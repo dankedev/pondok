@@ -15,13 +15,16 @@ class SettingSeeder extends Seeder
         'dokumen', 'prestasi', 'tahfidz', 'perizinan',
     ];
 
+    /** Modul yang sudah selesai dibangun dan aktif saat instalasi baru. */
+    public const ENABLED_BY_DEFAULT = ['akademik'];
+
     public function run(): void
     {
         // firstOrCreate agar seed ulang tidak menimpa nilai yang sudah diubah dari panel.
         Setting::query()->firstOrCreate(['key' => 'school.name'], ['value' => config('app.name')]);
 
         foreach (self::MODULES as $module) {
-            Setting::query()->firstOrCreate(['key' => "modules.{$module}.enabled"], ['value' => false]);
+            Setting::query()->firstOrCreate(['key' => "modules.{$module}.enabled"], ['value' => in_array($module, self::ENABLED_BY_DEFAULT, true)]);
         }
     }
 }

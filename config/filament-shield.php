@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Filament\Resources\Students\StudentResource;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
@@ -149,6 +150,7 @@ return [
             'viewAny',
             'create',
             'deleteAny',
+            'restoreAny',
         ],
     ],
 
@@ -188,6 +190,11 @@ return [
                 'create',
                 'update',
                 'delete',
+            ],
+            // Santri memakai soft delete; tidak ada hapus permanen.
+            StudentResource::class => [
+                'restore',
+                'restoreAny',
             ],
         ],
         'exclude' => [

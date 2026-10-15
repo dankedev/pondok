@@ -55,7 +55,11 @@ it('grants each role exactly its permissions', function (string $role, array $ex
     'bendahara' => ['bendahara', ['view-dashboard', 'view-finance-metrics']],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
     'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],
-    'kesantrian' => ['kesantrian', ['view-dashboard', 'view-student-metrics']],
+    'kesantrian' => ['kesantrian', [
+        'view-dashboard', 'view-student-metrics',
+        'view-any:student', 'view:student',
+        'view-any:guardian', 'view:guardian',
+    ]],
     'musyrif' => ['musyrif', ['view-dashboard']],
     'ustadz-tahfidz' => ['ustadz-tahfidz', ['view-dashboard']],
     'petugas-pos' => ['petugas-pos', ['view-dashboard']],
@@ -65,6 +69,11 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:staff', 'view:staff', 'create:staff', 'update:staff', 'delete:staff', 'delete-any:staff',
         'view-any:unit', 'view:unit',
         'view-any:academic-year', 'view:academic-year',
+        'view-any:cohort', 'view:cohort', 'create:cohort', 'update:cohort', 'delete:cohort', 'delete-any:cohort',
+        'view-any:classroom', 'view:classroom', 'create:classroom', 'update:classroom', 'delete:classroom', 'delete-any:classroom',
+        'view-any:student', 'view:student', 'create:student', 'update:student', 'delete:student', 'delete-any:student',
+        'restore:student', 'restore-any:student',
+        'view-any:guardian', 'view:guardian', 'create:guardian', 'update:guardian', 'delete:guardian', 'delete-any:guardian',
     ]],
 ]);
 

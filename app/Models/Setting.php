@@ -33,4 +33,12 @@ class Setting extends Model
     {
         static::query()->updateOrCreate(['key' => $key], ['value' => $value]);
     }
+
+    /**
+     * Status saklar modul `modules.<nama>.enabled`. Modul yang belum diatur dianggap mati.
+     */
+    public static function moduleEnabled(string $module): bool
+    {
+        return (bool) static::get("modules.{$module}.enabled", false);
+    }
 }

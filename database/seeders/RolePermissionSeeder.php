@@ -28,9 +28,17 @@ class RolePermissionSeeder extends Seeder
     ];
 
     /** Model yang punya resource Filament, beserta aksi policy-nya. */
-    public const RESOURCE_MODELS = ['Unit', 'AcademicYear', 'Staff', 'User', 'Role'];
+    public const RESOURCE_MODELS = [
+        'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
+        'Cohort', 'Classroom', 'Student', 'Guardian',
+    ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
+
+    /** Aksi tambahan per model, misalnya pemulihan untuk model soft delete. */
+    public const EXTRA_RESOURCE_ACTIONS = [
+        'Student' => ['restore', 'restoreAny'],
+    ];
 
     public function run(): void
     {
@@ -63,7 +71,7 @@ class RolePermissionSeeder extends Seeder
     {
         return array_map(
             fn (string $action): string => self::resourcePermission($action, $model),
-            $actions ?? self::RESOURCE_ACTIONS,
+            $actions ?? [...self::RESOURCE_ACTIONS, ...(self::EXTRA_RESOURCE_ACTIONS[$model] ?? [])],
         );
     }
 
@@ -98,9 +106,19 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Staff'),
                 ...self::resourcePermissions('Unit', $readOnly),
                 ...self::resourcePermissions('AcademicYear', $readOnly),
+                ...self::resourcePermissions('Cohort'),
+                ...self::resourcePermissions('Classroom'),
+                ...self::resourcePermissions('Student'),
+                ...self::resourcePermissions('Guardian'),
             ],
             'admin-psb' => ['view-dashboard', 'view-psb-metrics'],
-            'kesantrian' => ['view-dashboard', 'view-student-metrics'],
+            // Lihat-saja; dibutuhkan modul asrama dan perizinan.
+            'kesantrian' => [
+                'view-dashboard',
+                'view-student-metrics',
+                ...self::resourcePermissions('Student', $readOnly),
+                ...self::resourcePermissions('Guardian', $readOnly),
+            ],
             'musyrif', 'ustadz-tahfidz', 'petugas-pos' => ['view-dashboard'],
             // Portal wali (Fase 2) di luar panel admin.
             'wali' => [],

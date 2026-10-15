@@ -1,0 +1,554 @@
+{
+  "rules": {
+    "id": "Format F + 3 digit (F001, F002, ...). Unik, tidak pernah diubah, tidak dipakai ulang, dan tidak diurutkan ulang. Fitur baru memakai next_id lalu next_id dinaikkan.",
+    "status": {
+      "todo": "belum dikerjakan",
+      "in-progress": "sedang dikerjakan; owner wajib diisi",
+      "handoff": "dialihkan ke agent lain; field handoff wajib menunjuk file di docs/handoffs/",
+      "blocked": "tertahan; tulis alasannya di notes",
+      "deferred": "ditunda (di luar fase berjalan atau menunggu keputusan user)",
+      "done": "selesai; evidence wajib berisi commit dan hasil test"
+    },
+    "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
+    "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
+  },
+  "next_id": "F033",
+  "features": [
+    {
+      "id": "F001",
+      "key": "inti-fondasi",
+      "name": "Fondasi proyek & RBAC",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": [],
+      "description": "Laravel 13, Filament 5, Spatie Permission + Shield, Activitylog, Pest. Tabel units, academic_years, settings, unit_user, staff. Seeder peran dan permission. Cakupan jenjang lewat HasUnitScope.",
+      "acceptance": [
+        "Peran bawaan dan permission dashboard ter-seed",
+        "Cakupan jenjang lewat unit_user teruji",
+        "Queue, cache, session memakai driver database"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit ba293ef; test Pest seeder peran, akses panel, cakupan jenjang, form pengguna, aktivasi tahun ajaran",
+      "notes": ""
+    },
+    {
+      "id": "F002",
+      "key": "akademik-santri",
+      "name": "Akademik & Santri",
+      "phase": 1,
+      "module": "Akademik",
+      "status": "done",
+      "depends_on": ["F001"],
+      "description": "Angkatan, rombel, santri (soft delete), riwayat kelas (enrollments), wali dan kontak tagihan. Saklar modules.akademik.enabled.",
+      "acceptance": [
+        "Kenaikan kelas idempotent dan riwayat lama tetap",
+        "Satu kontak tagihan per santri",
+        "Menu hilang dan halaman 403 saat modul mati"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit f4e1fbf; test Pest cakupan jenjang, akses per peran, saklar modul, constraint unik, setiap Action",
+      "notes": "FK students.applicant_id ditambahkan oleh F011/F012 (PSB)."
+    },
+    {
+      "id": "F003",
+      "key": "asrama",
+      "name": "Asrama, kamar & musyrif",
+      "phase": 1,
+      "module": "Asrama",
+      "status": "todo",
+      "depends_on": ["F002"],
+      "description": "dormitories, rooms (kapasitas), room_assignments dengan riwayat pindah kamar, dormitory_supervisors per tahun ajaran. Santri tanpa penempatan aktif = nonmukim.",
+      "acceptance": [
+        "Validasi gender dan kapasitas saat penempatan",
+        "Pindah kamar menambah baris baru, bukan menimpa",
+        "Status mukim diturunkan dari room_assignments aktif"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F004",
+      "key": "keuangan-tarif",
+      "name": "Jenis biaya & resolusi tarif",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F002", "F003"],
+      "description": "fee_types (frekuensi, billing_group, priority, applies_to), fee_rates dengan generated column COALESCE, resolver tarif dari yang paling spesifik dan effective_from_year terbaru.",
+      "acceptance": [
+        "Urutan fallback: angkatan + asrama, angkatan, jenjang + asrama, jenjang (semua diuji)",
+        "Uang unsignedBigInteger rupiah",
+        "Activitylog aktif di model keuangan"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F005",
+      "key": "keuangan-keringanan",
+      "name": "Beasiswa & keringanan",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F004"],
+      "description": "Program beasiswa dan donatur, fee_overrides per santri/pendaftar per jenis biaya dengan masa berlaku. Mode nominal, potongan, persen.",
+      "acceptance": [
+        "Ketiga mode override teruji",
+        "Override di luar masa berlaku diabaikan"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F006",
+      "key": "keuangan-generator-tagihan",
+      "name": "Generator tagihan bulanan",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F004", "F005"],
+      "description": "Action GenerateMonthlyInvoices: invoices + invoice_items (base_amount, discount_amount, amount snapshot), digabung per billing_group, dijalankan dari scheduler.",
+      "acceptance": [
+        "Idempotent dengan unique (student_id, period, billing_group)",
+        "Gabungan atau terpisah sesuai billing_group",
+        "Biaya mukim tidak ditagihkan ke nonmukim",
+        "Santri tanpa tarif dicatat di log dan dilewati"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F007",
+      "key": "keuangan-pembayaran",
+      "name": "Pembayaran, cicilan & kuitansi",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F006"],
+      "description": "Action RecordPayment (tunai/transfer), alokasi ke item sesuai fee_types.priority di payment_allocations, status tagihan otomatis, kuitansi bernomor (PDF lewat Service). Pembatalan memakai status batal.",
+      "acceptance": [
+        "Alokasi cicilan berdasarkan prioritas teruji",
+        "Status tagihan diperbarui otomatis",
+        "Data keuangan tidak bisa dihapus (restrictOnDelete)"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Format nomor kuitansi masih pertanyaan terbuka di PRD §7."
+    },
+    {
+      "id": "F008",
+      "key": "keuangan-laporan",
+      "name": "Laporan keuangan",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F007"],
+      "description": "Tagihan bulan berjalan, terbayar vs menunggak, rasio koleksi, santri menunggak teratas, total subsidi beasiswa per program.",
+      "acceptance": [
+        "Laporan menghormati cakupan jenjang"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F009",
+      "key": "psb-master",
+      "name": "Master PSB: gelombang, jalur, syarat berkas",
+      "phase": 1,
+      "module": "PSB",
+      "status": "todo",
+      "depends_on": ["F001"],
+      "description": "admission_waves per tahun ajaran, admission_tracks (Reguler, Prestasi, Tahfidz, Yatim, scholarship_id), syarat berkas per jenjang. Saklar modules.psb.enabled.",
+      "acceptance": [
+        "Menu hilang dan halaman 403 saat modul mati"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F010",
+      "key": "psb-pendaftaran-online",
+      "name": "Pendaftaran online & cek status",
+      "phase": 1,
+      "module": "PSB",
+      "status": "todo",
+      "depends_on": ["F009", "F004"],
+      "description": "Form publik Livewire tanpa akun, nomor pendaftaran + token untuk cek status dan unggah berkas (disk private). Tagihan saat_daftar dibuat saat daftar; formulir lunas membuka unggah berkas dan tes.",
+      "acceptance": [
+        "Status: draft, diajukan, diverifikasi, diterima, cadangan, ditolak",
+        "Berkas hanya bisa diakses lewat token atau permission"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F011",
+      "key": "psb-seleksi-penerimaan",
+      "name": "Seleksi & penerimaan pendaftar",
+      "phase": 1,
+      "module": "PSB",
+      "status": "todo",
+      "depends_on": ["F010", "F005"],
+      "description": "Verifikasi berkas, keputusan status, Action AcceptApplicant: tagihan saat_diterima dibuat dan beasiswa jalur diterapkan otomatis.",
+      "acceptance": [
+        "Beasiswa jalur muncul sebagai fee_override pendaftar"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F012",
+      "key": "psb-daftar-ulang",
+      "name": "Daftar ulang & konversi menjadi santri",
+      "phase": 1,
+      "module": "PSB",
+      "status": "todo",
+      "depends_on": ["F011", "F007", "F013"],
+      "description": "Daftar ulang setelah pembayaran minimal psb.min_paid_percent membuat students; student_id diisi di tagihan dan override pendaftar, berkas valid disalin ke documents.",
+      "acceptance": [
+        "Konversi memindahkan tagihan, override, dan dokumen (teruji)"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F013",
+      "key": "dokumen-repositori",
+      "name": "Repositori dokumen",
+      "phase": 1,
+      "module": "Dokumen",
+      "status": "todo",
+      "depends_on": ["F002"],
+      "description": "document_types, documents untuk santri/wali/staff/prestasi, verifikasi, masa berlaku, riwayat versi (replaced_by_id), cek kelengkapan berkas wajib. Unduh lewat route berizin dari disk private.",
+      "acceptance": [
+        "Dokumen rahasia hanya bisa dibuka peran tertentu",
+        "Versi baru menambah baris, bukan menimpa"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F014",
+      "key": "dokumen-surat-keluar",
+      "name": "Surat keluar & QR verifikasi",
+      "phase": 1,
+      "module": "Dokumen",
+      "status": "todo",
+      "depends_on": ["F013"],
+      "description": "Surat keterangan aktif, rekomendasi, pindah, syahadah, kartu santri dengan penomoran otomatis dan halaman publik verifikasi QR.",
+      "acceptance": [
+        "Nomor surat unik dan berurutan"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Format nomor surat masih pertanyaan terbuka di PRD §7."
+    },
+    {
+      "id": "F015",
+      "key": "prestasi",
+      "name": "Prestasi santri",
+      "phase": 1,
+      "module": "Prestasi",
+      "status": "todo",
+      "depends_on": ["F002", "F013"],
+      "description": "Prestasi individu/beregu dengan kategori, tingkat, peringkat, sertifikat, foto. Rekap per santri dan per tahun.",
+      "acceptance": [
+        "Prestasi bisa diterbitkan menjadi berita (terhubung F016)"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F016",
+      "key": "konten-cms",
+      "name": "Konten (CMS) di panel",
+      "phase": 1,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F001"],
+      "description": "posts (soft delete) untuk berita/kegiatan/prestasi, galeri berkategori, video YouTube, halaman statis, profil sekolah lewat settings.",
+      "acceptance": [
+        "Gambar konten di disk public"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F017",
+      "key": "portal-publik",
+      "name": "Portal publik",
+      "phase": 1,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F016"],
+      "description": "Halaman publik Blade + Livewire + Tailwind: beranda, berita, galeri, halaman statis, tautan PSB.",
+      "acceptance": [
+        "Lolos checklist §0 docs/design-guide.md"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F018",
+      "key": "dashboard",
+      "name": "Dashboard role-aware",
+      "phase": 1,
+      "module": "Dashboard",
+      "status": "todo",
+      "depends_on": ["F001"],
+      "description": "Widget konten, PSB, santri, keuangan, kelengkapan dokumen, prestasi terbaru; masing-masing dicek permission view-*-metrics.",
+      "acceptance": [
+        "Tetap render dengan pesan \"Modul belum tersedia\" saat modul atau tabel belum ada",
+        "Link widget hanya tampil bila route tersedia",
+        "Akses widget per peran teruji"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Bisa mulai setelah F001; widget per modul ditambah seiring modulnya selesai."
+    },
+    {
+      "id": "F019",
+      "key": "rilis-cpanel",
+      "name": "Paket rilis & instalasi shared hosting",
+      "phase": 1,
+      "module": "Inti",
+      "status": "todo",
+      "depends_on": ["F008", "F012", "F014", "F015", "F017", "F018"],
+      "description": "Aset ter-build ikut paket, panduan instalasi cPanel (PHP 8.3, MySQL), satu cron schedule:run.",
+      "acceptance": [
+        "Aplikasi terpasang dan berjalan di cPanel dengan PHP 8.3 dan MySQL"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "F020",
+      "key": "keuangan-payment-gateway",
+      "name": "Virtual account & payment gateway",
+      "phase": 2,
+      "module": "Keuangan",
+      "status": "deferred",
+      "depends_on": ["F007"],
+      "description": "Midtrans/Xendit/Tripay/bank syariah lewat Service class yang bisa diganti.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 2. Menunggu keputusan gateway (PRD §7)."
+    },
+    {
+      "id": "F021",
+      "key": "notifikasi-whatsapp",
+      "name": "Notifikasi WhatsApp",
+      "phase": 2,
+      "module": "Inti",
+      "status": "deferred",
+      "depends_on": ["F007", "F010"],
+      "description": "Driver WhatsApp yang bisa diganti, dikirim lewat queue database.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 2. Menunggu keputusan gateway resmi/tidak resmi (PRD §7)."
+    },
+    {
+      "id": "F022",
+      "key": "portal-wali",
+      "name": "Portal wali",
+      "phase": 2,
+      "module": "Portal Wali",
+      "status": "deferred",
+      "depends_on": ["F007", "F013"],
+      "description": "Login wali (peran wali) untuk melihat data santri, tagihan, dan dokumen.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 2."
+    },
+    {
+      "id": "F023",
+      "key": "tahfidz",
+      "name": "Tahfidz",
+      "phase": 3,
+      "module": "Tahfidz",
+      "status": "deferred",
+      "depends_on": ["F002"],
+      "description": "Halaqah, setoran ziyadah/murajaah/tasmi' berbasis rentang surah-ayat, student_juz_progress, ujian dan syahadah.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 3."
+    },
+    {
+      "id": "F024",
+      "key": "perizinan",
+      "name": "Perizinan, kepulangan & kunjungan",
+      "phase": 3,
+      "module": "Perizinan",
+      "status": "deferred",
+      "depends_on": ["F003"],
+      "description": "Jenis izin, approver otomatis dari musyrif, pos keluar-kembali, pulang massal, kunjungan wali.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 3."
+    },
+    {
+      "id": "F025",
+      "key": "absensi",
+      "name": "Absensi",
+      "phase": 3,
+      "module": "Akademik",
+      "status": "deferred",
+      "depends_on": ["F002"],
+      "description": "Absensi santri.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 3. Belum ada di ERD."
+    },
+    {
+      "id": "F026",
+      "key": "kedisiplinan",
+      "name": "Kedisiplinan",
+      "phase": 3,
+      "module": "Akademik",
+      "status": "deferred",
+      "depends_on": ["F002"],
+      "description": "Pencatatan pelanggaran dan poin kedisiplinan.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 3. Belum ada di ERD."
+    },
+    {
+      "id": "F027",
+      "key": "rapor-diniyah",
+      "name": "Rapor diniyah",
+      "phase": 4,
+      "module": "Akademik",
+      "status": "deferred",
+      "depends_on": ["F002"],
+      "description": "Rapor mata pelajaran diniyah.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 4."
+    },
+    {
+      "id": "F028",
+      "key": "tabungan-uang-saku",
+      "name": "Tabungan & uang saku",
+      "phase": 4,
+      "module": "Keuangan",
+      "status": "deferred",
+      "depends_on": ["F007"],
+      "description": "Tabungan dan uang saku santri.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 4."
+    },
+    {
+      "id": "F029",
+      "key": "kas-umum",
+      "name": "Kas umum yayasan",
+      "phase": 4,
+      "module": "Keuangan",
+      "status": "deferred",
+      "depends_on": ["F007"],
+      "description": "Pencatatan kas masuk dan keluar yayasan.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 4."
+    },
+    {
+      "id": "F030",
+      "key": "kepegawaian-honor",
+      "name": "Kepegawaian & honor",
+      "phase": 4,
+      "module": "Kepegawaian",
+      "status": "deferred",
+      "depends_on": ["F001"],
+      "description": "Data kepegawaian staff dan honor.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 4."
+    },
+    {
+      "id": "F031",
+      "key": "kesehatan",
+      "name": "Kesehatan santri",
+      "phase": 4,
+      "module": "Kesehatan",
+      "status": "deferred",
+      "depends_on": ["F002"],
+      "description": "Catatan kesehatan santri.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 4."
+    },
+    {
+      "id": "F032",
+      "key": "alumni-donasi",
+      "name": "Alumni & donasi",
+      "phase": 4,
+      "module": "Alumni",
+      "status": "deferred",
+      "depends_on": ["F002"],
+      "description": "Data alumni dan pencatatan donasi.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Fase 4."
+    }
+  ]
+}

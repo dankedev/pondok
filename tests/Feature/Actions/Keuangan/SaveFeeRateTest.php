@@ -54,14 +54,15 @@ it('AC-20: rejects the rate', function (Closure $data, string $reason, string $f
 
 it('AC-21: rejects a duplicate rate combination', function (array $keys) {
     $f = keuanganFixture();
+    $type = in_array('wave', $keys, true) ? psbFeeType() : $f->type;
     $base = [
         'cohort_id' => in_array('cohort', $keys, true) ? $f->cohort2025->id : null,
         'dormitory_id' => in_array('dormitory', $keys, true) ? $f->d1->id : null,
-        'admission_wave_id' => in_array('wave', $keys, true) ? 7 : null,
+        'admission_wave_id' => in_array('wave', $keys, true) ? psbWave($f->y2026)->id : null,
     ];
-    keuanganSaveFeeRate($f, $base);
+    keuanganSaveFeeRate($f, $base, null, $type);
 
-    keuanganAssertRejected(fn () => keuanganSaveFeeRate($f, [...$base, 'amount' => 999000]), 'duplicate_rate', 'effective_from_year_id');
+    keuanganAssertRejected(fn () => keuanganSaveFeeRate($f, [...$base, 'amount' => 999000], null, $type), 'duplicate_rate', 'effective_from_year_id');
 
     expect(FeeRate::query()->count())->toBe(1);
 })->with([
@@ -74,15 +75,17 @@ it('AC-21: rejects a duplicate rate combination', function (array $keys) {
 
 it('AC-21: allows rates that differ in one dimension', function () {
     $f = keuanganFixture();
+    $registration = psbFeeType();
     keuanganSaveFeeRate($f);
 
     keuanganSaveFeeRate($f, ['effective_from_year_id' => $f->y2026->id]);
     keuanganSaveFeeRate($f, ['cohort_id' => $f->cohort2025->id]);
     keuanganSaveFeeRate($f, ['dormitory_id' => $f->d1->id]);
-    keuanganSaveFeeRate($f, ['admission_wave_id' => 7]);
+    keuanganSaveFeeRate($f, [], null, $registration);
+    keuanganSaveFeeRate($f, ['admission_wave_id' => psbWave($f->y2026)->id], null, $registration);
     keuanganSaveFeeRate($f, [], null, FeeType::factory()->create());
 
-    expect(FeeRate::query()->count())->toBe(6);
+    expect(FeeRate::query()->count())->toBe(7);
 });
 
 it('AC-21: updates a rate without clashing with itself', function () {
@@ -103,4 +106,53 @@ it('AC-21: rejects updating a rate into another existing combination', function 
     keuanganAssertRejected(fn () => keuanganSaveFeeRate($f, ['cohort_id' => null], $cohortRate), 'duplicate_rate', 'effective_from_year_id');
 
     expect($cohortRate->fresh()->cohort_id)->toBe($f->cohort2025->id);
+});
+
+it('AC-19 (F009): saves a wave rate for registration and acceptance fees', function (string $frequency) {
+    $f = keuanganFixture();
+    $wave = psbWave($f->y2026);
+
+    $rate = keuanganSaveFeeRate($f, ['admission_wave_id' => $wave->id], null, psbFeeType($frequency));
+
+    expect($rate->fresh()->admission_wave_id)->toBe($wave->id);
+})->with(['saat_daftar', 'saat_diterima']);
+
+it('AC-19 (F009): rejects the wave', function (string $frequency, ?int $waveId, string $reason) {
+    $f = keuanganFixture();
+    $wave = psbWave($f->y2026);
+
+    keuanganAssertRejected(
+        fn () => keuanganSaveFeeRate($f, ['admission_wave_id' => $waveId ?? $wave->id], null, psbFeeType($frequency)),
+        $reason,
+        'admission_wave_id',
+    );
+
+    expect(FeeRate::query()->count())->toBe(0);
+})->with([
+    'unknown wave' => ['saat_daftar', 999, 'wave_not_found'],
+    'monthly fee' => ['bulanan', null, 'wave_rate_for_non_psb_fee'],
+    'yearly fee' => ['tahunan', null, 'wave_rate_for_non_psb_fee'],
+    'manual fee' => ['manual', null, 'wave_rate_for_non_psb_fee'],
+]);
+
+it('AC-19 (F009): keeps rejecting a duplicate wave rate and leaves rates without a wave alone', function () {
+    $f = keuanganFixture();
+    $wave = psbWave($f->y2026);
+    $type = psbFeeType();
+    keuanganSaveFeeRate($f, ['admission_wave_id' => $wave->id], null, $type);
+
+    keuanganAssertRejected(fn () => keuanganSaveFeeRate($f, ['admission_wave_id' => $wave->id, 'amount' => 1], null, $type), 'duplicate_rate', 'effective_from_year_id');
+
+    $plain = keuanganSaveFeeRate($f);
+
+    expect($plain->fresh()->admission_wave_id)->toBeNull()->and(FeeRate::query()->count())->toBe(2);
+});
+
+it('AC-19 (F009): rejects moving an existing rate to a wave when its fee type is not a psb fee', function () {
+    $f = keuanganFixture();
+    $rate = keuanganSaveFeeRate($f);
+
+    keuanganAssertRejected(fn () => keuanganSaveFeeRate($f, ['admission_wave_id' => psbWave($f->y2026)->id], $rate), 'wave_rate_for_non_psb_fee', 'admission_wave_id');
+
+    expect($rate->fresh()->admission_wave_id)->toBeNull();
 });

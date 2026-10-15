@@ -2,6 +2,7 @@
 
 namespace App\Actions\Keuangan;
 
+use App\Models\AdmissionWave;
 use App\Models\Cohort;
 use App\Models\FeeRate;
 use App\Models\FeeType;
@@ -14,7 +15,7 @@ use Illuminate\Validation\ValidationException;
  * Nominal bilangan bulat rupiah >= 0. Satu kombinasi jenis biaya, tahun
  * berlaku, jenjang, angkatan, asrama, dan gelombang hanya boleh punya satu
  * tarif (unique `fee_rates_combination_unique` tetap pengaman terakhir).
- * `admission_wave_id` belum divalidasi keberadaannya sampai F009.
+ * Tarif per gelombang hanya untuk jenis biaya PSB (`saat_daftar`/`saat_diterima`).
  */
 class SaveFeeRate
 {
@@ -50,6 +51,18 @@ class SaveFeeRate
             && FeeType::query()->whereKey($attributes['fee_type_id'])->value('applies_to') === FeeType::APPLIES_TO_NON_RESIDENT
         ) {
             $this->fail('dormitory_id', 'dormitory_rate_for_nonresident_fee');
+        }
+
+        if ($attributes['admission_wave_id'] !== null) {
+            if (! AdmissionWave::query()->whereKey($attributes['admission_wave_id'])->exists()) {
+                $this->fail('admission_wave_id', 'wave_not_found');
+            }
+
+            $frequency = FeeType::query()->whereKey($attributes['fee_type_id'])->value('frequency');
+
+            if (! in_array($frequency, FeeType::ADMISSION_FREQUENCIES, true)) {
+                $this->fail('admission_wave_id', 'wave_rate_for_non_psb_fee');
+            }
         }
 
         return DB::transaction(function () use ($attributes, $amount, $feeRate): FeeRate {

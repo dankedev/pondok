@@ -5,7 +5,9 @@ use App\Actions\Keuangan\FinanceReportFilter;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
 use App\Models\AcademicYear;
+use App\Models\AdmissionWave;
 use App\Models\Cohort;
+use App\Models\DocumentType;
 use App\Models\Dormitory;
 use App\Models\FeeOverride;
 use App\Models\FeeRate;
@@ -20,6 +22,7 @@ use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\UnitSeeder;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
@@ -956,4 +959,159 @@ function laporanCashFixture(object $f): void
     bayarRecord($third, 70000);
     $cancelled = bayarRecord($fourth, 100000);
     app(CancelPayment::class)->handle($cancelled, User::factory()->create(), 'Salah input');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper master PSB (F009)
+|--------------------------------------------------------------------------
+|
+| Berawalan `psb`. Memakai `keuanganUser` untuk membuat user berperan.
+| Seeder peran harus sudah dijalankan oleh test pemanggil bila butuh user.
+|
+*/
+
+/**
+ * User dengan peran, opsional dibatasi ke jenjang (kode unit, mis. 'SLTP').
+ *
+ * @param  list<string>  $unitCodes
+ */
+function psbUser(string $role, array $unitCodes = []): User
+{
+    return keuanganUser($role, $unitCodes);
+}
+
+/**
+ * Fixture: jenjang SD, SLTP, SLTA (UnitSeeder), 7 jenis dokumen (DocumentTypeSeeder), tahun ajaran
+ * 2026/2027 (aktif, 2026-07-01..2027-06-30) dan 2027/2028, beasiswa aktif `Beasiswa Tahfidz` (persen 50)
+ * dan nonaktif `Beasiswa Lama`. `types` diindeks kode jenis dokumen.
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit, y2026: AcademicYear, y2027: AcademicYear, tahfidz: Scholarship, lama: Scholarship, types: Collection<string, DocumentType>}
+ */
+function psbFixture(): object
+{
+    test()->seed([UnitSeeder::class, DocumentTypeSeeder::class]);
+
+    return (object) [
+        'sd' => Unit::query()->where('code', 'SD')->firstOrFail(),
+        'sltp' => Unit::query()->where('code', 'SLTP')->firstOrFail(),
+        'slta' => Unit::query()->where('code', 'SLTA')->firstOrFail(),
+        'y2026' => AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']),
+        'y2027' => AcademicYear::factory()->create(['name' => '2027/2028', 'starts_on' => '2027-07-01', 'ends_on' => '2028-06-30']),
+        'tahfidz' => Scholarship::factory()->percent(50)->create(['name' => 'Beasiswa Tahfidz']),
+        'lama' => Scholarship::factory()->inactive()->create(['name' => 'Beasiswa Lama']),
+        'types' => DocumentType::query()->get()->keyBy('code'),
+    ];
+}
+
+/**
+ * Gelombang langsung lewat factory (tanpa Action, jadi tanpa validasi irisan).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function psbWave(AcademicYear $year, string $name = 'Gelombang 1', string $opens = '2027-01-01', string $closes = '2027-03-31', array $attributes = []): AdmissionWave
+{
+    return AdmissionWave::factory()->create([
+        'academic_year_id' => $year->id,
+        'name' => $name,
+        'opens_on' => $opens,
+        'closes_on' => $closes,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Jenis biaya PSB (frekuensi `saat_daftar` atau `saat_diterima`).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function psbFeeType(string $frequency = 'saat_daftar', array $attributes = []): FeeType
+{
+    return FeeType::factory()->create(['frequency' => $frequency, 'billing_group' => 'PSB', ...$attributes]);
+}
+
+/**
+ * Data masukan SaveAdmissionWave yang valid (Y2027, 2027-01-01..2027-03-31, kuota 150, tanpa `is_open`).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function psbWaveData(object $f, array $overrides = []): array
+{
+    return [
+        'academic_year_id' => $f->y2027->id,
+        'name' => 'Gelombang 1',
+        'opens_on' => '2027-01-01',
+        'closes_on' => '2027-03-31',
+        'quota' => 150,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Data masukan SaveAdmissionTrack yang valid (beasiswa tahfidz).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function psbTrackData(object $f, array $overrides = []): array
+{
+    return [
+        'code' => 'TAHFIDZ_2',
+        'name' => 'Tahfidz Lanjutan',
+        'scholarship_id' => $f->tahfidz->id,
+        'terms' => 'Hafal 5 juz',
+        ...$overrides,
+    ];
+}
+
+/**
+ * Data masukan SaveAdmissionRequirement yang valid (KK untuk SD).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function psbRequirementData(object $f, array $overrides = []): array
+{
+    return [
+        'unit_id' => $f->sd->id,
+        'document_type_id' => $f->types['KK']->id,
+        'name' => 'Kartu Keluarga',
+        'sort_order' => 0,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Pola regex untuk pesan `pondok.psb.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function psbMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.psb.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan kunci lang `pondok.psb.errors.<reason>` pada `$field`.
+ */
+function psbAssertRejected(Closure $callback, string $reason, string $field): void
+{
+    expect(__("pondok.psb.errors.{$reason}"))->not->toBe("pondok.psb.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        expect($errors)->toHaveKey($field);
+
+        $matches = collect($errors[$field])->contains(fn (string $message): bool => preg_match(psbMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.psb.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
 }

@@ -135,29 +135,34 @@ it('AC-12: orders years by start date, not by id', function () {
 
 it('AC-13: prefers the admission wave rate and falls back to all waves', function () {
     $f = keuanganFixture();
-    keuanganRate($f->type, $f->y2025, $f->sltp, 150000, null, null, 7);
+    $wave = psbWave($f->y2026, 'Gelombang 1');
+    $other = psbWave($f->y2026, 'Gelombang 2', '2027-04-01', '2027-05-31');
+    keuanganRate($f->type, $f->y2025, $f->sltp, 150000, null, null, $wave->id);
     keuanganRate($f->type, $f->y2025, $f->sltp, 200000);
 
-    expect(keuanganResolve($f, null, null, null, 7))->amount->toBe(150000)
-        ->and(keuanganResolve($f, null, null, null, 8))->amount->toBe(200000)
+    expect(keuanganResolve($f, null, null, null, $wave->id))->amount->toBe(150000)
+        ->and(keuanganResolve($f, null, null, null, $other->id))->amount->toBe(200000)
         ->and(keuanganResolve($f, null, null, null, null))->amount->toBe(200000);
 });
 
 it('AC-13: never uses a wave rate without a requested wave', function () {
     $f = keuanganFixture();
-    keuanganRate($f->type, $f->y2025, $f->sltp, 150000, null, null, 7);
+    $wave = psbWave($f->y2026, 'Gelombang 1');
+    $other = psbWave($f->y2026, 'Gelombang 2', '2027-04-01', '2027-05-31');
+    keuanganRate($f->type, $f->y2025, $f->sltp, 150000, null, null, $wave->id);
 
     expect(keuanganResolve($f, null, null, null, null))->toBeNull()
-        ->and(keuanganResolve($f, null, null, null, 8))->toBeNull()
-        ->and(keuanganResolve($f, null, null, null, 7))->amount->toBe(150000);
+        ->and(keuanganResolve($f, null, null, null, $other->id))->toBeNull()
+        ->and(keuanganResolve($f, null, null, null, $wave->id))->amount->toBe(150000);
 });
 
 it('AC-13: a cohort rate without wave beats a unit rate with a wave', function () {
     $f = keuanganFixture();
+    $wave = psbWave($f->y2026, 'Gelombang 1');
     keuanganRate($f->type, $f->y2025, $f->sltp, 500000, $f->cohort2025);
-    keuanganRate($f->type, $f->y2025, $f->sltp, 150000, null, null, 7);
+    keuanganRate($f->type, $f->y2025, $f->sltp, 150000, null, null, $wave->id);
 
-    expect(keuanganResolve($f, null, $f->cohort2025, null, 7))->amount->toBe(500000);
+    expect(keuanganResolve($f, null, $f->cohort2025, null, $wave->id))->amount->toBe(500000);
 });
 
 it('AC-14: resolves a student rate from the active room', function () {

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -89,6 +90,14 @@ class FeeType extends Model
     public function invoiceItems(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    /**
+     * Jalur pendaftaran yang memberi beasiswa untuk jenis biaya ini (F011).
+     */
+    public function admissionTracks(): BelongsToMany
+    {
+        return $this->belongsToMany(AdmissionTrack::class)->withTimestamps();
     }
 
     public function isAdmissionFee(): bool

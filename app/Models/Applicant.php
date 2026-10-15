@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Actions\Keuangan\ResolveFeeRate;
 use App\Models\Concerns\HasUnitScope;
 use Database\Factories\ApplicantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +63,20 @@ class Applicant extends Model
     public const OPEN_STATUSES = [
         self::STATUS_SUBMITTED,
         self::STATUS_VERIFIED,
+    ];
+
+    /**
+     * Transisi keputusan panitia (F011): status asal => status tujuan yang sah.
+     * `draft` tidak punya transisi keluar; `ditolak` hanya bisa dipulihkan.
+     *
+     * @var array<string, list<string>>
+     */
+    public const TRANSITIONS = [
+        self::STATUS_SUBMITTED => [self::STATUS_VERIFIED, self::STATUS_REJECTED],
+        self::STATUS_VERIFIED => [self::STATUS_SUBMITTED, self::STATUS_RESERVE, self::STATUS_ACCEPTED, self::STATUS_REJECTED],
+        self::STATUS_RESERVE => [self::STATUS_ACCEPTED, self::STATUS_REJECTED],
+        self::STATUS_ACCEPTED => [self::STATUS_REJECTED],
+        self::STATUS_REJECTED => [self::STATUS_SUBMITTED],
     ];
 
     /** @var array<string, mixed> */
@@ -146,6 +162,79 @@ class Applicant extends Model
     public function registrationFeeSettled(): bool
     {
         return ! $this->registrationInvoices()->where('status', '<>', Invoice::STATUS_PAID)->exists();
+    }
+
+    /**
+     * Tagihan aktif (bukan `batal`) yang memuat item biaya `saat_diterima`.
+     */
+    public function acceptanceInvoices(): HasMany
+    {
+        return $this->invoices()
+            ->withoutGlobalScopes()
+            ->where('status', '<>', Invoice::STATUS_CANCELLED)
+            ->whereHas('items.feeType', fn (Builder $query) => $query->where('frequency', FeeType::FREQUENCY_ON_ACCEPTANCE));
+    }
+
+    /**
+     * Biaya formulir wajib dibayar bila modul keuangan aktif dan ada jenis
+     * biaya `saat_daftar` aktif yang bertarif untuk gelombang dan jenjang ini.
+     */
+    public function registrationFeeRequired(): bool
+    {
+        if (! Setting::moduleEnabled('keuangan')) {
+            return false;
+        }
+
+        $wave = AdmissionWave::query()->with('academicYear')->find($this->admission_wave_id);
+
+        if ($wave === null) {
+            return false;
+        }
+
+        $resolveFeeRate = app(ResolveFeeRate::class);
+
+        return FeeType::query()
+            ->active()
+            ->where('frequency', FeeType::FREQUENCY_ON_REGISTRATION)
+            ->get()
+            ->contains(fn (FeeType $type): bool => $resolveFeeRate->handle($type, $wave->academicYear, $this->unit_id, null, null, $wave->id) !== null);
+    }
+
+    /**
+     * Syarat verifikasi (lebih ketat dari `registrationFeeSettled()`): bila biaya
+     * formulir wajib, harus ada tagihan pendaftaran aktif dan semuanya lunas.
+     * Tagihan `batal` tidak pernah dihitung lunas.
+     */
+    public function registrationFeeCleared(): bool
+    {
+        if (! $this->registrationFeeRequired()) {
+            return true;
+        }
+
+        $statuses = $this->registrationInvoices()->pluck('status');
+
+        return $statuses->isNotEmpty() && $statuses->every(fn (string $status): bool => $status === Invoice::STATUS_PAID);
+    }
+
+    public function canTransitionTo(string $status): bool
+    {
+        return in_array($status, self::TRANSITIONS[$this->status] ?? [], true);
+    }
+
+    /**
+     * Syarat wajib jenjang tujuan yang belum punya berkas `valid`, urut `sort_order`.
+     *
+     * @return Collection<int, AdmissionRequirement>
+     */
+    public function missingRequiredDocuments(): Collection
+    {
+        return $this->requirements()
+            ->where('is_required', true)
+            ->whereNotIn('id', ApplicantDocument::withoutGlobalScopes()
+                ->select('admission_requirement_id')
+                ->where('applicant_id', $this->id)
+                ->where('status', ApplicantDocument::STATUS_VALID))
+            ->get();
     }
 
     public function acceptsUploads(): bool

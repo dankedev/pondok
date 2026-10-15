@@ -86,9 +86,12 @@ class ApplicationStatus extends Component
     #[Computed]
     public function invoices(): Collection
     {
+        // Semua tagihan aktif: formulir (F010) dan penerimaan (F011).
         return Invoice::withoutGlobalScopes()
+            ->with(['items' => fn ($query) => $query->orderBy('id'), 'items.feeType'])
             ->where('applicant_id', $this->applicant->id)
             ->where('status', '<>', Invoice::STATUS_CANCELLED)
+            ->orderBy('period')
             ->orderBy('id')
             ->get();
     }

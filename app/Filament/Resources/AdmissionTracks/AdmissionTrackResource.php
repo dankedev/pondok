@@ -7,16 +7,20 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Concerns\ShowsActionErrorsOnForm;
 use App\Filament\Resources\AdmissionTracks\Pages\ManageAdmissionTracks;
 use App\Models\AdmissionTrack;
+use App\Models\FeeType;
 use App\Models\Scholarship;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -26,8 +30,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Jalur pendaftaran beserta program beasiswanya. Simpan selalu lewat Action
- * `SaveAdmissionTrack`. Jalur tidak dihapus, cukup dinonaktifkan.
+ * Jalur pendaftaran beserta program beasiswanya dan jenis biaya penerima
+ * beasiswa (F011). Simpan selalu lewat Action `SaveAdmissionTrack`. Jalur
+ * tidak dihapus, cukup dinonaktifkan.
  */
 class AdmissionTrackResource extends Resource
 {
@@ -89,7 +94,16 @@ class AdmissionTrackResource extends Resource
                         ->mapWithKeys(fn (Scholarship $scholarship): array => [
                             $scholarship->id => "{$scholarship->name} ({$scholarship->defaultValueLabel()})",
                         ])
-                        ->all()),
+                        ->all())
+                    ->live(),
+                // Field hanya dibangun saat program beasiswa dipilih; tanpa field, pemetaan tidak dikirim dan tetap.
+                Group::make(fn (Get $get): array => blank($get('scholarship_id')) ? [] : [
+                    CheckboxList::make('fee_type_ids')
+                        ->label(__('pondok.admission_track.fee_types'))
+                        ->helperText(__('pondok.admission_track.fee_types_helper'))
+                        ->options(fn (?AdmissionTrack $record): array => static::feeTypeOptions($record))
+                        ->columns(2),
+                ])->columnSpanFull(),
                 Toggle::make('is_active')
                     ->label(__('pondok.admission_track.is_active'))
                     ->helperText(__('pondok.admission_track.is_active_helper'))
@@ -105,7 +119,7 @@ class AdmissionTrackResource extends Resource
     {
         return $table
             ->defaultSort('code')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('scholarship'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['scholarship', 'feeTypes' => fn ($query) => $query->orderBy('priority')->orderBy('fee_types.id')]))
             ->columns([
                 TextColumn::make('code')
                     ->label(__('pondok.admission_track.code'))
@@ -117,7 +131,12 @@ class AdmissionTrackResource extends Resource
                 TextColumn::make('scholarship.name')
                     ->label(__('pondok.admission_track.scholarship'))
                     ->placeholder(__('pondok.admission_track.no_scholarship'))
-                    ->description(fn (AdmissionTrack $record): ?string => $record->scholarship?->defaultValueLabel()),
+                    ->description(fn (AdmissionTrack $record): ?string => $record->scholarship === null ? null : implode(' · ', [
+                        $record->scholarship->defaultValueLabel(),
+                        $record->feeTypes->isEmpty()
+                            ? __('pondok.admission_track.all_acceptance_fees')
+                            : $record->feeTypes->pluck('name')->implode(', '),
+                    ])),
                 IconColumn::make('is_active')
                     ->label(__('pondok.admission_track.is_active'))
                     ->boolean(),
@@ -129,11 +148,39 @@ class AdmissionTrackResource extends Resource
             ->emptyStateHeading(__('pondok.admission_track.empty'))
             ->recordActions([
                 EditAction::make()
+                    ->mutateRecordDataUsing(fn (array $data, AdmissionTrack $record): array => [
+                        ...$data,
+                        'fee_type_ids' => $record->feeTypes()->pluck('fee_types.id')->all(),
+                    ])
                     ->using(fn (AdmissionTrack $record, array $data, SaveAdmissionTrack $saveAdmissionTrack, Action $action): AdmissionTrack => static::saveShowingFormErrors(
                         $action,
                         fn (): AdmissionTrack => $saveAdmissionTrack->handle($data, $record),
                     )),
             ]);
+    }
+
+    /**
+     * Jenis biaya aktif yang boleh dipetakan, ditambah yang sedang terpasang walau nonaktif.
+     *
+     * @return array<int, string>
+     */
+    public static function feeTypeOptions(?AdmissionTrack $record): array
+    {
+        $mapped = $record?->feeTypes()->pluck('fee_types.id')->all() ?? [];
+
+        return FeeType::query()
+            ->whereIn('frequency', AdmissionTrack::SCHOLARSHIP_FREQUENCIES)
+            ->where(fn (Builder $query) => $query->where('is_active', true)->orWhereIn('id', $mapped))
+            ->orderBy('priority')
+            ->orderBy('id')
+            ->get()
+            ->mapWithKeys(fn (FeeType $type): array => [
+                $type->id => __('pondok.admission_track.fee_type_option', [
+                    'name' => $type->name,
+                    'frequency' => __("pondok.fee_type.frequencies.{$type->frequency}"),
+                ]),
+            ])
+            ->all();
     }
 
     public static function createAction(): CreateAction

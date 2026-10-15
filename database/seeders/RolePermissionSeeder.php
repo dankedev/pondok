@@ -51,7 +51,7 @@ class RolePermissionSeeder extends Seeder
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.
         'Payment' => ['cancel'],
         // Pendaftar dibuat lewat form publik; panitia memverifikasi berkas, mengatur ulang token, dan menagih formulir.
-        'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices'],
+        'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reopen'],
     ];
 
     public function run(): void
@@ -151,7 +151,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('AdmissionWave', $withoutDelete),
                 ...self::resourcePermissions('AdmissionTrack', $withoutDelete),
                 ...self::resourcePermissions('AdmissionRequirement'),
-                ...self::resourcePermissions('Applicant', ['viewAny', 'view', 'delete', 'verifyDocument', 'resetToken', 'generateInvoices']),
+                ...self::resourcePermissions('Applicant', ['viewAny', 'view', 'delete', 'verifyDocument', 'resetToken', 'generateInvoices', 'decide']),
             ],
             // Santri dan wali lihat-saja; mengelola asrama, kamar, penghuni, dan musyrif.
             'kesantrian' => [

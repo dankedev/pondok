@@ -73,6 +73,11 @@ it('AC-6: shows module unavailable for modules that are not built yet (:state)',
     ];
 
     foreach ($headings as $key => $heading) {
+        // F011: widget PSB punya sumber metrik; "Modul belum tersedia" hanya berlaku saat saklar psb mati.
+        if ($key === 'psb' && $enabled) {
+            continue;
+        }
+
         $class = dashboardWidgets()[$key];
 
         expect(class_exists($class))->toBeTrue("Kelas widget {$class} belum ada")
@@ -86,5 +91,5 @@ it('AC-6: shows module unavailable for modules that are not built yet (:state)',
 
     $text = dashboardText(keuanganUser('super-admin'));
 
-    expect(substr_count($text, 'Modul belum tersedia.'))->toBeGreaterThanOrEqual(4);
+    expect(substr_count($text, 'Modul belum tersedia.'))->toBeGreaterThanOrEqual($enabled ? 3 : 4);
 })->with([true, false]);

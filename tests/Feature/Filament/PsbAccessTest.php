@@ -312,3 +312,64 @@ it('AC-40: translates every applicant text key', function (string $key) {
     'pondok.payment.applicant_owner',
     'pondok.receipt.registration_no',
 ]);
+
+it('AC-31 (F011): translates every acceptance text key', function (string $key) {
+    expect(__($key))->toBeString()->not->toBe($key)->not->toBeEmpty();
+})->with(function () {
+    $applicant = [
+        'section_decision', 'reviewer', 'reviewed_at', 'review_note', 'no_review', 'section_overrides', 'override_custom',
+        'activity_decided', 'track_scholarship_reason', 'cancel_reason_rejected', 'verify', 'verify_description', 'accept',
+        'accept_description', 'accept_scholarship_description', 'reserve', 'return', 'return_description', 'reject',
+        'reject_description', 'cancel_acceptance', 'cancel_acceptance_description', 'reopen', 'reopen_description', 'reopened',
+        'decided', 'accepted', 'accepted_with_invoices', 'scholarship_applied', 'missing_rates', 'billing_failed',
+        'generate_acceptance_invoices', 'generate_acceptance_invoices_description', 'acceptance_invoices_generated',
+        'acceptance_invoices_none_generated', 'section_invoices',
+    ];
+    $errors = [
+        'invalid_transition', 'review_note_required', 'review_note_invalid', 'documents_incomplete', 'applicant_not_found',
+        'applicant_not_accepted', 'applicant_converted', 'acceptance_has_payments', 'track_fee_type_not_found',
+        'track_fee_type_invalid', 'registration_fee_unpaid',
+    ];
+
+    foreach ($applicant as $name) {
+        yield "applicant.{$name}" => ["pondok.applicant.{$name}"];
+    }
+
+    foreach (['fee_types', 'fee_types_helper', 'all_acceptance_fees'] as $name) {
+        yield "admission_track.{$name}" => ["pondok.admission_track.{$name}"];
+    }
+
+    foreach ($errors as $name) {
+        yield "psb.errors.{$name}" => ["pondok.psb.errors.{$name}"];
+    }
+
+    foreach (['heading_year', 'total', 'total_description', 'no_waves', 'list_link'] as $name) {
+        yield "dashboard.psb.{$name}" => ["pondok.dashboard.psb.{$name}"];
+    }
+});
+
+it('AC-31 (F011): words the key texts the plan fixes', function () {
+    expect(__('pondok.psb_public.invoices_title'))->toBe('Tagihan')
+        ->and(__('pondok.applicant.section_invoices'))->toBe('Tagihan')
+        ->and(__('pondok.psb_public.status_help.diterima'))->toBe('Selamat, Anda diterima. Silakan lunasi tagihan di bawah ini. Pembayaran bisa dicicil ke panitia.')
+        ->and(__('pondok.applicant.verify'))->toBe('Tandai terverifikasi')
+        ->and(__('pondok.applicant.accept'))->toBe('Terima')
+        ->and(__('pondok.applicant.reserve'))->toBe('Jadikan cadangan')
+        ->and(__('pondok.applicant.return'))->toBe('Kembalikan ke diajukan')
+        ->and(__('pondok.applicant.reject'))->toBe('Tolak')
+        ->and(__('pondok.applicant.reopen'))->toBe('Pulihkan pendaftar')
+        ->and(__('pondok.applicant.cancel_acceptance'))->toBe('Batalkan penerimaan')
+        ->and(__('pondok.applicant.generate_acceptance_invoices'))->toBe('Buat tagihan penerimaan');
+});
+
+it('AC-31 (F011): tells the committee which step creates the missing registration invoice', function () {
+    expect(__('pondok.psb.errors.registration_fee_unpaid'))->toContain(__('pondok.applicant.generate_invoices'));
+});
+
+it('AC-31 (F011): fills the placeholders of the decision notifications', function () {
+    expect(__('pondok.applicant.accepted_with_invoices', ['count' => 3]))->toContain('3')
+        ->and(__('pondok.applicant.scholarship_applied', ['scholarship' => 'Beasiswa Tahfidz', 'count' => 2]))->toContain('Beasiswa Tahfidz')->toContain('2')
+        ->and(__('pondok.applicant.missing_rates', ['fee_types' => 'Uang pangkal, Kitab']))->toContain('Uang pangkal, Kitab')
+        ->and(__('pondok.applicant.track_scholarship_reason', ['track' => 'Tahfidz']))->toContain('Tahfidz')
+        ->and(__('pondok.psb.errors.documents_incomplete', ['count' => 4]))->toContain('4');
+});

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Keuangan\CancelInvoice;
 use App\Actions\Psb\CheckApplicantCredentials;
 use App\Actions\Psb\GenerateRegistrationInvoices;
 use App\Actions\Psb\ResetApplicantToken;
@@ -221,3 +222,68 @@ it('AC-28a: rejects oversized and executable temporary uploads', function (Closu
     '3 MB pdf' => [fn () => UploadedFile::fake()->create('besar.pdf', 3072, 'application/pdf')],
     'exe file' => [fn () => UploadedFile::fake()->create('virus.exe', 10, 'application/x-msdownload')],
 ]);
+
+it('AC-28 (F011): shows the acceptance invoices and the new help text without the review note', function () {
+    seleksiExtend($this->f);
+    $applicant = seleksiApplicant();
+    seleksiAccept($applicant, psbUser('admin-psb'), 'Catatan internal rahasia');
+
+    $invoices = seleksiInvoices($applicant);
+    $registration = $invoices->firstWhere('billing_group', 'PSB_DAFTAR');
+    $terima = $invoices->firstWhere('billing_group', 'PSB_TERIMA');
+    $kitab = $invoices->firstWhere('billing_group', 'PSB_KITAB');
+
+    expect(__('pondok.psb_public.status_help.diterima'))->toBe('Selamat, Anda diterima. Silakan lunasi tagihan di bawah ini. Pembayaran bisa dicicil ke panitia.')
+        ->and(__('pondok.psb_public.invoices_title'))->toBe('Tagihan');
+
+    $text = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    expect($text)->toContain(__('pondok.applicant.statuses.diterima'))
+        ->toContain(__('pondok.psb_public.status_help.diterima'))
+        ->toContain($terima->invoice_no)->toContain($kitab->invoice_no)->toContain($registration->invoice_no)
+        ->toContain('Rp 5.750.000')->toContain('Rp 300.000')->toContain('Rp 250.000')
+        ->toContain('Uang pangkal')->toContain('Seragam')->toContain('Kitab')
+        ->not->toContain('Catatan internal rahasia');
+});
+
+it('AC-28 (F011): leaves a cancelled acceptance invoice out of the page', function () {
+    seleksiExtend($this->f);
+    $applicant = seleksiApplicant();
+    seleksiAccept($applicant, psbUser('admin-psb'));
+    $kitab = seleksiInvoices($applicant, group: 'PSB_KITAB')->sole();
+    app(CancelInvoice::class)->handle($kitab, User::factory()->create(), 'Salah tagih');
+
+    $text = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    expect($text)->not->toContain($kitab->invoice_no)->not->toContain('Rp 300.000')->toContain('Rp 5.750.000');
+});
+
+it('AC-28 (F011): shows the paid and remaining amounts of an acceptance invoice', function () {
+    seleksiExtend($this->f);
+    $applicant = seleksiApplicant();
+    seleksiAccept($applicant, psbUser('admin-psb'));
+    bayarRecord(seleksiInvoices($applicant, group: 'PSB_TERIMA')->sole(), 1000000);
+
+    $text = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    expect($text)->toContain('Rp 1.000.000')->toContain('Rp 4.750.000')->toContain(__('pondok.invoice.statuses.sebagian'));
+});
+
+it('AC-28 (VERIFY): hides the review note and cancelled invoices from a rejected applicant', function () {
+    seleksiExtend($this->f);
+    $applicant = seleksiApplicant('diverifikasi');
+    seleksiAccept($applicant, psbUser('admin-psb'));
+    seleksiRun('RejectApplicant', $applicant->fresh(), psbUser('admin-psb'), 'Catatan rahasia penolakan');
+    $cancelled = seleksiInvoices($applicant, true)->where('status', 'batal');
+
+    $text = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    expect($cancelled)->toHaveCount(2)
+        ->and($text)->toContain(__('pondok.psb_public.status_help.ditolak'))
+        ->not->toContain('Catatan rahasia penolakan')
+        ->not->toContain('Rp 5.750.000');
+
+    foreach ($cancelled as $invoice) {
+        expect($text)->not->toContain($invoice->invoice_no);
+    }
+});

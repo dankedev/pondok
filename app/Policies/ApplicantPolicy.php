@@ -65,4 +65,20 @@ class ApplicantPolicy
     {
         return $authUser->can('generate-invoices:applicant');
     }
+
+    /**
+     * Keputusan seleksi: verifikasi, terima, cadangkan, kembalikan, tolak, batalkan penerimaan (F011).
+     */
+    public function decide(AuthUser $authUser, Applicant $applicant): bool
+    {
+        return $authUser->can('decide:applicant');
+    }
+
+    /**
+     * Memulihkan pendaftar `ditolak` ke `diajukan` (bawaan hanya super-admin).
+     */
+    public function reopen(AuthUser $authUser, Applicant $applicant): bool
+    {
+        return $authUser->can('reopen:applicant');
+    }
 }

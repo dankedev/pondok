@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Applicant;
 use App\Models\User;
+use App\Policies\ApplicantPolicy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Permission;
@@ -71,6 +73,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'update:admission-requirement', 'delete:admission-requirement', 'delete-any:admission-requirement',
         'view-any:applicant', 'view:applicant', 'delete:applicant',
         'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant',
+        'decide:applicant',
     ]],
     'kesantrian' => ['kesantrian', [
         'view-dashboard', 'view-student-metrics',
@@ -196,9 +199,9 @@ it('AC-22: creates no permission for document types', function () {
     expect(Permission::query()->where('name', 'like', '%document-type%')->count())->toBe(0);
 });
 
-it('AC-30: creates the nine applicant permissions', function () {
+it('AC-30: creates the eleven applicant permissions', function () {
     $expected = ['view-any:applicant', 'view:applicant', 'create:applicant', 'update:applicant', 'delete:applicant', 'delete-any:applicant',
-        'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant'];
+        'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant', 'decide:applicant', 'reopen:applicant'];
 
     expect(Permission::query()->where('name', 'like', '%:applicant')->pluck('name')->sort()->values()->all())
         ->toBe(collect($expected)->sort()->values()->all());
@@ -220,3 +223,35 @@ it('AC-30: lets admin-psb verify, reset tokens and delete but not create or upda
 it('AC-30: gives applicant permissions to no other role', function (string $role) {
     expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':applicant'))->all())->toBe([]);
 })->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-23: creates the decide and reopen permissions', function () {
+    expect(Permission::query()->pluck('name')->all())->toContain('decide:applicant', 'reopen:applicant');
+});
+
+it('AC-23: gives decide to admin-psb and reopen to nobody but super-admin', function () {
+    $admin = User::factory()->create()->assignRole('admin-psb');
+    $super = User::factory()->create()->assignRole('super-admin');
+
+    expect($admin->can('decide:applicant'))->toBeTrue()
+        ->and($admin->can('reopen:applicant'))->toBeFalse()
+        ->and($super->can('decide:applicant'))->toBeTrue()
+        ->and($super->can('reopen:applicant'))->toBeTrue()
+        ->and(Role::findByName('admin-psb')->permissions->pluck('name')->contains('reopen:applicant'))->toBeFalse();
+});
+
+it('AC-23: gives decide and reopen to no other role', function (string $role) {
+    $names = Role::findByName($role)->permissions->pluck('name');
+
+    expect($names->contains('decide:applicant'))->toBeFalse()->and($names->contains('reopen:applicant'))->toBeFalse();
+})->with(['bendahara', 'admin-konten', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-23: backs the decide and reopen abilities with the applicant policy', function () {
+    $policy = new ApplicantPolicy;
+
+    expect(method_exists($policy, 'decide'))->toBeTrue()->and(method_exists($policy, 'reopen'))->toBeTrue();
+
+    $admin = User::factory()->create()->assignRole('admin-psb');
+    $applicant = new Applicant;
+
+    expect($policy->decide($admin, $applicant))->toBeTrue()->and($policy->reopen($admin, $applicant))->toBeFalse();
+});

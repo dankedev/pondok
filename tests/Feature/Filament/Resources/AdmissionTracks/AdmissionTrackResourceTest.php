@@ -2,10 +2,12 @@
 
 use App\Filament\Resources\AdmissionTracks\Pages\ManageAdmissionTracks;
 use App\Models\AdmissionTrack;
+use App\Models\FeeType;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -99,4 +101,98 @@ it('AC-27: shows a track without a scholarship with a placeholder', function () 
     Livewire::test(ManageAdmissionTracks::class)
         ->assertCanSeeTableRecords([$track])
         ->assertSeeText('Tanpa beasiswa');
+});
+
+/**
+ * Jenis biaya untuk uji pemetaan: UANG_PANGKAL dan KITAB (`saat_diterima`), FORMULIR (`saat_daftar`).
+ *
+ * @return array{pangkal: FeeType, kitab: FeeType, formulir: FeeType}
+ */
+function seleksiTrackFormTypes(): array
+{
+    return [
+        'pangkal' => psbFeeType('saat_diterima', ['code' => 'UANG_PANGKAL', 'name' => 'Uang pangkal', 'billing_group' => 'PSB_TERIMA', 'priority' => 20]),
+        'kitab' => psbFeeType('saat_diterima', ['code' => 'KITAB', 'name' => 'Kitab', 'billing_group' => 'PSB_KITAB', 'priority' => 40]),
+        'formulir' => psbFeeType('saat_daftar', ['code' => 'FORMULIR', 'name' => 'Formulir pendaftaran', 'billing_group' => 'PSB_DAFTAR', 'priority' => 10]),
+    ];
+}
+
+it('AC-4 (F011): edits the fee type mapping', function () {
+    $types = seleksiTrackFormTypes();
+    $track = AdmissionTrack::factory()->create(['code' => 'TAHFIDZ', 'name' => 'Tahfidz', 'scholarship_id' => $this->f->tahfidz->id]);
+    seleksiMapFeeType($track, $types['pangkal']);
+
+    Livewire::test(ManageAdmissionTracks::class)
+        ->assertActionVisible(TestAction::make('edit')->table($track))
+        ->callAction(TestAction::make('edit')->table($track), psbTrackData($this->f, ['code' => 'TAHFIDZ', 'name' => 'Tahfidz', 'fee_type_ids' => [$types['pangkal']->id, $types['kitab']->id]]))
+        ->assertHasNoFormErrors();
+
+    expect(DB::table('admission_track_fee_type')->where('admission_track_id', $track->id)->pluck('fee_type_id')->map(fn ($id): int => (int) $id)->sort()->values()->all())
+        ->toBe([$types['pangkal']->id, $types['kitab']->id]);
+});
+
+it('AC-4 (F011): keeps the mapping when another field is edited', function () {
+    $types = seleksiTrackFormTypes();
+    $track = AdmissionTrack::factory()->create(['code' => 'TAHFIDZ', 'name' => 'Tahfidz', 'scholarship_id' => $this->f->tahfidz->id]);
+    seleksiMapFeeType($track, $types['pangkal']);
+
+    Livewire::test(ManageAdmissionTracks::class)
+        ->assertActionVisible(TestAction::make('edit')->table($track))
+        ->callAction(TestAction::make('edit')->table($track), ['name' => 'Tahfidz baru'])
+        ->assertHasNoFormErrors();
+
+    expect($track->fresh()->name)->toBe('Tahfidz baru')
+        ->and(DB::table('admission_track_fee_type')->where('admission_track_id', $track->id)->pluck('fee_type_id')->map(fn ($id): int => (int) $id)->all())->toBe([$types['pangkal']->id]);
+});
+
+it('AC-4 (F011): hides the fee type field while no scholarship is chosen', function () {
+    $track = AdmissionTrack::factory()->create(['code' => 'REGULER', 'name' => 'Reguler', 'scholarship_id' => null]);
+    $withScholarship = AdmissionTrack::factory()->create(['code' => 'TAHFIDZ', 'name' => 'Tahfidz', 'scholarship_id' => $this->f->tahfidz->id]);
+
+    Livewire::test(ManageAdmissionTracks::class)
+        ->mountAction(TestAction::make('edit')->table($withScholarship))
+        ->assertSchemaComponentExists('fee_type_ids');
+
+    Livewire::test(ManageAdmissionTracks::class)
+        ->mountAction(TestAction::make('edit')->table($track))
+        ->assertSchemaComponentDoesNotExist('fee_type_ids');
+});
+
+it('AC-4 (F011): offers acceptance, monthly and yearly fee types but not registration fees', function () {
+    $types = seleksiTrackFormTypes();
+    $spp = psbFeeType('bulanan', ['code' => 'SPP', 'name' => 'SPP', 'billing_group' => 'BULANAN']);
+    $manual = psbFeeType('manual', ['code' => 'LAIN', 'name' => 'Biaya lain', 'billing_group' => 'MANUAL']);
+    $track = AdmissionTrack::factory()->create(['code' => 'TAHFIDZ', 'name' => 'Tahfidz', 'scholarship_id' => $this->f->tahfidz->id]);
+
+    Livewire::test(ManageAdmissionTracks::class)
+        ->mountAction(TestAction::make('edit')->table($track))
+        ->assertSchemaComponentExists('fee_type_ids', checkComponentUsing: function ($component) use ($types, $spp, $manual): bool {
+            $options = $component->getOptions();
+
+            return array_key_exists($types['pangkal']->id, $options)
+                && array_key_exists($types['kitab']->id, $options)
+                && array_key_exists($spp->id, $options)
+                && ! array_key_exists($types['formulir']->id, $options)
+                && ! array_key_exists($manual->id, $options)
+                && str_contains((string) $options[$types['pangkal']->id], 'Uang pangkal');
+        });
+});
+
+it('AC-4 (F011): lists the mapped fee types or the fallback text in the table', function () {
+    $types = seleksiTrackFormTypes();
+    $tahfidz = AdmissionTrack::factory()->create(['code' => 'TAHFIDZ', 'name' => 'Tahfidz', 'scholarship_id' => $this->f->tahfidz->id]);
+    $yatim = AdmissionTrack::factory()->create(['code' => 'YATIM', 'name' => 'Yatim', 'scholarship_id' => $this->f->lama->id]);
+    seleksiMapFeeType($tahfidz, $types['pangkal']);
+
+    expect(__('pondok.admission_track.all_acceptance_fees'))->toBe('Semua biaya saat diterima');
+
+    $component = Livewire::test(ManageAdmissionTracks::class)->assertCanSeeTableRecords([$tahfidz, $yatim]);
+
+    expect(tagihanPlainText($component))->toContain('Uang pangkal')->toContain('Semua biaya saat diterima')
+        ->and(substr_count(tagihanPlainText($component), 'Semua biaya saat diterima'))->toBe(1);
+});
+
+it('AC-4 (F011): translates the fee type field texts', function () {
+    expect(seleksiText('pondok.admission_track.fee_types'))->toBe('Jenis biaya yang mendapat beasiswa')
+        ->and(seleksiText('pondok.admission_track.fee_types_helper'))->toBe('Kosongkan untuk menerapkan beasiswa ke semua biaya saat diterima.');
 });

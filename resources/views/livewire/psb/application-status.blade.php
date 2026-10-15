@@ -59,6 +59,11 @@
                                 <span class="text-sm tabular-nums text-gray-600">{{ $invoice->invoice_no }}</span>
                                 <x-ui.badge :color="$invoice->statusColor()">{{ $invoice->statusLabel() }}</x-ui.badge>
                             </div>
+                            <ul class="flex flex-col gap-0.5 text-sm text-gray-900">
+                                @foreach ($invoice->items as $item)
+                                    <li>{{ $item->feeType?->name }}</li>
+                                @endforeach
+                            </ul>
                             <dl class="grid grid-cols-3 gap-2 text-sm">
                                 <div>
                                     <dt class="text-gray-600">{{ __('pondok.invoice.total') }}</dt>
@@ -74,7 +79,8 @@
                                 </div>
                             </dl>
                             @if ($invoice->remainingAmount() > 0)
-                                <p class="text-sm text-gray-600">{{ __('pondok.psb_public.payment_hint', ['number' => $applicant->registration_no]) }}</p>
+                                @php($isRegistration = $invoice->items->contains(fn ($item) => $item->feeType?->frequency === \App\Models\FeeType::FREQUENCY_ON_REGISTRATION))
+                                <p class="text-sm text-gray-600">{{ __($isRegistration ? 'pondok.psb_public.payment_hint' : 'pondok.psb_public.invoice_payment_hint', ['number' => $applicant->registration_no]) }}</p>
                             @endif
                         </li>
                     @endforeach

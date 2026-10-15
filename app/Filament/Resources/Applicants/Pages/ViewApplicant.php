@@ -15,18 +15,15 @@ class ViewApplicant extends ViewRecord
      */
     protected function resolveRecord(int|string $key): Model
     {
-        return parent::resolveRecord($key)->load([
-            'unit',
-            'admissionWave.academicYear',
-            'admissionTrack',
-            'invoices' => fn ($query) => $query->orderBy('id'),
-        ]);
+        return parent::resolveRecord($key)->load(ApplicantResource::infolistRelations());
     }
 
     protected function getHeaderActions(): array
     {
         return [
+            ...ApplicantResource::decisionActions(),
             ApplicantResource::generateInvoicesAction(),
+            ApplicantResource::generateAcceptanceInvoicesAction(),
             ApplicantResource::resetTokenAction(),
             ApplicantResource::deleteAction(),
         ];

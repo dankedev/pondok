@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Satu jenis biaya dalam tagihan. Nominal adalah snapshot dan tidak diubah
@@ -64,5 +65,18 @@ class InvoiceItem extends Model
     public function feeOverride(): BelongsTo
     {
         return $this->belongsTo(FeeOverride::class);
+    }
+
+    /**
+     * Alokasi pembayaran ke item ini, termasuk milik pembayaran `batal`.
+     */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
+
+    public function remainingAmount(): int
+    {
+        return max(0, $this->amount - $this->paid_amount);
     }
 }

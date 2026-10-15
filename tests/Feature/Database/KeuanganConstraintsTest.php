@@ -8,11 +8,14 @@ use App\Models\FeeRate;
 use App\Models\FeeType;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
 use App\Models\Scholarship;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -350,3 +353,81 @@ it('AC-57: sets the active marker to 1 for every non-cancelled status', function
 
     expect((int) DB::table('invoices')->where('id', $invoice->id)->value('active_marker'))->toBe(1);
 })->with(['belum', 'sebagian', 'lunas']);
+
+/*
+|--------------------------------------------------------------------------
+| F007: pembayaran (payments dan payment_allocations)
+|--------------------------------------------------------------------------
+*/
+
+it('F007 AC-1: rejects a duplicate receipt number', function () {
+    Payment::factory()->create(['receipt_no' => 'KW-202610-00001']);
+
+    expect(fn () => Payment::factory()->create(['receipt_no' => 'KW-202610-00001']))->toThrow(UniqueConstraintViolationException::class)
+        ->and(Payment::query()->count())->toBe(1);
+});
+
+it('F007 AC-2: rejects a duplicate allocation per item', function () {
+    $payment = Payment::factory()->create();
+    $item = InvoiceItem::factory()->create(['invoice_id' => $payment->invoice_id]);
+    PaymentAllocation::factory()->create(['payment_id' => $payment->id, 'invoice_item_id' => $item->id, 'amount' => 1000]);
+
+    expect(fn () => PaymentAllocation::factory()->create(['payment_id' => $payment->id, 'invoice_item_id' => $item->id, 'amount' => 2000]))
+        ->toThrow(UniqueConstraintViolationException::class)
+        ->and(PaymentAllocation::query()->count())->toBe(1);
+});
+
+it('F007 AC-3: restricts deleting referenced payment rows', function (Closure $referenced) {
+    $record = $referenced();
+
+    expect(fn () => $record->delete())->toThrow(QueryException::class)
+        ->and($record::query()->whereKey($record->getKey())->exists())->toBeTrue();
+})->with([
+    'invoice with payments' => [fn (): Invoice => Payment::factory()->create()->invoice],
+    'payment with allocations' => [function (): Payment {
+        $payment = Payment::factory()->create();
+        PaymentAllocation::factory()->create(['payment_id' => $payment->id, 'invoice_item_id' => InvoiceItem::factory()->create(['invoice_id' => $payment->invoice_id])->id]);
+
+        return $payment;
+    }],
+    'invoice item with allocations' => [function (): InvoiceItem {
+        $payment = Payment::factory()->create();
+        $item = InvoiceItem::factory()->create(['invoice_id' => $payment->invoice_id]);
+        PaymentAllocation::factory()->create(['payment_id' => $payment->id, 'invoice_item_id' => $item->id]);
+
+        return $item;
+    }],
+    'user who received a payment' => [fn (): User => Payment::factory()->create()->receiver],
+    'user who cancelled a payment' => [function (): User {
+        $user = User::factory()->create();
+        Payment::factory()->cancelled()->create(['cancelled_by' => $user->id]);
+
+        return $user;
+    }],
+]);
+
+it('F007 AC-4: stores payment money as integers with received default', function () {
+    foreach (['payments', 'payment_allocations'] as $table) {
+        $column = collect(Schema::getColumns($table))->firstWhere('name', 'amount');
+
+        expect($column)->not->toBeNull()
+            ->and($column['type_name'])->toBeIn(['integer', 'bigint', 'int8', 'int']);
+    }
+
+    $names = collect(Schema::getColumns('payments'))->pluck('name');
+
+    expect($names->all())->toContain('status', 'cancelled_at', 'cancelled_by', 'cancel_reason', 'proof_path', 'gateway_ref');
+
+    $payment = Payment::factory()->create();
+
+    expect(DB::table('payments')->where('id', $payment->id)->value('status'))->toBe('diterima')
+        ->and(class_uses_recursive(Payment::class))->not->toContain(SoftDeletes::class)
+        ->and(class_uses_recursive(PaymentAllocation::class))->not->toContain(SoftDeletes::class);
+});
+
+it('F007 AC-4: indexes payments for invoice and cash reports', function () {
+    $columns = collect(Schema::getIndexes('payments'))->pluck('columns');
+
+    expect($columns->contains(['invoice_id', 'status']))->toBeTrue()
+        ->and($columns->contains(['status', 'paid_on']))->toBeTrue();
+});

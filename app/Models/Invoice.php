@@ -114,6 +114,22 @@ class Invoice extends Model
     }
 
     /**
+     * Semua pembayaran, termasuk yang `batal`.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Sisa yang belum dibayar, tidak pernah negatif.
+     */
+    public function remainingAmount(): int
+    {
+        return max(0, $this->total - $this->paid_total);
+    }
+
+    /**
      * Hitung ulang `total` dari item di database, sinkronkan status, lalu simpan.
      */
     public function recalculateTotal(): void

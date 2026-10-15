@@ -70,6 +70,22 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Pembayaran yang diterima user ini. Selama ada, user tidak bisa dihapus.
+     */
+    public function receivedPayments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'received_by');
+    }
+
+    /**
+     * Pembayaran yang dibatalkan user ini. Selama ada, user tidak bisa dihapus.
+     */
+    public function cancelledPayments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'cancelled_by');
+    }
+
+    /**
      * ID jenjang yang boleh dilihat user. Array kosong berarti tanpa batasan.
      *
      * @return list<int>

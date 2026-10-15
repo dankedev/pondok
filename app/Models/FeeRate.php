@@ -12,7 +12,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
  * Tarif satu jenis biaya, berlaku mulai tahun ajaran tertentu. Angkatan,
- * asrama, dan gelombang PSB opsional; NULL berarti berlaku umum.
+ * asrama, dan gelombang PSB opsional; NULL berarti berlaku umum. Gelombang
+ * ber-FK ke `admission_waves` dan hanya untuk jenis biaya PSB (dijaga
+ * `SaveFeeRate`).
  *
  * Kolom generated `cohort_key`, `dormitory_key`, `wave_key` diisi database
  * dan hanya dipakai unique `fee_rates_combination_unique`. Tidak memakai
@@ -63,6 +65,11 @@ class FeeRate extends Model
     public function dormitory(): BelongsTo
     {
         return $this->belongsTo(Dormitory::class);
+    }
+
+    public function admissionWave(): BelongsTo
+    {
+        return $this->belongsTo(AdmissionWave::class);
     }
 
     /**

@@ -36,6 +36,11 @@ class Unit extends Model
         }
     }
 
+    public function admissionRequirements(): HasMany
+    {
+        return $this->hasMany(AdmissionRequirement::class);
+    }
+
     public function feeRates(): HasMany
     {
         return $this->hasMany(FeeRate::class);

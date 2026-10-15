@@ -45,6 +45,14 @@ class Scholarship extends Model
         return $this->hasMany(FeeOverride::class);
     }
 
+    /**
+     * Jalur pendaftaran yang memakai program ini sebagai potongan otomatis.
+     */
+    public function admissionTracks(): HasMany
+    {
+        return $this->hasMany(AdmissionTrack::class);
+    }
+
     public function scopeActive(Builder $query): void
     {
         $query->where('is_active', true);

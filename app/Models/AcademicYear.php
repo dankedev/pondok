@@ -40,6 +40,14 @@ class AcademicYear extends Model
     }
 
     /**
+     * Gelombang PSB yang menerima pendaftar untuk tahun ajaran ini.
+     */
+    public function admissionWaves(): HasMany
+    {
+        return $this->hasMany(AdmissionWave::class);
+    }
+
+    /**
      * Tarif yang berlaku mulai tahun ajaran ini.
      */
     public function feeRates(): HasMany

@@ -39,6 +39,12 @@ class FeeType extends Model
         self::FREQUENCY_MANUAL,
     ];
 
+    /** Frekuensi biaya PSB; hanya jenis ini yang boleh punya tarif per gelombang. */
+    public const ADMISSION_FREQUENCIES = [
+        self::FREQUENCY_ON_REGISTRATION,
+        self::FREQUENCY_ON_ACCEPTANCE,
+    ];
+
     public const APPLIES_TO_ALL = 'semua';
 
     public const APPLIES_TO_RESIDENT = 'mukim';
@@ -83,6 +89,11 @@ class FeeType extends Model
     public function invoiceItems(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    public function isAdmissionFee(): bool
+    {
+        return in_array($this->frequency, self::ADMISSION_FREQUENCIES, true);
     }
 
     public function scopeActive(Builder $query): void

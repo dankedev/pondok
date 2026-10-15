@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AcademicYear;
+use App\Models\AdmissionWave;
 use App\Models\Cohort;
 use App\Models\Dormitory;
 use App\Models\FeeOverride;
@@ -39,13 +40,16 @@ it('AC-22: rejects duplicate cohort rates through generated keys', function () {
 });
 
 it('AC-22: includes the wave key in the unique rate', function () {
-    $rate = FeeRate::factory()->create(['admission_wave_id' => 7]);
+    $year = AcademicYear::factory()->create();
+    $first = AdmissionWave::factory()->create(['academic_year_id' => $year->id, 'name' => 'Gelombang 1']);
+    $second = AdmissionWave::factory()->create(['academic_year_id' => $year->id, 'name' => 'Gelombang 2']);
+    $rate = FeeRate::factory()->create(['admission_wave_id' => $first->id]);
     $same = $rate->only(['fee_type_id', 'effective_from_year_id', 'unit_id']);
 
-    expect(fn () => FeeRate::factory()->create([...$same, 'admission_wave_id' => 7]))->toThrow(UniqueConstraintViolationException::class);
+    expect(fn () => FeeRate::factory()->create([...$same, 'admission_wave_id' => $first->id]))->toThrow(UniqueConstraintViolationException::class);
 
     FeeRate::factory()->create([...$same, 'admission_wave_id' => null]);
-    FeeRate::factory()->create([...$same, 'admission_wave_id' => 8]);
+    FeeRate::factory()->create([...$same, 'admission_wave_id' => $second->id]);
 
     expect(FeeRate::query()->count())->toBe(3);
 });
@@ -53,12 +57,13 @@ it('AC-22: includes the wave key in the unique rate', function () {
 it('AC-22: fills generated keys without the application writing them', function () {
     $cohort = Cohort::factory()->create();
     $dormitory = Dormitory::factory()->create();
+    $wave = AdmissionWave::factory()->create();
 
     $plain = FeeRate::factory()->create()->refresh();
-    $full = FeeRate::factory()->create(['unit_id' => $cohort->unit_id, 'cohort_id' => $cohort->id, 'dormitory_id' => $dormitory->id, 'admission_wave_id' => 7])->refresh();
+    $full = FeeRate::factory()->create(['unit_id' => $cohort->unit_id, 'cohort_id' => $cohort->id, 'dormitory_id' => $dormitory->id, 'admission_wave_id' => $wave->id])->refresh();
 
     expect((int) $plain->cohort_key)->toBe(0)->and((int) $plain->dormitory_key)->toBe(0)->and((int) $plain->wave_key)->toBe(0)
-        ->and((int) $full->cohort_key)->toBe($cohort->id)->and((int) $full->dormitory_key)->toBe($dormitory->id)->and((int) $full->wave_key)->toBe(7);
+        ->and((int) $full->cohort_key)->toBe($cohort->id)->and((int) $full->dormitory_key)->toBe($dormitory->id)->and((int) $full->wave_key)->toBe($wave->id);
 });
 
 it('AC-23: restricts deleting records referenced by rates', function (Closure $referenced) {

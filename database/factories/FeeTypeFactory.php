@@ -15,7 +15,8 @@ class FeeTypeFactory extends Factory
         return [
             'code' => fake()->unique()->regexify('[A-Z]{4}_[0-9]{4}'),
             'name' => 'Biaya '.fake()->unique()->word(),
-            'frequency' => fake()->randomElement(FeeType::FREQUENCIES),
+            // Tanpa frekuensi PSB agar jenis biaya bawaan tidak bisa diberi tarif bergelombang (F009).
+            'frequency' => fake()->randomElement([FeeType::FREQUENCY_MONTHLY, FeeType::FREQUENCY_YEARLY, FeeType::FREQUENCY_MANUAL]),
             'applies_to' => FeeType::APPLIES_TO_ALL,
             'billing_group' => 'BULANAN',
             'priority' => FeeType::DEFAULT_PRIORITY,

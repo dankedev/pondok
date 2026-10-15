@@ -84,7 +84,35 @@ Wajib ada test Pest untuk:
 - Konversi pendaftar menjadi santri (tagihan, override, dan dokumen ikut pindah).
 - Dashboard tetap render ketika modul atau tabel belum ada.
 
+## Alur kerja agent
+
+### 1. Commit
+
+Setiap commit mengikuti skill **git-commit** (`~/.claude/skills/git-commit/SKILL.md`): micro-commits (satu perubahan logis per commit) dengan format Conventional Commits `type(scope): deskripsi`. Scope memakai `key` modul, misalnya `feat(asrama): ...`, `fix(keuangan): ...`. Commit hanya bila user meminta.
+
+### 2. Daftar fitur (`feature_list.json`)
+
+`feature_list.json` di root adalah sumber kebenaran status fitur. Aturan:
+
+- **ID** berformat `F` + 3 digit (`F001`). Unik, permanen, tidak pernah diubah, dipakai ulang, atau diurutkan ulang. Fitur baru memakai `next_id`, lalu `next_id` dinaikkan satu. `key` (kebab-case, `<modul>-<topik>`) juga unik.
+- **Status:** `todo` (belum), `in-progress` (sedang), `handoff` (dialihkan ke agent lain), `blocked` (tertahan, alasan di `notes`), `deferred` (ditunda), `done` (selesai).
+- **`depends_on`** berisi ID yang wajib `done` sebelum fitur boleh mulai. Jangan mulai fitur yang dependensinya belum `done`; laporkan ke user.
+- **Sebelum mulai:** ubah status ke `in-progress` dan isi `owner` (nama sesi/agent). Satu agent hanya memegang satu fitur `in-progress`. Jangan ambil fitur yang `owner`-nya agent lain.
+- **Menandai `done`:** hanya setelah semua `acceptance` terpenuhi, test terkait lulus, dan Pint dijalankan. Isi `evidence` dengan hash commit dan test yang lulus, lalu kosongkan `owner`.
+- Pekerjaan di luar daftar: tambahkan entri baru dulu, jangan kerjakan diam-diam. Fitur batal tidak dihapus; jadikan `deferred` dan tulis alasan di `notes`.
+- Perubahan `feature_list.json` ikut commit fiturnya (atau `docs(features): ...` bila berdiri sendiri).
+
+### 3. Handoff antar agent
+
+Jika fitur dialihkan ke agent/sesi lain (konteks hampir habis, ganti sesi, atau dibagi ke agent paralel):
+
+1. Salin `docs/handoffs/_TEMPLATE.md` menjadi `docs/handoffs/<ID>-<YYYYMMDD>-<HHMM>.md` dan isi semua bagian, termasuk perubahan yang belum di-commit dan bukti test terakhir.
+2. Di `feature_list.json`: status `handoff`, isi `handoff` dengan path file tersebut.
+3. Agent penerima membaca handoff, memverifikasi kondisi repo, lalu mengubah status ke `in-progress` dan `owner` ke namanya. File handoff lama tidak dihapus.
+
 ## Urutan pengembangan
+
+Rincian per fitur dan statusnya ada di `feature_list.json`.
 
 1. **Fase 1 (MVP):** inti (users, RBAC, settings, units, academic_years), Akademik & Santri, Asrama, PSB, Keuangan, Konten, Dokumen, Prestasi, Dashboard.
 2. **Fase 2:** virtual account (Midtrans/Xendit/Tripay/bank syariah), notifikasi WhatsApp (driver bisa diganti), portal wali.

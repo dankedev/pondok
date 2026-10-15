@@ -8,6 +8,7 @@ use App\Actions\Keuangan\RecordPayment;
 use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
 use App\Actions\Psb\SubmitApplication;
+use App\Filament\Resources\Applicants\Pages\ViewApplicant;
 use App\Models\AcademicYear;
 use App\Models\AdmissionRequirement;
 use App\Models\AdmissionTrack;
@@ -51,6 +52,7 @@ use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 /*
@@ -1698,4 +1700,322 @@ function pendaftaranSeeMessage(Testable $component, string $reason): bool
     $pattern = '/'.implode('.+?', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $message))).'/su';
 
     return preg_match($pattern, tagihanPlainText($component)) === 1;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper penerimaan PSB (F011)
+|--------------------------------------------------------------------------
+|
+| Berawalan `seleksi`. Memakai `pendaftaranFixture`, `pendaftaranApplicant`, `pendaftaranPayRegistration`,
+| `pendaftaranDocument`, `keuanganRate`, `psbFeeType`, `psbUser`. Waktu uji bawaan: 2026-11-20 10:00 Asia/Jakarta.
+| Tagihan formulir pendaftar dibuat pada 2026-10-15 (nomor `INV-202610-NNNNN`) sehingga nomor tagihan penerimaan
+| November mulai dari `INV-202611-00001`. Kontrak nama aksi panel `ViewApplicant`: `verify`, `accept`, `reserve`,
+| `return`, `reject`, `reopen`, `cancelAcceptance`, `generateAcceptanceInvoices` dengan field catatan `review_note`.
+|
+*/
+
+/**
+ * Tambahan fixture F011 di atas hasil `pendaftaranFixture()`: jenis biaya UANG_PANGKAL (`saat_diterima`, grup
+ * PSB_TERIMA, prioritas 20), SERAGAM (PSB_TERIMA, 30), KITAB (PSB_KITAB, 40), SPP (`bulanan`, BULANAN, 50) dengan tarif
+ * SLTP berlaku Y2027 (5.000.000, 750.000, 300.000, 400.000); program `Beasiswa Yatim` (nominal 0); jalur TAHFIDZ
+ * ber-Beasiswa Tahfidz (persen 50) dengan pemetaan [UANG_PANGKAL, SPP] dan jalur YATIM ber-Beasiswa Yatim tanpa
+ * pemetaan; peran di-seed; `user` = admin-psb (P). Tidak mengubah waktu.
+ *
+ * @return object{uangPangkal: FeeType, seragam: FeeType, kitab: FeeType, spp: FeeType, rates: array<string, FeeRate>, yatim: Scholarship, tahfidzTrack: AdmissionTrack, yatimTrack: AdmissionTrack, user: User}
+ */
+function seleksiExtend(object $f): object
+{
+    test()->seed(RolePermissionSeeder::class);
+
+    $f->uangPangkal = psbFeeType('saat_diterima', ['code' => 'UANG_PANGKAL', 'name' => 'Uang pangkal', 'billing_group' => 'PSB_TERIMA', 'priority' => 20]);
+    $f->seragam = psbFeeType('saat_diterima', ['code' => 'SERAGAM', 'name' => 'Seragam', 'billing_group' => 'PSB_TERIMA', 'priority' => 30]);
+    $f->kitab = psbFeeType('saat_diterima', ['code' => 'KITAB', 'name' => 'Kitab', 'billing_group' => 'PSB_KITAB', 'priority' => 40]);
+    $f->spp = psbFeeType('bulanan', ['code' => 'SPP', 'name' => 'SPP', 'billing_group' => 'BULANAN', 'priority' => 50]);
+    $f->rates = [
+        'UANG_PANGKAL' => keuanganRate($f->uangPangkal, $f->y2027, $f->sltp, 5000000),
+        'SERAGAM' => keuanganRate($f->seragam, $f->y2027, $f->sltp, 750000),
+        'KITAB' => keuanganRate($f->kitab, $f->y2027, $f->sltp, 300000),
+        'SPP' => keuanganRate($f->spp, $f->y2027, $f->sltp, 400000),
+    ];
+    $f->yatim = Scholarship::factory()->nominal(0)->create(['name' => 'Beasiswa Yatim']);
+    $f->tahfidzTrack = AdmissionTrack::query()->where('code', 'TAHFIDZ')->firstOrFail();
+    $f->yatimTrack = AdmissionTrack::query()->where('code', 'YATIM')->firstOrFail();
+    $f->tahfidzTrack->update(['scholarship_id' => $f->tahfidz->id]);
+    $f->yatimTrack->update(['scholarship_id' => $f->yatim->id]);
+
+    foreach ([$f->uangPangkal, $f->spp] as $type) {
+        seleksiMapFeeType($f->tahfidzTrack, $type);
+    }
+
+    $f->user = psbUser('admin-psb');
+
+    return $f;
+}
+
+/**
+ * Fixture lengkap F011: `pendaftaranFixture()` + `seleksiExtend()` + waktu 2026-11-20 10:00 Asia/Jakarta.
+ */
+function seleksiFixture(): object
+{
+    $f = seleksiExtend(pendaftaranFixture());
+    test()->travelTo(CarbonImmutable::parse('2026-11-20 10:00', 'Asia/Jakarta'));
+
+    return $f;
+}
+
+/**
+ * Petakan jenis biaya ke jalur lewat tabel pivot `admission_track_fee_type` (langsung, tanpa relasi model).
+ */
+function seleksiMapFeeType(AdmissionTrack $track, FeeType $type): void
+{
+    DB::table('admission_track_fee_type')->insert([
+        'admission_track_id' => $track->id,
+        'fee_type_id' => $type->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
+
+/**
+ * Pendaftar di gelombang W1 dengan status, jalur (kode), dan jenjang (kode) tertentu. Dibuat `diajukan` pada
+ * 2026-10-15 lalu status diubah langsung di database. `$complete` true: tagihan formulir (bila ada tarif) dilunasi dan
+ * semua syarat wajib punya berkas `valid`; false: tagihan formulir (bila ada tarif) dibuat tetapi belum dibayar,
+ * tanpa berkas. Waktu dikembalikan ke 2026-11-20 10:00.
+ */
+function seleksiApplicant(string $status = 'diverifikasi', string $track = 'REGULER', string $unit = 'SLTP', bool $complete = true): Applicant
+{
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+
+    $applicant = pendaftaranApplicant([
+        'unit_id' => Unit::query()->where('code', $unit)->value('id'),
+        'admission_track_id' => AdmissionTrack::query()->where('code', $track)->value('id'),
+        'status' => Applicant::STATUS_SUBMITTED,
+    ]);
+
+    app(GenerateRegistrationInvoices::class)->handle($applicant);
+
+    if ($complete) {
+        pendaftaranPayRegistration($applicant);
+
+        $applicant->requirements()->where('is_required', true)->get()
+            ->each(fn (AdmissionRequirement $requirement) => pendaftaranDocument($applicant, $requirement, ['status' => 'valid'], false));
+    }
+
+    if ($status !== Applicant::STATUS_SUBMITTED) {
+        Applicant::withoutGlobalScopes()->whereKey($applicant->id)->update(['status' => $status]);
+    }
+
+    test()->travelTo(CarbonImmutable::parse('2026-11-20 10:00', 'Asia/Jakarta'));
+
+    return Applicant::withoutGlobalScopes()->findOrFail($applicant->id);
+}
+
+/**
+ * Jalankan Action keputusan (nama kelas tanpa namespace) sebagai `$by`. Catatan wajib dikirim sebagai string.
+ */
+function seleksiRun(string $action, Applicant $applicant, User $by, ?string $note = 'Catatan keputusan'): mixed
+{
+    test()->actingAs($by);
+
+    return app("App\\Actions\\Psb\\{$action}")->handle($applicant, $by, $note);
+}
+
+/**
+ * Terima pendaftar lewat `AcceptApplicant` sebagai `$by` (bawaan: admin-psb baru).
+ *
+ * @return array{applicant: Applicant, billing: array<string, mixed>|null, billing_failed: bool}
+ */
+function seleksiAccept(Applicant $applicant, ?User $by = null, ?string $note = null): array
+{
+    return seleksiRun('AcceptApplicant', $applicant, $by ?? psbUser('admin-psb'), $note);
+}
+
+/**
+ * Tagihan pendaftar (semua kecuali `batal` bila `$includeCancelled` false), urut id, dengan item.
+ *
+ * @return Collection<int, Invoice>
+ */
+function seleksiInvoices(Applicant $applicant, bool $includeCancelled = false, ?string $group = null): Collection
+{
+    return Invoice::withoutUnitScope()->with('items.feeType')->where('applicant_id', $applicant->id)
+        ->when(! $includeCancelled, fn ($query) => $query->where('status', '<>', Invoice::STATUS_CANCELLED))
+        ->when($group, fn ($query, string $group) => $query->where('billing_group', $group))
+        ->orderBy('id')->get();
+}
+
+/**
+ * Item tagihan diindeks kode jenis biaya.
+ *
+ * @return Collection<string, InvoiceItem>
+ */
+function seleksiItems(Invoice $invoice): Collection
+{
+    return InvoiceItem::query()->where('invoice_id', $invoice->id)->with('feeType')->orderBy('id')->get()
+        ->keyBy(fn (InvoiceItem $item): string => $item->feeType->code);
+}
+
+/**
+ * Keringanan pendaftar urut id.
+ *
+ * @return Collection<int, FeeOverride>
+ */
+function seleksiOverrides(Applicant $applicant): Collection
+{
+    return FeeOverride::query()->with('feeType')->where('applicant_id', $applicant->id)->orderBy('id')->get();
+}
+
+/**
+ * Activity log `psb` milik pendaftar, urut id.
+ *
+ * @return Collection<int, Activity>
+ */
+function seleksiActivities(Applicant $applicant): Collection
+{
+    return Activity::query()->where('log_name', 'psb')
+        ->where('subject_type', $applicant->getMorphClass())->where('subject_id', $applicant->id)
+        ->orderBy('id')->get();
+}
+
+/**
+ * Potret keadaan pendaftar (keputusan, activity, tagihan, keringanan) untuk membuktikan "tanpa perubahan apa pun".
+ *
+ * @return array<string, mixed>
+ */
+function seleksiSnapshot(Applicant $applicant): array
+{
+    $row = Applicant::withoutGlobalScopes()->findOrFail($applicant->id);
+
+    return [
+        'status' => $row->status,
+        'reviewed_by' => $row->reviewed_by,
+        'reviewed_at' => $row->reviewed_at?->toDateTimeString(),
+        'review_note' => $row->review_note,
+        'activities' => Activity::query()->count(),
+        'invoices' => Invoice::withoutUnitScope()->where('applicant_id', $applicant->id)->orderBy('id')->get(['id', 'status', 'total', 'paid_total'])->toArray(),
+        'overrides' => FeeOverride::query()->where('applicant_id', $applicant->id)->orderBy('id')->get(['id', 'valid_from', 'valid_until', 'mode', 'value'])->toArray(),
+    ];
+}
+
+/**
+ * Apakah daftar `skipped` memuat jenis biaya (NULL untuk program nonaktif) dengan alasan tertentu.
+ *
+ * @param  list<array{fee_type_id: int|null, reason: string}>  $skipped
+ */
+function seleksiSkipped(array $skipped, ?int $feeTypeId, string $reason): bool
+{
+    return collect($skipped)->contains(fn (array $row): bool => $row['fee_type_id'] === $feeTypeId && $row['reason'] === $reason);
+}
+
+/**
+ * Teks terjemahan yang dipastikan bukan kunci mentah.
+ *
+ * @param  array<string, mixed>  $replace
+ */
+function seleksiText(string $key, array $replace = []): string
+{
+    $text = __($key, $replace);
+
+    expect($text)->toBeString()->not->toBe($key)->not->toBeEmpty();
+
+    return $text;
+}
+
+/**
+ * Livewire `ViewApplicant` untuk pendaftar sebagai user (bawaan: user yang sedang login).
+ */
+function seleksiView(Applicant $applicant, ?User $as = null): Testable
+{
+    if ($as !== null) {
+        test()->actingAs($as);
+    }
+
+    return Livewire::test(ViewApplicant::class, ['record' => $applicant->id]);
+}
+
+/**
+ * Semua teks notifikasi Filament pada request Livewire terakhir.
+ */
+function seleksiNotificationText(): string
+{
+    return asramaNotifications()->map(fn (array $notification): string => ($notification['title'] ?? '').' '.($notification['body'] ?? ''))->implode("\n");
+}
+
+/**
+ * Apakah pesan `pondok.psb.errors.<reason>` terlihat di halaman komponen (galat form) atau notifikasi.
+ */
+function seleksiSeeMessage(Testable $component, string $reason): bool
+{
+    $message = seleksiText("pondok.psb.errors.{$reason}");
+    $pattern = '/'.implode('.+?', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $message))).'/su';
+    $haystack = tagihanPlainText($component).' '.seleksiNotificationText().' '.collect($component->errors()->all())->implode(' ');
+
+    return preg_match($pattern, $haystack) === 1;
+}
+
+/**
+ * Ganti `GenerateInvoiceNumber` di container dengan palsu yang meneruskan ke yang asli, tetapi menjalankan
+ * `$onFirstCall` pada panggilan pertama (di dalam transaksi tagihan grup pertama). `calls` menghitung panggilan.
+ */
+function seleksiFakeInvoiceNumberWithHook(Closure $onFirstCall): object
+{
+    $real = app(GenerateInvoiceNumber::class);
+    $fake = new class($real, $onFirstCall) extends GenerateInvoiceNumber
+    {
+        public int $calls = 0;
+
+        public function __construct(private GenerateInvoiceNumber $real, private Closure $hook) {}
+
+        public function handle(CarbonInterface $month): string
+        {
+            if (++$this->calls === 1) {
+                ($this->hook)();
+            }
+
+            return $this->real->handle($month);
+        }
+    };
+
+    app()->instance(GenerateInvoiceNumber::class, $fake);
+
+    return $fake;
+}
+
+/**
+ * Berkas pendaftar langsung lewat factory (tanpa file) untuk syarat wajib jenjangnya (atau hanya yang bernama
+ * `$names`), dengan status `$status`. Mengembalikan berkas urut syarat.
+ *
+ * @param  list<string>|null  $names
+ * @return Collection<int, ApplicantDocument>
+ */
+function seleksiAddDocuments(Applicant $applicant, string $status = 'valid', ?array $names = null): Collection
+{
+    return $applicant->requirements()->where('is_required', true)
+        ->when($names, fn ($query, array $names) => $query->whereIn('name', $names))
+        ->orderBy('sort_order')->get()
+        ->map(fn (AdmissionRequirement $requirement): ApplicantDocument => pendaftaranDocument($applicant, $requirement, ['status' => $status], false));
+}
+
+/**
+ * Pendaftar langsung lewat factory di gelombang `$wave` (bawaan W1).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function seleksiSummaryApplicants(int $count, string $status, array $attributes = [], ?AdmissionWave $wave = null): void
+{
+    for ($i = 0; $i < $count; $i++) {
+        pendaftaranApplicant([
+            'status' => $status,
+            ...($wave ? ['admission_wave_id' => $wave->id] : []),
+            ...$attributes,
+        ]);
+    }
+}
+
+/**
+ * Angka stat (teks setelah label stat) pada teks polos widget.
+ */
+function seleksiStatValue(string $text, string $label): ?int
+{
+    return preg_match('/'.preg_quote($label, '/').'\s+(\d+)/u', $text, $matches) === 1 ? (int) $matches[1] : null;
 }

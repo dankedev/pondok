@@ -153,15 +153,15 @@
       "name": "Laporan keuangan",
       "phase": 1,
       "module": "Keuangan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F007"],
       "description": "Tagihan bulan berjalan, terbayar vs menunggak, rasio koleksi, santri menunggak teratas, total subsidi beasiswa per program.",
       "acceptance": [
         "Laporan menghormati cakupan jenjang"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit c3ddb47, d34c695, c8a3f09; 918 test Pest lulus di PHP 8.4, test keuangan/laporan/seeder lulus di 8.3; query diuji di MySQL strict ONLY_FULL_GROUP_BY",
       "notes": "Dari F007: pembayaran bisa dibatalkan kapan saja (status batal, alokasi tetap tersimpan). Laporan kas wajib memakai paid_on dan hanya pembayaran berstatus diterima saat laporan dibaca."
     },
     {
@@ -170,13 +170,13 @@
       "name": "Master PSB: gelombang, jalur, syarat berkas",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F001"],
       "description": "admission_waves per tahun ajaran, admission_tracks (Reguler, Prestasi, Tahfidz, Yatim, scholarship_id), syarat berkas per jenjang. Saklar modules.psb.enabled.",
       "acceptance": [
         "Menu hilang dan halaman 403 saat modul mati"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "F004 membuat fee_rates.admission_wave_id tanpa FK. Saat F009 menambah FK, SQLite membangun ulang tabel: wajib test bahwa kolom cohort_key/dormitory_key/wave_key dan unique fee_rates_combination_unique tetap ada setelah migrasi."
@@ -197,7 +197,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "F005 membuat fee_overrides.applicant_id (dan F002 students.applicant_id) tanpa FK. Saat F010 membuat applicants dan menambah FK, SQLite membangun ulang tabel: wajib test bahwa index ERD (student_id, fee_type_id, valid_from) dan FK lain tetap ada."
+      "notes": "F005 membuat fee_overrides.applicant_id (dan F002 students.applicant_id) tanpa FK. Saat F010 membuat applicants dan menambah FK, SQLite membangun ulang tabel: wajib test bahwa index ERD (student_id, fee_type_id, valid_from) dan FK lain tetap ada. Dari F009: tegakkan kuota gelombang; cegah hapus syarat berkas yang sudah punya applicant_documents; tentukan gelombang mana yang berlaku bila beberapa terbuka di tanggal yang sama (bisa lintas tahun ajaran). Dari F006: billing_group PSB harus berbeda dari grup bulanan."
     },
     {
       "id": "F011",
@@ -214,7 +214,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F009: tentukan jenis biaya mana yang mendapat potongan otomatis dari admission_tracks.scholarship_id (scholarships tidak punya fee_type)."
     },
     {
       "id": "F012",
@@ -231,7 +231,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F013: isi documents.uploaded_by dengan user yang menjalankan daftar ulang; saat menambah FK documents.source_applicant_document_id, SQLite membangun ulang tabel documents — wajib test index dan FK tetap ada."
     },
     {
       "id": "F013",
@@ -240,7 +240,7 @@
       "phase": 1,
       "module": "Dokumen",
       "status": "todo",
-      "depends_on": ["F002"],
+      "depends_on": ["F002", "F009"],
       "description": "document_types, documents untuk santri/wali/staff/prestasi, verifikasi, masa berlaku, riwayat versi (replaced_by_id), cek kelengkapan berkas wajib. Unduh lewat route berizin dari disk private.",
       "acceptance": [
         "Dokumen rahasia hanya bisa dibuka peran tertentu",
@@ -249,7 +249,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Tabel document_types dan DocumentTypeSeeder sudah dibuat di F009 (tanpa UI). F013 cukup menambah resource, permission, documents, dan aturan kerahasiaan."
     },
     {
       "id": "F014",
@@ -283,7 +283,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F013: tambahkan alias achievement ke Document::DOCUMENTABLE_TYPES / morph map dan cabang achievement di Document::applyUnitScope; sertifikat dan foto prestasi disimpan di documents."
     },
     {
       "id": "F016",

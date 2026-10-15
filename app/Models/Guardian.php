@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDocuments;
 use Database\Factories\GuardianFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Guardian extends Model
 {
     /** @use HasFactory<GuardianFactory> */
-    use HasFactory;
+    use HasDocuments, HasFactory;
 
     public const RELATIONS = ['ayah', 'ibu', 'wali'];
 

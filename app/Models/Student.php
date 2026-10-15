@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDocuments;
 use App\Models\Concerns\HasUnitScope;
+use Carbon\CarbonInterface;
+use Closure;
 use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
  * Santri semua jenjang. `unit_id` diduplikasi dari `cohorts.unit_id` untuk
@@ -26,7 +30,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Student extends Model
 {
     /** @use HasFactory<StudentFactory> */
-    use HasFactory, HasUnitScope, SoftDeletes;
+    use HasDocuments, HasFactory, HasUnitScope, SoftDeletes;
 
     public const STATUS_ACTIVE = 'aktif';
 
@@ -128,5 +132,50 @@ class Student extends Model
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Santri yang belum memiliki semua berkas wajib (jenis wajib aktif milik
+     * santri tanpa dokumen current `valid` yang masih berlaku). Konsisten dengan
+     * `CheckDocumentCompleteness`; tidak terpengaruh cakupan jenjang dokumen.
+     */
+    public function scopeWithIncompleteDocuments(Builder $query, ?CarbonInterface $today = null): void
+    {
+        $query->whereExists($this->missingRequiredDocumentTypes($today));
+    }
+
+    /**
+     * Kebalikan `withIncompleteDocuments`. Tanpa jenis wajib aktif, semua santri lengkap.
+     */
+    public function scopeWithCompleteDocuments(Builder $query, ?CarbonInterface $today = null): void
+    {
+        $query->whereNotExists($this->missingRequiredDocumentTypes($today));
+    }
+
+    /**
+     * Subquery jenis wajib aktif yang belum terpenuhi untuk baris `students`.
+     */
+    private function missingRequiredDocumentTypes(?CarbonInterface $today): Closure
+    {
+        $date = ($today ?? today())->toDateString();
+        $students = $this->getTable();
+
+        return fn (QueryBuilder $types) => $types
+            ->select('document_types.id')
+            ->from('document_types')
+            ->where('document_types.is_required', true)
+            ->where('document_types.is_active', true)
+            ->where('document_types.owner', DocumentType::OWNER_STUDENT)
+            ->whereNotExists(fn (QueryBuilder $documents) => $documents
+                ->select('documents.id')
+                ->from('documents')
+                ->whereColumn('documents.document_type_id', 'document_types.id')
+                ->where('documents.documentable_type', $this->getMorphClass())
+                ->whereColumn('documents.documentable_id', "{$students}.id")
+                ->whereNull('documents.replaced_by_id')
+                ->where('documents.status', Document::STATUS_VALID)
+                ->where(fn (QueryBuilder $expiry) => $expiry
+                    ->whereNull('documents.expires_on')
+                    ->orWhere('documents.expires_on', '>=', $date)));
     }
 }

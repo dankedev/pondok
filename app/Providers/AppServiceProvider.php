@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Document;
 use App\Models\Setting;
 use App\Models\User;
 use ArrayObject;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureTrustedProxies();
+
+        // Tidak dipaksakan (`enforceMorphMap`): Spatie Permission dan Activitylog menyimpan nama kelas.
+        Relation::morphMap(Document::DOCUMENTABLE_TYPES);
 
         Event::listen(function (Login $event): void {
             if ($event->user instanceof User) {

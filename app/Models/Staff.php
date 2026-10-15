@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDocuments;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Staff extends Model
 {
     /** @use HasFactory<StaffFactory> */
-    use HasFactory;
+    use HasDocuments, HasFactory;
 
     protected $table = 'staff';
 

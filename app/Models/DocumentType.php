@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\UnitScope;
 use Database\Factories\DocumentTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,6 +44,26 @@ class DocumentType extends Model
             'is_confidential' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    /**
+     * Dipakai dokumen (semua jenjang) atau syarat berkas PSB. Jenis yang dipakai
+     * tidak bisa dihapus dan owner-nya tidak bisa diubah.
+     */
+    public function isInUse(): bool
+    {
+        return $this->documents()->withoutGlobalScope(UnitScope::class)->exists()
+            || $this->admissionRequirements()->exists();
+    }
+
+    public function ownerLabel(): string
+    {
+        return __("pondok.document_type.owners.{$this->owner}");
     }
 
     public function admissionRequirements(): HasMany

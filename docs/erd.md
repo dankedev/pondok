@@ -838,7 +838,7 @@ foreach (students aktif as $s) {
     }
 
     $amount = match ($ovr?->mode) {
-      'nominal'  => $ovr->value,
+      'nominal'  => min($ovr->value, $base ?? $ovr->value), // tidak pernah di atas tarif
       'potongan' => max(0, $base - $ovr->value),
       'persen'   => $base - intdiv($base * $ovr->value, 100),
       default    => $base,

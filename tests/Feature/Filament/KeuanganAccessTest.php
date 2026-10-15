@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Setting;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -116,4 +117,71 @@ it('AC-45: hides invoices when the module is disabled', function () {
     $this->actingAs($user)->get('/admin/invoices')->assertForbidden();
     $this->actingAs($user)->get("/admin/invoices/{$invoice->id}")->assertForbidden();
     $this->actingAs($user)->get('/admin')->assertOk()->assertDontSee(__('pondok.invoice.plural'));
+});
+
+/*
+|--------------------------------------------------------------------------
+| F007: pembayaran
+|--------------------------------------------------------------------------
+*/
+
+it('AC-27: offers no way to delete payments', function () {
+    $payment = Payment::factory()->create();
+    $bendahara = keuanganUser('bendahara');
+    $super = keuanganUser('super-admin');
+
+    expect($bendahara->can('delete', $payment))->toBeFalse()
+        ->and($bendahara->can('deleteAny', Payment::class))->toBeFalse()
+        ->and($bendahara->can('update', $payment))->toBeFalse()
+        ->and($bendahara->can('cancel', $payment))->toBeTrue()
+        ->and($bendahara->can('create', Payment::class))->toBeTrue();
+
+    $this->actingAs($bendahara)->get("/admin/payments/{$payment->id}/edit")->assertNotFound();
+    $this->actingAs($bendahara)->get('/admin/payments/create')->assertNotFound();
+
+    expect($super->can('view', $payment))->toBeTrue();
+});
+
+it('AC-31: lets bendahara and super-admin open payments', function (string $role) {
+    $payment = Payment::factory()->create();
+    $user = keuanganUser($role);
+
+    $this->actingAs($user)->get('/admin/payments')->assertOk();
+    $this->actingAs($user)->get("/admin/payments/{$payment->id}")->assertOk();
+})->with(['bendahara', 'super-admin']);
+
+it('AC-31: forbids payments to other roles', function (string $role) {
+    $payment = Payment::factory()->create();
+    $user = keuanganUser($role);
+
+    $this->actingAs($user)->get('/admin/payments')->assertForbidden();
+    $this->actingAs($user)->get("/admin/payments/{$payment->id}")->assertForbidden();
+})->with(['admin-sekolah', 'kesantrian', 'musyrif', 'admin-konten', 'admin-psb', 'ustadz-tahfidz', 'petugas-pos']);
+
+it('AC-31: shows the payment menu to bendahara below invoices', function () {
+    expect(__('pondok.payment.plural'))->not->toBe('pondok.payment.plural');
+
+    $html = $this->actingAs(keuanganUser('bendahara'))->get('/admin')->assertOk()->assertSee(__('pondok.payment.plural'))->getContent();
+
+    expect(strpos($html, __('pondok.invoice.plural')))->toBeLessThan(strpos($html, __('pondok.payment.plural')));
+});
+
+it('AC-32: hides payments when the module is disabled', function () {
+    $payment = Payment::factory()->create();
+    Setting::set('modules.keuangan.enabled', false);
+    $user = keuanganUser('super-admin');
+
+    $this->actingAs($user)->get('/admin/payments')->assertForbidden();
+    $this->actingAs($user)->get("/admin/payments/{$payment->id}")->assertForbidden();
+    $this->actingAs($user)->get("/admin/receipts/{$payment->id}")->assertForbidden();
+    $this->actingAs($user)->get("/admin/payment-proofs/{$payment->id}")->assertForbidden();
+    $this->actingAs($user)->get('/admin')->assertOk()->assertDontSee(__('pondok.payment.plural'));
+});
+
+it('AC-32: answers 403 for receipts and proofs of unknown ids when the module is disabled', function () {
+    Setting::set('modules.keuangan.enabled', false);
+    $user = keuanganUser('super-admin');
+
+    $this->actingAs($user)->get('/admin/receipts/999999')->assertForbidden();
+    $this->actingAs($user)->get('/admin/payment-proofs/999999')->assertForbidden();
 });

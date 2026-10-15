@@ -4,13 +4,17 @@ namespace App\Filament\Resources\Invoices;
 
 use App\Actions\Keuangan\CancelInvoice;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
+use App\Actions\Keuangan\RecordPayment;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Concerns\ShowsActionErrorsOnForm;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
+use App\Filament\Resources\Invoices\RelationManagers\PaymentsRelationManager;
+use App\Filament\Resources\Payments\PaymentResource;
 use App\Models\AcademicYear;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Payment;
 use App\Models\Unit;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -18,14 +22,19 @@ use Carbon\CarbonInterface;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
@@ -33,6 +42,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Number;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -128,6 +138,7 @@ class InvoiceResource extends Resource
                                 TableColumn::make(__('pondok.invoice.base_amount'))->alignment(Alignment::End),
                                 TableColumn::make(__('pondok.invoice.discount_amount'))->alignment(Alignment::End),
                                 TableColumn::make(__('pondok.invoice.amount'))->alignment(Alignment::End),
+                                TableColumn::make(__('pondok.payment.paid_amount'))->alignment(Alignment::End),
                                 TableColumn::make(__('pondok.invoice.rate_source')),
                                 TableColumn::make(__('pondok.invoice.fee_override')),
                             ])
@@ -143,6 +154,10 @@ class InvoiceResource extends Resource
                                     ->extraAttributes(['class' => 'tabular-nums']),
                                 TextEntry::make('amount')
                                     ->formatStateUsing(fn (InvoiceItem $record): string => static::itemAmountLabel($record))
+                                    ->alignEnd()
+                                    ->extraAttributes(['class' => 'tabular-nums']),
+                                TextEntry::make('paid_amount')
+                                    ->money('IDR', locale: 'id', decimalPlaces: 0)
                                     ->alignEnd()
                                     ->extraAttributes(['class' => 'tabular-nums']),
                                 TextEntry::make('rate_source')
@@ -243,6 +258,7 @@ class InvoiceResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 ActionGroup::make([
+                    static::recordPaymentAction(),
                     static::cancelAction(),
                 ]),
             ]);
@@ -296,6 +312,119 @@ class InvoiceResource extends Resource
                     ]))
                     ->body($skipped > 0 ? __('pondok.invoice.generated_skipped_hint') : null)
                     ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * Mencatat pembayaran tunai atau transfer lewat `RecordPayment`; tersembunyi
+     * untuk tagihan `lunas` dan `batal`.
+     */
+    public static function recordPaymentAction(): Action
+    {
+        return Action::make('recordPayment')
+            ->label(__('pondok.payment.record_action'))
+            ->icon(Heroicon::OutlinedBanknotes)
+            ->color('primary')
+            ->modalHeading(__('pondok.payment.record_heading'))
+            ->modalDescription(__('pondok.payment.record_description'))
+            ->modalSubmitActionLabel(__('pondok.payment.record_submit'))
+            // Mencegah kirim ganda: tombol simpan nonaktif selama permintaan berjalan.
+            ->modalSubmitAction(fn (Action $action): Action => $action->extraAttributes(['wire:loading.attr' => 'disabled'], merge: true))
+            ->authorize(fn (): bool => (bool) auth()->user()?->can('create', Payment::class))
+            ->hidden(fn (Invoice $record): bool => in_array($record->status, [Invoice::STATUS_PAID, Invoice::STATUS_CANCELLED], true))
+            ->fillForm(fn (Invoice $record): array => [
+                'amount' => $record->remainingAmount(),
+                'paid_on' => today()->toDateString(),
+                'method' => Payment::METHOD_CASH,
+            ])
+            ->schema([
+                TextInput::make('amount')
+                    ->label(__('pondok.payment.amount'))
+                    ->numeric()
+                    ->integer()
+                    ->minValue(1)
+                    ->prefix('Rp')
+                    ->required()
+                    ->helperText(fn (Invoice $record): string => __('pondok.payment.remaining_helper', [
+                        'amount' => Payment::formatRupiah($record->remainingAmount()),
+                    ])),
+                DatePicker::make('paid_on')
+                    ->label(__('pondok.payment.paid_on'))
+                    ->native(false)
+                    ->displayFormat('j M Y')
+                    ->maxDate(fn (): string => today()->toDateString())
+                    ->required(),
+                ToggleButtons::make('method')
+                    ->label(__('pondok.payment.method'))
+                    ->options(collect(Payment::MANUAL_METHODS)
+                        ->mapWithKeys(fn (string $method): array => [$method => __("pondok.payment.methods.{$method}")])
+                        ->all())
+                    ->inline()
+                    ->required()
+                    ->live(),
+                FileUpload::make('proof')
+                    ->label(__('pondok.payment.proof'))
+                    ->helperText(__('pondok.payment.proof_helper'))
+                    ->visible(fn (Get $get): bool => $get('method') === Payment::METHOD_TRANSFER)
+                    ->storeFiles(false)
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
+                    ->maxSize(RecordPayment::PROOF_MAX_KILOBYTES),
+                Textarea::make('note')
+                    ->label(__('pondok.payment.note'))
+                    ->helperText(__('pondok.payment.note_helper'))
+                    ->maxLength(RecordPayment::NOTE_MAX_LENGTH)
+                    ->rows(2),
+            ])
+            ->action(function (Invoice $record, array $data, RecordPayment $recordPayment, Action $action): void {
+                $proof = $data['proof'] ?? null;
+
+                if (is_array($proof)) {
+                    $proof = collect($proof)->first(fn (mixed $file): bool => $file instanceof UploadedFile);
+                }
+
+                try {
+                    $payment = $recordPayment->handle($record, auth()->user(), [
+                        'amount' => $data['amount'] ?? null,
+                        'paid_on' => $data['paid_on'] ?? null,
+                        'method' => $data['method'] ?? null,
+                        'proof' => ($data['method'] ?? null) === Payment::METHOD_TRANSFER ? $proof : null,
+                        'note' => $data['note'] ?? null,
+                    ]);
+                } catch (ValidationException $exception) {
+                    // Tagihan dibatalkan atau dilunasi di tempat lain: bukan kesalahan isian form.
+                    if (array_key_exists('invoice', $exception->errors())) {
+                        Notification::make()->title($exception->errors()['invoice'][0])->danger()->send();
+                        $action->cancel();
+
+                        return;
+                    }
+
+                    static::runShowingFormErrors($action, fn () => throw $exception);
+
+                    return;
+                } catch (RuntimeException $exception) {
+                    if ($exception->getMessage() !== __('pondok.payment.errors.receipt_number_conflict')) {
+                        throw $exception;
+                    }
+
+                    Notification::make()->title($exception->getMessage())->danger()->send();
+                    $action->halt();
+
+                    return;
+                }
+
+                Notification::make()
+                    ->title(__('pondok.payment.recorded', [
+                        'amount' => Payment::formatRupiah($payment->amount),
+                        'receipt_no' => $payment->receipt_no,
+                    ]))
+                    ->success()
+                    ->actions([
+                        Action::make('printReceipt')
+                            ->label(__('pondok.payment.print_action'))
+                            ->url(PaymentResource::receiptUrl($payment), shouldOpenInNewTab: true),
+                    ])
                     ->send();
             });
     }
@@ -379,6 +508,13 @@ class InvoiceResource extends Resource
         }
 
         return (string) Number::currency($item->amount, in: 'IDR', locale: 'id', precision: 0);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            PaymentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

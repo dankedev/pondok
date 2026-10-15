@@ -26,6 +26,7 @@ class ViewInvoice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            InvoiceResource::recordPaymentAction(),
             InvoiceResource::cancelAction(),
         ];
     }

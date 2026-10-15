@@ -2,8 +2,11 @@
 
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
+use App\Models\Cohort;
 use App\Models\FeeOverride;
 use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -90,4 +93,31 @@ it('AC-53: hides delete for users who generated invoices', function () {
 
     Livewire::test(EditUser::class, ['record' => $generator->id])->assertActionHidden('delete');
     Livewire::test(EditUser::class, ['record' => $plain->id])->assertActionVisible('delete');
+});
+
+it('AC-46: hides delete for a user who received or cancelled payments', function () {
+    $this->actingAs(User::factory()->create()->assignRole('super-admin'));
+    $receiver = User::factory()->create();
+    $canceller = User::factory()->create();
+    $plain = User::factory()->create();
+    Payment::factory()->create(['received_by' => $receiver->id]);
+    Payment::factory()->cancelled()->create(['cancelled_by' => $canceller->id]);
+
+    Livewire::test(EditUser::class, ['record' => $receiver->id])->assertActionHidden('delete');
+    Livewire::test(EditUser::class, ['record' => $canceller->id])->assertActionHidden('delete');
+    Livewire::test(EditUser::class, ['record' => $plain->id])->assertActionVisible('delete');
+});
+
+it('AC-46: checks payments without the unit scope of the viewer', function () {
+    $viewer = User::factory()->create()->assignRole('super-admin');
+    $viewer->units()->attach(Unit::query()->where('code', 'SLTP')->value('id'));
+    $slta = Unit::query()->where('code', 'SLTA')->firstOrFail();
+    $student = Student::factory()->forCohort(Cohort::factory()->create(['unit_id' => $slta->id]))->create();
+    $receiver = User::factory()->create();
+    Payment::factory()->create(['invoice_id' => Invoice::factory()->create(['student_id' => $student->id])->id, 'received_by' => $receiver->id]);
+    $this->actingAs($viewer);
+
+    expect(Payment::query()->where('received_by', $receiver->id)->exists())->toBeFalse();
+
+    Livewire::test(EditUser::class, ['record' => $receiver->id])->assertActionHidden('delete');
 });

@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Controllers\Keuangan\DownloadPaymentProof;
+use App\Http\Controllers\Keuangan\ShowPaymentReceipt;
+use App\Http\Middleware\EnsureModuleIsEnabled;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -17,6 +20,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -58,6 +62,14 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // Kuitansi cetak dan unduh bukti transfer: login panel, saklar modul
+            // (sebelum binding), cakupan jenjang lewat binding, lalu policy di controller.
+            ->authenticatedRoutes(function (): void {
+                Route::middleware(EnsureModuleIsEnabled::class.':keuangan')->group(function (): void {
+                    Route::get('receipts/{payment}', ShowPaymentReceipt::class)->name('keuangan.receipt');
+                    Route::get('payment-proofs/{payment}', DownloadPaymentProof::class)->name('keuangan.payment-proof');
+                });
+            });
     }
 }

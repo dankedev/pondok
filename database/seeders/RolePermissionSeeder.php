@@ -32,7 +32,7 @@ class RolePermissionSeeder extends Seeder
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
-        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice',
+        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -42,6 +42,8 @@ class RolePermissionSeeder extends Seeder
         'Student' => ['restore', 'restoreAny'],
         // Tagihan hanya dibuat generator dan dibatalkan, tidak dibuat manual atau dihapus.
         'Invoice' => ['generate', 'cancel'],
+        // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.
+        'Payment' => ['cancel'],
     ];
 
     public function run(): void
@@ -106,7 +108,8 @@ class RolePermissionSeeder extends Seeder
             // Mengatur jenis biaya, tarif, program beasiswa, dan keringanan. Tidak ada yang
             // dihapus: jenis biaya dan program dinonaktifkan, tarif dikoreksi lewat edit,
             // keringanan diakhiri lewat tanggal berakhir. Tagihan dibuat generator dan
-            // dibatalkan, tidak dibuat manual, diubah, atau dihapus.
+            // dibatalkan, tidak dibuat manual, diubah, atau dihapus. Pembayaran dicatat dan
+            // dibatalkan, tidak diubah atau dihapus.
             'bendahara' => [
                 'view-dashboard',
                 'view-finance-metrics',
@@ -115,6 +118,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Scholarship', $withoutDelete),
                 ...self::resourcePermissions('FeeOverride', $withoutDelete),
                 ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel']),
+                ...self::resourcePermissions('Payment', ['viewAny', 'view', 'create', 'cancel']),
             ],
             'admin-konten' => ['view-dashboard', 'view-content-metrics'],
             'admin-sekolah' => [

@@ -59,6 +59,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:scholarship', 'view:scholarship', 'create:scholarship', 'update:scholarship',
         'view-any:fee-override', 'view:fee-override', 'create:fee-override', 'update:fee-override',
         'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice',
+        'view-any:payment', 'view:payment', 'create:payment', 'cancel:payment',
     ]],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
     'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],
@@ -121,3 +122,24 @@ it('AC-52: does not let bendahara create, update or delete invoices', function (
         ->and($user->can('delete:invoice'))->toBeFalse()
         ->and($user->can('delete-any:invoice'))->toBeFalse();
 });
+
+it('AC-30: creates payment permissions and keeps bendahara from deleting payments', function () {
+    expect(Permission::query()->pluck('name')->all())->toContain(
+        'view-any:payment', 'view:payment', 'create:payment', 'update:payment', 'delete:payment', 'delete-any:payment',
+        'cancel:payment',
+    );
+
+    $user = User::factory()->create()->assignRole('bendahara');
+
+    expect($user->can('view-any:payment'))->toBeTrue()
+        ->and($user->can('view:payment'))->toBeTrue()
+        ->and($user->can('create:payment'))->toBeTrue()
+        ->and($user->can('cancel:payment'))->toBeTrue()
+        ->and($user->can('update:payment'))->toBeFalse()
+        ->and($user->can('delete:payment'))->toBeFalse()
+        ->and($user->can('delete-any:payment'))->toBeFalse();
+});
+
+it('AC-30: gives payment permissions to no other role except super-admin', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':payment'))->all())->toBe([]);
+})->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);

@@ -170,15 +170,15 @@
       "name": "Master PSB: gelombang, jalur, syarat berkas",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001"],
       "description": "admission_waves per tahun ajaran, admission_tracks (Reguler, Prestasi, Tahfidz, Yatim, scholarship_id), syarat berkas per jenjang. Saklar modules.psb.enabled.",
       "acceptance": [
         "Menu hilang dan halaman 403 saat modul mati"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 29712b8, ec8c9e2, 0139823, 823866f; 1173 test Pest lulus di PHP 8.4 dan 8.3 (PsbConstraints, FeeRateWaveForeignKey, PsbSeeders, Actions/Psb, PsbAccess, AdmissionWaves/Tracks/Requirements, PsbReferences, PsbVerify, PsbActivityLog); migrate:fresh --seed dan rollback MySQL",
       "notes": "F004 membuat fee_rates.admission_wave_id tanpa FK. Saat F009 menambah FK, SQLite membangun ulang tabel: wajib test bahwa kolom cohort_key/dormitory_key/wave_key dan unique fee_rates_combination_unique tetap ada setelah migrasi."
     },
     {
@@ -206,7 +206,7 @@
       "phase": 1,
       "module": "PSB",
       "status": "todo",
-      "depends_on": ["F010", "F005"],
+      "depends_on": ["F010", "F005", "F018"],
       "description": "Verifikasi berkas, keputusan status, Action AcceptApplicant: tagihan saat_diterima dibuat dan beasiswa jalur diterapkan otomatis.",
       "acceptance": [
         "Beasiswa jalur muncul sebagai fee_override pendaftar"
@@ -214,7 +214,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Dari F009: tentukan jenis biaya mana yang mendapat potongan otomatis dari admission_tracks.scholarship_id (scholarships tidak punya fee_type)."
+      "notes": "Dari F009: tentukan jenis biaya mana yang mendapat potongan otomatis dari admission_tracks.scholarship_id (scholarships tidak punya fee_type). Dari F018: isi widget dashboard PSB (total, per status, 7 hari terakhir) lewat Action metrik + hasMetricSource() true. Dari F010: verifikasi per berkas sudah di F010; F011 cukup keputusan status pendaftar (termasuk diverifikasi)."
     },
     {
       "id": "F012",
@@ -231,7 +231,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Dari F013: isi documents.uploaded_by dengan user yang menjalankan daftar ulang; saat menambah FK documents.source_applicant_document_id, SQLite membangun ulang tabel documents — wajib test index dan FK tetap ada."
+      "notes": "Dari F013: isi documents.uploaded_by dengan user yang menjalankan daftar ulang; saat menambah FK documents.source_applicant_document_id, SQLite membangun ulang tabel documents — wajib test index dan FK tetap ada. Dari F010: applicant_documents sudah punya original_name, mime_type, size_kb."
     },
     {
       "id": "F013",
@@ -249,7 +249,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Tabel document_types dan DocumentTypeSeeder sudah dibuat di F009 (tanpa UI). F013 cukup menambah resource, permission, documents, dan aturan kerahasiaan."
+      "notes": "Tabel document_types dan DocumentTypeSeeder sudah dibuat di F009 (tanpa UI). F013 cukup menambah resource, permission, documents, dan aturan kerahasiaan. Dari F018: isi widget kelengkapan dokumen memakai Student::withIncompleteDocuments()."
     },
     {
       "id": "F014",
@@ -258,7 +258,7 @@
       "phase": 1,
       "module": "Dokumen",
       "status": "todo",
-      "depends_on": ["F013"],
+      "depends_on": ["F013", "F016"],
       "description": "Surat keterangan aktif, rekomendasi, pindah, syahadah, kartu santri dengan penomoran otomatis dan halaman publik verifikasi QR.",
       "acceptance": [
         "Nomor surat unik dan berurutan"
@@ -275,7 +275,7 @@
       "phase": 1,
       "module": "Prestasi",
       "status": "todo",
-      "depends_on": ["F002", "F013"],
+      "depends_on": ["F002", "F013", "F016", "F018"],
       "description": "Prestasi individu/beregu dengan kategori, tingkat, peringkat, sertifikat, foto. Rekap per santri dan per tahun.",
       "acceptance": [
         "Prestasi bisa diterbitkan menjadi berita (terhubung F016)"
@@ -283,7 +283,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Dari F013: tambahkan alias achievement ke Document::DOCUMENTABLE_TYPES / morph map dan cabang achievement di Document::applyUnitScope; sertifikat dan foto prestasi disimpan di documents."
+      "notes": "Dari F013: tambahkan alias achievement ke Document::DOCUMENTABLE_TYPES / morph map dan cabang achievement di Document::applyUnitScope; sertifikat dan foto prestasi disimpan di documents. Dari F018: isi widget prestasi terbaru."
     },
     {
       "id": "F016",
@@ -300,7 +300,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F018: isi widget jumlah konten."
     },
     {
       "id": "F017",
@@ -309,7 +309,7 @@
       "phase": 1,
       "module": "Konten",
       "status": "todo",
-      "depends_on": ["F016"],
+      "depends_on": ["F016", "F010"],
       "description": "Halaman publik Blade + Livewire + Tailwind: beranda, berita, galeri, halaman statis, tautan PSB.",
       "acceptance": [
         "Lolos checklist §0 docs/design-guide.md"
@@ -317,7 +317,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F010: pakai ulang layouts/public.blade.php dan components/ui/*."
     },
     {
       "id": "F018",
@@ -325,15 +325,15 @@
       "name": "Dashboard role-aware",
       "phase": 1,
       "module": "Dashboard",
-      "status": "todo",
-      "depends_on": ["F001"],
+      "status": "in-progress",
+      "depends_on": ["F001", "F008"],
       "description": "Widget konten, PSB, santri, keuangan, kelengkapan dokumen, prestasi terbaru; masing-masing dicek permission view-*-metrics.",
       "acceptance": [
         "Tetap render dengan pesan \"Modul belum tersedia\" saat modul atau tabel belum ada",
         "Link widget hanya tampil bila route tersedia",
         "Akses widget per peran teruji"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "Bisa mulai setelah F001; widget per modul ditambah seiring modulnya selesai."
@@ -353,7 +353,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F010/F014/F016/F017: paket rilis wajib memuat public/build; panduan instalasi cPanel harus mencakup storage:link, APP_URL yang benar (QR surat & gambar portal), TRUSTED_PROXIES opsional, dan cron schedule:run."
     },
     {
       "id": "F020",

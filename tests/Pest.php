@@ -1,12 +1,16 @@
 <?php
 
 use App\Models\AcademicYear;
+use App\Models\Cohort;
 use App\Models\Dormitory;
+use App\Models\FeeRate;
+use App\Models\FeeType;
 use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
+use Database\Seeders\UnitSeeder;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
@@ -185,4 +189,184 @@ function asramaNotifications(): Collection
     $component->pullNotificationsFromSession();
 
     return $component->notifications->map(fn (Notification $notification): array => $notification->toArray())->values();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper modul Keuangan (F004)
+|--------------------------------------------------------------------------
+|
+| Berawalan `keuangan` agar tidak bentrok dengan helper global di file test lain.
+|
+*/
+
+/**
+ * User dengan peran, opsional dibatasi ke jenjang (kode unit, mis. 'SLTP').
+ * Seeder peran dan unit harus sudah dijalankan oleh test pemanggil.
+ *
+ * @param  list<string>  $unitCodes
+ */
+function keuanganUser(string $role, array $unitCodes = []): User
+{
+    $user = User::factory()->create()->assignRole($role);
+
+    foreach ($unitCodes as $code) {
+        $user->units()->attach(Unit::query()->where('code', $code)->value('id'));
+    }
+
+    return $user;
+}
+
+/**
+ * Pola regex untuk pesan `pondok.keuangan.errors.<reason>`; placeholder `:nama` bebas isi.
+ * Pesan dipecah di placeholder lalu tiap potongan di-quote sendiri (hindari kesalahan escape ':').
+ */
+function keuanganMessagePattern(string $reason): string
+{
+    $message = __("pondok.keuangan.errors.{$reason}");
+    $parts = preg_split('/:[A-Za-z_]+/', $message);
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan kunci lang `reason`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function keuanganAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    expect(__("pondok.keuangan.errors.{$reason}"))->not->toBe("pondok.keuangan.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(keuanganMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.keuangan.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Fixture resolver bersama: jenjang SD dan SLTP, empat tahun ajaran, tiga angkatan SLTP, dua asrama,
+ * dan jenis biaya ASRAMA (bulanan, mukim). Tahun ajaran aktif: 2026/2027.
+ * Dengan `$reverseYears` id tahun ajaran terbalik terhadap urutan `starts_on`.
+ *
+ * @return object{sd: Unit, sltp: Unit, y2024: AcademicYear, y2025: AcademicYear, y2026: AcademicYear, y2027: AcademicYear, cohort2024: Cohort, cohort2025: Cohort, cohort2026: Cohort, d1: Dormitory, d2: Dormitory, type: FeeType}
+ */
+function keuanganFixture(bool $reverseYears = false): object
+{
+    test()->seed(UnitSeeder::class);
+
+    $specs = [
+        'y2024' => ['2024/2025', '2024-07-15', '2025-06-30', false],
+        'y2025' => ['2025/2026', '2025-07-15', '2026-06-30', false],
+        'y2026' => ['2026/2027', '2026-07-15', '2027-06-30', true],
+        'y2027' => ['2027/2028', '2027-07-15', '2028-06-30', false],
+    ];
+
+    if ($reverseYears) {
+        $specs = array_reverse($specs, true);
+    }
+
+    $years = [];
+    foreach ($specs as $key => [$name, $start, $end, $active]) {
+        $years[$key] = AcademicYear::factory()->create(['name' => $name, 'starts_on' => $start, 'ends_on' => $end, 'is_active' => $active]);
+    }
+
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+
+    return (object) [
+        'sd' => Unit::query()->where('code', 'SD')->firstOrFail(),
+        'sltp' => $sltp,
+        'y2024' => $years['y2024'],
+        'y2025' => $years['y2025'],
+        'y2026' => $years['y2026'],
+        'y2027' => $years['y2027'],
+        'cohort2024' => Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2024, 'name' => 'Angkatan 2024']),
+        'cohort2025' => Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2025, 'name' => 'Angkatan 2025']),
+        'cohort2026' => Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2026, 'name' => 'Angkatan 2026']),
+        'd1' => Dormitory::factory()->create(['code' => 'D1', 'name' => 'Asrama D1', 'gender' => 'L']),
+        'd2' => Dormitory::factory()->create(['code' => 'D2', 'name' => 'Asrama D2', 'gender' => 'L']),
+        'type' => FeeType::factory()->resident()->create(['code' => 'ASRAMA', 'name' => 'Asrama']),
+    ];
+}
+
+/**
+ * Tarif langsung lewat factory (tanpa Action).
+ */
+function keuanganRate(FeeType $type, AcademicYear $year, Unit $unit, int $amount, ?Cohort $cohort = null, ?Dormitory $dormitory = null, ?int $waveId = null): FeeRate
+{
+    return FeeRate::factory()->create([
+        'fee_type_id' => $type->id,
+        'effective_from_year_id' => $year->id,
+        'unit_id' => $unit->id,
+        'cohort_id' => $cohort?->id,
+        'dormitory_id' => $dormitory?->id,
+        'admission_wave_id' => $waveId,
+        'amount' => $amount,
+    ]);
+}
+
+/**
+ * Santri SLTP dari angkatan tertentu, opsional mukim di asrama tertentu (penempatan aktif lewat factory).
+ */
+function keuanganStudent(Cohort $cohort, ?Dormitory $dormitory = null): Student
+{
+    $student = Student::factory()->forCohort($cohort)->create(['gender' => 'L']);
+
+    if ($dormitory !== null) {
+        asramaResident($student, asramaRoom(10, 'L', [], $dormitory));
+    }
+
+    return $student;
+}
+
+/**
+ * Data masukan SaveFeeType yang valid.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function keuanganFeeTypeData(array $overrides = []): array
+{
+    return [
+        'code' => 'SPP',
+        'name' => 'SPP',
+        'frequency' => 'bulanan',
+        'applies_to' => 'semua',
+        'billing_group' => 'BULANAN',
+        'priority' => 100,
+        'is_active' => true,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Data masukan SaveFeeRate yang valid (tarif jenjang default).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function keuanganFeeRateData(FeeType $type, AcademicYear $year, Unit $unit, array $overrides = []): array
+{
+    return [
+        'fee_type_id' => $type->id,
+        'effective_from_year_id' => $year->id,
+        'unit_id' => $unit->id,
+        'cohort_id' => null,
+        'dormitory_id' => null,
+        'admission_wave_id' => null,
+        'amount' => 400000,
+        ...$overrides,
+    ];
 }

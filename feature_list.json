@@ -134,7 +134,7 @@
       "name": "Pembayaran, cicilan & kuitansi",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F006"],
       "description": "Action RecordPayment (tunai/transfer), alokasi ke item sesuai fee_types.priority di payment_allocations, status tagihan otomatis, kuitansi bernomor (PDF lewat Service). Pembatalan memakai status batal.",
       "acceptance": [
@@ -144,7 +144,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit febcb3c, a528301, b436ffa, 90f000f (+8f7f258 memory_limit test); 818 test Pest lulus di PHP 8.4 dan 8.3 (AllocatePaymentToItems, RecordPayment, CancelPayment, Payment model, RecordPaymentAction, Payments resource, PaymentReceipt, PaymentProofDownload); migrate:fresh --seed MySQL",
       "notes": "Format nomor kuitansi masih pertanyaan terbuka di PRD §7."
     },
     {
@@ -153,16 +153,16 @@
       "name": "Laporan keuangan",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F007"],
       "description": "Tagihan bulan berjalan, terbayar vs menunggak, rasio koleksi, santri menunggak teratas, total subsidi beasiswa per program.",
       "acceptance": [
         "Laporan menghormati cakupan jenjang"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "Dari F007: pembayaran bisa dibatalkan kapan saja (status batal, alokasi tetap tersimpan). Laporan kas wajib memakai paid_on dan hanya pembayaran berstatus diterima saat laporan dibaca."
     },
     {
       "id": "F009",

@@ -56,6 +56,8 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-dashboard', 'view-finance-metrics',
         'view-any:fee-type', 'view:fee-type', 'create:fee-type', 'update:fee-type',
         'view-any:fee-rate', 'view:fee-rate', 'create:fee-rate', 'update:fee-rate',
+        'view-any:scholarship', 'view:scholarship', 'create:scholarship', 'update:scholarship',
+        'view-any:fee-override', 'view:fee-override', 'create:fee-override', 'update:fee-override',
     ]],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
     'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],

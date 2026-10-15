@@ -13,8 +13,10 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Approver keringanan dirujuk FK restrict; user itu dinonaktifkan, bukan dihapus.
             DeleteAction::make()
-                ->hidden(fn (): bool => $this->getRecord()->is(auth()->user())),
+                ->hidden(fn (): bool => $this->getRecord()->is(auth()->user())
+                    || $this->getRecord()->approvedFeeOverrides()->exists()),
         ];
     }
 }

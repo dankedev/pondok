@@ -2,6 +2,7 @@
 
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
+use App\Models\FeeOverride;
 use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -68,4 +69,14 @@ it('does not let a non-super-admin grant the super-admin role', function () {
         ->assertHasFormErrors(['roles.0']);
 
     expect(User::query()->where('email', 'penyusup@pondok.test')->exists())->toBeFalse();
+});
+
+it('AC-35: hides delete for users who approved overrides', function () {
+    $this->actingAs(User::factory()->create()->assignRole('super-admin'));
+    $approver = User::factory()->create();
+    $plain = User::factory()->create();
+    FeeOverride::factory()->create(['approved_by' => $approver->id]);
+
+    Livewire::test(EditUser::class, ['record' => $approver->id])->assertActionHidden('delete');
+    Livewire::test(EditUser::class, ['record' => $plain->id])->assertActionVisible('delete');
 });

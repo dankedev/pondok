@@ -32,7 +32,7 @@ class RolePermissionSeeder extends Seeder
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
-        'FeeType', 'FeeRate',
+        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -101,12 +101,16 @@ class RolePermissionSeeder extends Seeder
 
         return match ($role) {
             'super-admin' => self::allPermissions(),
-            // Mengatur jenis biaya dan tarif; jenis biaya dinonaktifkan, tarif dikoreksi lewat edit.
+            // Mengatur jenis biaya, tarif, program beasiswa, dan keringanan. Tidak ada yang
+            // dihapus: jenis biaya dan program dinonaktifkan, tarif dikoreksi lewat edit,
+            // keringanan diakhiri lewat tanggal berakhir.
             'bendahara' => [
                 'view-dashboard',
                 'view-finance-metrics',
                 ...self::resourcePermissions('FeeType', $withoutDelete),
                 ...self::resourcePermissions('FeeRate', $withoutDelete),
+                ...self::resourcePermissions('Scholarship', $withoutDelete),
+                ...self::resourcePermissions('FeeOverride', $withoutDelete),
             ],
             'admin-konten' => ['view-dashboard', 'view-content-metrics'],
             'admin-sekolah' => [

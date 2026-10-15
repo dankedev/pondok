@@ -497,6 +497,12 @@ erDiagram
     text terms "syarat jalur, nullable"
     boolean is_active
   }
+  admission_track_fee_type {
+    bigint id PK
+    bigint admission_track_id FK "restrictOnDelete"
+    bigint fee_type_id FK "restrictOnDelete, saat_diterima | bulanan | tahunan"
+    timestamps timestamps "unique (admission_track_id, fee_type_id)"
+  }
   admission_requirements {
     bigint id PK
     bigint unit_id FK "nullable = semua jenjang"
@@ -544,13 +550,16 @@ erDiagram
   }
   admission_waves ||--o{ applicants : ""
   admission_tracks ||--o{ applicants : ""
+  admission_tracks ||--o{ admission_track_fee_type : "jenis biaya beasiswa"
   applicants ||--o{ applicant_documents : ""
   admission_requirements ||--o{ applicant_documents : ""
   
 ```
 
 - Pendaftar tidak perlu akun di tabel `users`. Mereka cek status dan unggah ulang berkas dengan nomor pendaftaran + token (disimpan dalam bentuk hash).
-- Saat status menjadi *diterima*, sebuah Action membuat baris `students` dengan `applicant_id` terisi dan menyalin data wali ke `guardians`.
+- Status *diterima* tidak langsung membuat `students`. Baris `students` (dengan `applicant_id` terisi, data wali disalin ke `guardians`) dibuat saat daftar ulang (F012), sesuai PRD 3.4.
+- **Transisi status** (F011, `Applicant::TRANSITIONS`): `diajukan` → `diverifikasi` (formulir lunas dan semua berkas wajib `valid`) atau `ditolak`; `diverifikasi` → `diajukan` (dikembalikan untuk unggah ulang), `cadangan`, `diterima`, atau `ditolak`; `cadangan` → `diterima` atau `ditolak`; `diterima` → `ditolak` (pembatalan penerimaan, hanya bila belum menjadi santri dan tagihan penerimaan belum dibayar); `ditolak` → `diajukan` (pemulihan, permission `reopen:applicant`). `draft` tidak punya transisi keluar. Setiap keputusan mengisi `reviewed_by`, `reviewed_at`, `review_note` (catatan internal, tidak tampil ke pendaftar) dan tepat satu activity log `psb`.
+- **Penolakan/pembatalan penerimaan** membatalkan (status `batal`) semua tagihan aktif pendaftar yang belum dibayar dan mengakhiri keringanan jalur yang masih berlaku (`valid_until` = hari itu). Pemulihan tidak memulihkan tagihan atau keringanan tersebut.
 - Berkas disimpan di disk `private` (bukan `public`) dan diakses lewat route yang dicek permission-nya, karena berisi KK dan akta.
 - **Token akses:** 12 karakter dari alfabet tanpa huruf/angka yang mirip (`A-H J-N P-Z 2-9`), ditampilkan `XXXX-XXXX-XXXX`; yang disimpan hanya hash dari token ternormalisasi (huruf besar, tanpa spasi/tanda hubung). Token bisa diatur ulang panitia.
 - **Kuota gelombang** dihitung dari pendaftar semua jenjang, tanpa status `draft` dan tanpa pendaftar terhapus (soft delete).
@@ -569,7 +578,8 @@ Biaya PSB memakai mekanisme yang sama dengan SPP: jenis biaya, tarif yang berlak
 
 - **Tarif per gelombang:** `fee_rates.admission_wave_id` memungkinkan gelombang 1 lebih murah dari gelombang 2. Kalau kosong, tarif berlaku untuk semua gelombang. Kolom biaya di `admission_waves` dihapus agar semua tarif ada di satu tempat.
 - **Berubah tiap tahun atau tetap:** sama seperti SPP, lewat `effective_from_year_id`.
-- **Jalur pendaftaran:** `admission_tracks` seperti Tahfidz atau Yatim bisa dihubungkan ke program beasiswa. Saat pendaftar jalur itu diterima, keringanannya dibuat otomatis, misalnya uang pangkal gratis atau SPP potong 50%.
+- **Jalur pendaftaran:** `admission_tracks` seperti Tahfidz atau Yatim bisa dihubungkan ke program beasiswa. Saat pendaftar jalur itu diterima, keringanannya dibuat otomatis (`fee_overrides.applicant_id`, mode dan nilai snapshot dari program, berlaku mulai tanggal penerimaan tanpa akhir), misalnya uang pangkal gratis atau SPP potong 50%. Jenis biaya penerimanya dipetakan di `admission_track_fee_type` (frekuensi `saat_diterima`, `bulanan`, atau `tahunan`); **pemetaan kosong berarti semua jenis biaya `saat_diterima` yang aktif**. Keringanan khusus pendaftar yang sudah ada untuk jenis biaya yang sama tidak ditimpa.
+- **Tagihan penerimaan:** dibuat setelah beasiswa jalur diterapkan, per `billing_group`, dengan `period` awal bulan penerimaan dan `due_on` = awal tahun ajaran tujuan bila masih di depan, selain itu tanggal penerimaan. Idempotent: kelompok yang sudah punya tagihan aktif dilewati. Kegagalan pembuatan tagihan tidak membatalkan penerimaan; panitia mengulang lewat aksi "Buat tagihan penerimaan".
 - **Keringanan khusus:** panitia bisa memberi potongan per pendaftar (misalnya diskon saudara kandung) lewat `fee_overrides.applicant_id`, termasuk potongan SPP yang mulai berlaku setelah jadi santri.
 - **Pindah ke santri:** saat santri dibuat, `student_id` diisi pada tagihan dan keringanan milik pendaftar. `applicant_id` tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.
 - **Pemisahan `billing_group`:** satu kelompok tagihan hanya boleh berisi jenis biaya dari kelas frekuensi yang sama: `saat_daftar`, `saat_diterima`, atau lainnya (`bulanan`, `tahunan`, `manual`). Tagihan formulir tidak menghalangi tagihan saat diterima, dan setelah konversi tidak bertabrakan dengan generator bulanan.

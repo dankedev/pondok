@@ -87,6 +87,12 @@ Aturan:
 | Pendaftar | `UserPlus` |
 | Unggah berkas | `ArrowUpTray` |
 | Unduh | `ArrowDownTray` |
+| Tandai terverifikasi | `CheckBadge` |
+| Terima | `CheckCircle` |
+| Tolak / batalkan penerimaan | `XCircle` |
+| Kembalikan ke tahap sebelumnya | `ArrowUturnLeft` |
+| Pulihkan | `ArrowPath` |
+| Cadangan | `Clock` |
 
 ## 4. Status & badge
 
@@ -103,7 +109,7 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Pembayaran | diterima | `success` |
 | Tagihan / pembayaran | batal | `danger` (teks dicoret tidak dipakai) |
 | PSB | draft, diajukan (terdaftar) | `gray` |
-| PSB | diverifikasi (berkas diverifikasi), tes | `info` |
+| PSB | diverifikasi, tes | `info` |
 | PSB | diterima, daftar ulang | `success` |
 | PSB | cadangan | `warning` |
 | PSB | ditolak, mengundurkan diri | `danger` |

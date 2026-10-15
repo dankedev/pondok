@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Applicant;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
@@ -82,7 +83,7 @@ it('F007: scopes payments to the units of the user through the invoice', functio
     $f = tagihanFixture();
     $sltp = tagihanInvoice(tagihanStudent($f), $f->year, ['billing_group' => 'A']);
     $slta = tagihanInvoice(tagihanStudent($f, attributes: ['unit_id' => $f->slta->id], cohort: $f->cohortSlta), $f->year, ['billing_group' => 'B']);
-    $applicant = Invoice::factory()->create(['student_id' => null, 'applicant_id' => 5, 'billing_group' => 'PSB']);
+    $applicant = Invoice::factory()->create(['student_id' => null, 'applicant_id' => Applicant::factory()->create(['unit_id' => $f->slta->id])->id, 'billing_group' => 'PSB']);
     $archivedStudent = tagihanStudent($f);
     $archived = tagihanInvoice($archivedStudent, $f->year, ['billing_group' => 'C']);
     $archivedStudent->delete();

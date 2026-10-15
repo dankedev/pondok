@@ -2,6 +2,7 @@
 
 use App\Models\AcademicYear;
 use App\Models\AdmissionWave;
+use App\Models\Applicant;
 use App\Models\Cohort;
 use App\Models\Dormitory;
 use App\Models\FeeOverride;
@@ -130,10 +131,11 @@ it('AC-23: rejects a duplicate scholarship name', function () {
     Scholarship::factory()->create(['name' => 'Yatim']);
 })->throws(UniqueConstraintViolationException::class);
 
-it('AC-23: stores applicant overrides without a foreign key', function () {
-    $override = FeeOverride::factory()->create(['student_id' => null, 'applicant_id' => 999]);
+it('AC-23: stores applicant-only overrides', function () {
+    $applicant = Applicant::factory()->create();
+    $override = FeeOverride::factory()->create(['student_id' => null, 'applicant_id' => $applicant->id]);
 
-    expect($override->fresh())->student_id->toBeNull()->applicant_id->toBe(999);
+    expect($override->fresh())->student_id->toBeNull()->applicant_id->toBe($applicant->id);
 });
 
 it('AC-24: stores override values as integer columns', function (string $table, string $column) {
@@ -199,9 +201,10 @@ it('AC-1: rejects reactivating a cancelled invoice while an active one exists', 
 });
 
 it('AC-2: rejects two active applicant invoices with the same group', function () {
-    Invoice::factory()->create(['student_id' => null, 'applicant_id' => 9, 'billing_group' => 'PSB']);
+    $applicantId = Applicant::factory()->create()->id;
+    Invoice::factory()->create(['student_id' => null, 'applicant_id' => $applicantId, 'billing_group' => 'PSB']);
 
-    expect(fn () => Invoice::factory()->create(['student_id' => null, 'applicant_id' => 9, 'billing_group' => 'PSB']))
+    expect(fn () => Invoice::factory()->create(['student_id' => null, 'applicant_id' => $applicantId, 'billing_group' => 'PSB']))
         ->toThrow(UniqueConstraintViolationException::class)
         ->and(Invoice::query()->count())->toBe(1);
 });
@@ -333,10 +336,11 @@ it('AC-56: allows one active invoice beside cancelled ones', function () {
 });
 
 it('AC-56: allows one active applicant invoice beside a cancelled one', function () {
-    Invoice::factory()->create(['student_id' => null, 'applicant_id' => 9, 'billing_group' => 'PSB', 'status' => 'batal']);
-    Invoice::factory()->create(['student_id' => null, 'applicant_id' => 9, 'billing_group' => 'PSB']);
+    $applicantId = Applicant::factory()->create()->id;
+    Invoice::factory()->create(['student_id' => null, 'applicant_id' => $applicantId, 'billing_group' => 'PSB', 'status' => 'batal']);
+    Invoice::factory()->create(['student_id' => null, 'applicant_id' => $applicantId, 'billing_group' => 'PSB']);
 
-    expect(fn () => Invoice::factory()->create(['student_id' => null, 'applicant_id' => 9, 'billing_group' => 'PSB', 'status' => 'sebagian']))
+    expect(fn () => Invoice::factory()->create(['student_id' => null, 'applicant_id' => $applicantId, 'billing_group' => 'PSB', 'status' => 'sebagian']))
         ->toThrow(UniqueConstraintViolationException::class);
 });
 

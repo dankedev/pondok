@@ -66,6 +66,11 @@ class FeeOverride extends Model
         return $this->belongsTo(Student::class);
     }
 
+    public function applicant(): BelongsTo
+    {
+        return $this->belongsTo(Applicant::class)->withTrashed();
+    }
+
     public function feeType(): BelongsTo
     {
         return $this->belongsTo(FeeType::class);

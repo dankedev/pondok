@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -41,6 +42,11 @@ class AdmissionTrack extends Model
     public function scholarship(): BelongsTo
     {
         return $this->belongsTo(Scholarship::class);
+    }
+
+    public function applicants(): HasMany
+    {
+        return $this->hasMany(Applicant::class);
     }
 
     public function scopeActive(Builder $query): void

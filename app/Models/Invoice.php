@@ -22,8 +22,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * `active_marker` adalah generated column (1 untuk tagihan aktif, NULL untuk
  * `batal`) yang diisi database; tidak fillable dan tidak di-cast.
  *
- * Cakupan jenjang dibaca lewat santri, termasuk santri yang diarsipkan.
- * Tagihan tanpa santri (pendaftar, F010) tidak terlihat oleh user berjenjang.
+ * Cakupan jenjang dibaca lewat santri (termasuk yang diarsipkan), atau lewat
+ * pendaftar (termasuk yang terhapus) untuk tagihan tanpa santri.
  */
 #[Fillable(['invoice_no', 'student_id', 'applicant_id', 'academic_year_id', 'period', 'billing_group', 'total', 'paid_total', 'status', 'due_on', 'generated_by'])]
 class Invoice extends Model
@@ -87,15 +87,32 @@ class Invoice extends Model
      */
     public function applyUnitScope(Builder $builder, array $unitIds): void
     {
-        $builder->whereIn(
-            $this->qualifyColumn('student_id'),
-            Student::withoutGlobalScopes()->whereIn('unit_id', $unitIds)->select('id'),
-        );
+        static::constrainToUnits($builder, $unitIds, $this->getTable());
+    }
+
+    /**
+     * Tagihan santri jenjang `$unitIds`, atau tagihan pendaftar (tanpa santri)
+     * jenjang `$unitIds`. Dipakai juga oleh cakupan `Payment`.
+     *
+     * @param  list<int>  $unitIds
+     */
+    public static function constrainToUnits(Builder $builder, array $unitIds, string $table = 'invoices'): void
+    {
+        $builder->where(fn (Builder $query) => $query
+            ->whereIn("{$table}.student_id", Student::withoutGlobalScopes()->whereIn('unit_id', $unitIds)->select('id'))
+            ->orWhere(fn (Builder $query) => $query
+                ->whereNull("{$table}.student_id")
+                ->whereIn("{$table}.applicant_id", Applicant::withoutGlobalScopes()->whereIn('unit_id', $unitIds)->select('id'))));
     }
 
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class)->withTrashed();
+    }
+
+    public function applicant(): BelongsTo
+    {
+        return $this->belongsTo(Applicant::class)->withTrashed();
     }
 
     public function academicYear(): BelongsTo

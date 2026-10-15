@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Syarat berkas PSB untuk satu jenjang atau semua jenjang (`unit_id` NULL).
@@ -40,6 +41,14 @@ class AdmissionRequirement extends Model
     public function documentType(): BelongsTo
     {
         return $this->belongsTo(DocumentType::class);
+    }
+
+    /**
+     * Semua berkas pendaftar untuk syarat ini, tanpa cakupan jenjang.
+     */
+    public function applicantDocuments(): HasMany
+    {
+        return $this->hasMany(ApplicantDocument::class)->withoutGlobalScopes();
     }
 
     /**

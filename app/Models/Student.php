@@ -40,6 +40,11 @@ class Student extends Model
         ];
     }
 
+    public function applicant(): BelongsTo
+    {
+        return $this->belongsTo(Applicant::class)->withTrashed();
+    }
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);

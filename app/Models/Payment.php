@@ -19,8 +19,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * `CancelPayment` (status `batal`). Tidak pernah dihapus: nomor kuitansi,
  * alokasi, dan bukti transfer tetap tersimpan setelah pembatalan.
  *
- * Cakupan jenjang dibaca lewat tagihan lalu santri (termasuk santri yang
- * diarsipkan). Pembayaran tagihan pendaftar tidak terlihat oleh user berjenjang.
+ * Cakupan jenjang dibaca lewat tagihan, lalu santri (termasuk yang
+ * diarsipkan) atau pendaftar (termasuk yang terhapus).
  */
 #[Fillable(['receipt_no', 'invoice_id', 'amount', 'paid_on', 'method', 'proof_path', 'gateway_ref', 'received_by', 'note', 'status', 'cancelled_at', 'cancelled_by', 'cancel_reason'])]
 class Payment extends Model
@@ -103,7 +103,7 @@ class Payment extends Model
         $builder->whereIn(
             $this->qualifyColumn('invoice_id'),
             Invoice::withoutGlobalScopes()
-                ->whereIn('student_id', Student::withoutGlobalScopes()->whereIn('unit_id', $unitIds)->select('id'))
+                ->tap(fn (Builder $query) => Invoice::constrainToUnits($query, $unitIds))
                 ->select('id'),
         );
     }

@@ -10,3 +10,12 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('queue:work --stop-when-empty --max-time=50')
     ->everyMinute()
     ->withoutOverlapping();
+
+/*
+| Generator tagihan bulanan setiap tanggal 1 pukul 01:00 WIB. Command keluar
+| tanpa membuat data bila modul keuangan mati.
+*/
+Schedule::command('keuangan:generate-invoices')
+    ->monthlyOn(1, '01:00')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping();

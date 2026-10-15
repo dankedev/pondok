@@ -1,16 +1,20 @@
 <?php
 
+use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Models\AcademicYear;
 use App\Models\Cohort;
 use App\Models\Dormitory;
 use App\Models\FeeOverride;
 use App\Models\FeeRate;
 use App\Models\FeeType;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\UnitSeeder;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
@@ -18,6 +22,7 @@ use Filament\Notifications\NotificationMailbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Livewire\Features\SupportTesting\Testable;
 use Tests\TestCase;
 
 /*
@@ -454,4 +459,166 @@ function keringananScholarshipData(array $overrides = []): array
         'is_active' => true,
         ...$overrides,
     ];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper generator tagihan (F006)
+|--------------------------------------------------------------------------
+|
+| Berawalan `tagihan`. Memakai `keuanganRate`, `keuanganUser`, `asramaResident`,
+| `asramaRoom`, dan `keringananOverride`. Seeder peran harus sudah dijalankan
+| oleh test pemanggil bila butuh user.
+|
+*/
+
+/**
+ * Fixture umum: tahun ajaran aktif 2026/2027 (2026-07-01 s.d. 2027-06-30), jenjang SLTP dan SLTA,
+ * angkatan 2026 masing-masing, asrama A dan B, jenis biaya bulanan SPP (semua, prioritas 3),
+ * ASRAMA (mukim, prioritas 2), MAKAN (mukim, prioritas 1), semuanya grup BULANAN.
+ * Tarif jenjang SLTP (bukan SLTA): SPP 500.000, ASRAMA 300.000, MAKAN 400.000.
+ *
+ * @return object{year: AcademicYear, sltp: Unit, slta: Unit, cohort: Cohort, cohortSlta: Cohort, dormA: Dormitory, dormB: Dormitory, spp: FeeType, asrama: FeeType, makan: FeeType, period: CarbonImmutable}
+ */
+function tagihanFixture(bool $withRates = true): object
+{
+    test()->seed(UnitSeeder::class);
+
+    $year = AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']);
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+    $slta = Unit::query()->where('code', 'SLTA')->firstOrFail();
+
+    $f = (object) [
+        'year' => $year,
+        'sltp' => $sltp,
+        'slta' => $slta,
+        'cohort' => Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2026, 'name' => 'Angkatan 2026']),
+        'cohortSlta' => Cohort::factory()->create(['unit_id' => $slta->id, 'entry_year' => 2026, 'name' => 'Angkatan 2026']),
+        'dormA' => Dormitory::factory()->create(['code' => 'A', 'name' => 'Asrama A', 'gender' => 'L']),
+        'dormB' => Dormitory::factory()->create(['code' => 'B', 'name' => 'Asrama B', 'gender' => 'L']),
+        'spp' => FeeType::factory()->monthly()->create(['code' => 'SPP', 'name' => 'SPP', 'billing_group' => 'BULANAN', 'priority' => 3]),
+        'asrama' => FeeType::factory()->monthly()->resident()->create(['code' => 'ASRAMA', 'name' => 'Asrama', 'billing_group' => 'BULANAN', 'priority' => 2]),
+        'makan' => FeeType::factory()->monthly()->resident()->create(['code' => 'MAKAN', 'name' => 'Makan', 'billing_group' => 'BULANAN', 'priority' => 1]),
+        'period' => CarbonImmutable::parse('2026-10-01', 'Asia/Jakarta'),
+    ];
+
+    if ($withRates) {
+        keuanganRate($f->spp, $year, $sltp, 500000);
+        keuanganRate($f->asrama, $year, $sltp, 300000);
+        keuanganRate($f->makan, $year, $sltp, 400000);
+    }
+
+    return $f;
+}
+
+/**
+ * Santri aktif (masuk 2026-07-15) di angkatan fixture, opsional mukim (penempatan aktif lewat factory).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function tagihanStudent(object $f, bool $resident = false, ?Dormitory $dormitory = null, array $attributes = [], ?Cohort $cohort = null): Student
+{
+    $student = Student::factory()->forCohort($cohort ?? $f->cohort)->create(['gender' => 'L', 'entered_on' => '2026-07-15', ...$attributes]);
+
+    if ($resident) {
+        asramaResident($student, asramaRoom(10, 'L', [], $dormitory ?? $f->dormA));
+    }
+
+    return $student;
+}
+
+/**
+ * Jalankan generator dari container (tanpa cakupan jenjang tambahan).
+ *
+ * @return array{period: string, created_invoices: int, added_items: int, existing_invoices: int, skipped: list<array{student_id: int, fee_type_id: int, reason: string}>}
+ */
+function tagihanGenerate(string $period = '2026-10-01', ?User $by = null): array
+{
+    return app(GenerateMonthlyInvoices::class)->handle(CarbonImmutable::parse($period, 'Asia/Jakarta'), $by);
+}
+
+/**
+ * Tagihan aktif (bukan batal) santri untuk periode dan grup, tanpa cakupan jenjang.
+ */
+function tagihanInvoiceFor(Student $student, string $group = 'BULANAN', string $period = '2026-10-01'): ?Invoice
+{
+    return Invoice::withoutUnitScope()
+        ->where('student_id', $student->id)
+        ->where('billing_group', $group)
+        ->whereDate('period', $period)
+        ->where('status', '<>', 'batal')
+        ->first();
+}
+
+/**
+ * Item tagihan, diindeks per `fee_type_id`.
+ *
+ * @return Collection<int, InvoiceItem>
+ */
+function tagihanItems(Invoice $invoice): Collection
+{
+    return InvoiceItem::query()->where('invoice_id', $invoice->id)->get()->keyBy('fee_type_id');
+}
+
+/**
+ * Tagihan manual lewat factory (periode selalu `startOfMonth()` lewat model).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function tagihanInvoice(Student $student, AcademicYear $year, array $attributes = []): Invoice
+{
+    return Invoice::factory()->create([
+        'student_id' => $student->id,
+        'academic_year_id' => $year->id,
+        'period' => CarbonImmutable::parse('2026-10-01', 'Asia/Jakarta')->startOfMonth(),
+        'billing_group' => 'BULANAN',
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Pola regex untuk pesan `pondok.invoice.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function tagihanMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.invoice.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan kunci lang `pondok.invoice.errors.<reason>`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function tagihanAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    expect(__("pondok.invoice.errors.{$reason}"))->not->toBe("pondok.invoice.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(tagihanMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.invoice.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Teks polos halaman Livewire: tag dibuang, entitas didekode, spasi tak-putus dirapikan.
+ */
+function tagihanPlainText(Testable $component): string
+{
+    $text = html_entity_decode(strip_tags($component->html()), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    return trim((string) preg_replace('/[\s\x{00A0}\x{202F}]+/u', ' ', $text));
 }

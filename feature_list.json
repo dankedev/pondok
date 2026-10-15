@@ -187,14 +187,14 @@
       "name": "Pendaftaran online & cek status",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F009", "F004"],
       "description": "Form publik Livewire tanpa akun, nomor pendaftaran + token untuk cek status dan unggah berkas (disk private). Tagihan saat_daftar dibuat saat daftar; formulir lunas membuka unggah berkas dan tes.",
       "acceptance": [
         "Status: draft, diajukan, diverifikasi, diterima, cadangan, ditolak",
         "Berkas hanya bisa diakses lewat token atau permission"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "F005 membuat fee_overrides.applicant_id (dan F002 students.applicant_id) tanpa FK. Saat F010 membuat applicants dan menambah FK, SQLite membangun ulang tabel: wajib test bahwa index ERD (student_id, fee_type_id, valid_from) dan FK lain tetap ada. Dari F009: tegakkan kuota gelombang; cegah hapus syarat berkas yang sudah punya applicant_documents; tentukan gelombang mana yang berlaku bila beberapa terbuka di tanggal yang sama (bisa lintas tahun ajaran). Dari F006: billing_group PSB harus berbeda dari grup bulanan."
@@ -325,7 +325,7 @@
       "name": "Dashboard role-aware",
       "phase": 1,
       "module": "Dashboard",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001", "F008"],
       "description": "Widget konten, PSB, santri, keuangan, kelengkapan dokumen, prestasi terbaru; masing-masing dicek permission view-*-metrics.",
       "acceptance": [
@@ -333,9 +333,9 @@
         "Link widget hanya tampil bila route tersedia",
         "Akses widget per peran teruji"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 305e55a, ad19416, e8d3c52, ce1e38a; 1236 test Pest lulus di PHP 8.4 dan 8.3 (parallel): DashboardAccess, DashboardModuleAvailability, DashboardPerformance, Widgets/*, Actions/Dashboard/*",
       "notes": "Bisa mulai setelah F001; widget per modul ditambah seiring modulnya selesai."
     },
     {
@@ -353,7 +353,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Dari F010/F014/F016/F017: paket rilis wajib memuat public/build; panduan instalasi cPanel harus mencakup storage:link, APP_URL yang benar (QR surat & gambar portal), TRUSTED_PROXIES opsional, dan cron schedule:run."
+      "notes": "Dari F010/F014/F016/F017: paket rilis wajib memuat public/build; panduan instalasi cPanel harus mencakup storage:link, APP_URL yang benar (QR surat & gambar portal), TRUSTED_PROXIES opsional, dan cron schedule:run. Dari Review #2 F019: .htaccess deny di root aplikasi bisa diwarisi Apache (AllowOverride All) dan menutup public/ pada cara A — public/.htaccess wajib memuat izin eksplisit (Require all granted / Allow from all) yang mengalahkan deny induk; verifikasi di Apache (bukan php -S) atau catat sebagai uji manual user. Lewati blok handler PHP simpanan bila berkas sudah punya blok sejenis; app_exposure jangan memperingatkan /var/www/<app> standar."
     },
     {
       "id": "F020",

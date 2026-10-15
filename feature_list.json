@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F033",
+  "next_id": "F034",
   "features": [
     {
       "id": "F001",
@@ -77,7 +77,7 @@
       "name": "Jenis biaya & resolusi tarif",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F002", "F003"],
       "description": "fee_types (frekuensi, billing_group, priority, applies_to), fee_rates dengan generated column COALESCE, resolver tarif dari yang paling spesifik dan effective_from_year terbaru.",
       "acceptance": [
@@ -87,7 +87,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 15a8379, 102e892, e75cf94, 4007127; 300 test Pest lulus di PHP 8.4 dan 8.3 (Actions/Keuangan, KeuanganConstraints, KeuanganActivityLog, KeuanganAccess, FeeTypes, FeeRates, FeeRateReferences, KeuanganVerify); migrate:fresh --seed MySQL",
       "notes": ""
     },
     {
@@ -179,7 +179,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "F004 membuat fee_rates.admission_wave_id tanpa FK. Saat F009 menambah FK, SQLite membangun ulang tabel: wajib test bahwa kolom cohort_key/dormitory_key/wave_key dan unique fee_rates_combination_unique tetap ada setelah migrasi."
     },
     {
       "id": "F010",
@@ -549,6 +549,24 @@
       "handoff": null,
       "evidence": "",
       "notes": "Fase 4."
+    },
+    {
+      "id": "F033",
+      "key": "inti-cache-setting",
+      "name": "Cache pengaturan per request",
+      "phase": 1,
+      "module": "Inti",
+      "status": "in-progress",
+      "depends_on": ["F001"],
+      "description": "Setting::get dan Setting::moduleEnabled membaca tabel settings sekali per key per request, bukan setiap cek otorisasi resource (BelongsToModule dipanggil per baris tabel).",
+      "acceptance": [
+        "Cek modul berulang dalam satu request hanya menjalankan satu query settings per key",
+        "Setting::set dan perubahan model Setting langsung terlihat oleh pembacaan berikutnya"
+      ],
+      "owner": "tim-agent-fase1",
+      "handoff": null,
+      "evidence": "",
+      "notes": "Ditemukan red-tester saat VERIFY F004."
     }
   ]
 }

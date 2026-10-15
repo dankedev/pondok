@@ -655,8 +655,12 @@ erDiagram
     enum method "tunai | transfer | gateway"
     string proof_path "bukti transfer, nullable"
     string gateway_ref "id transaksi Midtrans/Xendit, nullable"
-    bigint received_by FK "users"
+    bigint received_by FK "users, nullable untuk callback gateway"
     text note "nullable"
+    enum status "diterima | batal (keputusan F007)"
+    timestamp cancelled_at "nullable"
+    bigint cancelled_by FK "users, nullable"
+    string cancel_reason "nullable"
   }
   fee_types ||--o{ fee_rates : ""
   admission_waves ||--o{ fee_rates : ""
@@ -692,6 +696,8 @@ erDiagram
 - `scholarships` mengelompokkan program beasiswa, sehingga bendahara bisa melaporkan total subsidi per program atau per donatur. Keringanan yang bukan beasiswa (misalnya kesepakatan dengan wali) cukup tanpa `scholarship_id`.
 - `invoice_items` menyimpan tarif normal, potongan, dan nominal akhir, jadi besarnya beasiswa yang diberikan tiap bulan bisa dihitung langsung dari tagihan.
 - Pembayaran cicilan pada tagihan gabungan dialokasikan ke item sesuai `fee_types.priority` (misalnya makan dulu, lalu asrama, lalu SPP) dan dicatat di `payment_allocations`. Laporan bendahara per jenis biaya jadi akurat.
+- Pembayaran tidak dihapus. Pembayaran salah input dibatalkan (`payments.status = batal`, beserta `cancelled_at`, `cancelled_by`, `cancel_reason`); baris, nomor kuitansi, alokasi, dan bukti transfer tetap ada, sedangkan `paid_amount` item dan `paid_total` tagihan dikurangi kembali. Alokasi berlaku selama pembayarannya `diterima`; pembayaran lain tidak dialokasikan ulang (keputusan F007).
+- Nomor kuitansi `KW-YYYYMM-NNNNN`, urut per bulan pencatatan untuk semua jenjang; pembayaran `batal` tetap memakai nomornya. Bukti transfer disimpan di disk `private`.
 - Biaya `saat_daftar` dan `saat_diterima` (formulir, uang pangkal, seragam, kitab) tidak dibuat oleh generator bulanan, tetapi oleh alur PSB. Lihat bagian [PSB](#psb).
 - Semua nominal uang memakai `bigint` rupiah tanpa desimal, dan nominal item adalah snapshot sehingga perubahan tarif tidak mengubah tagihan lama.
 
@@ -864,6 +870,8 @@ foreach (students aktif as $s) {
 | `invoices` | generated column stored `active_marker = CASE WHEN status <> 'batal' THEN 1 END`; unique (`student_id`, `period`, `billing_group`, `active_marker`) | Generator aman dijalankan ulang tanpa membuat tagihan ganda. Hanya satu tagihan aktif per kombinasi; tagihan `batal` bernilai NULL sehingga boleh banyak dan tidak menghalangi tagihan pengganti (keputusan F006) |
 | `invoices` | check: `student_id` atau `applicant_id` wajib terisi; unique (`applicant_id`, `billing_group`, `active_marker`) | Tagihan selalu punya pemilik, dan biaya PSB tidak dobel selama tagihannya aktif |
 | `invoice_items` | unique (`invoice_id`, `fee_type_id`) | Satu jenis biaya hanya muncul sekali per tagihan |
+| `payments` | unique `receipt_no`; index (`invoice_id`, `status`), (`status`, `paid_on`); semua FK `restrictOnDelete` | Nomor kuitansi tidak ganda; daftar pembayaran per tagihan dan laporan kas harian (F008) |
+| `payment_allocations` | unique (`payment_id`, `invoice_item_id`); FK `restrictOnDelete` | Satu baris alokasi per item per pembayaran |
 | `fee_overrides` | index (`student_id`, `fee_type_id`, `valid_from`) | Cari override yang berlaku di bulan tagihan |
 | `invoices` | index (`status`, `period`) | Widget tunggakan dan rasio koleksi di dashboard |
 | `fee_rates` | unique (`fee_type_id`, `effective_from_year_id`, `unit_id`, `cohort_key`, `dormitory_key`, `wave_key`) | Satu tarif per kombinasi. Lihat catatan NULL di bawah |

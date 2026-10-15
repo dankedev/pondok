@@ -97,6 +97,7 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Tagihan | sebagian | `warning` |
 | Tagihan | belum bayar | `gray` |
 | Tagihan | jatuh tempo lewat | `danger` |
+| Pembayaran | diterima | `success` |
 | Tagihan / pembayaran | batal | `danger` (teks dicoret tidak dipakai) |
 | PSB | draft, terdaftar | `gray` |
 | PSB | berkas diverifikasi, tes | `info` |

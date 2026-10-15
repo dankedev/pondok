@@ -58,7 +58,7 @@
       "name": "Asrama, kamar & musyrif",
       "phase": 1,
       "module": "Asrama",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F002"],
       "description": "dormitories, rooms (kapasitas), room_assignments dengan riwayat pindah kamar, dormitory_supervisors per tahun ajaran. Santri tanpa penempatan aktif = nonmukim.",
       "acceptance": [
@@ -68,7 +68,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 155d3e1, ad6a23b, 5914347, 6d366bd; 192 test Pest lulus di PHP 8.4 dan 8.3 (Actions/Asrama, StudentResidency, AsramaConstraints, AsramaAccess, Dormitories, RoomAssignments, AsramaVerify); migrate:fresh --seed MySQL",
       "notes": ""
     },
     {

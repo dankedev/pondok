@@ -114,7 +114,7 @@
       "name": "Generator tagihan bulanan",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F004", "F005"],
       "description": "Action GenerateMonthlyInvoices: invoices + invoice_items (base_amount, discount_amount, amount snapshot), digabung per billing_group, dijalankan dari scheduler.",
       "acceptance": [
@@ -125,7 +125,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit b1590fb, 3117f8d, 411e383, be66afa; 630 test Pest lulus di PHP 8.4 dan 8.3 (GenerateMonthlyInvoices, GenerateMonthlyInvoicesRerun, GenerateInvoiceNumber, CancelInvoice, InvoiceVerify, Invoice model, command, Invoices resource); migrate:fresh --seed MySQL",
       "notes": ""
     },
     {

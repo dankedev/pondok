@@ -193,6 +193,7 @@ erDiagram
     date start_on
     date end_on "nullable = masih menempati"
     string note "alasan pindah, nullable"
+    tinyint active_marker "generated stored: 1 bila end_on null, unique dengan student_id"
   }
   dormitory_supervisors {
     bigint id PK
@@ -870,6 +871,7 @@ foreach (students aktif as $s) {
 | `cohorts` | unique (`unit_id`, `entry_year`) | Tidak ada angkatan ganda dalam satu jenjang |
 | `classrooms` | unique (`academic_year_id`, `unit_id`, `name`) | 1A hanya ada satu per jenjang per tahun ajaran |
 | `room_assignments` | index (`student_id`, `end_on`), (`room_id`, `end_on`) | Cari kamar aktif santri dan hitung sisa kapasitas kamar |
+| `room_assignments` | generated column stored `active_marker = CASE WHEN end_on IS NULL THEN 1 END`; unique (`student_id`, `active_marker`) | Satu penempatan aktif per santri. Baris riwayat bernilai NULL sehingga tidak saling bentrok (pola sama dengan catatan NULL di bawah) |
 | `rooms` | unique (`dormitory_id`, `name`) | Nama kamar unik per asrama |
 | `memorization_records` | index (`student_id`, `recorded_on`), (`halaqah_id`, `recorded_on`) | Riwayat setoran per santri dan rekap harian per halaqah |
 | `halaqah_members` | index (`student_id`, `left_on`) | Cari halaqah aktif santri |

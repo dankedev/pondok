@@ -21,4 +21,9 @@ class AcademicYearFactory extends Factory
             'is_active' => false,
         ];
     }
+
+    public function active(): static
+    {
+        return $this->state(['is_active' => true]);
+    }
 }

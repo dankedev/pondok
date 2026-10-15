@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -68,6 +69,40 @@ class Student extends Model
         return $this->belongsToMany(Guardian::class, 'student_guardian')
             ->withPivot(['relation', 'is_billing_contact'])
             ->withTimestamps();
+    }
+
+    public function roomAssignments(): HasMany
+    {
+        return $this->hasMany(RoomAssignment::class);
+    }
+
+    /**
+     * Penempatan kamar yang sedang berjalan. Ada berarti santri mukim.
+     */
+    public function activeRoomAssignment(): HasOne
+    {
+        return $this->hasOne(RoomAssignment::class)->whereNull('end_on');
+    }
+
+    public function activeRoom(): HasOneThrough
+    {
+        return $this->hasOneThrough(Room::class, RoomAssignment::class, 'student_id', 'id', 'id', 'room_id')
+            ->whereNull('room_assignments.end_on');
+    }
+
+    public function isResident(): bool
+    {
+        return $this->activeRoomAssignment()->exists();
+    }
+
+    public function scopeResident(Builder $query): void
+    {
+        $query->whereHas('activeRoomAssignment');
+    }
+
+    public function scopeNonResident(Builder $query): void
+    {
+        $query->whereDoesntHave('activeRoomAssignment');
     }
 
     public function scopeActive(Builder $query): void

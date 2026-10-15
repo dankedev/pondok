@@ -38,6 +38,7 @@ class RolePermissionSeeder extends Seeder
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
         'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
+        'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -140,7 +141,15 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Student'),
                 ...self::resourcePermissions('Guardian'),
             ],
-            'admin-psb' => ['view-dashboard', 'view-psb-metrics'],
+            // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
+            // boleh dihapus selama belum dirujuk berkas pendaftar.
+            'admin-psb' => [
+                'view-dashboard',
+                'view-psb-metrics',
+                ...self::resourcePermissions('AdmissionWave', $withoutDelete),
+                ...self::resourcePermissions('AdmissionTrack', $withoutDelete),
+                ...self::resourcePermissions('AdmissionRequirement'),
+            ],
             // Santri dan wali lihat-saja; mengelola asrama, kamar, penghuni, dan musyrif.
             'kesantrian' => [
                 'view-dashboard',

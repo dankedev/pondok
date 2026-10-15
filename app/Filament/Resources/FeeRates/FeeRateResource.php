@@ -7,10 +7,12 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Concerns\ShowsActionErrorsOnForm;
 use App\Filament\Resources\FeeRates\Pages\ManageFeeRates;
 use App\Models\AcademicYear;
+use App\Models\AdmissionWave;
 use App\Models\Cohort;
 use App\Models\Dormitory;
 use App\Models\FeeRate;
 use App\Models\FeeType;
+use App\Models\Setting;
 use App\Models\Unit;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -18,6 +20,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
@@ -28,9 +31,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 
 /**
- * Tarif per jenis biaya, jenjang, angkatan, dan asrama, berlaku mulai tahun
+ * Tarif per jenis biaya, jenjang, angkatan, asrama, dan gelombang PSB, berlaku mulai tahun
  * ajaran tertentu. Simpan selalu lewat Action `SaveFeeRate`. Tarif tidak
  * dihapus: dikoreksi lewat edit atau diganti tarif tahun berikutnya.
  */
@@ -120,6 +124,21 @@ class FeeRateResource extends Resource
                     // Jenis biaya khusus nonmukim tidak dibedakan per asrama.
                     ->hidden(fn (Get $get): bool => filled($get('fee_type_id'))
                         && FeeType::query()->whereKey($get('fee_type_id'))->value('applies_to') === FeeType::APPLIES_TO_NON_RESIDENT),
+                Select::make('admission_wave_id')
+                    ->label(__('pondok.fee_rate.admission_wave'))
+                    ->placeholder(__('pondok.fee_rate.all_waves'))
+                    ->helperText(__('pondok.fee_rate.admission_wave_helper'))
+                    ->options(fn (): array => AdmissionWave::query()
+                        ->with('academicYear')
+                        ->orderByDesc(AcademicYear::query()->select('starts_on')->whereColumn('academic_years.id', 'admission_waves.academic_year_id'))
+                        ->orderBy('opens_on')
+                        ->get()
+                        ->mapWithKeys(fn (AdmissionWave $wave): array => [$wave->id => "{$wave->name} — {$wave->academicYear->name}"])
+                        ->all())
+                    // Tarif per gelombang hanya untuk biaya PSB, dan hanya bila modul PSB aktif.
+                    ->visible(fn (Get $get): bool => Setting::moduleEnabled('psb')
+                        && filled($get('fee_type_id'))
+                        && in_array(FeeType::query()->whereKey($get('fee_type_id'))->value('frequency'), FeeType::ADMISSION_FREQUENCIES, true)),
                 TextInput::make('amount')
                     ->label(__('pondok.fee_rate.amount'))
                     ->prefix('Rp')
@@ -139,7 +158,7 @@ class FeeRateResource extends Resource
                 ->orderBy(Unit::query()->select('sort_order')->whereColumn('units.id', 'fee_rates.unit_id'))
                 ->orderByDesc(AcademicYear::query()->select('starts_on')->whereColumn('academic_years.id', 'fee_rates.effective_from_year_id'))
                 ->orderBy('fee_rates.id'))
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['feeType', 'unit', 'cohort', 'dormitory', 'effectiveFromYear']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['feeType', 'unit', 'cohort', 'dormitory', 'effectiveFromYear', 'admissionWave']))
             ->columns([
                 TextColumn::make('feeType.name')
                     ->label(__('pondok.fee_rate.fee_type'))
@@ -152,6 +171,9 @@ class FeeRateResource extends Resource
                 TextColumn::make('dormitory.name')
                     ->label(__('pondok.fee_rate.dormitory'))
                     ->placeholder(__('pondok.fee_rate.all_dormitories')),
+                TextColumn::make('admissionWave.name')
+                    ->label(__('pondok.fee_rate.admission_wave'))
+                    ->placeholder(__('pondok.fee_rate.all_waves')),
                 TextColumn::make('effectiveFromYear.name')
                     ->label(__('pondok.fee_rate.effective_from_year')),
                 TextColumn::make('amount')
@@ -176,10 +198,47 @@ class FeeRateResource extends Resource
                 EditAction::make()
                     ->using(fn (FeeRate $record, array $data, SaveFeeRate $saveFeeRate, Action $action): FeeRate => static::saveShowingFormErrors(
                         $action,
-                        // Gelombang PSB belum tampil di form (F009); pertahankan nilainya.
-                        fn (): FeeRate => $saveFeeRate->handle(['admission_wave_id' => $record->admission_wave_id, ...$data], $record),
+                        // Field gelombang tersembunyi tidak ikut `$data`. Saat modul PSB mati,
+                        // nilai lama dipertahankan; saat aktif, field tersembunyi berarti biaya
+                        // non-PSB sehingga gelombang dikosongkan.
+                        fn (): FeeRate => static::saveKeepingHiddenWave($saveFeeRate, $record, $data, $action),
                     )),
             ]);
+    }
+
+    /**
+     * Simpan hasil edit. Field gelombang tersembunyi tidak ikut `$data`: saat modul PSB
+     * mati nilai lama dipertahankan, saat aktif field tersembunyi berarti biaya non-PSB
+     * sehingga gelombang dikosongkan. Bila gelombang lama ditolak (mis. jenis biayanya
+     * kini non-PSB) padahal field-nya tersembunyi, kesalahan ditampilkan sebagai
+     * notifikasi agar modal tidak diam.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected static function saveKeepingHiddenWave(SaveFeeRate $saveFeeRate, FeeRate $record, array $data, Action $action): FeeRate
+    {
+        $isPsbEnabled = Setting::moduleEnabled('psb');
+
+        try {
+            return $saveFeeRate->handle([
+                'admission_wave_id' => $isPsbEnabled ? null : $record->admission_wave_id,
+                ...$data,
+            ], $record);
+        } catch (ValidationException $exception) {
+            $waveErrors = $exception->errors()['admission_wave_id'] ?? [];
+
+            if ($isPsbEnabled || $waveErrors === []) {
+                throw $exception;
+            }
+
+            Notification::make()
+                ->title(__('pondok.fee_rate.hidden_wave_error'))
+                ->body($waveErrors[0])
+                ->danger()
+                ->send();
+
+            $action->halt();
+        }
     }
 
     public static function createAction(): CreateAction

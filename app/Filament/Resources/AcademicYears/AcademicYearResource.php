@@ -72,7 +72,7 @@ class AcademicYearResource extends Resource
     {
         return $table
             ->defaultSort('starts_on', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->withExists('feeRates'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->withExists(['feeRates', 'admissionWaves']))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('pondok.academic_year.name'))
@@ -105,9 +105,10 @@ class AcademicYearResource extends Resource
                             ->send();
                     }),
                 EditAction::make(),
-                // Tahun ajaran yang menjadi awal berlaku tarif tidak bisa dihapus (FK restrict).
+                // Tahun ajaran yang menjadi awal berlaku tarif atau punya gelombang PSB
+                // tidak bisa dihapus (FK restrict).
                 DeleteAction::make()
-                    ->hidden(fn (AcademicYear $record): bool => $record->is_active || $record->fee_rates_exists),
+                    ->hidden(fn (AcademicYear $record): bool => $record->is_active || $record->fee_rates_exists || $record->admission_waves_exists),
             ]);
     }
 

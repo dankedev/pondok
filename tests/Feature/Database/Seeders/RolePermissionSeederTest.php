@@ -63,7 +63,13 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view:finance-report',
     ]],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
-    'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],
+    'admin-psb' => ['admin-psb', [
+        'view-dashboard', 'view-psb-metrics',
+        'view-any:admission-wave', 'view:admission-wave', 'create:admission-wave', 'update:admission-wave',
+        'view-any:admission-track', 'view:admission-track', 'create:admission-track', 'update:admission-track',
+        'view-any:admission-requirement', 'view:admission-requirement', 'create:admission-requirement',
+        'update:admission-requirement', 'delete:admission-requirement', 'delete-any:admission-requirement',
+    ]],
     'kesantrian' => ['kesantrian', [
         'view-dashboard', 'view-student-metrics',
         'view-any:student', 'view:student',
@@ -158,3 +164,32 @@ it('AC-23: creates the finance report permission for bendahara only', function (
 it('AC-23: gives the finance report permission to no other role', function (string $role) {
     expect(Role::findByName($role)->permissions->pluck('name')->contains('view:finance-report'))->toBeFalse();
 })->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-22: creates the psb master permissions', function () {
+    $expected = collect(['admission-wave', 'admission-track', 'admission-requirement'])
+        ->flatMap(fn (string $resource): array => collect(['view-any', 'view', 'create', 'update', 'delete', 'delete-any'])
+            ->map(fn (string $action): string => "{$action}:{$resource}")
+            ->all());
+
+    expect($expected)->toHaveCount(18)
+        ->and(Permission::query()->pluck('name')->all())->toContain(...$expected->all());
+});
+
+it('AC-22: does not let admin-psb delete waves or tracks', function () {
+    $user = User::factory()->create()->assignRole('admin-psb');
+
+    expect($user->can('create:admission-wave'))->toBeTrue()
+        ->and($user->can('delete:admission-wave'))->toBeFalse()
+        ->and($user->can('delete-any:admission-wave'))->toBeFalse()
+        ->and($user->can('delete:admission-track'))->toBeFalse()
+        ->and($user->can('delete-any:admission-track'))->toBeFalse()
+        ->and($user->can('delete:admission-requirement'))->toBeTrue();
+});
+
+it('AC-22: gives psb master permissions to no other role', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_contains($name, ':admission-'))->all())->toBe([]);
+})->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-22: creates no permission for document types', function () {
+    expect(Permission::query()->where('name', 'like', '%document-type%')->count())->toBe(0);
+});

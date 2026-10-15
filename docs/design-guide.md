@@ -84,6 +84,9 @@ Aturan:
 | Konten / berita | `Newspaper` |
 | Pengaturan | `Cog6Tooth` |
 | Pindah (jenjang, kamar, kelas) | `ArrowsRightLeft` |
+| Pendaftar | `UserPlus` |
+| Unggah berkas | `ArrowUpTray` |
+| Unduh | `ArrowDownTray` |
 
 ## 4. Status & badge
 
@@ -99,11 +102,14 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Tagihan | jatuh tempo lewat | `danger` |
 | Pembayaran | diterima | `success` |
 | Tagihan / pembayaran | batal | `danger` (teks dicoret tidak dipakai) |
-| PSB | draft, terdaftar | `gray` |
-| PSB | berkas diverifikasi, tes | `info` |
+| PSB | draft, diajukan (terdaftar) | `gray` |
+| PSB | diverifikasi (berkas diverifikasi), tes | `info` |
 | PSB | diterima, daftar ulang | `success` |
 | PSB | cadangan | `warning` |
 | PSB | ditolak, mengundurkan diri | `danger` |
+| Berkas PSB | menunggu | `warning` |
+| Berkas PSB | valid | `success` |
+| Berkas PSB | ditolak | `danger` |
 | Perizinan | menunggu | `warning` |
 | Perizinan | disetujui, sudah kembali | `success` |
 | Perizinan | ditolak | `danger` |

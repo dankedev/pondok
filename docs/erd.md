@@ -526,6 +526,7 @@ erDiagram
     bigint reviewed_by FK "users, nullable"
     timestamp reviewed_at "nullable"
     text review_note "nullable"
+    timestamp consented_at "nullable, bukti persetujuan data pribadi (UU PDP), diisi server"
     timestamp deleted_at "soft delete"
   }
   applicant_documents {
@@ -533,6 +534,9 @@ erDiagram
     bigint applicant_id FK
     bigint admission_requirement_id FK
     string file_path "disk private"
+    string original_name "nama file asli"
+    string mime_type "dibaca dari isi file"
+    int size_kb
     enum status "menunggu | valid | ditolak"
     text note "nullable"
     bigint verified_by FK "users, nullable"
@@ -548,6 +552,9 @@ erDiagram
 - Pendaftar tidak perlu akun di tabel `users`. Mereka cek status dan unggah ulang berkas dengan nomor pendaftaran + token (disimpan dalam bentuk hash).
 - Saat status menjadi *diterima*, sebuah Action membuat baris `students` dengan `applicant_id` terisi dan menyalin data wali ke `guardians`.
 - Berkas disimpan di disk `private` (bukan `public`) dan diakses lewat route yang dicek permission-nya, karena berisi KK dan akta.
+- **Token akses:** 12 karakter dari alfabet tanpa huruf/angka yang mirip (`A-H J-N P-Z 2-9`), ditampilkan `XXXX-XXXX-XXXX`; yang disimpan hanya hash dari token ternormalisasi (huruf besar, tanpa spasi/tanda hubung). Token bisa diatur ulang panitia.
+- **Kuota gelombang** dihitung dari pendaftar semua jenjang, tanpa status `draft` dan tanpa pendaftar terhapus (soft delete).
+- **FK `applicant_id`** di `students`, `fee_overrides`, dan `invoices` kini dibuat (`restrictOnDelete`) setelah tabel `applicants` ada.
 
 ### Biaya PSB
 
@@ -556,7 +563,7 @@ Biaya PSB memakai mekanisme yang sama dengan SPP: jenis biaya, tarif yang berlak
 | Tahap | Yang terjadi | Tagihan |
 | --- | --- | --- |
 | Daftar online | Status *diajukan* | Biaya formulir dibuat otomatis dari jenis biaya `saat_daftar`. Tarif bisa dibedakan per gelombang dan jenjang. |
-| Formulir lunas | Unggah berkas dan jadwal tes dibuka | Panitia bisa menandai lunas untuk pembayaran tunai. |
+| Formulir lunas | Unggah berkas dan jadwal tes dibuka | Lunas ditandai lewat pembayaran yang dicatat bendahara (`RecordPayment`), bukan oleh panitia. |
 | Diterima | Status *diterima* | Uang pangkal, seragam, kitab dibuat dari jenis biaya `saat_diterima`. Potongan jalur diterapkan otomatis, dan pembayaran bisa dicicil. |
 | Daftar ulang | Data santri dibuat | Tagihan dan keringanan yang belum selesai ikut pindah ke santri. Tagihan bulanan dimulai bulan berikutnya. |
 
@@ -565,6 +572,7 @@ Biaya PSB memakai mekanisme yang sama dengan SPP: jenis biaya, tarif yang berlak
 - **Jalur pendaftaran:** `admission_tracks` seperti Tahfidz atau Yatim bisa dihubungkan ke program beasiswa. Saat pendaftar jalur itu diterima, keringanannya dibuat otomatis, misalnya uang pangkal gratis atau SPP potong 50%.
 - **Keringanan khusus:** panitia bisa memberi potongan per pendaftar (misalnya diskon saudara kandung) lewat `fee_overrides.applicant_id`, termasuk potongan SPP yang mulai berlaku setelah jadi santri.
 - **Pindah ke santri:** saat santri dibuat, `student_id` diisi pada tagihan dan keringanan milik pendaftar. `applicant_id` tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.
+- **Pemisahan `billing_group`:** satu kelompok tagihan hanya boleh berisi jenis biaya dari kelas frekuensi yang sama: `saat_daftar`, `saat_diterima`, atau lainnya (`bulanan`, `tahunan`, `manual`). Tagihan formulir tidak menghalangi tagihan saat diterima, dan setelah konversi tidak bertabrakan dengan generator bulanan.
 - Syarat minimal pembayaran untuk daftar ulang (misalnya lunas atau minimal 50%) diatur di `settings` sebagai `psb.min_paid_percent`.
 
 ## Keuangan & Tagihan

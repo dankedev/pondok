@@ -205,15 +205,15 @@
       "name": "Seleksi & penerimaan pendaftar",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F010", "F005", "F018"],
       "description": "Verifikasi berkas, keputusan status, Action AcceptApplicant: tagihan saat_diterima dibuat dan beasiswa jalur diterapkan otomatis.",
       "acceptance": [
         "Beasiswa jalur muncul sebagai fee_override pendaftar"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 39757ba, 4f93d63, daf4ed1, b3ed50f; 2071 test Pest lulus di PHP 8.4 dan 8.3 (parallel): ApplicantDecision, AcceptApplicant, RejectApplicant, ReopenRejectedApplicant, SummarizeApplicants, ApplicantDecisionActions, PsbOverviewWidget, ApplicantDecisionVerify; migrate:fresh --seed MySQL",
       "notes": "Dari F009: tentukan jenis biaya mana yang mendapat potongan otomatis dari admission_tracks.scholarship_id (scholarships tidak punya fee_type). Dari F018: isi widget dashboard PSB (total, per status, 7 hari terakhir) lewat Action metrik + hasMetricSource() true. Dari F010: verifikasi per berkas sudah di F010; F011 cukup keputusan status pendaftar (termasuk diverifikasi)."
     },
     {
@@ -239,14 +239,14 @@
       "name": "Repositori dokumen",
       "phase": 1,
       "module": "Dokumen",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F002", "F009"],
       "description": "document_types, documents untuk santri/wali/staff/prestasi, verifikasi, masa berlaku, riwayat versi (replaced_by_id), cek kelengkapan berkas wajib. Unduh lewat route berizin dari disk private.",
       "acceptance": [
         "Dokumen rahasia hanya bisa dibuka peran tertentu",
         "Versi baru menambah baris, bukan menimpa"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "Tabel document_types dan DocumentTypeSeeder sudah dibuat di F009 (tanpa UI). F013 cukup menambah resource, permission, documents, dan aturan kerahasiaan. Dari F018: isi widget kelengkapan dokumen memakai Student::withIncompleteDocuments()."

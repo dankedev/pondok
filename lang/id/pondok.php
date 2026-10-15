@@ -824,4 +824,51 @@ return [
         ],
     ],
 
+    'dashboard' => [
+        'module_unavailable' => 'Modul belum tersedia.',
+        'finance' => [
+            'heading' => 'Keuangan :period',
+            'billed' => 'Ditagihkan',
+            'billed_description' => ':count tagihan',
+            'no_invoices' => 'Belum ada tagihan untuk bulan ini.',
+            'paid' => 'Terbayar',
+            'paid_description' => ':rate% terkumpul',
+            'overdue' => 'Lewat jatuh tempo',
+            'overdue_description' => ':count santri',
+            'cash' => 'Kas diterima',
+            'cash_description' => ':count pembayaran',
+            'report_link' => 'Lihat laporan keuangan',
+        ],
+        'students' => [
+            'heading' => 'Santri aktif',
+            'unit' => 'Jenjang',
+            'cohort' => 'Angkatan',
+            'count' => 'Jumlah',
+            'subtotal' => 'Subtotal',
+            'empty' => 'Belum ada santri aktif.',
+            'list_link' => 'Lihat data santri',
+        ],
+        'psb' => [
+            'heading' => 'Pendaftaran santri baru',
+        ],
+        'content' => [
+            'heading' => 'Konten',
+        ],
+        'documents' => [
+            'heading' => 'Kelengkapan dokumen',
+        ],
+        'achievements' => [
+            'heading' => 'Prestasi terbaru',
+        ],
+        'system' => [
+            'heading' => 'Status sistem',
+            'academic_year' => 'Tahun ajaran aktif',
+            'no_academic_year' => 'Belum ada tahun ajaran aktif.',
+            'modules' => 'Modul aktif',
+            'modules_value' => ':enabled dari :total',
+            'users' => 'Pengguna aktif',
+            'academic_year_link' => 'Atur tahun ajaran',
+        ],
+    ],
+
 ];

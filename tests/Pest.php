@@ -18,19 +18,26 @@ use App\Models\Payment;
 use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Scholarship;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DocumentTypeSeeder;
+use Database\Seeders\RolePermissionSeeder;
+use Database\Seeders\SettingSeeder;
 use Database\Seeders\UnitSeeder;
+use Filament\Facades\Filament;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportTesting\Testable;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /*
@@ -1114,4 +1121,203 @@ function psbAssertRejected(Closure $callback, string $reason, string $field): vo
     }
 
     test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper dashboard (F018)
+|--------------------------------------------------------------------------
+|
+| Berawalan `dashboard`. Memakai `tagihanFixture`, `laporanStudent`, `laporanInvoice`,
+| `laporanPayment`, `bayarHtmlText`. Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta.
+|
+*/
+
+/**
+ * Seed peran dan saklar, aktifkan panel admin, bekukan waktu, lalu siapkan fixture tanpa tarif
+ * (tahun ajaran aktif 2026/2027, jenjang SD/SLTP/SLTA, angkatan 2026 untuk SLTP dan SLTA).
+ *
+ * @return object{year: AcademicYear, sd: Unit, sltp: Unit, slta: Unit, cohort: Cohort, cohortSlta: Cohort, spp: FeeType}
+ */
+function dashboardBoot(): object
+{
+    test()->seed([RolePermissionSeeder::class, SettingSeeder::class]);
+    Filament::setCurrentPanel('admin');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+
+    $f = tagihanFixture(withRates: false);
+    $f->sd = Unit::query()->where('code', 'SD')->firstOrFail();
+
+    return $f;
+}
+
+/**
+ * Widget F018 (kunci pendek => kelas).
+ *
+ * @return array<string, class-string>
+ */
+function dashboardWidgets(): array
+{
+    return [
+        'finance' => 'App\\Filament\\Widgets\\FinanceOverviewWidget',
+        'psb' => 'App\\Filament\\Widgets\\PsbOverviewWidget',
+        'content' => 'App\\Filament\\Widgets\\ContentOverviewWidget',
+        'students' => 'App\\Filament\\Widgets\\ActiveStudentsWidget',
+        'documents' => 'App\\Filament\\Widgets\\DocumentCompletenessWidget',
+        'achievements' => 'App\\Filament\\Widgets\\RecentAchievementsWidget',
+        'system' => 'App\\Filament\\Widgets\\SystemOverviewWidget',
+    ];
+}
+
+/**
+ * Permission metrik tiap widget (kunci pendek => permission).
+ *
+ * @return array<string, string>
+ */
+function dashboardPermissions(): array
+{
+    return [
+        'finance' => 'view-finance-metrics',
+        'psb' => 'view-psb-metrics',
+        'content' => 'view-content-metrics',
+        'students' => 'view-student-metrics',
+        'documents' => 'view-student-metrics',
+        'achievements' => 'view-student-metrics',
+        'system' => 'view-settings-metrics',
+    ];
+}
+
+/**
+ * Matriks peran => widget yang terlihat (plan F018, bagian Permission).
+ *
+ * @return array<string, list<string>>
+ */
+function dashboardMatrix(): array
+{
+    return [
+        'super-admin' => ['finance', 'psb', 'content', 'students', 'documents', 'achievements', 'system'],
+        'bendahara' => ['finance'],
+        'admin-konten' => ['content'],
+        'admin-sekolah' => ['students', 'documents', 'achievements', 'system'],
+        'admin-psb' => ['psb'],
+        'kesantrian' => ['students', 'documents', 'achievements'],
+        'musyrif' => [],
+        'ustadz-tahfidz' => [],
+        'petugas-pos' => [],
+    ];
+}
+
+/**
+ * User tanpa peran dengan permission tertentu saja, opsional dibatasi jenjang.
+ *
+ * @param  list<string>  $permissions
+ * @param  list<string>  $unitCodes
+ */
+function dashboardUserWith(array $permissions, array $unitCodes = []): User
+{
+    $user = User::factory()->create()->givePermissionTo($permissions);
+
+    foreach ($unitCodes as $code) {
+        $user->units()->attach(Unit::query()->where('code', $code)->value('id'));
+    }
+
+    return $user;
+}
+
+/**
+ * GET /admin sebagai user (harus 200).
+ */
+function dashboardGet(User $user): TestResponse
+{
+    return test()->actingAs($user)->get('/admin')->assertOk();
+}
+
+/**
+ * Teks polos isi halaman `/admin` sebagai user.
+ */
+function dashboardText(User $user): string
+{
+    return bayarHtmlText(dashboardGet($user)->getContent());
+}
+
+/**
+ * Teks polos satu widget (kunci pendek dari `dashboardWidgets()`) yang dirender untuk user.
+ */
+function dashboardWidgetText(User $user, string $key): string
+{
+    test()->actingAs($user);
+
+    return bayarHtmlText(Livewire::test(dashboardWidgets()[$key])->html());
+}
+
+/**
+ * Tepat tiga saklar modul aktif (akademik, keuangan, konten) dari sembilan.
+ */
+function dashboardEnableThreeModules(): void
+{
+    foreach (SettingSeeder::MODULES as $module) {
+        Setting::set("modules.{$module}.enabled", in_array($module, ['akademik', 'keuangan', 'konten'], true));
+    }
+}
+
+/**
+ * Data AC-7 (bulan berjalan Oktober 2026). Tagihan C milik santri `$unitOfC` ('sltp' atau 'slta'), sisanya SLTP.
+ * Oktober: A 500.000 lunas (bayar 1 Okt), B 300.000 sebagian 100.000 jatuh tempo 10 Okt (bayar 31 Okt),
+ * C 200.000 belum jatuh tempo 20 Okt (pembayaran 50.000 dibatalkan), D 400.000 batal.
+ * September: 999.000 sebagian 70.000 (bayar 30 Sep).
+ *
+ * @return object{a: Invoice, b: Invoice, c: Invoice, d: Invoice, september: Invoice}
+ */
+function dashboardFinanceData(object $f, string $unitOfC = 'sltp'): object
+{
+    $a = laporanInvoice($f, laporanStudent($f), '2026-10-01', 500000, 500000);
+    $b = laporanInvoice($f, laporanStudent($f), '2026-10-01', 300000, 100000, null, '2026-10-10');
+    $c = laporanInvoice($f, laporanStudent($f, $unitOfC), '2026-10-01', 200000, 0, null, '2026-10-20');
+    $d = laporanInvoice($f, laporanStudent($f), '2026-10-01', 400000, 0, Invoice::STATUS_CANCELLED);
+    $september = laporanInvoice($f, laporanStudent($f), '2026-09-01', 999000, 70000);
+
+    laporanPayment($a, 500000, '2026-10-01');
+    laporanPayment($b, 100000, '2026-10-31');
+    laporanPayment($c, 50000, '2026-10-12', 'tunai', [
+        'status' => Payment::STATUS_CANCELLED,
+        'cancelled_at' => now(),
+        'cancelled_by' => User::factory()->create()->id,
+        'cancel_reason' => 'Salah input',
+    ]);
+    laporanPayment($september, 70000, '2026-09-30');
+
+    return (object) ['a' => $a, 'b' => $b, 'c' => $c, 'd' => $d, 'september' => $september];
+}
+
+/**
+ * Data AC-11. SLTP: angkatan 2025 dua aktif, angkatan 2026 tiga aktif, satu `lulus`, satu aktif yang diarsipkan.
+ * SLTA: angkatan 2026 satu aktif. SD: tanpa santri.
+ *
+ * @return object{cohort2025: Cohort, cohort2026: Cohort, cohortSlta: Cohort}
+ */
+function dashboardStudentData(object $f): object
+{
+    $cohort2025 = Cohort::factory()->create(['unit_id' => $f->sltp->id, 'entry_year' => 2025, 'name' => 'Angkatan 2025']);
+
+    Student::factory()->count(2)->forCohort($cohort2025)->create();
+    Student::factory()->count(3)->forCohort($f->cohort)->create();
+    Student::factory()->forCohort($f->cohort)->create(['status' => 'lulus']);
+    Student::factory()->forCohort($f->cohort)->create()->delete();
+    Student::factory()->forCohort($f->cohortSlta)->create();
+
+    return (object) ['cohort2025' => $cohort2025, 'cohort2026' => $f->cohort, 'cohortSlta' => $f->cohortSlta];
+}
+
+/**
+ * Jumlah query yang dijalankan callback.
+ */
+function dashboardQueryCount(Closure $callback): int
+{
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $callback();
+    $count = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    return $count;
 }

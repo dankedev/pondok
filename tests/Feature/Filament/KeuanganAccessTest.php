@@ -33,7 +33,11 @@ it('AC-29: returns 403 and hides the menu when the keuangan module is disabled',
 
     $this->actingAs($user)->get('/admin/fee-types')->assertForbidden();
     $this->actingAs($user)->get('/admin/fee-rates')->assertForbidden();
-    $this->actingAs($user)->get('/admin')->assertOk()->assertDontSee(__('pondok.navigation.keuangan'));
+    $html = $this->actingAs($user)->get('/admin')->assertOk()->getContent();
+    preg_match_all('#<nav\b.*?</nav>#is', $html, $navigation);
+
+    expect($navigation[0])->not->toBeEmpty()
+        ->and(bayarHtmlText(implode(' ', $navigation[0])))->not->toContain(__('pondok.navigation.keuangan'));
 });
 
 it('AC-29: shows the keuangan menu when the module is enabled', function () {

@@ -504,6 +504,7 @@ erDiagram
     string name "Kartu Keluarga, Akta, Rapor"
     boolean is_required
     tinyint sort_order
+    bigint unit_key "generated stored: COALESCE(unit_id, 0), ikut unique"
   }
   applicants {
     bigint id PK
@@ -889,6 +890,8 @@ foreach (students aktif as $s) {
 | `documents` | index (`documentable_type`, `documentable_id`, `document_type_id`), (`expires_on`) | Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa |
 | `achievements` | index (`academic_year_id`, `category`, `level`) | Rekap prestasi per tahun, kategori, dan tingkat |
 | `applicant_documents` | unique (`applicant_id`, `admission_requirement_id`) | Unggah ulang menimpa berkas lama, tidak menumpuk |
+| `admission_waves` | unique (`academic_year_id`, `name`) | Nama gelombang tidak ganda dalam satu tahun ajaran (keputusan F009). Rentang tanggal gelombang dalam satu tahun ajaran juga tidak beririsan, dijaga Action `SaveAdmissionWave` |
+| `admission_requirements` | generated column stored `unit_key = COALESCE(unit_id, 0)`; unique (`document_type_id`, `unit_key`) | Satu syarat per jenis dokumen per jenjang (keputusan F009). Syarat semua jenjang dan syarat per jenjang untuk jenis yang sama tidak boleh berdampingan (dijaga Action). Keterbatasan: satu jenis dokumen hanya bisa jadi satu syarat per jenjang, jadi dua syarat bertipe sama (mis. rapor semester 1 dan 2) belum bisa dimodelkan; F012 memetakan berkas valid ke `documents` dengan asumsi satu jenis ke satu syarat. Melonggarkannya nanti adalah perubahan skema |
 | `applicants` | index (`admission_wave_id`, `status`), (`created_at`) | Breakdown status dan pendaftar 7 hari terakhir |
 
 ### Catatan NULL pada unique key

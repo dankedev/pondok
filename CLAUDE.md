@@ -7,8 +7,11 @@ Aplikasi open source untuk pondok pesantren dan sekolah: portal publik, PSB, dat
 Dokumen acuan:
 - `docs/prd.md` — kebutuhan produk dan kriteria penerimaan
 - `docs/erd.md` — skema database lengkap (Mermaid) beserta aturan bisnis per modul
+- `docs/design-guide.md` — panduan desain UI (warna, tipografi, status, format data, layout, state, bahasa)
 
 Bila ada konflik, urutan prioritas: instruksi user > `docs/prd.md` > `docs/erd.md` > file ini.
+
+**Wajib:** sebelum membuat atau mengubah apa pun yang tampil ke pengguna (Filament resource/page/widget, Blade, Livewire, teks di `lang/id`, CSS), baca `docs/design-guide.md`, panggil skill `/anti-ui-slop` bila tersedia (alur §13, tetap dalam batas panduan), dan jalankan checklist §0 sebelum menyatakan pekerjaan selesai.
 
 ## Stack
 

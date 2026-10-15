@@ -39,6 +39,7 @@ class RolePermissionSeeder extends Seeder
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
         'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
         'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement', 'Applicant',
+        'DocumentType', 'Document',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -52,6 +53,8 @@ class RolePermissionSeeder extends Seeder
         'Payment' => ['cancel'],
         // Pendaftar dibuat lewat form publik; panitia memverifikasi berkas, mengatur ulang token, dan menagih formulir.
         'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reopen'],
+        // Dokumen tidak diubah atau dihapus dari panel: koreksi lewat versi baru atau status `ditolak`.
+        'Document' => ['verify', 'viewConfidential'],
     ];
 
     public function run(): void
@@ -142,6 +145,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Classroom'),
                 ...self::resourcePermissions('Student'),
                 ...self::resourcePermissions('Guardian'),
+                ...self::resourcePermissions('DocumentType'),
+                ...self::resourcePermissions('Document', ['viewAny', 'view', 'create', 'verify', 'viewConfidential']),
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.
@@ -163,6 +168,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Room'),
                 ...self::resourcePermissions('RoomAssignment', $withoutDelete),
                 ...self::resourcePermissions('DormitorySupervisor', $withoutDelete),
+                // Dokumen santri non-rahasia (mis. kartu BPJS) untuk keperluan asrama.
+                ...self::resourcePermissions('Document', $readOnly),
             ],
             // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi.
             'musyrif' => [

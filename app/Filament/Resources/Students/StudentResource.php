@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Students;
 
 use App\Actions\Akademik\ChangeStudentUnit;
 use App\Filament\Concerns\BelongsToModule;
+use App\Filament\Resources\Documents\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Filament\Resources\Students\Pages\EditStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
@@ -72,7 +73,9 @@ class StudentResource extends Resource
 
     public static function getRelations(): array
     {
+        // Dokumen di tab pertama: ringkasan kelengkapan berkas wajib langsung terlihat saat membuka santri.
         return [
+            DocumentsRelationManager::class,
             EnrollmentsRelationManager::class,
             GuardiansRelationManager::class,
         ];

@@ -3,6 +3,7 @@
 use App\Models\Applicant;
 use App\Models\User;
 use App\Policies\ApplicantPolicy;
+use App\Policies\DocumentPolicy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Permission;
@@ -83,6 +84,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:room', 'view:room', 'create:room', 'update:room', 'delete:room', 'delete-any:room',
         'view-any:room-assignment', 'view:room-assignment', 'create:room-assignment', 'update:room-assignment',
         'view-any:dormitory-supervisor', 'view:dormitory-supervisor', 'create:dormitory-supervisor', 'update:dormitory-supervisor',
+        'view-any:document', 'view:document',
     ]],
     'musyrif' => ['musyrif', ['view-dashboard', 'view-any:room-assignment', 'view:room-assignment']],
     'ustadz-tahfidz' => ['ustadz-tahfidz', ['view-dashboard']],
@@ -98,6 +100,8 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:student', 'view:student', 'create:student', 'update:student', 'delete:student', 'delete-any:student',
         'restore:student', 'restore-any:student',
         'view-any:guardian', 'view:guardian', 'create:guardian', 'update:guardian', 'delete:guardian', 'delete-any:guardian',
+        'view-any:document-type', 'view:document-type', 'create:document-type', 'update:document-type', 'delete:document-type', 'delete-any:document-type',
+        'view-any:document', 'view:document', 'create:document', 'verify:document', 'view-confidential:document',
     ]],
 ]);
 
@@ -195,8 +199,43 @@ it('AC-22: gives psb master permissions to no other role', function (string $rol
     expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_contains($name, ':admission-'))->all())->toBe([]);
 })->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
 
-it('AC-22: creates no permission for document types', function () {
-    expect(Permission::query()->where('name', 'like', '%document-type%')->count())->toBe(0);
+it('AC-22: leaves document types to the dokumen module (F013 AC-7 supersedes the F009 no-permission rule)', function () {
+    expect(Permission::query()->where('name', 'like', '%:document-type')->count())->toBe(6);
+});
+
+it('AC-7: creates document permissions', function () {
+    $expected = ['view-any', 'view', 'create', 'update', 'delete', 'delete-any'];
+    $types = collect($expected)->map(fn (string $action): string => "{$action}:document-type")->all();
+    $documents = collect($expected)->map(fn (string $action): string => "{$action}:document")->push('verify:document', 'view-confidential:document')->all();
+
+    expect(Permission::query()->where('name', 'like', '%:document-type')->pluck('name')->sort()->values()->all())->toBe(collect($types)->sort()->values()->all())
+        ->and(Permission::query()->where('name', 'like', '%:document')->pluck('name')->sort()->values()->all())->toBe(collect($documents)->sort()->values()->all());
+});
+
+it('AC-7: keeps document update and delete from every role but super-admin', function (string $role) {
+    $names = Role::findByName($role)->permissions->pluck('name');
+
+    expect($names->intersect(['update:document', 'delete:document', 'delete-any:document'])->all())->toBe([]);
+})->with(['bendahara', 'admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-7: gives document permissions to no other role', function (string $role) {
+    $names = Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':document') || str_ends_with($name, ':document-type'));
+
+    expect($names->all())->toBe([]);
+})->with(['bendahara', 'admin-konten', 'admin-psb', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-7: lets super-admin update and delete documents', function () {
+    $user = User::factory()->create()->assignRole('super-admin');
+
+    expect($user->can('update:document'))->toBeTrue()->and($user->can('delete-any:document'))->toBeTrue();
+});
+
+it('AC-7: backs the document abilities with the document policy', function () {
+    $policy = new DocumentPolicy;
+
+    foreach (['verify', 'download', 'viewConfidential', 'uploadType'] as $method) {
+        expect(method_exists($policy, $method))->toBeTrue("DocumentPolicy::{$method}");
+    }
 });
 
 it('AC-30: creates the eleven applicant permissions', function () {

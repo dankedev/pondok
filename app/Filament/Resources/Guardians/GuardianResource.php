@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Guardians;
 
 use App\Filament\Concerns\BelongsToModule;
+use App\Filament\Resources\Documents\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Guardians\Pages\CreateGuardian;
 use App\Filament\Resources\Guardians\Pages\EditGuardian;
 use App\Filament\Resources\Guardians\Pages\ListGuardians;
@@ -62,6 +63,7 @@ class GuardianResource extends Resource
     {
         return [
             StudentsRelationManager::class,
+            DocumentsRelationManager::class,
         ];
     }
 

@@ -12,6 +12,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -74,6 +75,17 @@ class StudentsTable
                     ->label(__('pondok.common.gender'))
                     ->options(__('pondok.common.genders')),
                 TrashedFilter::make(),
+                // Kelengkapan berkas wajib (modul Dokumen); tidak tersedia saat modul mati.
+                ...(Setting::moduleEnabled('dokumen') ? [
+                    TernaryFilter::make('required_documents')
+                        ->label(__('pondok.document.completeness_filter'))
+                        ->trueLabel(__('pondok.document.completeness_labels.1'))
+                        ->falseLabel(__('pondok.document.completeness_labels.0'))
+                        ->queries(
+                            true: fn (Builder $query): Builder => $query->withCompleteDocuments(),
+                            false: fn (Builder $query): Builder => $query->withIncompleteDocuments(),
+                        ),
+                ] : []),
             ])
             ->recordActions([
                 EditAction::make(),

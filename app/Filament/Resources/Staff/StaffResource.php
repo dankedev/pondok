@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Staff;
 
+use App\Filament\Resources\Documents\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Staff\Pages\CreateStaff;
 use App\Filament\Resources\Staff\Pages\EditStaff;
 use App\Filament\Resources\Staff\Pages\ListStaff;
@@ -47,6 +48,13 @@ class StaffResource extends Resource
     public static function table(Table $table): Table
     {
         return StaffTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

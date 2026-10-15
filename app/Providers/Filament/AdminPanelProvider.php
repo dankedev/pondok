@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Controllers\Dokumen\DownloadDocument;
 use App\Http\Controllers\Keuangan\DownloadPaymentProof;
 use App\Http\Controllers\Keuangan\ShowPaymentReceipt;
 use App\Http\Controllers\Psb\DownloadApplicantDocument;
@@ -86,6 +87,9 @@ class AdminPanelProvider extends PanelProvider
                 });
                 Route::middleware(EnsureModuleIsEnabled::class.':psb')->group(function (): void {
                     Route::get('applicant-documents/{applicantDocument}', DownloadApplicantDocument::class)->name('psb.applicant-document');
+                });
+                Route::middleware(EnsureModuleIsEnabled::class.':dokumen')->group(function (): void {
+                    Route::get('documents/{document}/download', DownloadDocument::class)->whereNumber('document')->name('dokumen.download');
                 });
             });
     }

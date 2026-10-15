@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Guardians\Tables;
 
 use App\Models\Guardian;
+use App\Models\Scopes\UnitScope;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -15,7 +16,10 @@ class GuardiansTable
     {
         return $table
             ->defaultSort('name')
-            ->modifyQueryUsing(fn (Builder $query) => $query->withCount('students'))
+            // Dokumen dihitung tanpa cakupan jenjang: dokumen yang tidak terlihat user tetap mengunci hapus.
+            ->modifyQueryUsing(fn (Builder $query) => $query
+                ->withCount('students')
+                ->withExists(['documents' => fn (Builder $query) => $query->withoutGlobalScope(UnitScope::class)]))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('pondok.common.name'))
@@ -33,7 +37,7 @@ class GuardiansTable
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make()
-                    ->hidden(fn (Guardian $record): bool => $record->students_count > 0),
+                    ->hidden(fn (Guardian $record): bool => $record->students_count > 0 || $record->documents_exists),
             ]);
     }
 }

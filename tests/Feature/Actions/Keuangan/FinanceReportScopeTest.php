@@ -4,6 +4,7 @@ use App\Actions\Keuangan\ListTopArrears;
 use App\Actions\Keuangan\SummarizeCashReceipts;
 use App\Actions\Keuangan\SummarizeInvoices;
 use App\Actions\Keuangan\SummarizeScholarshipSubsidies;
+use App\Models\Applicant;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Student;
@@ -39,7 +40,7 @@ function laporanScopeData(object $f): void
 {
     laporanScopeStudent($f, 'sltp', 100000, true, 100000);
     laporanScopeStudent($f, 'slta', 200000, true, 300000);
-    $applicant = laporanInvoice($f, laporanStudent($f), '2026-10-01', 600000, 0, null, '2026-10-10', 'BULANAN', ['student_id' => null, 'applicant_id' => 91]);
+    $applicant = laporanInvoice($f, laporanStudent($f), '2026-10-01', 600000, 0, null, '2026-10-10', 'BULANAN', ['student_id' => null, 'applicant_id' => Applicant::factory()->create(['unit_id' => $f->slta->id])->id]);
     laporanPayment($applicant, 50000, '2026-10-15');
 }
 

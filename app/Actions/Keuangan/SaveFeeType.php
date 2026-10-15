@@ -10,6 +10,10 @@ use Illuminate\Validation\ValidationException;
  *
  * `code` dan `billing_group` dinormalisasi ke huruf besar. Jenis biaya yang
  * sudah punya tarif ber-asrama tidak boleh diubah menjadi khusus nonmukim.
+ *
+ * Satu `billing_group` hanya untuk satu kelas frekuensi: `saat_daftar`,
+ * `saat_diterima`, atau selainnya (bulanan, tahunan, manual). Tagihan PSB
+ * tidak boleh bercampur dengan tagihan santri maupun satu sama lain.
  */
 class SaveFeeType
 {
@@ -65,6 +69,8 @@ class SaveFeeType
             $this->fail('applies_to', 'has_dormitory_rates');
         }
 
+        $this->ensureGroupFrequencyClass($billingGroup, $data['frequency'], $feeType);
+
         $feeType ??= new FeeType;
 
         $feeType->fill([
@@ -78,6 +84,24 @@ class SaveFeeType
         ])->save();
 
         return $feeType;
+    }
+
+    private function ensureGroupFrequencyClass(string $billingGroup, string $frequency, ?FeeType $feeType): void
+    {
+        $conflict = FeeType::query()
+            ->where('billing_group', $billingGroup)
+            ->when($feeType, fn ($query, FeeType $feeType) => $query->whereKeyNot($feeType->getKey()))
+            ->pluck('frequency')
+            ->contains(fn (string $other): bool => $this->frequencyClass($other) !== $this->frequencyClass($frequency));
+
+        if ($conflict) {
+            $this->fail('billing_group', 'billing_group_frequency_conflict');
+        }
+    }
+
+    private function frequencyClass(string $frequency): string
+    {
+        return in_array($frequency, FeeType::ADMISSION_FREQUENCIES, true) ? $frequency : 'student';
     }
 
     private function fail(string $field, string $reason): never

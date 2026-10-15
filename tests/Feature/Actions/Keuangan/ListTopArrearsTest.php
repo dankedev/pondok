@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Keuangan\ListTopArrears;
+use App\Models\Applicant;
 use App\Models\Invoice;
 use Carbon\CarbonImmutable;
 
@@ -77,7 +78,7 @@ it('AC-10: limits rows and keeps archived students', function () {
         }
     }
 
-    laporanInvoice($f, laporanStudent($f), '2026-10-01', 9900000, 0, null, '2026-10-10', 'BULANAN', ['student_id' => null, 'applicant_id' => 55]);
+    laporanInvoice($f, laporanStudent($f), '2026-10-01', 9900000, 0, null, '2026-10-10', 'BULANAN', ['student_id' => null, 'applicant_id' => Applicant::factory()->create(['unit_id' => $f->slta->id])->id]);
 
     $action = app(ListTopArrears::class);
     $filter = laporanFilter('2026-10');

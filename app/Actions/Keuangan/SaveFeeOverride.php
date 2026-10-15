@@ -2,6 +2,7 @@
 
 namespace App\Actions\Keuangan;
 
+use App\Models\Applicant;
 use App\Models\FeeOverride;
 use App\Models\FeeType;
 use App\Models\Scholarship;
@@ -18,8 +19,8 @@ use Illuminate\Validation\ValidationException;
  *
  * Pemilik (santri dan/atau pendaftar) hanya ditentukan saat dibuat; saat
  * edit pemilik dan `approved_by` tetap. Santri dicari lewat `Student::query()`
- * sehingga cakupan jenjang user login berlaku. `applicant_id` belum dicek
- * keberadaannya sampai F010 menambah tabel `applicants`. Mode dan nilai yang
+ * sehingga cakupan jenjang user login berlaku; pendaftar juga lewat
+ * `Applicant::query()` (cakupan jenjang, tanpa yang terhapus). Mode dan nilai yang
  * disimpan selalu dari masukan, bukan bawaan program beasiswa. Rentang
  * tanggal tidak boleh beririsan dengan keringanan lain untuk pemilik dan
  * jenis biaya yang sama.
@@ -136,6 +137,10 @@ class SaveFeeOverride
             if (! $student->isActive()) {
                 $this->fail('student_id', 'student_not_active');
             }
+        }
+
+        if ($applicantId !== null && ! Applicant::query()->whereKey($applicantId)->exists()) {
+            $this->fail('applicant_id', 'applicant_not_found');
         }
 
         return [$studentId, $applicantId];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Keuangan\ResolveFeeOverride;
+use App\Models\Applicant;
 use App\Models\FeeType;
 use App\Models\Scholarship;
 use Carbon\CarbonImmutable;
@@ -32,20 +33,22 @@ it('AC-9: ignores other students, fee types, and applicant overrides', function 
     $other = FeeType::factory()->create();
     keringananOverride(['student_id' => $f->b->id, 'fee_type_id' => $f->spp->id, 'valid_from' => '2026-01-01']);
     keringananOverride(['student_id' => $f->a->id, 'fee_type_id' => $other->id, 'valid_from' => '2026-01-01']);
-    keringananOverride(['student_id' => null, 'applicant_id' => 77, 'fee_type_id' => $f->spp->id, 'valid_from' => '2026-01-01']);
+    keringananOverride(['student_id' => null, 'applicant_id' => Applicant::factory()->create()->id, 'fee_type_id' => $f->spp->id, 'valid_from' => '2026-01-01']);
 
     expect(app(ResolveFeeOverride::class)->forStudent($f->a, $f->spp, CarbonImmutable::parse('2026-10-01')))->toBeNull();
 });
 
 it('AC-9: resolves applicant overrides', function () {
     $f = keringananFixture();
-    $override = keringananOverride(['student_id' => null, 'applicant_id' => 77, 'fee_type_id' => $f->spp->id, 'valid_from' => '2026-01-01']);
+    $applicant = Applicant::factory()->create();
+    $otherApplicant = Applicant::factory()->create();
+    $override = keringananOverride(['student_id' => null, 'applicant_id' => $applicant->id, 'fee_type_id' => $f->spp->id, 'valid_from' => '2026-01-01']);
     keringananOverride(['student_id' => $f->a->id, 'applicant_id' => null, 'fee_type_id' => $f->spp->id, 'valid_from' => '2026-01-01']);
 
     $resolver = app(ResolveFeeOverride::class);
 
-    expect($resolver->forApplicant(77, $f->spp, CarbonImmutable::parse('2026-10-01'))?->id)->toBe($override->id)
-        ->and($resolver->forApplicant(78, $f->spp, CarbonImmutable::parse('2026-10-01')))->toBeNull();
+    expect($resolver->forApplicant($applicant->id, $f->spp, CarbonImmutable::parse('2026-10-01'))?->id)->toBe($override->id)
+        ->and($resolver->forApplicant($otherApplicant->id, $f->spp, CarbonImmutable::parse('2026-10-01')))->toBeNull();
 });
 
 it('AC-10: picks the latest override within the same month', function () {

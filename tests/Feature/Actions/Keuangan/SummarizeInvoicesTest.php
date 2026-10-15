@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Keuangan\SummarizeInvoices;
+use App\Models\Applicant;
 use App\Models\Invoice;
 use Carbon\CarbonImmutable;
 
@@ -143,7 +144,7 @@ it('AC-8: applies unit and billing group filters', function () {
     laporanInvoice($f, $sltp, '2026-10-01', 40000, 0, null, null, 'ASRAMA');
     laporanInvoice($f, $archived, '2026-10-01', 200000);
     laporanInvoice($f, $slta, '2026-10-01', 400000);
-    laporanInvoice($f, laporanStudent($f), '2026-10-01', 800000, 0, null, null, 'BULANAN', ['student_id' => null, 'applicant_id' => 77]);
+    laporanInvoice($f, laporanStudent($f), '2026-10-01', 800000, 0, null, null, 'BULANAN', ['student_id' => null, 'applicant_id' => Applicant::factory()->create(['unit_id' => $f->slta->id])->id]);
     $archived->delete();
 
     expect(laporanSummary()['totals']['billed'])->toBe(1540000)

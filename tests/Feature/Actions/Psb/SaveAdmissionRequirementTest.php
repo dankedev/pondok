@@ -2,6 +2,7 @@
 
 use App\Actions\Psb\SaveAdmissionRequirement;
 use App\Models\AdmissionRequirement;
+use App\Models\ApplicantDocument;
 use App\Models\DocumentType;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -192,4 +193,37 @@ it('AC-18: lists the same requirements without a login and for a user scoped to 
 
     $this->actingAs(psbUser('admin-psb', ['SD']));
     expect(AdmissionRequirement::forUnit($this->f->sltp->id)->pluck('name')->all())->toBe($expected);
+});
+
+it('AC-6 (F010): locks the document type and unit of a requirement in use', function (string $field) {
+    $f = $this->f;
+    $requirement = psbRequirement($f, 'sd', 'KK', 'Kartu Keluarga');
+    ApplicantDocument::factory()->create(['admission_requirement_id' => $requirement->id]);
+    $change = match ($field) {
+        'document_type_id' => ['document_type_id' => $f->types['AKTA']->id],
+        'unit_id' => ['unit_id' => $f->sltp->id],
+    };
+
+    pendaftaranAssertRejected(fn () => psbSaveRequirement($f, $change, $requirement), 'requirement_in_use', 'document_type_id');
+
+    expect($requirement->fresh())->document_type_id->toBe($f->types['KK']->id)->unit_id->toBe($f->sd->id);
+})->with(['document type' => ['document_type_id'], 'unit' => ['unit_id']]);
+
+it('AC-6 (F010): lets a requirement in use change name, required flag and order', function () {
+    $f = $this->f;
+    $requirement = psbRequirement($f, 'sd', 'KK', 'Kartu Keluarga');
+    ApplicantDocument::factory()->create(['admission_requirement_id' => $requirement->id]);
+
+    psbSaveRequirement($f, ['name' => 'KK terbaru', 'is_required' => false, 'sort_order' => 9], $requirement);
+
+    expect($requirement->fresh())->name->toBe('KK terbaru')->is_required->toBeFalse()->sort_order->toBe(9);
+});
+
+it('AC-6 (F010): lets a requirement without documents change its document type and unit', function () {
+    $f = $this->f;
+    $requirement = psbRequirement($f, 'sd', 'KK', 'Kartu Keluarga');
+
+    psbSaveRequirement($f, ['document_type_id' => $f->types['AKTA']->id, 'unit_id' => $f->sltp->id], $requirement);
+
+    expect($requirement->fresh())->document_type_id->toBe($f->types['AKTA']->id)->unit_id->toBe($f->sltp->id);
 });

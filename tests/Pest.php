@@ -2,10 +2,18 @@
 
 use App\Actions\Keuangan\CancelPayment;
 use App\Actions\Keuangan\FinanceReportFilter;
+use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
+use App\Actions\Psb\GenerateApplicantNumber;
+use App\Actions\Psb\GenerateRegistrationInvoices;
+use App\Actions\Psb\SubmitApplication;
 use App\Models\AcademicYear;
+use App\Models\AdmissionRequirement;
+use App\Models\AdmissionTrack;
 use App\Models\AdmissionWave;
+use App\Models\Applicant;
+use App\Models\ApplicantDocument;
 use App\Models\Cohort;
 use App\Models\DocumentType;
 use App\Models\Dormitory;
@@ -23,6 +31,8 @@ use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Database\Seeders\AdmissionTrackSeeder;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -32,8 +42,11 @@ use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportTesting\Testable;
@@ -1320,4 +1333,369 @@ function dashboardQueryCount(Closure $callback): int
     DB::disableQueryLog();
 
     return $count;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper pendaftaran PSB (F010)
+|--------------------------------------------------------------------------
+|
+| Berawalan `pendaftaran`. Memakai `psbFixture`, `psbWave`, `psbFeeType`, `keuanganRate`,
+| `keuanganUser`, `bayarRecord`. Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta.
+| Kunci sesi halaman status (kontrak rencana): `psb.applicant_id`, `psb.token_fingerprint`.
+|
+*/
+
+/**
+ * Token polos bawaan `pendaftaranApplicant()`.
+ */
+function pendaftaranToken(): string
+{
+    return 'ABCD-EFGH-JK23';
+}
+
+/**
+ * Fixture PSB: jenjang, jenis dokumen, jalur bawaan, tahun ajaran 2026/2027 dan 2027/2028, gelombang W1
+ * (Y2027, "Gelombang 1", 2026-10-01..2026-12-31, terbuka, tanpa kuota), jenis biaya FORMULIR (`saat_daftar`,
+ * grup PSB_DAFTAR, prioritas 10) dengan tarif SLTP Rp250.000 berlaku Y2027, syarat KK/AKTA (semua jenjang, wajib),
+ * RAPOR (SLTP, opsional), IJAZAH (SD, wajib), saklar modul bawaan, waktu dibekukan, dan disk private/public palsu.
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit, y2026: AcademicYear, y2027: AcademicYear, types: Collection<string, DocumentType>, reguler: AdmissionTrack, wave: AdmissionWave, formulir: FeeType, kk: AdmissionRequirement, akta: AdmissionRequirement, rapor: AdmissionRequirement, ijazah: AdmissionRequirement}
+ */
+function pendaftaranFixture(): object
+{
+    test()->seed([SettingSeeder::class, AdmissionTrackSeeder::class]);
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('private');
+    Storage::fake('public');
+
+    $f = psbFixture();
+    $f->reguler = AdmissionTrack::query()->where('code', 'REGULER')->firstOrFail();
+    $f->wave = psbWave($f->y2027, 'Gelombang 1', '2026-10-01', '2026-12-31');
+    $f->formulir = psbFeeType('saat_daftar', ['code' => 'FORMULIR', 'name' => 'Formulir pendaftaran', 'billing_group' => 'PSB_DAFTAR', 'priority' => 10]);
+    keuanganRate($f->formulir, $f->y2027, $f->sltp, 250000);
+    $f->kk = AdmissionRequirement::factory()->create(['unit_id' => null, 'document_type_id' => $f->types['KK']->id, 'name' => 'Kartu Keluarga', 'is_required' => true, 'sort_order' => 1]);
+    $f->akta = AdmissionRequirement::factory()->create(['unit_id' => null, 'document_type_id' => $f->types['AKTA']->id, 'name' => 'Akta kelahiran', 'is_required' => true, 'sort_order' => 2]);
+    $f->rapor = AdmissionRequirement::factory()->create(['unit_id' => $f->sltp->id, 'document_type_id' => $f->types['RAPOR']->id, 'name' => 'Rapor', 'is_required' => false, 'sort_order' => 3]);
+    $f->ijazah = AdmissionRequirement::factory()->create(['unit_id' => $f->sd->id, 'document_type_id' => $f->types['IJAZAH']->id, 'name' => 'Ijazah', 'is_required' => true, 'sort_order' => 4]);
+
+    return $f;
+}
+
+/**
+ * Data masukan SubmitApplication yang valid (SLTP, jalur REGULER, gelombang "Gelombang 1").
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function pendaftaranData(array $overrides = []): array
+{
+    return [
+        'unit_id' => Unit::query()->where('code', 'SLTP')->value('id'),
+        'admission_track_id' => AdmissionTrack::query()->where('code', 'REGULER')->value('id'),
+        'admission_wave_id' => AdmissionWave::query()->where('name', 'Gelombang 1')->value('id'),
+        'name' => ' Ahmad  Fauzan ',
+        'gender' => 'L',
+        'birth_place' => 'Bandung',
+        'birth_date' => '2014-05-12',
+        'nisn' => '0123456789',
+        'previous_school' => 'SDIT Al-Fatih',
+        'guardian_name' => 'Budi Santoso',
+        'guardian_phone' => '+62 812-3456-7890',
+        'email' => 'Budi@Example.com',
+        'consent' => true,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Kirim pendaftaran lewat Action.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array{applicant: Applicant, token: string}
+ */
+function pendaftaranSubmit(array $overrides = []): array
+{
+    return app(SubmitApplication::class)->handle(pendaftaranData($overrides));
+}
+
+/**
+ * Pendaftar langsung lewat factory (SLTP, REGULER, "Gelombang 1", status `diajukan`), token bawaan `pendaftaranToken()`.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function pendaftaranApplicant(array $attributes = [], ?string $token = null): Applicant
+{
+    $defaults = [
+        'unit_id' => Unit::query()->where('code', 'SLTP')->value('id'),
+        'admission_track_id' => AdmissionTrack::query()->where('code', 'REGULER')->value('id'),
+        'admission_wave_id' => AdmissionWave::query()->where('name', 'Gelombang 1')->value('id'),
+    ];
+
+    return Applicant::factory()->withToken($token ?? pendaftaranToken())->create([...$defaults, ...$attributes]);
+}
+
+/**
+ * Buat tagihan pendaftaran (bila belum ada) dan lunasi semuanya lewat `RecordPayment`.
+ */
+function pendaftaranPayRegistration(Applicant $applicant): void
+{
+    app(GenerateRegistrationInvoices::class)->handle($applicant);
+
+    $applicant->invoices()->withoutGlobalScopes()->where('status', '<>', Invoice::STATUS_CANCELLED)->get()
+        ->each(function (Invoice $invoice): void {
+            if ($invoice->remainingAmount() > 0) {
+                bayarRecord($invoice, $invoice->remainingAmount());
+            }
+        });
+}
+
+/**
+ * Berkas pendaftar langsung lewat factory, dengan file isi di disk private bila `$withFile`.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function pendaftaranDocument(Applicant $applicant, AdmissionRequirement $requirement, array $attributes = [], bool $withFile = true): ApplicantDocument
+{
+    $path = "psb/applicants/{$applicant->id}/".fake()->uuid().'.pdf';
+
+    if ($withFile) {
+        Storage::disk('private')->put($path, '%PDF-1.4 isi berkas');
+    }
+
+    return ApplicantDocument::factory()->create([
+        'applicant_id' => $applicant->id,
+        'admission_requirement_id' => $requirement->id,
+        'file_path' => $path,
+        'original_name' => 'kk.pdf',
+        'mime_type' => 'application/pdf',
+        'size_kb' => 1,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Sesi halaman status yang valid untuk pendaftar (kunci sesi dari rencana F010).
+ *
+ * @return array<string, mixed>
+ */
+function pendaftaranSession(Applicant $applicant): array
+{
+    return ['psb.applicant_id' => $applicant->id, 'psb.token_fingerprint' => $applicant->tokenFingerprint()];
+}
+
+/**
+ * Berkas unggahan palsu PDF (`$kb` KB) bernama `$name`.
+ */
+function pendaftaranPdf(string $name = 'kk.pdf', int $kb = 100): UploadedFile
+{
+    return UploadedFile::fake()->create($name, $kb, 'application/pdf');
+}
+
+/**
+ * Pola regex untuk token pendaftar `XXXX-XXXX-XXXX`.
+ */
+function pendaftaranTokenPattern(): string
+{
+    return '/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.psb.errors.<reason>`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function pendaftaranAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    expect(__("pondok.psb.errors.{$reason}"))->not->toBe("pondok.psb.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(psbMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.psb.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Struktur tabel `students`, `fee_overrides`, `invoices`, dan FK tabel anak setelah migration FK `applicant_id`
+ * (AC-3 dan AC-4 F010): FK baru, index, unique, kolom generated, dan FK lain tetap utuh dan `restrict`.
+ */
+function pendaftaranAssertForeignKeyStructure(): void
+{
+    $foreignKey = fn (string $table, string $column) => collect(Schema::getForeignKeys($table))->first(fn (array $key): bool => $key['columns'] === [$column]);
+    $indexColumns = fn (string $table) => collect(Schema::getIndexes($table))->pluck('columns')->all();
+    $uniqueColumns = fn (string $table) => collect(Schema::getIndexes($table))->where('unique', true)->pluck('columns')->all();
+
+    foreach (['students', 'fee_overrides', 'invoices'] as $table) {
+        $key = $foreignKey($table, 'applicant_id');
+
+        expect($key)->not->toBeNull("FK applicant_id di {$table}")
+            ->and($key['foreign_table'])->toBe('applicants')
+            ->and($key['foreign_columns'])->toBe(['id'])
+            ->and(strtolower($key['on_delete']))->toBe('restrict')
+            ->and($indexColumns($table))->toContain(['applicant_id']);
+    }
+
+    expect(Schema::hasColumn('students', 'deleted_at'))->toBeTrue()
+        ->and($uniqueColumns('students'))->toContain(['nis'])->toContain(['nisn'])
+        ->and($indexColumns('students'))->toContain(['unit_id', 'status'])
+        ->and($indexColumns('fee_overrides'))->toContain(['student_id', 'fee_type_id', 'valid_from']);
+
+    foreach ([['students', 'unit_id'], ['students', 'cohort_id'], ['fee_overrides', 'student_id'], ['fee_overrides', 'fee_type_id'], ['fee_overrides', 'scholarship_id'], ['fee_overrides', 'approved_by'],
+        ['invoices', 'student_id'], ['invoices', 'academic_year_id'], ['invoices', 'generated_by'],
+        ['invoice_items', 'invoice_id'], ['payments', 'invoice_id']] as [$table, $column]) {
+        $key = $foreignKey($table, $column);
+
+        expect($key)->not->toBeNull("FK {$column} di {$table}")
+            ->and(strtolower($key['on_delete']))->toBe('restrict');
+    }
+
+    // Migration lama (sudah di-commit): enrollments dan room_assignments memakai cascadeOnDelete ke students.
+    foreach ([['enrollments', 'student_id'], ['room_assignments', 'student_id']] as [$table, $column]) {
+        expect(strtolower($foreignKey($table, $column)['on_delete']))->toBe('cascade');
+    }
+
+    foreach ([['invoice_items', 'invoice_id', 'invoices'], ['payments', 'invoice_id', 'invoices'], ['enrollments', 'student_id', 'students'],
+        ['room_assignments', 'student_id', 'students'], ['fee_overrides', 'student_id', 'students'], ['invoices', 'student_id', 'students']] as [$table, $column, $parent]) {
+        expect($foreignKey($table, $column)['foreign_table'])->toBe($parent);
+    }
+
+    $marker = collect(Schema::getColumns('invoices'))->firstWhere('name', 'active_marker');
+    $indexes = collect(Schema::getIndexes('invoices'));
+
+    expect($marker)->not->toBeNull()->and($marker['generation'])->not->toBeNull()
+        ->and($indexes->firstWhere('name', 'invoices_student_period_group_active_unique'))->toMatchArray(['unique' => true, 'columns' => ['student_id', 'period', 'billing_group', 'active_marker']])
+        ->and($indexes->firstWhere('name', 'invoices_applicant_group_active_unique'))->toMatchArray(['unique' => true, 'columns' => ['applicant_id', 'billing_group', 'active_marker']])
+        ->and($uniqueColumns('invoices'))->toContain(['invoice_no'])
+        ->and($indexColumns('invoices'))->toContain(['status', 'period']);
+}
+
+/**
+ * Ganti `GenerateApplicantNumber` di container dengan palsu: nomor `$forced` dikembalikan lebih dulu (satu per
+ * panggilan), lalu `$always` bila diisi, selain itu perilaku asli. `calls` menghitung panggilan.
+ *
+ * @param  list<string>  $forced
+ */
+function pendaftaranFakeApplicantNumber(array $forced = [], ?string $always = null): object
+{
+    $real = app(GenerateApplicantNumber::class);
+    $fake = new class($real, $forced, $always) extends GenerateApplicantNumber
+    {
+        public int $calls = 0;
+
+        /** @param list<string> $forced */
+        public function __construct(private GenerateApplicantNumber $real, private array $forced, private ?string $always) {}
+
+        public function handle(AdmissionWave $wave): string
+        {
+            $this->calls++;
+
+            return array_shift($this->forced) ?? $this->always ?? $this->real->handle($wave);
+        }
+    };
+
+    app()->instance(GenerateApplicantNumber::class, $fake);
+
+    return $fake;
+}
+
+/**
+ * Ganti `GenerateInvoiceNumber` di container dengan palsu (aturan sama seperti `pendaftaranFakeApplicantNumber`).
+ *
+ * @param  list<string>  $forced
+ */
+function pendaftaranFakeInvoiceNumber(array $forced = [], ?string $always = null): object
+{
+    $real = app(GenerateInvoiceNumber::class);
+    $fake = new class($real, $forced, $always) extends GenerateInvoiceNumber
+    {
+        public int $calls = 0;
+
+        /** @param list<string> $forced */
+        public function __construct(private GenerateInvoiceNumber $real, private array $forced, private ?string $always) {}
+
+        public function handle(CarbonInterface $month): string
+        {
+            $this->calls++;
+
+            return array_shift($this->forced) ?? $this->always ?? $this->real->handle($month);
+        }
+    };
+
+    app()->instance(GenerateInvoiceNumber::class, $fake);
+
+    return $fake;
+}
+
+/**
+ * Berkas unggahan sungguhan dengan isi `$content` (tipe MIME dibaca dari isi, bukan dari nama).
+ */
+function pendaftaranRealFile(string $name, string $content): UploadedFile
+{
+    $path = tempnam(sys_get_temp_dir(), 'pendaftaran');
+    file_put_contents($path, $content);
+
+    return new UploadedFile($path, $name, null, null, true);
+}
+
+/**
+ * Isi wizard pendaftaran sampai langkah 4 (periksa & kirim). Kunci `$overrides` memakai nama field
+ * `pendaftaranData`; `consent` diisi hanya bila bernilai true. Kontrak komponen `RegistrationForm`:
+ * properti publik bernama sama dengan field Action, `step`, honeypot `website`, aksi `next`, `back`, `submit`.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function pendaftaranFillWizard(Testable $component, array $overrides = []): Testable
+{
+    $data = pendaftaranData($overrides);
+
+    $component->set('unit_id', $data['unit_id'])->set('admission_track_id', $data['admission_track_id']);
+
+    if (blank($component->get('admission_wave_id'))) {
+        $component->set('admission_wave_id', $data['admission_wave_id']);
+    }
+
+    $component->call('next');
+
+    foreach (['name', 'gender', 'birth_place', 'birth_date', 'nisn', 'previous_school'] as $field) {
+        $component->set($field, $data[$field] ?? '');
+    }
+
+    $component->call('next');
+
+    foreach (['guardian_name', 'guardian_phone', 'email'] as $field) {
+        $component->set($field, $data[$field] ?? '');
+    }
+
+    $component->call('next');
+
+    if (($data['consent'] ?? false) === true) {
+        $component->set('consent', true);
+    }
+
+    return $component;
+}
+
+/**
+ * Pastikan teks halaman memuat pesan `pondok.psb.errors.<reason>` (placeholder `:nama` bebas isi).
+ */
+function pendaftaranSeeMessage(Testable $component, string $reason): bool
+{
+    $message = __("pondok.psb.errors.{$reason}");
+    expect($message)->not->toBe("pondok.psb.errors.{$reason}");
+
+    $pattern = '/'.implode('.+?', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $message))).'/su';
+
+    return preg_match($pattern, tagihanPlainText($component)) === 1;
 }

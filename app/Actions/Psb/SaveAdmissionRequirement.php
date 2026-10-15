@@ -18,7 +18,8 @@ use Illuminate\Validation\ValidationException;
  * jenjang. Jenis dokumen harus milik santri dan aktif (kecuali nilai yang
  * sudah tersimpan). Satu jenis dokumen paling banyak satu syarat per jenjang,
  * dan syarat semua jenjang tidak berdampingan dengan syarat per jenjang untuk
- * jenis yang sama.
+ * jenis yang sama. Syarat yang sudah punya berkas pendaftar tidak boleh
+ * mengganti jenjang atau jenis dokumennya.
  */
 class SaveAdmissionRequirement
 {
@@ -50,6 +51,12 @@ class SaveAdmissionRequirement
         }
 
         $documentTypeId = $this->documentTypeId($data['document_type_id'] ?? null, $requirement);
+
+        if ($requirement !== null
+            && ($requirement->unit_id !== $unitId || $requirement->document_type_id !== $documentTypeId)
+            && $requirement->applicantDocuments()->exists()) {
+            $this->fail('document_type_id', 'requirement_in_use');
+        }
 
         $name = trim((string) ($data['name'] ?? ''));
 

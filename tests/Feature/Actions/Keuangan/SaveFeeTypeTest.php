@@ -88,3 +88,48 @@ it('AC-18: allows switching to nonmukim without dormitory rates', function () {
     expect($updated->fresh()->applies_to)->toBe('nonmukim')
         ->and(FeeRate::query()->count())->toBe(1);
 });
+
+it('AC-5 (F010): separates psb billing groups from other frequencies', function (string $existingFrequency, string $existingGroup, bool $existingActive, string $frequency, string $group, bool $conflict) {
+    FeeType::factory()->create(['code' => 'ADA', 'frequency' => $existingFrequency, 'billing_group' => $existingGroup, 'is_active' => $existingActive]);
+
+    $save = fn () => keuanganSaveFeeType(['code' => 'BARU', 'frequency' => $frequency, 'billing_group' => $group]);
+
+    if ($conflict) {
+        keuanganAssertRejected($save, 'billing_group_frequency_conflict', 'billing_group');
+
+        expect(FeeType::query()->where('code', 'BARU')->exists())->toBeFalse();
+
+        return;
+    }
+
+    expect($save()->exists)->toBeTrue()
+        ->and(FeeType::query()->count())->toBe(2);
+})->with([
+    'saat_daftar into a monthly group' => ['bulanan', 'BULANAN', true, 'saat_daftar', 'BULANAN', true],
+    'saat_diterima into a saat_daftar group' => ['saat_daftar', 'PSB_DAFTAR', true, 'saat_diterima', 'PSB_DAFTAR', true],
+    'monthly into a saat_daftar group' => ['saat_daftar', 'PSB_DAFTAR', true, 'bulanan', 'PSB_DAFTAR', true],
+    'inactive types still count' => ['saat_daftar', 'PSB_DAFTAR', false, 'bulanan', 'PSB_DAFTAR', true],
+    'second saat_daftar in the same group' => ['saat_daftar', 'PSB_DAFTAR', true, 'saat_daftar', 'PSB_DAFTAR', false],
+    'yearly beside monthly keeps the old behaviour' => ['bulanan', 'BULANAN', true, 'tahunan', 'BULANAN', false],
+]);
+
+it('AC-5 (F010): rejects editing a fee type into a conflicting frequency', function () {
+    $formulir = FeeType::factory()->create(['code' => 'FORMULIR', 'frequency' => 'saat_daftar', 'billing_group' => 'PSB_DAFTAR']);
+    FeeType::factory()->create(['code' => 'SERAGAM', 'frequency' => 'saat_daftar', 'billing_group' => 'PSB_DAFTAR']);
+
+    keuanganAssertRejected(
+        fn () => keuanganSaveFeeType(['code' => 'FORMULIR', 'frequency' => 'bulanan', 'billing_group' => 'PSB_DAFTAR'], $formulir),
+        'billing_group_frequency_conflict',
+        'billing_group',
+    );
+
+    expect($formulir->fresh()->frequency)->toBe('saat_daftar');
+});
+
+it('AC-5 (F010): allows editing the only fee type of a group to another frequency', function () {
+    $formulir = FeeType::factory()->create(['code' => 'FORMULIR', 'frequency' => 'saat_daftar', 'billing_group' => 'PSB_DAFTAR']);
+
+    keuanganSaveFeeType(['code' => 'FORMULIR', 'frequency' => 'bulanan', 'billing_group' => 'PSB_DAFTAR'], $formulir);
+
+    expect($formulir->fresh()->frequency)->toBe('bulanan');
+});

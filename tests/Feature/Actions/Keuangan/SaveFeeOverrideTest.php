@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Keuangan\SaveFeeOverride;
+use App\Models\Applicant;
 use App\Models\FeeOverride;
 use App\Models\FeeType;
 use App\Models\Scholarship;
@@ -145,11 +146,13 @@ it('AC-17: allows a new override after an ended one', function () {
 
 it('AC-17: rejects overlapping applicant-only overrides per applicant', function () {
     $f = keringananFixture();
-    $data = fn (array $o) => keringananOverrideData($f, ['student_id' => null, 'applicant_id' => 77, ...$o]);
+    $first = Applicant::factory()->create();
+    $second = Applicant::factory()->create();
+    $data = fn (array $o) => keringananOverrideData($f, ['student_id' => null, 'applicant_id' => $first->id, ...$o]);
     keringananSave($data(['valid_from' => '2026-07-01', 'valid_until' => '2026-12-31']));
 
     keuanganAssertRejected(fn () => keringananSave($data(['valid_from' => '2026-12-01', 'valid_until' => null])), 'overlapping_override', 'valid_from');
-    keringananSave($data(['applicant_id' => 78, 'valid_from' => '2026-12-01', 'valid_until' => null]));
+    keringananSave($data(['applicant_id' => $second->id, 'valid_from' => '2026-12-01', 'valid_until' => null]));
 
     expect(FeeOverride::query()->count())->toBe(2);
 });
@@ -205,11 +208,12 @@ it('AC-19: edits an override keeping the owner and approver', function () {
     $creator = keuanganUser('bendahara');
     $editor = keuanganUser('bendahara');
     $override = keringananSave(keringananOverrideData($f), $creator);
+    $otherApplicant = Applicant::factory()->create();
     $this->actingAs($editor);
 
     keringananSave(keringananOverrideData($f, [
         'student_id' => $f->c->id,
-        'applicant_id' => 55,
+        'applicant_id' => $otherApplicant->id,
         'mode' => 'persen',
         'value' => 40,
         'reason' => 'Alasan baru',
@@ -250,13 +254,46 @@ it('AC-19: validates scholarship status only when it changes', function () {
     expect($override->fresh()->scholarship_id)->toBe($program->id);
 });
 
-it('AC-20: saves applicant overrides without an applicants table', function () {
+it('AC-20: saves applicant overrides for real applicants', function () {
     $f = keringananFixture();
 
-    $applicantOnly = keringananSave(keringananOverrideData($f, ['student_id' => null, 'applicant_id' => 77]));
-    $both = keringananSave(keringananOverrideData($f, ['student_id' => $f->a->id, 'applicant_id' => 77]));
+    $applicantId = Applicant::factory()->create()->id;
+    $applicantOnly = keringananSave(keringananOverrideData($f, ['student_id' => null, 'applicant_id' => $applicantId]));
+    $both = keringananSave(keringananOverrideData($f, ['student_id' => $f->a->id, 'applicant_id' => $applicantId]));
 
-    expect($applicantOnly->fresh())->student_id->toBeNull()->applicant_id->toBe(77)
-        ->and($both->fresh())->student_id->toBe($f->a->id)->applicant_id->toBe(77)
+    expect($applicantOnly->fresh())->student_id->toBeNull()->applicant_id->toBe($applicantId)
+        ->and($both->fresh())->student_id->toBe($f->a->id)->applicant_id->toBe($applicantId)
         ->and(Student::query()->count())->toBe(3);
 });
+
+it('AC-7 (F010): validates the applicant of an override', function (string $case) {
+    $f = keringananFixture();
+    $applicant = Applicant::factory()->create(['unit_id' => $f->sltp->id]);
+    $bendahara = keuanganUser('bendahara');
+    $applicantId = $applicant->id;
+
+    if ($case === 'unknown') {
+        $applicantId = 999999;
+    }
+
+    if ($case === 'deleted') {
+        $applicant->delete();
+    }
+
+    if ($case === 'out of scope') {
+        $bendahara = keuanganUser('bendahara', ['SD']);
+        $this->actingAs($bendahara);
+    }
+
+    $save = fn () => keringananSave(keringananOverrideData($f, ['student_id' => null, 'applicant_id' => $applicantId]), $bendahara);
+
+    if ($case === 'valid') {
+        expect($save()->fresh())->applicant_id->toBe($applicant->id)->student_id->toBeNull();
+
+        return;
+    }
+
+    keuanganAssertRejected($save, 'applicant_not_found', 'applicant_id');
+
+    expect(FeeOverride::query()->count())->toBe(0);
+})->with(['unknown', 'deleted', 'out of scope', 'valid']);

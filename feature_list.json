@@ -239,16 +239,16 @@
       "name": "Repositori dokumen",
       "phase": 1,
       "module": "Dokumen",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002", "F009"],
       "description": "document_types, documents untuk santri/wali/staff/prestasi, verifikasi, masa berlaku, riwayat versi (replaced_by_id), cek kelengkapan berkas wajib. Unduh lewat route berizin dari disk private.",
       "acceptance": [
         "Dokumen rahasia hanya bisa dibuka peran tertentu",
         "Versi baru menambah baris, bukan menimpa"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit ee6695d, d68469a, a614591, bc9a762; 2456 test Pest lulus di PHP 8.4 dan 8.3 (parallel): DokumenConstraints, Document, Actions/Dokumen/*, DocumentPolicy, DocumentDownload, DokumenAccess, DocumentTypes, Documents, DokumenVerifyGaps, StudentDocumentFilter; migrate:fresh --seed MySQL",
       "notes": "Tabel document_types dan DocumentTypeSeeder sudah dibuat di F009 (tanpa UI). F013 cukup menambah resource, permission, documents, dan aturan kerahasiaan. Dari F018: isi widget kelengkapan dokumen memakai Student::withIncompleteDocuments()."
     },
     {
@@ -291,13 +291,13 @@
       "name": "Konten (CMS) di panel",
       "phase": 1,
       "module": "Konten",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F001"],
       "description": "posts (soft delete) untuk berita/kegiatan/prestasi, galeri berkategori, video YouTube, halaman statis, profil sekolah lewat settings.",
       "acceptance": [
         "Gambar konten di disk public"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "Dari F018: isi widget jumlah konten."

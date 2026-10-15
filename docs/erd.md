@@ -396,9 +396,9 @@ erDiagram
   documents {
     bigint id PK
     bigint document_type_id FK
-    string documentable_type "Student, Guardian, Staff, Achievement"
+    string documentable_type "alias morph: student | guardian | staff | achievement"
     bigint documentable_id
-    string number "nomor KK atau NIK, terenkripsi, nullable"
+    text number "nomor KK atau NIK, cast encrypted, nullable"
     date issued_on "nullable"
     date expires_on "nullable"
     string file_path "disk private"
@@ -409,8 +409,8 @@ erDiagram
     bigint verified_by FK "users, nullable"
     timestamp verified_at "nullable"
     bigint uploaded_by FK "users"
-    bigint replaced_by_id FK "nullable, versi lebih baru"
-    bigint source_applicant_document_id FK "nullable, asal berkas PSB"
+    bigint replaced_by_id FK "nullable, unique, versi lebih baru"
+    bigint source_applicant_document_id "nullable, asal berkas PSB; FK ditambahkan F012"
   }
   issued_letters {
     bigint id PK
@@ -435,6 +435,8 @@ erDiagram
 - **Berkas PSB tidak perlu diunggah ulang.** `admission_requirements` kini merujuk ke `document_types`. Saat pendaftar menjadi santri, berkas yang sudah valid disalin menjadi `documents` milik santri.
 - **Kelengkapan berkas** bisa dicek otomatis: jenis dokumen yang `is_required` tapi belum ada atau belum valid. Hasilnya bisa tampil sebagai widget di dashboard dan sebagai pengingat di portal wali.
 - **Riwayat versi:** dokumen yang diperbarui (misalnya KK baru) tidak menimpa yang lama. Dokumen lama ditandai lewat `replaced_by_id`.
+- **Alias morph:** `documentable_type` menyimpan alias (`student`, `guardian`, `staff`; `achievement` menyusul di F015) lewat `Relation::morphMap` yang tidak dipaksakan. `number` bertipe `text` karena ciphertext `encrypted` lebih panjang dari 255 karakter. `replaced_by_id` unik: satu versi baru hanya menggantikan satu dokumen. FK `source_applicant_document_id` ke `applicant_documents` ditunda sampai penyalinan berkas PSB (F012).
+- **Jenis pemilik per peran:** selain cakupan jenjang (dokumen santri lewat jenjang santri, dokumen wali lewat santri terhubung, dokumen staff tidak berjenjang), dokumen wali hanya terlihat oleh pemegang `update:guardian` dan dokumen staff oleh pemegang `update:staff`; tipe lain hanya super-admin.
 - **Data pribadi:** nomor KK dan NIK disimpan dengan cast `encrypted` Laravel. File tersimpan di disk private dan dokumen `is_confidential` hanya bisa dibuka peran yang punya permission khusus. Ini sejalan dengan kewajiban perlindungan data di UU PDP.
 - **Surat keluar** (keterangan aktif, rekomendasi, pindah, syahadah) diberi nomor otomatis dan kode verifikasi. Pihak luar bisa memindai QR untuk mengecek keasliannya.
 

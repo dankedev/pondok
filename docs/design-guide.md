@@ -120,9 +120,10 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Perizinan | disetujui, sudah kembali | `success` |
 | Perizinan | ditolak | `danger` |
 | Perizinan | terlambat (dihitung, bukan status) | `danger` |
+| Dokumen | menunggu | `warning` |
 | Dokumen | valid | `success` |
-| Dokumen | perlu revisi | `warning` |
-| Dokumen | diganti | `gray` |
+| Dokumen | ditolak | `danger` |
+| Dokumen | diganti (dihitung dari `replaced_by_id`) | `gray` |
 
 Pemetaan warna ditaruh di satu tempat (method `color()` pada enum atau konstanta model), tidak ditulis ulang di setiap tabel.
 

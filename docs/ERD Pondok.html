@@ -1,0 +1,1062 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ERD Pondok</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: satu kolom dokumen teknis, diagram per domain melebar di dalam kontainer scroll sendiri */
+:root{
+  --bg:#f7f8f6; --surface:#ffffff; --fg:#1b2420; --muted:#5d6b64; --line:#dde3df;
+  --accent:#1f6b52; --accent-soft:#e3f0ea; --warn:#8a5a00; --warn-soft:#fbf1dc;
+  --font-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121715; --surface:#1a211e; --fg:#e4ebe7; --muted:#9aa8a1; --line:#2c3632;
+  --accent:#6cc4a1; --accent-soft:#1d3329; --warn:#e2b45a; --warn-soft:#33291a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121715; --surface:#1a211e; --fg:#e4ebe7; --muted:#9aa8a1; --line:#2c3632;
+  --accent:#6cc4a1; --accent-soft:#1d3329; --warn:#e2b45a; --warn-soft:#33291a; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 80px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:48px}
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,4vw,38px);line-height:1.15;margin:0;text-wrap:balance;font-weight:700}
+h2{font-size:22px;margin:0;text-wrap:balance}
+h3{font-size:16px;margin:0}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted);font-size:16px}
+section{display:flex;flex-direction:column;gap:16px}
+code,.mono{font-family:var(--font-mono);font-size:.88em}
+p code,li code,td code{background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+.diagram pre{margin:0;min-width:640px}
+.legend{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--font-mono);font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip b{color:var(--accent);font-weight:500}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:72ch}
+.callout{background:var(--warn-soft);color:var(--fg);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.callout h3{color:var(--warn)}
+pre.code{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;
+  font-family:var(--font-mono);font-size:13px;line-height:1.55;margin:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav a{color:var(--accent);text-decoration:none;font-size:14px;border:1px solid var(--line);padding:4px 10px;border-radius:6px;background:var(--surface)}
+nav a:hover,nav a:focus-visible{border-color:var(--accent);outline:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.grid2>div{min-width:0;display:flex;flex-direction:column;gap:8px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Pondok · pondok.org · Ma'had Al-Khair · Laravel + Filament</span>
+  <h1>Entity Relationship Diagram</h1>
+  <p class="lead">Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Dokumen, Prestasi, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.</p>
+  <nav aria-label="Bagian">
+    <a href="#ringkasan">Ringkasan</a><a href="#akademik">Akademik</a><a href="#asrama">Asrama</a><a href="#tahfidz">Tahfidz</a><a href="#perizinan">Perizinan</a><a href="#dokumen">Dokumen</a><a href="#prestasi">Prestasi</a><a href="#psb">PSB</a>
+    <a href="#keuangan">Keuangan</a><a href="#konten">Konten</a><a href="#rbac">Pengguna & RBAC</a>
+    <a href="#aturan">Aturan & Constraint</a>
+  </nav>
+</header>
+
+<section id="ringkasan">
+  <h2>Ringkasan relasi antar modul</h2>
+  <p>Pusatnya adalah <code>students</code>. Jenjang (SD/SLTP/SLTA) disimpan di satu tabel <code>units</code>, dan semua data siswa ada dalam satu tabel dengan <code>unit_id</code>. Ini menjawab pertanyaan di PRD bagian 3: tabel terpusat, bukan skema terpisah per jenjang.</p>
+  <div class="legend">
+    <span class="chip"><b>||--o{</b> satu ke banyak</span>
+    <span class="chip"><b>|o--o|</b> satu ke nol/satu</span>
+    <span class="chip"><b>}o--o{</b> banyak ke banyak (pivot)</span>
+  </div>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  units ||--o{ cohorts : "punya angkatan"
+  units ||--o{ classrooms : "punya kelas"
+  units ||--o{ students : "jenjang aktif"
+  cohorts ||--o{ students : "angkatan"
+  students ||--o{ enrollments : "riwayat kelas"
+  classrooms ||--o{ enrollments : ""
+  academic_years ||--o{ enrollments : ""
+  students }o--o{ guardians : "student_guardian"
+  staff ||--o{ classrooms : "wali kelas"
+  dormitories ||--o{ rooms : "kamar"
+  rooms ||--o{ room_assignments : "penghuni"
+  students ||--o{ room_assignments : "riwayat asrama"
+  staff ||--o{ dormitory_supervisors : "musyrif"
+  dormitories ||--o{ dormitory_supervisors : ""
+  staff ||--o{ halaqahs : "pengampu"
+  halaqahs ||--o{ halaqah_members : "anggota"
+  students ||--o{ halaqah_members : ""
+  students ||--o{ memorization_records : "setoran"
+  students ||--o{ tahfidz_exams : "ujian"
+  students ||--o{ leave_requests : "izin"
+  homecoming_periods ||--o{ leave_requests : "pulang massal"
+  students ||--o{ visits : "kunjungan"
+  document_types ||--o{ documents : "jenis"
+  students ||--o{ documents : "berkas santri"
+  students ||--o{ issued_letters : "surat keluar"
+  achievements ||--o{ achievement_student : "peserta"
+  students ||--o{ achievement_student : "prestasi"
+  achievements |o--o| posts : "dipublikasikan"
+  admission_waves ||--o{ applicants : "gelombang"
+  applicants |o--o| students : "diterima jadi"
+  applicants ||--o{ applicant_documents : "berkas"
+  admission_tracks ||--o{ applicants : "jalur"
+  applicants ||--o{ invoices : "biaya PSB"
+  fee_types ||--o{ fee_rates : "tarif"
+  units ||--o{ fee_rates : "tarif default"
+  cohorts ||--o{ fee_rates : "tarif angkatan"
+  students ||--o{ fee_overrides : "nominal khusus"
+  scholarships ||--o{ fee_overrides : "beasiswa"
+  students ||--o{ invoices : "tagihan"
+  invoices ||--o{ invoice_items : "rincian biaya"
+  fee_types ||--o{ invoice_items : ""
+  invoices ||--o{ payments : "cicilan"
+  users }o--o{ units : "unit_user"
+  users ||--o{ posts : "penulis"
+  </pre></div>
+</section>
+
+<section id="akademik">
+  <h2>Akademik & Santri</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  units {
+    bigint id PK
+    string code UK "SD | SLTP | SLTA"
+    string name
+    tinyint sort_order
+  }
+  academic_years {
+    bigint id PK
+    string name UK "2026/2027"
+    date starts_on
+    date ends_on
+    boolean is_active "hanya satu yang aktif"
+  }
+  cohorts {
+    bigint id PK
+    bigint unit_id FK
+    smallint entry_year "tahun masuk, mis. 2026"
+    string name "Angkatan 2026"
+  }
+  classrooms {
+    bigint id PK
+    bigint academic_year_id FK "rombel per tahun ajaran"
+    bigint unit_id FK
+    tinyint grade "tingkat 1 sampai 12"
+    string name "1A, 1B, 1C"
+    enum gender "L | P | campur"
+    bigint homeroom_staff_id FK "wali kelas, nullable"
+    smallint capacity "nullable"
+  }
+  staff {
+    bigint id PK
+    bigint user_id FK "nullable, hanya jika perlu login"
+    string nip UK "nomor pegawai, nullable"
+    string name
+    enum gender "L | P"
+    string phone
+    string position "ustadz, musyrif, TU"
+    boolean is_active
+  }
+  students {
+    bigint id PK
+    bigint unit_id FK "jenjang saat ini"
+    bigint cohort_id FK "angkatan di jenjang ini"
+    bigint applicant_id FK "asal PSB, nullable"
+    string nis UK
+    string nisn UK "nullable"
+    string name
+    enum gender "L | P"
+    string birth_place
+    date birth_date
+    text address
+    enum status "aktif | lulus | keluar | pindah"
+    date entered_on
+    string photo_path "nullable"
+    timestamp deleted_at "soft delete"
+  }
+  enrollments {
+    bigint id PK
+    bigint student_id FK
+    bigint classroom_id FK
+    bigint academic_year_id FK
+  }
+  guardians {
+    bigint id PK
+    string name
+    string phone
+    string occupation "nullable"
+    text address "nullable"
+    bigint user_id FK "akun portal wali, nullable"
+  }
+  student_guardian {
+    bigint student_id PK,FK
+    bigint guardian_id PK,FK
+    enum relation "ayah | ibu | wali"
+    boolean is_billing_contact "penerima info tagihan"
+  }
+  units ||--o{ cohorts : ""
+  units ||--o{ classrooms : ""
+  academic_years ||--o{ classrooms : ""
+  staff ||--o{ classrooms : "wali kelas"
+  units ||--o{ students : ""
+  cohorts ||--o{ students : ""
+  students ||--o{ enrollments : ""
+  classrooms ||--o{ enrollments : ""
+  academic_years ||--o{ enrollments : ""
+  students ||--o{ student_guardian : ""
+  guardians ||--o{ student_guardian : ""
+  </pre></div>
+  <ul>
+    <li><strong>Kelas paralel:</strong> 1A, 1B, 1C adalah tiga baris <code>classrooms</code> dengan <code>grade = 1</code> dan <code>name</code> berbeda. Laporan "seluruh kelas 1" cukup dengan filter <code>grade</code>.</li>
+    <li><code>classrooms</code> dibuat per tahun ajaran (rombel), karena wali kelas, jumlah paralel, dan pembagian putra/putri bisa berubah tiap tahun. Kelas tahun lalu tetap utuh untuk arsip. Panel admin bisa menyalin daftar kelas dari tahun sebelumnya.</li>
+    <li><code>staff</code> menampung ustadz, wali kelas, dan musyrif. Tidak semua perlu login, jadi <code>user_id</code> boleh kosong.</li>
+    <li><code>enrollments</code> menyimpan riwayat kelas per tahun ajaran, jadi kenaikan kelas tidak menimpa data lama.</li>
+    <li>Saat santri lanjut dari SD ke SLTP, <code>unit_id</code> dan <code>cohort_id</code> di <code>students</code> diperbarui ke jenjang baru. Riwayatnya tetap terbaca dari <code>enrollments</code> dan snapshot di <code>invoices</code>.</li>
+    <li><code>students.unit_id</code> sengaja diduplikasi dari <code>cohorts.unit_id</code> supaya filter dan scope per jenjang cepat. Validasi kecocokannya di Action class.</li>
+    <li>Wali memakai pivot karena kakak-adik di pondok sering berbagi wali yang sama, sehingga tagihan bisa digabung per keluarga.</li>
+  </ul>
+</section>
+
+<section id="asrama">
+  <h2>Asrama & Musyrif</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  dormitories {
+    bigint id PK
+    string code UK "ABK-1"
+    string name "Asrama Abu Bakar"
+    enum gender "L | P"
+    string location "gedung atau blok, nullable"
+    boolean is_active
+  }
+  rooms {
+    bigint id PK
+    bigint dormitory_id FK
+    string name "Kamar 101"
+    tinyint floor "nullable"
+    smallint capacity
+    boolean is_active
+  }
+  room_assignments {
+    bigint id PK
+    bigint student_id FK
+    bigint room_id FK
+    bigint academic_year_id FK
+    date start_on
+    date end_on "nullable = masih menempati"
+    string note "alasan pindah, nullable"
+  }
+  dormitory_supervisors {
+    bigint id PK
+    bigint dormitory_id FK
+    bigint room_id FK "nullable = untuk seluruh asrama"
+    bigint staff_id FK
+    bigint academic_year_id FK
+    enum role "kepala_asrama | musyrif"
+    date start_on
+    date end_on "nullable"
+  }
+  dormitories ||--o{ rooms : ""
+  rooms ||--o{ room_assignments : ""
+  students ||--o{ room_assignments : ""
+  academic_years ||--o{ room_assignments : ""
+  dormitories ||--o{ dormitory_supervisors : ""
+  rooms ||--o{ dormitory_supervisors : ""
+  staff ||--o{ dormitory_supervisors : ""
+  </pre></div>
+  <ul>
+    <li><strong>Santri di asrama mana:</strong> baris <code>room_assignments</code> dengan <code>end_on</code> kosong. Asramanya dibaca lewat <code>rooms.dormitory_id</code>. Pindah kamar di tengah tahun cukup menutup baris lama dan membuat baris baru, sehingga riwayatnya tersimpan.</li>
+    <li><strong>Musyrifnya siapa:</strong> <code>dormitory_supervisors</code> bisa per asrama (<code>room_id</code> kosong) atau per kamar. Jadi pola "satu musyrif per asrama" dan "satu musyrif per kamar" sama-sama didukung, dan pergantian musyrif tercatat.</li>
+    <li>Santri yang tidak punya penempatan aktif adalah santri nonmukim (pulang-pergi), tanpa kolom tambahan.</li>
+    <li><code>dormitories.gender</code> dicocokkan dengan <code>students.gender</code> saat penempatan, dan <code>rooms.capacity</code> dicek di Action <code>AssignRoom</code>.</li>
+  </ul>
+</section>
+
+<section id="tahfidz">
+  <h2>Tahfidz</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  quran_surahs {
+    smallint id PK "1 sampai 114, data seed"
+    string name "Al-Baqarah"
+    string name_arabic
+    smallint ayah_count
+    tinyint juz_start
+  }
+  halaqahs {
+    bigint id PK
+    bigint academic_year_id FK
+    bigint unit_id FK "nullable = lintas jenjang"
+    bigint teacher_staff_id FK "ustadz pengampu"
+    string name "Halaqah Abu Hurairah"
+    enum gender "L | P"
+    string schedule "Ba'da Subuh dan Maghrib"
+    boolean is_active
+  }
+  halaqah_members {
+    bigint id PK
+    bigint halaqah_id FK
+    bigint student_id FK
+    date joined_on
+    date left_on "nullable = masih aktif"
+  }
+  memorization_records {
+    bigint id PK
+    bigint student_id FK
+    bigint halaqah_id FK
+    bigint listener_staff_id FK "penyimak"
+    date recorded_on
+    enum session "subuh | pagi | sore | maghrib | malam"
+    enum type "ziyadah | murajaah | tasmi"
+    smallint from_surah_id FK
+    smallint from_ayah
+    smallint to_surah_id FK
+    smallint to_ayah
+    decimal pages "jumlah halaman, mushaf 15 baris"
+    enum grade "mumtaz | jayyid_jiddan | jayyid | maqbul | ulang"
+    tinyint mistakes "jumlah kesalahan"
+    text note "nullable"
+  }
+  student_juz_progress {
+    bigint student_id PK,FK
+    tinyint juz PK "1 sampai 30"
+    enum status "belum | proses | hafal | lulus_ujian"
+    date completed_on "nullable"
+  }
+  tahfidz_targets {
+    bigint id PK
+    bigint academic_year_id FK
+    bigint unit_id FK
+    tinyint grade "nullable = semua tingkat"
+    decimal target_juz "target per tahun"
+    decimal target_pages_weekly "nullable"
+  }
+  tahfidz_exams {
+    bigint id PK
+    bigint student_id FK
+    tinyint juz_from
+    tinyint juz_to
+    enum kind "kenaikan_juz | tasmi_5_juz | khataman"
+    date exam_on
+    bigint examiner_staff_id FK
+    tinyint score "0 sampai 100"
+    enum result "lulus | ulang"
+    string certificate_no UK "nullable, syahadah"
+  }
+  halaqahs ||--o{ halaqah_members : ""
+  students ||--o{ halaqah_members : ""
+  staff ||--o{ halaqahs : ""
+  students ||--o{ memorization_records : ""
+  halaqahs ||--o{ memorization_records : ""
+  quran_surahs ||--o{ memorization_records : "rentang ayat"
+  students ||--o{ student_juz_progress : ""
+  students ||--o{ tahfidz_exams : ""
+  staff ||--o{ tahfidz_exams : "penguji"
+  </pre></div>
+  <ul>
+    <li><strong>Setoran harian</strong> dicatat sebagai rentang surah dan ayat, bukan teks bebas. Dengan begitu total halaman, capaian juz, dan grafik kemajuan bisa dihitung otomatis. <code>quran_surahs</code> adalah data tetap yang diisi saat instalasi.</li>
+    <li><strong>Ziyadah, murajaah, dan tasmi'</strong> dibedakan lewat <code>type</code>. Laporan ke wali bisa menampilkan hafalan baru dan pengulangan secara terpisah.</li>
+    <li><code>student_juz_progress</code> adalah ringkasan per juz yang diperbarui setiap ada setoran atau ujian, supaya dashboard dan portal wali tidak perlu menghitung ulang dari seluruh riwayat setoran.</li>
+    <li><code>tahfidz_targets</code> membandingkan capaian dengan target per jenjang dan tingkat, sehingga santri yang tertinggal bisa terlihat lebih awal.</li>
+    <li>Anggota halaqah punya riwayat, jadi santri yang pindah halaqah tetap terlacak pengampunya di setiap periode.</li>
+    <li><code>pages</code> mengacu pada mushaf standar 15 baris. Kalau pondok memakai standar lain, cukup diatur di <code>settings</code>.</li>
+  </ul>
+</section>
+
+<section id="perizinan">
+  <h2>Perizinan, Kepulangan & Kunjungan</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  leave_types {
+    bigint id PK
+    string code UK "KELUAR | PULANG | SAKIT | KEPERLUAN"
+    string name
+    smallint max_hours "batas durasi, nullable"
+    enum approver "musyrif | kepala_asrama | kesantrian"
+    boolean requires_guardian "wajib dijemput atau dikonfirmasi wali"
+    boolean is_active
+  }
+  homecoming_periods {
+    bigint id PK
+    bigint academic_year_id FK
+    string name "Libur Ramadhan 1448 H"
+    date depart_on
+    date return_on "batas kembali"
+  }
+  leave_requests {
+    bigint id PK
+    bigint student_id FK
+    bigint leave_type_id FK
+    bigint homecoming_period_id FK "nullable, untuk pulang massal"
+    enum requested_via "wali | santri | musyrif"
+    bigint requested_by FK "users, nullable"
+    text reason
+    datetime planned_departure
+    datetime return_due
+    enum status "diajukan | disetujui | ditolak | keluar | kembali | batal"
+    bigint approved_by FK "staff, nullable"
+    datetime approved_at "nullable"
+    string pickup_name "penjemput, nullable"
+    string pickup_phone "nullable"
+    datetime departed_at "dicatat di pos"
+    bigint checked_out_by FK "users, nullable"
+    datetime returned_at "nullable"
+    bigint checked_in_by FK "users, nullable"
+    text note "nullable"
+  }
+  visits {
+    bigint id PK
+    bigint student_id FK
+    bigint guardian_id FK "nullable"
+    string visitor_name
+    string relation
+    datetime started_at
+    datetime ended_at "nullable"
+    text items_note "titipan barang, nullable"
+    bigint recorded_by FK "users"
+  }
+  leave_types ||--o{ leave_requests : ""
+  students ||--o{ leave_requests : ""
+  homecoming_periods ||--o{ leave_requests : ""
+  staff ||--o{ leave_requests : "menyetujui"
+  students ||--o{ visits : ""
+  guardians ||--o{ visits : ""
+  </pre></div>
+  <ul>
+    <li><strong>Alur izin:</strong> wali atau musyrif mengajukan, lalu disetujui oleh pihak sesuai <code>leave_types.approver</code>. Petugas pos mencatat jam keluar dan kembali. Persetujuan otomatis diarahkan ke musyrif kamar atau asrama santri lewat <code>dormitory_supervisors</code>, tanpa perlu memilih manual.</li>
+    <li><strong>Terlambat kembali</strong> tidak disimpan sebagai status. Cukup dibandingkan <code>returned_at</code> dengan <code>return_due</code>, atau santri yang belum kembali padahal sudah lewat batas. Daftar ini bisa langsung tampil di dashboard kesantrian.</li>
+    <li><strong>Pulang massal</strong> (libur semester, Ramadhan): buat satu <code>homecoming_periods</code>, lalu sistem membuat izin untuk semua santri mukim sekaligus. Petugas cukup mencatat keluar dan kembali, dan rekap santri yang belum kembali tersedia per asrama.</li>
+    <li><strong>Notifikasi WA ke wali</strong> dikirim saat izin disetujui, saat santri keluar dari pos, dan saat kembali.</li>
+    <li><code>visits</code> mencatat kunjungan wali (sambangan) beserta titipan barang, berguna untuk keamanan dan menjawab pertanyaan wali.</li>
+  </ul>
+</section>
+
+<section id="dokumen">
+  <h2>Dokumen</h2>
+  <p>Sebelumnya dokumen hanya ada di PSB (<code>applicant_documents</code>). Sekarang ada satu tabel dokumen umum untuk santri, wali, staff, dan prestasi, serta catatan surat yang dikeluarkan pondok.</p>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  document_types {
+    bigint id PK
+    string code UK "KK | AKTA | IJAZAH | RAPOR | BPJS | SERTIFIKAT"
+    string name
+    enum owner "santri | wali | staff | prestasi"
+    boolean is_required "wajib untuk santri aktif"
+    boolean has_expiry "mis. kartu BPJS, paspor"
+    boolean is_confidential "hanya peran tertentu yang bisa lihat"
+    boolean is_active
+  }
+  documents {
+    bigint id PK
+    bigint document_type_id FK
+    string documentable_type "Student, Guardian, Staff, Achievement"
+    bigint documentable_id
+    string number "nomor KK atau NIK, terenkripsi, nullable"
+    date issued_on "nullable"
+    date expires_on "nullable"
+    string file_path "disk private"
+    string original_name
+    string mime_type
+    int size_kb
+    enum status "menunggu | valid | ditolak"
+    bigint verified_by FK "users, nullable"
+    timestamp verified_at "nullable"
+    bigint uploaded_by FK "users"
+    bigint replaced_by_id FK "nullable, versi lebih baru"
+    bigint source_applicant_document_id FK "nullable, asal berkas PSB"
+  }
+  issued_letters {
+    bigint id PK
+    string letter_no UK "045/MAK/SKA/X/2026"
+    enum type "keterangan_aktif | pindah | rekomendasi | syahadah | kartu_santri"
+    bigint student_id FK
+    bigint signed_by_staff_id FK
+    date issued_on
+    string purpose "keperluan, nullable"
+    string verification_code UK "untuk QR cek keaslian"
+    string file_path "PDF yang dicetak"
+    bigint issued_by FK "users"
+  }
+  document_types ||--o{ documents : ""
+  documents |o--o| documents : "digantikan"
+  students ||--o{ issued_letters : ""
+  staff ||--o{ issued_letters : "penandatangan"
+  </pre></div>
+  <ul>
+    <li><strong>Satu tabel untuk semua pemilik</strong> lewat relasi polymorphic Laravel (<code>documentable</code>). Fitur unggah, verifikasi, dan penyimpanan cukup dibuat sekali.</li>
+    <li><strong>Berkas PSB tidak perlu diunggah ulang.</strong> <code>admission_requirements</code> kini merujuk ke <code>document_types</code>. Saat pendaftar menjadi santri, berkas yang sudah valid disalin menjadi <code>documents</code> milik santri.</li>
+    <li><strong>Kelengkapan berkas</strong> bisa dicek otomatis: jenis dokumen yang <code>is_required</code> tapi belum ada atau belum valid. Hasilnya bisa tampil sebagai widget di dashboard dan sebagai pengingat di portal wali.</li>
+    <li><strong>Riwayat versi:</strong> dokumen yang diperbarui (misalnya KK baru) tidak menimpa yang lama. Dokumen lama ditandai lewat <code>replaced_by_id</code>.</li>
+    <li><strong>Data pribadi:</strong> nomor KK dan NIK disimpan dengan cast <code>encrypted</code> Laravel. File tersimpan di disk private dan dokumen <code>is_confidential</code> hanya bisa dibuka peran yang punya permission khusus. Ini sejalan dengan kewajiban perlindungan data di UU PDP.</li>
+    <li><strong>Surat keluar</strong> (keterangan aktif, rekomendasi, pindah, syahadah) diberi nomor otomatis dan kode verifikasi. Pihak luar bisa memindai QR untuk mengecek keasliannya.</li>
+  </ul>
+</section>
+
+<section id="prestasi">
+  <h2>Prestasi Santri</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  achievements {
+    bigint id PK
+    bigint academic_year_id FK
+    enum category "tahfidz | akademik | keagamaan | olahraga | seni | organisasi | lainnya"
+    string title "Juara 1 MTQ Tahfidz 10 Juz"
+    string event_name "MTQ Tingkat Kabupaten 2026"
+    string organizer "nullable"
+    enum level "pondok | kecamatan | kabupaten | provinsi | nasional | internasional"
+    enum kind "individu | beregu"
+    date achieved_on
+    bigint recorded_by FK "users"
+    bigint verified_by FK "users, nullable"
+    boolean is_public "boleh tampil di website"
+  }
+  achievement_student {
+    bigint achievement_id PK,FK
+    bigint student_id PK,FK
+    string rank "Juara 1, Harapan 2, Finalis, Peserta"
+    string role "ketua tim, nullable"
+  }
+  achievements ||--o{ achievement_student : ""
+  students ||--o{ achievement_student : ""
+  achievements ||--o{ documents : "sertifikat dan foto"
+  achievements |o--o| posts : "berita prestasi"
+  </pre></div>
+  <ul>
+    <li><strong>Prestasi tercatat di profil santri,</strong> tidak hanya sebagai berita di website. Rekap per santri, per kategori, dan per tingkat bisa ditampilkan di rapor, portal wali, dan surat rekomendasi.</li>
+    <li><strong>Prestasi beregu</strong> cukup dicatat sekali lalu dihubungkan ke semua santri anggotanya lewat <code>achievement_student</code>, masing-masing dengan peringkat dan perannya.</li>
+    <li><strong>Sertifikat dan foto</strong> disimpan di tabel <code>documents</code> dengan pemilik <code>Achievement</code>.</li>
+    <li><strong>Publikasi ke website:</strong> prestasi dengan <code>is_public</code> bisa diterbitkan menjadi berita lewat <code>posts.achievement_id</code>. Data prestasi tetap satu sumber, dan widget prestasi di dashboard serta halaman publik mengambil dari tabel yang sama.</li>
+    <li>Kelulusan ujian khataman di modul tahfidz bisa otomatis diusulkan sebagai prestasi kategori tahfidz tingkat pondok.</li>
+    <li>Nanti, modul kedisiplinan bisa memakai prestasi ini sebagai poin positif yang mengimbangi poin pelanggaran.</li>
+  </ul>
+</section>
+
+<section id="psb">
+  <h2>Penerimaan Santri Baru (PSB)</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  admission_waves {
+    bigint id PK
+    bigint academic_year_id FK "tahun ajaran tujuan"
+    string name "Gelombang 1"
+    date opens_on
+    date closes_on
+    int quota "nullable"
+    boolean is_open
+  }
+  admission_tracks {
+    bigint id PK
+    string code UK "REGULER | PRESTASI | TAHFIDZ | YATIM"
+    string name
+    bigint scholarship_id FK "nullable, potongan otomatis"
+    text terms "syarat jalur, nullable"
+    boolean is_active
+  }
+  admission_requirements {
+    bigint id PK
+    bigint unit_id FK "nullable = semua jenjang"
+    bigint document_type_id FK "dipindah ke dokumen santri saat diterima"
+    string name "Kartu Keluarga, Akta, Rapor"
+    boolean is_required
+    tinyint sort_order
+  }
+  applicants {
+    bigint id PK
+    bigint admission_wave_id FK
+    bigint admission_track_id FK "jalur pendaftaran"
+    bigint unit_id FK "jenjang tujuan"
+    string registration_no UK "PSB-2027-0001"
+    string access_token_hash "untuk cek status tanpa akun"
+    string name
+    string nisn "nullable"
+    enum gender "L | P"
+    string birth_place
+    date birth_date
+    string previous_school
+    string guardian_name
+    string guardian_phone
+    string email "nullable"
+    enum status "draft | diajukan | diverifikasi | diterima | cadangan | ditolak"
+    bigint reviewed_by FK "users, nullable"
+    timestamp reviewed_at "nullable"
+    text review_note "nullable"
+    timestamp deleted_at "soft delete"
+  }
+  applicant_documents {
+    bigint id PK
+    bigint applicant_id FK
+    bigint admission_requirement_id FK
+    string file_path "disk private"
+    enum status "menunggu | valid | ditolak"
+    text note "nullable"
+    bigint verified_by FK "users, nullable"
+    timestamp verified_at "nullable"
+  }
+  admission_waves ||--o{ applicants : ""
+  admission_tracks ||--o{ applicants : ""
+  applicants ||--o{ applicant_documents : ""
+  admission_requirements ||--o{ applicant_documents : ""
+  </pre></div>
+  <ul>
+    <li>Pendaftar tidak perlu akun di tabel <code>users</code>. Mereka cek status dan unggah ulang berkas dengan nomor pendaftaran + token (disimpan dalam bentuk hash).</li>
+    <li>Saat status menjadi <em>diterima</em>, sebuah Action membuat baris <code>students</code> dengan <code>applicant_id</code> terisi dan menyalin data wali ke <code>guardians</code>.</li>
+    <li>Berkas disimpan di disk <code>private</code> (bukan <code>public</code>) dan diakses lewat route yang dicek permission-nya, karena berisi KK dan akta.</li>
+  </ul>
+
+  <h3>Biaya PSB</h3>
+  <p>Biaya PSB memakai mekanisme yang sama dengan SPP: jenis biaya, tarif yang berlaku per tahun ajaran, potongan, dan tagihan gabungan atau terpisah. Bedanya, tagihan dibuat untuk pendaftar (<code>applicant_id</code>) karena mereka belum menjadi santri.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Tahap</th><th>Yang terjadi</th><th>Tagihan</th></tr></thead>
+    <tbody>
+      <tr><td>Daftar online</td><td>Status <em>diajukan</em></td><td>Biaya formulir dibuat otomatis dari jenis biaya <code>saat_daftar</code>. Tarif bisa dibedakan per gelombang dan jenjang.</td></tr>
+      <tr><td>Formulir lunas</td><td>Unggah berkas dan jadwal tes dibuka</td><td>Panitia bisa menandai lunas untuk pembayaran tunai.</td></tr>
+      <tr><td>Diterima</td><td>Status <em>diterima</em></td><td>Uang pangkal, seragam, kitab dibuat dari jenis biaya <code>saat_diterima</code>. Potongan jalur diterapkan otomatis, dan pembayaran bisa dicicil.</td></tr>
+      <tr><td>Daftar ulang</td><td>Data santri dibuat</td><td>Tagihan dan keringanan yang belum selesai ikut pindah ke santri. Tagihan bulanan dimulai bulan berikutnya.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>Tarif per gelombang:</strong> <code>fee_rates.admission_wave_id</code> memungkinkan gelombang 1 lebih murah dari gelombang 2. Kalau kosong, tarif berlaku untuk semua gelombang. Kolom biaya di <code>admission_waves</code> dihapus agar semua tarif ada di satu tempat.</li>
+    <li><strong>Berubah tiap tahun atau tetap:</strong> sama seperti SPP, lewat <code>effective_from_year_id</code>.</li>
+    <li><strong>Jalur pendaftaran:</strong> <code>admission_tracks</code> seperti Tahfidz atau Yatim bisa dihubungkan ke program beasiswa. Saat pendaftar jalur itu diterima, keringanannya dibuat otomatis, misalnya uang pangkal gratis atau SPP potong 50%.</li>
+    <li><strong>Keringanan khusus:</strong> panitia bisa memberi potongan per pendaftar (misalnya diskon saudara kandung) lewat <code>fee_overrides.applicant_id</code>, termasuk potongan SPP yang mulai berlaku setelah jadi santri.</li>
+    <li><strong>Pindah ke santri:</strong> saat santri dibuat, <code>student_id</code> diisi pada tagihan dan keringanan milik pendaftar. <code>applicant_id</code> tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.</li>
+    <li>Syarat minimal pembayaran untuk daftar ulang (misalnya lunas atau minimal 50%) diatur di <code>settings</code> sebagai <code>psb.min_paid_percent</code>.</li>
+  </ul>
+</section>
+
+<section id="keuangan">
+  <h2>Keuangan & Tagihan</h2>
+  <p>SPP, asrama, makan, dan biaya lain diperlakukan sebagai <em>jenis biaya</em>. Apakah semuanya digabung dalam satu tagihan atau dipisah ditentukan oleh <code>fee_types.billing_group</code>, dan bisa diatur dari panel admin tanpa ubah kode.</p>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  fee_types {
+    bigint id PK
+    string code UK "SPP | ASRAMA | MAKAN | LAUNDRY"
+    string name
+    enum frequency "bulanan | tahunan | saat_daftar | saat_diterima | manual"
+    enum applies_to "semua | mukim | nonmukim"
+    string billing_group "BULANAN, ASRAMA, ... sama = digabung"
+    smallint priority "urutan pelunasan cicilan"
+    boolean is_active
+  }
+  fee_rates {
+    bigint id PK
+    bigint fee_type_id FK
+    bigint effective_from_year_id FK "berlaku mulai tahun ajaran ini"
+    bigint unit_id FK
+    bigint cohort_id FK "nullable = default jenjang"
+    bigint dormitory_id FK "nullable = semua asrama"
+    bigint admission_wave_id FK "nullable, tarif khusus gelombang PSB"
+    bigint amount "rupiah"
+  }
+  scholarships {
+    bigint id PK
+    string name "Beasiswa Tahfidz, Yatim, Anak Ustadz"
+    enum mode "nominal | potongan | persen"
+    bigint default_value "nominal/potongan rupiah atau persen"
+    string sponsor "donatur atau yayasan, nullable"
+    boolean is_active
+  }
+  fee_overrides {
+    bigint id PK
+    bigint student_id FK "nullable"
+    bigint applicant_id FK "nullable, keringanan saat PSB"
+    bigint fee_type_id FK
+    bigint scholarship_id FK "nullable = keringanan non-beasiswa"
+    enum mode "nominal | potongan | persen"
+    bigint value "nominal 0 = gratis"
+    string reason
+    date valid_from
+    date valid_until "nullable = sampai lulus"
+    bigint approved_by FK "users"
+  }
+  invoices {
+    bigint id PK
+    string invoice_no UK "INV-202610-00123"
+    bigint student_id FK "nullable sebelum diterima"
+    bigint applicant_id FK "nullable, terisi untuk tagihan PSB"
+    bigint academic_year_id FK
+    date period "tanggal 1 bulan tagihan"
+    string billing_group "salinan dari fee_types"
+    bigint total "jumlah semua item"
+    bigint paid_total "cache jumlah terbayar"
+    enum status "belum | sebagian | lunas | batal"
+    date due_on
+    bigint generated_by FK "users, nullable jika via scheduler"
+  }
+  invoice_items {
+    bigint id PK
+    bigint invoice_id FK
+    bigint fee_type_id FK
+    string description "SPP Oktober 2026"
+    bigint base_amount "tarif normal"
+    bigint discount_amount "beasiswa atau keringanan"
+    bigint amount "yang harus dibayar"
+    enum rate_source "angkatan | jenjang | manual"
+    bigint fee_override_id FK "nullable"
+    bigint paid_amount "hasil alokasi pembayaran"
+  }
+  payment_allocations {
+    bigint id PK
+    bigint payment_id FK
+    bigint invoice_item_id FK
+    bigint amount
+  }
+  payments {
+    bigint id PK
+    string receipt_no UK "nomor kuitansi"
+    bigint invoice_id FK
+    bigint amount "rupiah"
+    date paid_on
+    enum method "tunai | transfer | gateway"
+    string proof_path "bukti transfer, nullable"
+    string gateway_ref "id transaksi Midtrans/Xendit, nullable"
+    bigint received_by FK "users"
+    text note "nullable"
+  }
+  fee_types ||--o{ fee_rates : ""
+  admission_waves ||--o{ fee_rates : ""
+  applicants ||--o{ invoices : ""
+  applicants ||--o{ fee_overrides : ""
+  units ||--o{ fee_rates : ""
+  cohorts ||--o{ fee_rates : ""
+  dormitories ||--o{ fee_rates : ""
+  students ||--o{ fee_overrides : ""
+  fee_types ||--o{ fee_overrides : ""
+  scholarships ||--o{ fee_overrides : ""
+  fee_overrides ||--o{ invoice_items : ""
+  students ||--o{ invoices : ""
+  invoices ||--o{ invoice_items : ""
+  fee_types ||--o{ invoice_items : ""
+  invoices ||--o{ payments : ""
+  payments ||--o{ payment_allocations : ""
+  invoice_items ||--o{ payment_allocations : ""
+  </pre></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Mode</th><th>Pengaturan <code>billing_group</code></th><th>Hasil per santri mukim per bulan</th></tr></thead>
+    <tbody>
+      <tr><td>Digabung</td><td>SPP, ASRAMA, MAKAN semuanya <code>BULANAN</code></td><td>1 tagihan berisi 3 item</td></tr>
+      <tr><td>Dipisah</td><td>SPP → <code>SPP</code>, ASRAMA dan MAKAN → <code>ASRAMA</code></td><td>2 tagihan: SPP dan Asrama</td></tr>
+      <tr><td>Dipisah penuh</td><td>Setiap jenis punya grup sendiri</td><td>3 tagihan terpisah</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Santri nonmukim otomatis tidak ditagih biaya dengan <code>applies_to = mukim</code>. Status mukim dibaca dari <code>room_assignments</code> yang aktif.</li>
+    <li><code>fee_rates.dormitory_id</code> memungkinkan tarif asrama berbeda per gedung, misalnya asrama baru lebih mahal. Kalau tidak dipakai, biarkan kosong.</li>
+    <li><strong>Tarif berubah atau tetap:</strong> <code>fee_rates</code> berlaku mulai tahun ajaran tertentu sampai ada baris yang lebih baru. Kalau SPP tidak berubah, cukup satu baris dan tidak perlu disalin tiap tahun. Kalau naik, tambahkan baris baru dengan tahun ajaran berikutnya, dan tarif lama tetap tersimpan sebagai riwayat.</li>
+    <li><strong>Tarif dikunci per angkatan:</strong> isi <code>cohort_id</code>. Contoh: angkatan 2025 tetap Rp500.000 sampai lulus, sementara angkatan 2026 membayar Rp600.000. Tarif angkatan selalu menang atas default jenjang.</li>
+    <li><strong>Beasiswa dan keringanan:</strong> <code>fee_overrides</code> per santri, per jenis biaya, dengan masa berlaku. Tiga mode: <em>nominal</em> (bayar Rp250.000, atau Rp0 untuk gratis), <em>potongan</em> (dikurangi Rp100.000), dan <em>persen</em> (dikurangi 50%). Mode potongan dan persen ikut menyesuaikan saat tarif normal naik.</li>
+    <li><code>scholarships</code> mengelompokkan program beasiswa, sehingga bendahara bisa melaporkan total subsidi per program atau per donatur. Keringanan yang bukan beasiswa (misalnya kesepakatan dengan wali) cukup tanpa <code>scholarship_id</code>.</li>
+    <li><code>invoice_items</code> menyimpan tarif normal, potongan, dan nominal akhir, jadi besarnya beasiswa yang diberikan tiap bulan bisa dihitung langsung dari tagihan.</li>
+    <li>Pembayaran cicilan pada tagihan gabungan dialokasikan ke item sesuai <code>fee_types.priority</code> (misalnya makan dulu, lalu asrama, lalu SPP) dan dicatat di <code>payment_allocations</code>. Laporan bendahara per jenis biaya jadi akurat.</li>
+    <li>Biaya <code>saat_daftar</code> dan <code>saat_diterima</code> (formulir, uang pangkal, seragam, kitab) tidak dibuat oleh generator bulanan, tetapi oleh alur PSB. Lihat bagian <a href="#psb">PSB</a>.</li>
+    <li>Semua nominal uang memakai <code>bigint</code> rupiah tanpa desimal, dan nominal item adalah snapshot sehingga perubahan tarif tidak mengubah tagihan lama.</li>
+  </ul>
+</section>
+
+<section id="konten">
+  <h2>Konten Publik (CMS)</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  categories {
+    bigint id PK
+    enum type "post | album"
+    string name "Fasilitas, Olahraga, Tahfidz"
+    string slug
+  }
+  posts {
+    bigint id PK
+    bigint category_id FK "nullable"
+    bigint unit_id FK "nullable = umum"
+    bigint author_id FK "users"
+    enum type "kegiatan | prestasi | berita"
+    string title
+    string slug UK
+    string excerpt "nullable"
+    longtext body
+    string cover_path "nullable"
+    string youtube_url "nullable"
+    bigint achievement_id FK "nullable, untuk berita prestasi"
+    json meta "data tambahan, nullable"
+    enum status "draft | terbit"
+    timestamp published_at "nullable"
+  }
+  albums {
+    bigint id PK
+    bigint category_id FK
+    string title
+    string slug UK
+    text description "nullable"
+  }
+  photos {
+    bigint id PK
+    bigint album_id FK
+    string path
+    string caption "nullable"
+    smallint sort_order
+  }
+  videos {
+    bigint id PK
+    string title
+    string youtube_id
+    text description "nullable"
+    boolean is_featured
+    smallint sort_order
+  }
+  pages {
+    bigint id PK
+    string slug UK "profil | visi-misi | kontak"
+    string title
+    longtext body
+  }
+  settings {
+    string key PK "school.name, school.logo, psb.contact"
+    json value
+  }
+  categories ||--o{ posts : ""
+  categories ||--o{ albums : ""
+  albums ||--o{ photos : ""
+  </pre></div>
+  <ul>
+    <li>Kegiatan, prestasi, dan berita disatukan di <code>posts</code> dengan kolom <code>type</code>. Berita prestasi merujuk ke <code>achievements</code> lewat <code>achievement_id</code>, jadi data tingkat, peringkat, dan santri yang terlibat tidak ditulis ulang.</li>
+    <li><code>settings</code> menyimpan profil sekolah sebagai key-value, sehingga instalasi baru cukup mengisi lewat panel tanpa ubah kode.</li>
+  </ul>
+</section>
+
+<section id="rbac">
+  <h2>Pengguna & RBAC</h2>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  users {
+    bigint id PK
+    string name
+    string email UK
+    string password
+    boolean is_active
+    timestamp last_login_at "nullable"
+  }
+  unit_user {
+    bigint user_id PK,FK
+    bigint unit_id PK,FK
+  }
+  roles {
+    bigint id PK
+    string name "super-admin | bendahara | admin-konten | admin-sekolah | admin-psb | kesantrian | musyrif | ustadz-tahfidz | petugas-pos"
+    string guard_name
+  }
+  permissions {
+    bigint id PK
+    string name "view-dashboard, view-finance-metrics, ..."
+    string guard_name
+  }
+  model_has_roles {
+    bigint role_id PK,FK
+    string model_type PK
+    bigint model_id PK
+  }
+  model_has_permissions {
+    bigint permission_id PK,FK
+    string model_type PK
+    bigint model_id PK
+  }
+  role_has_permissions {
+    bigint permission_id PK,FK
+    bigint role_id PK,FK
+  }
+  users ||--o{ unit_user : ""
+  units ||--o{ unit_user : ""
+  users ||--o{ model_has_roles : "model_id"
+  roles ||--o{ model_has_roles : ""
+  users ||--o{ model_has_permissions : "model_id"
+  permissions ||--o{ model_has_permissions : ""
+  roles ||--o{ role_has_permissions : ""
+  permissions ||--o{ role_has_permissions : ""
+  </pre></div>
+  <ul>
+    <li>Tabel <code>roles</code>, <code>permissions</code>, dan tiga pivotnya dibuat oleh migration Spatie Permission. Tidak perlu ditulis sendiri.</li>
+    <li><code>unit_user</code> mengatur cakupan jenjang. Contohnya admin-sekolah yang hanya mengurus SLTP. Jika user tidak punya baris di sini, artinya ia boleh melihat semua jenjang. Diterapkan lewat global scope pada model <code>Student</code>, <code>Invoice</code>, dan <code>Applicant</code>.</li>
+    <li>Permission menentukan <em>modul apa</em> yang boleh diakses, sedangkan <code>unit_user</code> menentukan <em>data jenjang mana</em>. Dua hal ini sengaja dipisah.</li>
+  </ul>
+</section>
+
+<section id="aturan">
+  <h2>Aturan tarif & constraint penting</h2>
+  <div class="grid2">
+    <div>
+      <h3>Urutan penentuan nominal per jenis biaya</h3>
+      <p>Dijalankan oleh <code>GenerateMonthlyInvoices</code> lewat scheduler setiap tanggal 1. Untuk setiap jenis biaya bulanan yang berlaku bagi santri, tarif normal dicari dari yang paling spesifik: angkatan + asrama, angkatan, jenjang + asrama, lalu jenjang. Dari kandidat itu dipilih baris dengan <code>effective_from_year</code> terbaru yang sudah berlaku.</p>
+      <p>Setelah itu, override yang aktif di bulan tagihan diterapkan. Santri yang dibebaskan tetap mendapat item Rp0 beserta alasannya.</p>
+    </div>
+    <div>
+      <pre class="code">foreach (students aktif as $s) {
+  $dorm = $s->activeRoom?->dormitory_id;   // null = nonmukim
+
+  foreach (feeTypes bulanan berlaku untuk $s as $fee) {
+    $base = rate($fee, $s, $dorm, $tahunAjaran); // tarif terbaru
+    $ovr  = override($s, $fee, $bulan);          // beasiswa aktif
+
+    if ($base === null && $ovr?->mode !== 'nominal') {
+      log('tarif belum diatur'); continue;
+    }
+
+    $amount = match ($ovr?->mode) {
+      'nominal'  => $ovr->value,
+      'potongan' => max(0, $base - $ovr->value),
+      'persen'   => $base - intdiv($base * $ovr->value, 100),
+      default    => $base,
+    };
+
+    $inv = Invoice::firstOrCreate([
+      'student_id'    => $s->id,
+      'period'        => $bulan,
+      'billing_group' => $fee->billing_group,
+    ]);
+    $inv->items()->firstOrCreate(
+      ['fee_type_id' => $fee->id],
+      ['base_amount' => $base, 'amount' => $amount, ...]
+    );
+  }
+  // hitung ulang invoices.total
+}</pre>
+    </div>
+  </div>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Tabel</th><th>Constraint / index</th><th>Alasan</th></tr></thead>
+    <tbody>
+      <tr><td><code>invoices</code></td><td>unique (<code>student_id</code>, <code>period</code>, <code>billing_group</code>)</td><td>Generator aman dijalankan ulang tanpa membuat tagihan ganda</td></tr>
+      <tr><td><code>invoices</code></td><td>check: <code>student_id</code> atau <code>applicant_id</code> wajib terisi; unique (<code>applicant_id</code>, <code>billing_group</code>)</td><td>Tagihan selalu punya pemilik, dan biaya PSB tidak dobel</td></tr>
+      <tr><td><code>invoice_items</code></td><td>unique (<code>invoice_id</code>, <code>fee_type_id</code>)</td><td>Satu jenis biaya hanya muncul sekali per tagihan</td></tr>
+      <tr><td><code>fee_overrides</code></td><td>index (<code>student_id</code>, <code>fee_type_id</code>, <code>valid_from</code>)</td><td>Cari override yang berlaku di bulan tagihan</td></tr>
+      <tr><td><code>invoices</code></td><td>index (<code>status</code>, <code>period</code>)</td><td>Widget tunggakan dan rasio koleksi di dashboard</td></tr>
+      <tr><td><code>fee_rates</code></td><td>unique (<code>fee_type_id</code>, <code>effective_from_year_id</code>, <code>unit_id</code>, <code>cohort_key</code>, <code>dormitory_key</code>, <code>wave_key</code>)</td><td>Satu tarif per kombinasi. Lihat catatan NULL di bawah</td></tr>
+      <tr><td><code>enrollments</code></td><td>unique (<code>student_id</code>, <code>academic_year_id</code>)</td><td>Satu kelas per santri per tahun ajaran</td></tr>
+      <tr><td><code>students</code></td><td>unique <code>nis</code>; index (<code>unit_id</code>, <code>status</code>)</td><td>Hitungan santri aktif per jenjang</td></tr>
+      <tr><td><code>cohorts</code></td><td>unique (<code>unit_id</code>, <code>entry_year</code>)</td><td>Tidak ada angkatan ganda dalam satu jenjang</td></tr>
+      <tr><td><code>classrooms</code></td><td>unique (<code>academic_year_id</code>, <code>unit_id</code>, <code>name</code>)</td><td>1A hanya ada satu per jenjang per tahun ajaran</td></tr>
+      <tr><td><code>room_assignments</code></td><td>index (<code>student_id</code>, <code>end_on</code>), (<code>room_id</code>, <code>end_on</code>)</td><td>Cari kamar aktif santri dan hitung sisa kapasitas kamar</td></tr>
+      <tr><td><code>rooms</code></td><td>unique (<code>dormitory_id</code>, <code>name</code>)</td><td>Nama kamar unik per asrama</td></tr>
+      <tr><td><code>memorization_records</code></td><td>index (<code>student_id</code>, <code>recorded_on</code>), (<code>halaqah_id</code>, <code>recorded_on</code>)</td><td>Riwayat setoran per santri dan rekap harian per halaqah</td></tr>
+      <tr><td><code>halaqah_members</code></td><td>index (<code>student_id</code>, <code>left_on</code>)</td><td>Cari halaqah aktif santri</td></tr>
+      <tr><td><code>leave_requests</code></td><td>index (<code>status</code>, <code>return_due</code>), (<code>student_id</code>, <code>status</code>)</td><td>Daftar santri yang sedang di luar dan yang terlambat kembali</td></tr>
+      <tr><td><code>leave_requests</code></td><td>unique (<code>student_id</code>, <code>homecoming_period_id</code>)</td><td>Satu izin pulang massal per santri per periode</td></tr>
+      <tr><td><code>documents</code></td><td>index (<code>documentable_type</code>, <code>documentable_id</code>, <code>document_type_id</code>), (<code>expires_on</code>)</td><td>Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa</td></tr>
+      <tr><td><code>achievements</code></td><td>index (<code>academic_year_id</code>, <code>category</code>, <code>level</code>)</td><td>Rekap prestasi per tahun, kategori, dan tingkat</td></tr>
+      <tr><td><code>applicant_documents</code></td><td>unique (<code>applicant_id</code>, <code>admission_requirement_id</code>)</td><td>Unggah ulang menimpa berkas lama, tidak menumpuk</td></tr>
+      <tr><td><code>applicants</code></td><td>index (<code>admission_wave_id</code>, <code>status</code>), (<code>created_at</code>)</td><td>Breakdown status dan pendaftar 7 hari terakhir</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <h3>Catatan NULL pada unique key</h3>
+    <p>MySQL dan Postgres menganggap setiap <code>NULL</code> berbeda, jadi unique key biasa di <code>fee_rates</code> tetap membolehkan dua tarif default jenjang untuk jenis biaya dan tahun yang sama. Solusinya, tambahkan generated column <code>cohort_key = COALESCE(cohort_id, 0)</code> <code>dormitory_key = COALESCE(dormitory_id, 0)</code>, dan <code>wave_key = COALESCE(admission_wave_id, 0)</code>, lalu pasang unique di kolom itu. Cara ini jalan di MySQL, MariaDB, Postgres, dan SQLite.</p>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <h3>Tabel bawaan yang tidak digambar</h3>
+      <ul>
+        <li><code>sessions</code>, <code>cache</code>, <code>password_reset_tokens</code></li>
+        <li><code>jobs</code>, <code>job_batches</code>, <code>failed_jobs</code> (queue driver database)</li>
+        <li><code>notifications</code> (notifikasi in-app Filament)</li>
+        <li><code>activity_log</code> dari Spatie Activitylog untuk audit <code>invoices</code>, <code>payments</code>, dan perubahan override</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Konvensi umum</h3>
+      <ul>
+        <li>Semua tabel memakai <code>created_at</code> dan <code>updated_at</code> (tidak ditulis di diagram).</li>
+        <li>Soft delete hanya untuk <code>students</code>, <code>applicants</code>, dan <code>posts</code>. Data keuangan tidak dihapus, cukup diberi status <em>batal</em>.</li>
+        <li>Foreign key ke data keuangan memakai <code>restrictOnDelete</code>, bukan cascade.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+
+</body></html>

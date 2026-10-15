@@ -624,6 +624,7 @@ erDiagram
     bigint total "jumlah semua item"
     bigint paid_total "cache jumlah terbayar"
     enum status "belum | sebagian | lunas | batal"
+    tinyint active_marker "generated stored: 1 bila status bukan batal, ikut unique"
     date due_on
     bigint generated_by FK "users, nullable jika via scheduler"
   }
@@ -860,8 +861,8 @@ foreach (students aktif as $s) {
 
 | Tabel | Constraint / index | Alasan |
 | --- | --- | --- |
-| `invoices` | unique (`student_id`, `period`, `billing_group`) | Generator aman dijalankan ulang tanpa membuat tagihan ganda |
-| `invoices` | check: `student_id` atau `applicant_id` wajib terisi; unique (`applicant_id`, `billing_group`) | Tagihan selalu punya pemilik, dan biaya PSB tidak dobel |
+| `invoices` | generated column stored `active_marker = CASE WHEN status <> 'batal' THEN 1 END`; unique (`student_id`, `period`, `billing_group`, `active_marker`) | Generator aman dijalankan ulang tanpa membuat tagihan ganda. Hanya satu tagihan aktif per kombinasi; tagihan `batal` bernilai NULL sehingga boleh banyak dan tidak menghalangi tagihan pengganti (keputusan F006) |
+| `invoices` | check: `student_id` atau `applicant_id` wajib terisi; unique (`applicant_id`, `billing_group`, `active_marker`) | Tagihan selalu punya pemilik, dan biaya PSB tidak dobel selama tagihannya aktif |
 | `invoice_items` | unique (`invoice_id`, `fee_type_id`) | Satu jenis biaya hanya muncul sekali per tagihan |
 | `fee_overrides` | index (`student_id`, `fee_type_id`, `valid_from`) | Cari override yang berlaku di bulan tagihan |
 | `invoices` | index (`status`, `period`) | Widget tunggakan dan rasio koleksi di dashboard |

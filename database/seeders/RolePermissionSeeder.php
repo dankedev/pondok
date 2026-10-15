@@ -31,6 +31,7 @@ class RolePermissionSeeder extends Seeder
     public const RESOURCE_MODELS = [
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
         'Cohort', 'Classroom', 'Student', 'Guardian',
+        'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -94,6 +95,8 @@ class RolePermissionSeeder extends Seeder
     public static function permissionsFor(string $role): array
     {
         $readOnly = ['viewAny', 'view'];
+        // Riwayat penempatan dan tugas musyrif tidak dihapus.
+        $withoutDelete = ['viewAny', 'view', 'create', 'update'];
 
         return match ($role) {
             'super-admin' => self::allPermissions(),
@@ -112,14 +115,23 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Guardian'),
             ],
             'admin-psb' => ['view-dashboard', 'view-psb-metrics'],
-            // Lihat-saja; dibutuhkan modul asrama dan perizinan.
+            // Santri dan wali lihat-saja; mengelola asrama, kamar, penghuni, dan musyrif.
             'kesantrian' => [
                 'view-dashboard',
                 'view-student-metrics',
                 ...self::resourcePermissions('Student', $readOnly),
                 ...self::resourcePermissions('Guardian', $readOnly),
+                ...self::resourcePermissions('Dormitory'),
+                ...self::resourcePermissions('Room'),
+                ...self::resourcePermissions('RoomAssignment', $withoutDelete),
+                ...self::resourcePermissions('DormitorySupervisor', $withoutDelete),
             ],
-            'musyrif', 'ustadz-tahfidz', 'petugas-pos' => ['view-dashboard'],
+            // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi.
+            'musyrif' => [
+                'view-dashboard',
+                ...self::resourcePermissions('RoomAssignment', $readOnly),
+            ],
+            'ustadz-tahfidz', 'petugas-pos' => ['view-dashboard'],
             // Portal wali (Fase 2) di luar panel admin.
             'wali' => [],
         };

@@ -4,6 +4,7 @@ use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Filament\Resources\Students\Pages\EditStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Models\Cohort;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Database\Seeders\SettingSeeder;
 use Database\Seeders\UnitSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -125,4 +127,44 @@ it('hides the change unit action from a read-only role', function () {
 
     Livewire::test(ListStudents::class)
         ->assertActionHidden(TestAction::make('changeUnit')->table($student));
+});
+
+it('AC-37: shows the active room or nonresident in the student table', function () {
+    $this->actingAs(User::factory()->create()->assignRole('admin-sekolah'));
+    $room = asramaRoom(4, 'L', ['name' => 'Kamar 101'], asramaDormitory('L', ['name' => 'Asrama Abu Bakar']));
+    $resident = Student::factory()->forCohort($this->sdCohort)->create(['gender' => 'L']);
+    $nonResident = Student::factory()->forCohort($this->sdCohort)->create(['gender' => 'L']);
+    asramaResident($resident, $room);
+
+    Livewire::test(ListStudents::class)
+        ->assertCanSeeTableRecords([$resident, $nonResident])
+        ->assertSeeText('Asrama Abu Bakar')
+        ->assertSeeText('Kamar 101')
+        ->assertSeeText(__('pondok.room_assignment.non_resident'));
+});
+
+it('AC-37: hides the room column when the asrama module is disabled', function () {
+    Setting::set('modules.asrama.enabled', false);
+    $this->actingAs(User::factory()->create()->assignRole('admin-sekolah'));
+    $student = Student::factory()->forCohort($this->sdCohort)->create(['gender' => 'L']);
+    asramaResident($student, asramaRoom(4, 'L', ['name' => 'Kamar 101']));
+
+    Livewire::test(ListStudents::class)
+        ->assertSuccessful()
+        ->assertCanSeeTableRecords([$student])
+        ->assertDontSeeText('Kamar 101')
+        ->assertDontSeeText(__('pondok.room_assignment.non_resident'));
+});
+
+it('AC-37: does not query room assignments when the asrama module is disabled', function () {
+    Setting::set('modules.asrama.enabled', false);
+    $this->actingAs(User::factory()->create()->assignRole('admin-sekolah'));
+    $student = Student::factory()->forCohort($this->sdCohort)->create(['gender' => 'L']);
+    asramaResident($student, asramaRoom(4, 'L'));
+
+    DB::enableQueryLog();
+    Livewire::test(ListStudents::class)->assertCanSeeTableRecords([$student]);
+    $queries = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, 'room_assignments'));
+
+    expect($queries)->toBeEmpty();
 });

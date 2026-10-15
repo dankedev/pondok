@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Students\Tables;
 
 use App\Filament\Resources\Students\StudentResource;
+use App\Models\Setting;
 use App\Models\Student;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -19,9 +20,14 @@ class StudentsTable
 {
     public static function configure(Table $table): Table
     {
+        // Kolom kamar dan eager-load-nya hanya ada saat modul asrama aktif.
+        $asramaEnabled = Setting::moduleEnabled('asrama');
+
         return $table
             ->defaultSort('name')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['unit', 'cohort', 'currentEnrollment.classroom']))
+            ->modifyQueryUsing(fn (Builder $query) => $query
+                ->with(['unit', 'cohort', 'currentEnrollment.classroom'])
+                ->when($asramaEnabled, fn (Builder $query) => $query->with('activeRoom.dormitory')))
             ->columns([
                 TextColumn::make('nis')
                     ->label(__('pondok.student.nis'))
@@ -38,10 +44,15 @@ class StudentsTable
                     ->label(__('pondok.common.unit')),
                 TextColumn::make('cohort.name')
                     ->label(__('pondok.student.cohort'))
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('currentEnrollment.classroom.name')
                     ->label(__('pondok.student.current_classroom'))
                     ->placeholder('-'),
+                TextColumn::make('activeRoom.name')
+                    ->label(__('pondok.student.room'))
+                    ->visible($asramaEnabled)
+                    ->formatStateUsing(fn (Student $record): string => "{$record->activeRoom->dormitory->name} — {$record->activeRoom->name}")
+                    ->placeholder(__('pondok.room_assignment.non_resident')),
                 TextColumn::make('status')
                     ->label(__('pondok.student.status'))
                     ->badge()

@@ -71,6 +71,11 @@ class Student extends Model
             ->withTimestamps();
     }
 
+    public function feeOverrides(): HasMany
+    {
+        return $this->hasMany(FeeOverride::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);

@@ -556,16 +556,16 @@
       "name": "Cache pengaturan per request",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001"],
       "description": "Setting::get dan Setting::moduleEnabled membaca tabel settings sekali per key per request, bukan setiap cek otorisasi resource (BelongsToModule dipanggil per baris tabel).",
       "acceptance": [
         "Cek modul berulang dalam satu request hanya menjalankan satu query settings per key",
         "Setting::set dan perubahan model Setting langsung terlihat oleh pembacaan berikutnya"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit b4a74d0; tests/Feature/Models/SettingTest.php + suite penuh 303 test lulus di PHP 8.4, test Filament lulus di 8.3",
       "notes": "Ditemukan red-tester saat VERIFY F004."
     }
   ]

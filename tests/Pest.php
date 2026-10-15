@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
+use App\Actions\Keuangan\RecordPayment;
 use App\Models\AcademicYear;
 use App\Models\Cohort;
 use App\Models\Dormitory;
@@ -9,6 +10,7 @@ use App\Models\FeeRate;
 use App\Models\FeeType;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Payment;
 use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Student;
@@ -619,6 +621,125 @@ function tagihanAssertRejected(Closure $callback, string $reason, ?string $field
 function tagihanPlainText(Testable $component): string
 {
     $text = html_entity_decode(strip_tags($component->html()), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    return trim((string) preg_replace('/[\s\x{00A0}\x{202F}]+/u', ' ', $text));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper pembayaran & kuitansi (F007)
+|--------------------------------------------------------------------------
+|
+| Berawalan `bayar`. Memakai `tagihanFixture`, `tagihanStudent`, `tagihanGenerate`.
+| Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta (diatur oleh test pemanggil).
+|
+*/
+
+/**
+ * Tagihan Oktober 2026 dari generator untuk santri mukim SLTP (MAKAN 400.000, ASRAMA 300.000,
+ * SPP 500.000; total 1.200.000).
+ */
+function bayarInvoice(object $f, ?Student $student = null): Invoice
+{
+    $student ??= tagihanStudent($f, resident: true);
+    tagihanGenerate();
+
+    return tagihanInvoiceFor($student);
+}
+
+/**
+ * Catat pembayaran lewat Action dari container (tunai, hari ini, kecuali ditimpa).
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function bayarRecord(Invoice $invoice, int $amount, array $overrides = [], ?User $by = null): Payment
+{
+    return app(RecordPayment::class)->handle($invoice, $by ?? User::factory()->create(), [
+        'amount' => $amount,
+        'paid_on' => now('Asia/Jakarta')->toDateString(),
+        'method' => 'tunai',
+        ...$overrides,
+    ]);
+}
+
+/**
+ * `paid_amount` per item tagihan, diindeks kode jenis biaya (MAKAN, ASRAMA, SPP).
+ *
+ * @return array<string, int>
+ */
+function bayarPaidByCode(Invoice $invoice): array
+{
+    return InvoiceItem::query()->where('invoice_id', $invoice->id)->with('feeType')->get()
+        ->mapWithKeys(fn (InvoiceItem $item): array => [$item->feeType->code => (int) $item->paid_amount])
+        ->all();
+}
+
+/**
+ * Alokasi sebuah pembayaran per kode jenis biaya (dari baris payment_allocations).
+ *
+ * @return array<string, int>
+ */
+function bayarAllocationsByCode(Payment $payment): array
+{
+    return $payment->allocations()->with('invoiceItem.feeType')->get()
+        ->mapWithKeys(fn ($allocation): array => [$allocation->invoiceItem->feeType->code => (int) $allocation->amount])
+        ->all();
+}
+
+/**
+ * Pola regex untuk pesan `pondok.payment.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function bayarMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.payment.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan kunci lang `pondok.payment.errors.<reason>`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function bayarAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    expect(__("pondok.payment.errors.{$reason}"))->not->toBe("pondok.payment.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(bayarMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.payment.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Pembayaran 500.000 dari tagihan santri mukim SLTP (nomor KW-202610-00001), siap untuk uji kuitansi dan panel.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function bayarPaymentFor(object $f, int $amount = 500000, array $overrides = [], ?User $by = null): Payment
+{
+    return bayarRecord(bayarInvoice($f), $amount, $overrides, $by);
+}
+
+/**
+ * Teks polos dari HTML: tag dibuang, entitas didekode, spasi (termasuk spasi tak-putus) dirapikan.
+ */
+function bayarHtmlText(string $html): string
+{
+    $html = (string) preg_replace('#<(script|style)\b.*?</\1>#is', ' ', $html);
+    $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
     return trim((string) preg_replace('/[\s\x{00A0}\x{202F}]+/u', ' ', $text));
 }

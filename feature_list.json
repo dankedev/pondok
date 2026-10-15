@@ -187,16 +187,16 @@
       "name": "Pendaftaran online & cek status",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F009", "F004"],
       "description": "Form publik Livewire tanpa akun, nomor pendaftaran + token untuk cek status dan unggah berkas (disk private). Tagihan saat_daftar dibuat saat daftar; formulir lunas membuka unggah berkas dan tes.",
       "acceptance": [
         "Status: draft, diajukan, diverifikasi, diterima, cadangan, ditolak",
         "Berkas hanya bisa diakses lewat token atau permission"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit fd94e91, 7cca75d, 5ab828b, 573f436, 60ec56e (+4a21ba2 factory); 1729 test Pest lulus di PHP 8.4 dan 8.3 (parallel): PsbApplicantSchema, SubmitApplication, GenerateRegistrationInvoices, UploadApplicantDocument, CheckApplicantCredentials, RegistrationForm, ApplicationStatus, ApplicantResource, ApplicantVerify; migrate:fresh --seed MySQL. Cek visual halaman publik belum (butuh npm run build).",
       "notes": "F005 membuat fee_overrides.applicant_id (dan F002 students.applicant_id) tanpa FK. Saat F010 membuat applicants dan menambah FK, SQLite membangun ulang tabel: wajib test bahwa index ERD (student_id, fee_type_id, valid_from) dan FK lain tetap ada. Dari F009: tegakkan kuota gelombang; cegah hapus syarat berkas yang sudah punya applicant_documents; tentukan gelombang mana yang berlaku bila beberapa terbuka di tanggal yang sama (bisa lintas tahun ajaran). Dari F006: billing_group PSB harus berbeda dari grup bulanan."
     },
     {
@@ -205,13 +205,13 @@
       "name": "Seleksi & penerimaan pendaftar",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F010", "F005", "F018"],
       "description": "Verifikasi berkas, keputusan status, Action AcceptApplicant: tagihan saat_diterima dibuat dan beasiswa jalur diterapkan otomatis.",
       "acceptance": [
         "Beasiswa jalur muncul sebagai fee_override pendaftar"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "Dari F009: tentukan jenis biaya mana yang mendapat potongan otomatis dari admission_tracks.scholarship_id (scholarships tidak punya fee_type). Dari F018: isi widget dashboard PSB (total, per status, 7 hari terakhir) lewat Action metrik + hasMetricSource() true. Dari F010: verifikasi per berkas sudah di F010; F011 cukup keputusan status pendaftar (termasuk diverifikasi)."

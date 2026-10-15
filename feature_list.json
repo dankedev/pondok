@@ -96,7 +96,7 @@
       "name": "Beasiswa & keringanan",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F004"],
       "description": "Program beasiswa dan donatur, fee_overrides per santri/pendaftar per jenis biaya dengan masa berlaku. Mode nominal, potongan, persen.",
       "acceptance": [
@@ -105,7 +105,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 49185f3, 4830ad0, 45ac36d, c2a3f78; 451 test Pest lulus di PHP 8.4 dan 8.3 (ApplyFeeOverride, ResolveFeeOverride, SaveScholarship, SaveFeeOverride, EndFeeOverride, FeeOverrideVerify, FeeOverrides, Scholarships); migrate:fresh --seed MySQL",
       "notes": ""
     },
     {
@@ -197,7 +197,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": ""
+      "notes": "F005 membuat fee_overrides.applicant_id (dan F002 students.applicant_id) tanpa FK. Saat F010 membuat applicants dan menambah FK, SQLite membangun ulang tabel: wajib test bahwa index ERD (student_id, fee_type_id, valid_from) dan FK lain tetap ada."
     },
     {
       "id": "F011",

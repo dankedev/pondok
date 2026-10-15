@@ -91,7 +91,7 @@ class CohortResource extends Resource
     {
         return $table
             ->defaultSort('entry_year', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('unit')->withCount('students'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('unit')->withCount('students')->withExists('feeRates'))
             ->columns([
                 TextColumn::make('unit.name')
                     ->label(__('pondok.common.unit'))
@@ -112,8 +112,9 @@ class CohortResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
+                // Santri dan tarif menahan penghapusan (FK restrict).
                 DeleteAction::make()
-                    ->hidden(fn (Cohort $record): bool => $record->students_count > 0),
+                    ->hidden(fn (Cohort $record): bool => $record->students_count > 0 || $record->fee_rates_exists),
             ]);
     }
 

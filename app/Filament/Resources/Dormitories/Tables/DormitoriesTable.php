@@ -21,6 +21,7 @@ class DormitoriesTable
             ->defaultSort('name')
             ->modifyQueryUsing(fn (Builder $query) => $query
                 ->withCount(['rooms', 'supervisors'])
+                ->withExists('feeRates')
                 ->withSum('rooms', 'capacity')
                 ->addSelect(['occupied_count' => RoomAssignment::withoutUnitScope()
                     ->selectRaw('count(*)')
@@ -65,7 +66,7 @@ class DormitoriesTable
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make()
-                    ->hidden(fn (Dormitory $record): bool => $record->rooms_count > 0 || $record->supervisors_count > 0),
+                    ->hidden(fn (Dormitory $record): bool => $record->rooms_count > 0 || $record->supervisors_count > 0 || $record->fee_rates_exists),
             ]);
     }
 }

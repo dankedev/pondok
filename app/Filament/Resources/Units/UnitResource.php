@@ -13,6 +13,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class UnitResource extends Resource
 {
@@ -66,6 +67,7 @@ class UnitResource extends Resource
     {
         return $table
             ->defaultSort('sort_order')
+            ->modifyQueryUsing(fn (Builder $query) => $query->withExists('feeRates'))
             ->columns([
                 TextColumn::make('code')
                     ->label(__('pondok.unit.code'))
@@ -80,7 +82,9 @@ class UnitResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                // Jenjang yang punya tarif tidak bisa dihapus (FK restrict).
+                DeleteAction::make()
+                    ->hidden(fn (Unit $record): bool => $record->fee_rates_exists),
             ]);
     }
 

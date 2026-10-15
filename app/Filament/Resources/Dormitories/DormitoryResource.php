@@ -78,10 +78,12 @@ class DormitoryResource extends Resource
 
     /**
      * Semua FK ke asrama `restrictOnDelete`: asrama hanya bisa dihapus bila
-     * belum punya kamar maupun riwayat musyrif.
+     * belum punya kamar, riwayat musyrif, maupun tarif.
      */
     public static function canBeDeleted(Dormitory $dormitory): bool
     {
-        return ! $dormitory->rooms()->exists() && ! $dormitory->supervisors()->exists();
+        return ! $dormitory->rooms()->exists()
+            && ! $dormitory->supervisors()->exists()
+            && ! $dormitory->feeRates()->exists();
     }
 }

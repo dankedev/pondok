@@ -52,7 +52,11 @@ it('grants each role exactly its permissions', function (string $role, array $ex
     expect(Role::findByName($role)->permissions->pluck('name')->sort()->values()->all())
         ->toBe(collect($expected)->sort()->values()->all());
 })->with([
-    'bendahara' => ['bendahara', ['view-dashboard', 'view-finance-metrics']],
+    'bendahara' => ['bendahara', [
+        'view-dashboard', 'view-finance-metrics',
+        'view-any:fee-type', 'view:fee-type', 'create:fee-type', 'update:fee-type',
+        'view-any:fee-rate', 'view:fee-rate', 'create:fee-rate', 'update:fee-rate',
+    ]],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
     'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],
     'kesantrian' => ['kesantrian', [

@@ -32,6 +32,7 @@ class RolePermissionSeeder extends Seeder
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
+        'FeeType', 'FeeRate',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -95,12 +96,18 @@ class RolePermissionSeeder extends Seeder
     public static function permissionsFor(string $role): array
     {
         $readOnly = ['viewAny', 'view'];
-        // Riwayat penempatan dan tugas musyrif tidak dihapus.
+        // Riwayat penempatan, tugas musyrif, dan data keuangan tidak dihapus.
         $withoutDelete = ['viewAny', 'view', 'create', 'update'];
 
         return match ($role) {
             'super-admin' => self::allPermissions(),
-            'bendahara' => ['view-dashboard', 'view-finance-metrics'],
+            // Mengatur jenis biaya dan tarif; jenis biaya dinonaktifkan, tarif dikoreksi lewat edit.
+            'bendahara' => [
+                'view-dashboard',
+                'view-finance-metrics',
+                ...self::resourcePermissions('FeeType', $withoutDelete),
+                ...self::resourcePermissions('FeeRate', $withoutDelete),
+            ],
             'admin-konten' => ['view-dashboard', 'view-content-metrics'],
             'admin-sekolah' => [
                 'view-dashboard',

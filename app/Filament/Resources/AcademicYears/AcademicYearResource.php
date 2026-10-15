@@ -18,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class AcademicYearResource extends Resource
 {
@@ -71,6 +72,7 @@ class AcademicYearResource extends Resource
     {
         return $table
             ->defaultSort('starts_on', 'desc')
+            ->modifyQueryUsing(fn (Builder $query) => $query->withExists('feeRates'))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('pondok.academic_year.name'))
@@ -103,8 +105,9 @@ class AcademicYearResource extends Resource
                             ->send();
                     }),
                 EditAction::make(),
+                // Tahun ajaran yang menjadi awal berlaku tarif tidak bisa dihapus (FK restrict).
                 DeleteAction::make()
-                    ->hidden(fn (AcademicYear $record): bool => $record->is_active),
+                    ->hidden(fn (AcademicYear $record): bool => $record->is_active || $record->fee_rates_exists),
             ]);
     }
 

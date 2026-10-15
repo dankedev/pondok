@@ -1,0 +1,183 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\HasUnitScope;
+use Database\Factories\InvoiceFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+
+/**
+ * Tagihan satu santri (atau pendaftar) untuk satu periode dan satu kelompok
+ * tagihan. Item adalah snapshot nominal; tagihan tidak dihapus, hanya
+ * dibatalkan lewat `CancelInvoice` (status `batal`).
+ *
+ * `active_marker` adalah generated column (1 untuk tagihan aktif, NULL untuk
+ * `batal`) yang diisi database; tidak fillable dan tidak di-cast.
+ *
+ * Cakupan jenjang dibaca lewat santri, termasuk santri yang diarsipkan.
+ * Tagihan tanpa santri (pendaftar, F010) tidak terlihat oleh user berjenjang.
+ */
+#[Fillable(['invoice_no', 'student_id', 'applicant_id', 'academic_year_id', 'period', 'billing_group', 'total', 'paid_total', 'status', 'due_on', 'generated_by'])]
+class Invoice extends Model
+{
+    /** @use HasFactory<InvoiceFactory> */
+    use HasFactory, HasUnitScope, LogsActivity;
+
+    public const STATUS_UNPAID = 'belum';
+
+    public const STATUS_PARTIAL = 'sebagian';
+
+    public const STATUS_PAID = 'lunas';
+
+    public const STATUS_CANCELLED = 'batal';
+
+    public const STATUSES = [
+        self::STATUS_UNPAID,
+        self::STATUS_PARTIAL,
+        self::STATUS_PAID,
+        self::STATUS_CANCELLED,
+    ];
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'total' => 0,
+        'paid_total' => 0,
+        'status' => self::STATUS_UNPAID,
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'period' => 'date',
+            'due_on' => 'date',
+            'total' => 'integer',
+            'paid_total' => 'integer',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        // Pengganti check constraint (tidak portabel lewat Blueprint): pemilik wajib ada.
+        static::saving(function (Invoice $invoice): void {
+            if ($invoice->student_id === null && $invoice->applicant_id === null) {
+                throw new LogicException('Tagihan wajib punya santri atau pendaftar.');
+            }
+        });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('keuangan')
+            ->logOnly(['status'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
+    /**
+     * @param  list<int>  $unitIds
+     */
+    public function applyUnitScope(Builder $builder, array $unitIds): void
+    {
+        $builder->whereIn(
+            $this->qualifyColumn('student_id'),
+            Student::withoutGlobalScopes()->whereIn('unit_id', $unitIds)->select('id'),
+        );
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class)->withTrashed();
+    }
+
+    public function academicYear(): BelongsTo
+    {
+        return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function generator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'generated_by');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+
+    /**
+     * Hitung ulang `total` dari item di database, sinkronkan status, lalu simpan.
+     */
+    public function recalculateTotal(): void
+    {
+        $this->total = (int) $this->items()->sum('amount');
+        $this->syncStatus();
+        $this->save();
+    }
+
+    /**
+     * Status dari `paid_total` dan `total` (di memori, tanpa menyimpan).
+     * Tagihan `batal` tidak pernah berubah; total 0 dianggap lunas.
+     */
+    public function syncStatus(): void
+    {
+        if ($this->status === self::STATUS_CANCELLED) {
+            return;
+        }
+
+        $this->status = match (true) {
+            $this->paid_total >= $this->total => self::STATUS_PAID,
+            $this->paid_total === 0 => self::STATUS_UNPAID,
+            default => self::STATUS_PARTIAL,
+        };
+    }
+
+    public function isCancellable(): bool
+    {
+        return $this->status !== self::STATUS_CANCELLED && $this->paid_total === 0;
+    }
+
+    /**
+     * Lewat jatuh tempo dihitung, tidak disimpan sebagai status.
+     */
+    public function isOverdue(): bool
+    {
+        return in_array($this->status, [self::STATUS_UNPAID, self::STATUS_PARTIAL], true)
+            && $this->due_on !== null
+            && $this->due_on->lt(today());
+    }
+
+    /**
+     * Warna badge sesuai design guide §4.
+     */
+    public function statusColor(): string
+    {
+        if ($this->isOverdue()) {
+            return 'danger';
+        }
+
+        return match ($this->status) {
+            self::STATUS_PAID => 'success',
+            self::STATUS_PARTIAL => 'warning',
+            self::STATUS_CANCELLED => 'danger',
+            default => 'gray',
+        };
+    }
+
+    public function statusLabel(): string
+    {
+        if ($this->isOverdue()) {
+            return __('pondok.invoice.overdue');
+        }
+
+        return __("pondok.invoice.statuses.{$this->status}");
+    }
+}

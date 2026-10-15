@@ -80,6 +80,11 @@ class FeeType extends Model
         return $this->hasMany(FeeOverride::class);
     }
 
+    public function invoiceItems(): HasMany
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+
     public function scopeActive(Builder $query): void
     {
         $query->where('is_active', true);

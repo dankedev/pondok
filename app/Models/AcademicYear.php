@@ -34,6 +34,11 @@ class AcademicYear extends Model
         $query->where('is_active', true);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     /**
      * Tarif yang berlaku mulai tahun ajaran ini.
      */

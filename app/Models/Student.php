@@ -76,6 +76,11 @@ class Student extends Model
         return $this->hasMany(FeeOverride::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);

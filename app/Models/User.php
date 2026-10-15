@@ -62,6 +62,14 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Tagihan yang dibuat user ini lewat panel. Selama ada, user tidak bisa dihapus.
+     */
+    public function generatedInvoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'generated_by');
+    }
+
+    /**
      * ID jenjang yang boleh dilihat user. Array kosong berarti tanpa batasan.
      *
      * @return list<int>

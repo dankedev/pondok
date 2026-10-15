@@ -3,6 +3,7 @@
 use App\Models\AcademicYear;
 use App\Models\Cohort;
 use App\Models\Dormitory;
+use App\Models\FeeOverride;
 use App\Models\FeeRate;
 use App\Models\FeeType;
 use App\Models\Room;
@@ -367,6 +368,90 @@ function keuanganFeeRateData(FeeType $type, AcademicYear $year, Unit $unit, arra
         'dormitory_id' => null,
         'admission_wave_id' => null,
         'amount' => 400000,
+        ...$overrides,
+    ];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper beasiswa & keringanan (F005)
+|--------------------------------------------------------------------------
+|
+| Berawalan `keringanan`. Memakai `keuanganUser` dan `keuanganAssertRejected`.
+| Seeder peran harus sudah dijalankan oleh test pemanggil bila butuh user.
+|
+*/
+
+/**
+ * Fixture: jenjang SD dan SLTP, jenis biaya SPP, santri aktif SLTP `a` dan `b`, santri aktif SD `c`.
+ *
+ * @return object{sd: Unit, sltp: Unit, spp: FeeType, a: Student, b: Student, c: Student}
+ */
+function keringananFixture(): object
+{
+    test()->seed(UnitSeeder::class);
+
+    $sd = Unit::query()->where('code', 'SD')->firstOrFail();
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+    $sltpCohort = Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2025]);
+    $sdCohort = Cohort::factory()->create(['unit_id' => $sd->id, 'entry_year' => 2025]);
+
+    return (object) [
+        'sd' => $sd,
+        'sltp' => $sltp,
+        'spp' => FeeType::factory()->monthly()->create(['code' => 'SPP', 'name' => 'SPP']),
+        'a' => Student::factory()->forCohort($sltpCohort)->create(['nis' => '1000000001', 'name' => 'Ahmad']),
+        'b' => Student::factory()->forCohort($sltpCohort)->create(['nis' => '1000000002', 'name' => 'Budi']),
+        'c' => Student::factory()->forCohort($sdCohort)->create(['nis' => '1000000003', 'name' => 'Candra']),
+    ];
+}
+
+/**
+ * Keringanan langsung lewat factory (tanpa Action).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function keringananOverride(array $attributes = []): FeeOverride
+{
+    return FeeOverride::factory()->create($attributes);
+}
+
+/**
+ * Data masukan SaveFeeOverride yang valid (santri `a`, SPP, nominal, 2026-07-01 tanpa akhir).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function keringananOverrideData(object $f, array $overrides = []): array
+{
+    return [
+        'student_id' => $f->a->id,
+        'applicant_id' => null,
+        'fee_type_id' => $f->spp->id,
+        'scholarship_id' => null,
+        'mode' => 'nominal',
+        'value' => 250000,
+        'reason' => 'Hafal 10 juz',
+        'valid_from' => '2026-07-01',
+        'valid_until' => null,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Data masukan SaveScholarship yang valid.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function keringananScholarshipData(array $overrides = []): array
+{
+    return [
+        'name' => 'Beasiswa Tahfidz',
+        'mode' => 'persen',
+        'default_value' => 50,
+        'sponsor' => null,
+        'is_active' => true,
         ...$overrides,
     ];
 }

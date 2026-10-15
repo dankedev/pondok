@@ -163,7 +163,7 @@ Setiap daftar, tabel, dan widget wajib punya:
 | State | Isi |
 |---|---|
 | Kosong | Ikon + satu kalimat keadaan + satu aksi bila relevan. Contoh: "Belum ada tagihan untuk periode ini." [Buat tagihan] |
-| Modul mati / tabel belum ada | Pesan `pondok.common.module_disabled`, tanpa error, tanpa tombol aksi |
+| Modul mati / tabel belum ada | Widget dashboard: widget tetap tampil dengan pesan `pondok.dashboard.module_unavailable` ("Modul belum tersedia."), tanpa error, tanpa tombol aksi, tanpa link (trait `InteractsWithDashboardModule`). Resource/halaman: `pondok.common.module_disabled` (403) |
 | Tidak ada akses | Jangan tampilkan widget sama sekali (bukan widget kosong) |
 | Memuat (Livewire) | `wire:loading` pada tombol: tombol disabled + teks "Menyimpan…" |
 | Gagal | Notifikasi `danger` dengan pesan yang bisa ditindaklanjuti, bukan pesan exception |

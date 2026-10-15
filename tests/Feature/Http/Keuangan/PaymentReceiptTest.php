@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Keuangan\CancelPayment;
+use App\Models\Applicant;
 use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -136,7 +137,7 @@ it('AC-41: shows the note when the payment has one', function () {
 });
 
 it('AC-41: prints a receipt for an invoice without a student', function () {
-    $applicantInvoice = Invoice::factory()->create(['academic_year_id' => $this->f->year->id, 'student_id' => null, 'applicant_id' => 5, 'billing_group' => 'PSB', 'total' => 300000]);
+    $applicantInvoice = Invoice::factory()->create(['academic_year_id' => $this->f->year->id, 'student_id' => null, 'applicant_id' => Applicant::factory()->create()->id, 'billing_group' => 'PSB', 'total' => 300000]);
     $payment = Payment::factory()->create(['invoice_id' => $applicantInvoice->id, 'amount' => 300000, 'receipt_no' => 'KW-202610-00099', 'received_by' => $this->officer->id]);
 
     $this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->assertSee('KW-202610-00099');
@@ -202,4 +203,15 @@ it('VERIFY: prints a receipt and opens the detail when the receiver is unknown',
     $this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk();
     $this->actingAs($this->officer)->get("/admin/payments/{$payment->id}")->assertOk();
     $this->actingAs($this->officer)->get('/admin/payments')->assertOk();
+});
+
+it('AC-39: prints the applicant details and the guardian on the receipt', function () {
+    $applicant = Applicant::factory()->create(['unit_id' => $this->f->sltp->id, 'registration_no' => 'PSB-2027-0001', 'name' => 'Ahmad Fauzan', 'guardian_name' => 'Budi Santoso']);
+    $invoice = Invoice::factory()->create(['academic_year_id' => $this->f->year->id, 'student_id' => null, 'applicant_id' => $applicant->id, 'billing_group' => 'PSB_DAFTAR', 'total' => 250000]);
+    $payment = Payment::factory()->create(['invoice_id' => $invoice->id, 'amount' => 250000, 'receipt_no' => 'KW-202610-00098', 'received_by' => $this->officer->id]);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('PSB-2027-0001')->toContain('Ahmad Fauzan')
+        ->toContain(__('pondok.receipt.received_from').' Budi Santoso');
 });

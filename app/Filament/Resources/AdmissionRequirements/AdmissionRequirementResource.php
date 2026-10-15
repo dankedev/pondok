@@ -83,7 +83,8 @@ class AdmissionRequirementResource extends Resource
                     ->label(__('pondok.admission_requirement.unit'))
                     ->placeholder(__('pondok.admission_requirement.all_units'))
                     ->options(fn (): array => Unit::query()->accessible()->orderBy('sort_order')->pluck('name', 'id')->all())
-                    ->required(fn (): bool => static::userIsScoped()),
+                    ->required(fn (): bool => static::userIsScoped())
+                    ->disabled(fn (?AdmissionRequirement $record): bool => static::isInUse($record)),
                 Select::make('document_type_id')
                     ->label(__('pondok.admission_requirement.document_type'))
                     ->options(fn (?AdmissionRequirement $record): array => DocumentType::query()
@@ -95,6 +96,7 @@ class AdmissionRequirementResource extends Resource
                         ->pluck('name', 'id')
                         ->all())
                     ->required()
+                    ->disabled(fn (?AdmissionRequirement $record): bool => static::isInUse($record))
                     ->live()
                     ->afterStateUpdated(function (Get $get, Set $set, mixed $state): void {
                         if (blank($get('name')) && filled($state)) {
@@ -121,7 +123,7 @@ class AdmissionRequirementResource extends Resource
     {
         return $table
             ->defaultSort(fn (Builder $query) => $query->orderBy('sort_order')->orderBy('id'))
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['unit', 'documentType']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['unit', 'documentType'])->withExists('applicantDocuments'))
             ->columns([
                 TextColumn::make('unit.name')
                     ->label(__('pondok.admission_requirement.unit'))
@@ -152,12 +154,23 @@ class AdmissionRequirementResource extends Resource
                     ->hidden(fn (AdmissionRequirement $record): bool => static::isReadOnlyFor($record))
                     ->using(fn (AdmissionRequirement $record, array $data, SaveAdmissionRequirement $saveAdmissionRequirement, Action $action): AdmissionRequirement => static::saveShowingFormErrors(
                         $action,
-                        fn (): AdmissionRequirement => $saveAdmissionRequirement->handle($data, $record),
+                        // Field yang dikunci (disabled) tidak terkirim; nilai lama dipakai.
+                        fn (): AdmissionRequirement => $saveAdmissionRequirement->handle($data + ['unit_id' => $record->unit_id, 'document_type_id' => $record->document_type_id], $record),
                     )),
                 DeleteAction::make()
                     ->modalDescription(__('pondok.admission_requirement.delete_description'))
-                    ->hidden(fn (AdmissionRequirement $record): bool => static::isReadOnlyFor($record)),
+                    // Syarat yang sudah punya berkas pendaftar tidak bisa dihapus (FK restrict).
+                    ->hidden(fn (AdmissionRequirement $record): bool => static::isReadOnlyFor($record) || $record->applicant_documents_exists),
             ]);
+    }
+
+    /**
+     * Syarat yang sudah punya berkas pendaftar: jenjang dan jenis dokumen dikunci
+     * (`SaveAdmissionRequirement` tetap menolak perubahan keduanya).
+     */
+    public static function isInUse(?AdmissionRequirement $record): bool
+    {
+        return $record !== null && $record->applicantDocuments()->exists();
     }
 
     public static function createAction(): CreateAction

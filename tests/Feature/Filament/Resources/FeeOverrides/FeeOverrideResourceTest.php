@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Resources\FeeOverrides\Pages\ManageFeeOverrides;
+use App\Models\Applicant;
 use App\Models\FeeOverride;
 use App\Models\Scholarship;
 use App\Models\Student;
@@ -63,7 +64,7 @@ it('AC-30: forbids a scoped user from editing or ending overrides of another uni
 
 it('AC-30: hides applicant-only overrides', function () {
     $f = $this->f;
-    $applicantOnly = keringananOverride(['student_id' => null, 'applicant_id' => 77, 'fee_type_id' => $f->spp->id]);
+    $applicantOnly = keringananOverride(['student_id' => null, 'applicant_id' => Applicant::factory()->create()->id, 'fee_type_id' => $f->spp->id]);
     $student = keringananOverride(['student_id' => $f->a->id, 'fee_type_id' => $f->spp->id]);
     $this->actingAs(keuanganUser('super-admin'));
 

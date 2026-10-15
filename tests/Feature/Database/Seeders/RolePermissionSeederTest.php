@@ -69,6 +69,8 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:admission-track', 'view:admission-track', 'create:admission-track', 'update:admission-track',
         'view-any:admission-requirement', 'view:admission-requirement', 'create:admission-requirement',
         'update:admission-requirement', 'delete:admission-requirement', 'delete-any:admission-requirement',
+        'view-any:applicant', 'view:applicant', 'delete:applicant',
+        'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant',
     ]],
     'kesantrian' => ['kesantrian', [
         'view-dashboard', 'view-student-metrics',
@@ -193,3 +195,28 @@ it('AC-22: gives psb master permissions to no other role', function (string $rol
 it('AC-22: creates no permission for document types', function () {
     expect(Permission::query()->where('name', 'like', '%document-type%')->count())->toBe(0);
 });
+
+it('AC-30: creates the nine applicant permissions', function () {
+    $expected = ['view-any:applicant', 'view:applicant', 'create:applicant', 'update:applicant', 'delete:applicant', 'delete-any:applicant',
+        'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant'];
+
+    expect(Permission::query()->where('name', 'like', '%:applicant')->pluck('name')->sort()->values()->all())
+        ->toBe(collect($expected)->sort()->values()->all());
+});
+
+it('AC-30: lets admin-psb verify, reset tokens and delete but not create or update applicants', function () {
+    $user = User::factory()->create()->assignRole('admin-psb');
+
+    expect($user->can('view-any:applicant'))->toBeTrue()
+        ->and($user->can('verify-document:applicant'))->toBeTrue()
+        ->and($user->can('reset-token:applicant'))->toBeTrue()
+        ->and($user->can('generate-invoices:applicant'))->toBeTrue()
+        ->and($user->can('delete:applicant'))->toBeTrue()
+        ->and($user->can('create:applicant'))->toBeFalse()
+        ->and($user->can('update:applicant'))->toBeFalse()
+        ->and($user->can('delete-any:applicant'))->toBeFalse();
+});
+
+it('AC-30: gives applicant permissions to no other role', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':applicant'))->all())->toBe([]);
+})->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);

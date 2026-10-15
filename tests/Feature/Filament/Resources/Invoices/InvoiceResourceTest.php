@@ -2,6 +2,7 @@
 
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
+use App\Models\Applicant;
 use App\Models\FeeOverride;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -298,4 +299,57 @@ it('AC-54: shows no raw language keys', function () {
     foreach ([tagihanPlainText($list), tagihanPlainText($detail), tagihanPlainText($generate), tagihanPlainText($cancel), $empty] as $text) {
         expect($text)->not->toContain('pondok.invoice.')->not->toContain('pondok.navigation.');
     }
+});
+
+/**
+ * Tagihan pendaftar SLTP "PSB-2027-0001 — Ahmad Fauzan" (wali Budi Santoso) dan tagihan pendaftar SLTA.
+ *
+ * @return array{0: Invoice, 1: Invoice}
+ */
+function invoicesOfApplicants(object $f): array
+{
+    $sltp = Applicant::factory()->create(['unit_id' => $f->sltp->id, 'registration_no' => 'PSB-2027-0001', 'name' => 'Ahmad Fauzan', 'guardian_name' => 'Budi Santoso']);
+    $slta = Applicant::factory()->create(['unit_id' => $f->slta->id, 'registration_no' => 'PSB-2027-0002', 'name' => 'Siti Aminah']);
+    $make = fn (Applicant $applicant) => Invoice::factory()->create([
+        'student_id' => null, 'applicant_id' => $applicant->id, 'academic_year_id' => $f->year->id, 'billing_group' => 'PSB_DAFTAR', 'total' => 250000,
+    ]);
+
+    return [$make($sltp), $make($slta)];
+}
+
+it('AC-39: lists applicant invoices with the registration number and name', function () {
+    [$applicantInvoice] = invoicesOfApplicants($this->f);
+    $studentInvoice = invoiceWithItems($this->f);
+    $this->actingAs(keuanganUser('bendahara'));
+
+    $component = Livewire::test(ListInvoices::class)->assertCanSeeTableRecords([$applicantInvoice, $studentInvoice]);
+
+    expect(tagihanPlainText($component))->toContain('PSB-2027-0001')->toContain('Ahmad Fauzan');
+});
+
+it('AC-39: finds applicant invoices by registration number and name', function () {
+    [$applicantInvoice, $other] = invoicesOfApplicants($this->f);
+    $studentInvoice = invoiceWithItems($this->f);
+    $this->actingAs(keuanganUser('bendahara'));
+
+    Livewire::test(ListInvoices::class)
+        ->searchTable('PSB-2027-0001')->assertCanSeeTableRecords([$applicantInvoice])->assertCanNotSeeTableRecords([$other, $studentInvoice])
+        ->searchTable('Ahmad')->assertCanSeeTableRecords([$applicantInvoice])->assertCanNotSeeTableRecords([$other, $studentInvoice]);
+});
+
+it('AC-39: filters applicant invoices by unit', function () {
+    [$sltp, $slta] = invoicesOfApplicants($this->f);
+    $this->actingAs(keuanganUser('bendahara'));
+
+    Livewire::test(ListInvoices::class)
+        ->filterTable('unit', $this->f->sltp->id)->assertCanSeeTableRecords([$sltp])->assertCanNotSeeTableRecords([$slta])
+        ->removeTableFilters()
+        ->filterTable('unit', $this->f->slta->id)->assertCanSeeTableRecords([$slta])->assertCanNotSeeTableRecords([$sltp]);
+});
+
+it('AC-39: shows the applicant owner on the invoice detail', function () {
+    [$invoice] = invoicesOfApplicants($this->f);
+    $this->actingAs(keuanganUser('bendahara'));
+
+    expect(tagihanPlainText(Livewire::test(ViewInvoice::class, ['record' => $invoice->id])))->toContain('PSB-2027-0001 — Ahmad Fauzan');
 });

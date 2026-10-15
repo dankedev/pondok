@@ -38,7 +38,7 @@ class RolePermissionSeeder extends Seeder
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
         'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
-        'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement',
+        'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement', 'Applicant',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -50,6 +50,8 @@ class RolePermissionSeeder extends Seeder
         'Invoice' => ['generate', 'cancel'],
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.
         'Payment' => ['cancel'],
+        // Pendaftar dibuat lewat form publik; panitia memverifikasi berkas, mengatur ulang token, dan menagih formulir.
+        'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices'],
     ];
 
     public function run(): void
@@ -149,6 +151,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('AdmissionWave', $withoutDelete),
                 ...self::resourcePermissions('AdmissionTrack', $withoutDelete),
                 ...self::resourcePermissions('AdmissionRequirement'),
+                ...self::resourcePermissions('Applicant', ['viewAny', 'view', 'delete', 'verifyDocument', 'resetToken', 'generateInvoices']),
             ],
             // Santri dan wali lihat-saja; mengelola asrama, kamar, penghuni, dan musyrif.
             'kesantrian' => [

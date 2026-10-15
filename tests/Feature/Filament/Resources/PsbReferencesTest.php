@@ -1,9 +1,13 @@
 <?php
 
 use App\Filament\Resources\AcademicYears\Pages\ManageAcademicYears;
+use App\Filament\Resources\AdmissionRequirements\Pages\ManageAdmissionRequirements;
 use App\Filament\Resources\Units\Pages\ManageUnits;
 use App\Models\AcademicYear;
 use App\Models\AdmissionRequirement;
+use App\Models\Applicant;
+use App\Models\ApplicantDocument;
+use App\Models\Unit;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Filament\Actions\Testing\TestAction;
@@ -49,4 +53,33 @@ it('AC-29: refuses to delete an academic year with waves even when the action is
     }
 
     expect(AcademicYear::query()->whereKey($this->f->y2027->id)->exists())->toBeTrue();
+});
+
+it('AC-6 (F010): hides requirement delete when it has applicant documents', function () {
+    $used = AdmissionRequirement::factory()->create(['unit_id' => null, 'document_type_id' => $this->f->types['KK']->id]);
+    $free = AdmissionRequirement::factory()->create(['unit_id' => null, 'document_type_id' => $this->f->types['AKTA']->id]);
+    ApplicantDocument::factory()->create(['admission_requirement_id' => $used->id]);
+
+    Livewire::test(ManageAdmissionRequirements::class)
+        ->assertActionHidden(TestAction::make('delete')->table($used))
+        ->assertActionVisible(TestAction::make('delete')->table($free));
+});
+
+it('AC-6 (F010): hides unit delete when it has applicants', function () {
+    Applicant::factory()->create(['unit_id' => $this->f->sltp->id]);
+
+    Livewire::test(ManageUnits::class)
+        ->assertActionHidden(TestAction::make('delete')->table($this->f->sltp))
+        ->assertActionVisible(TestAction::make('delete')->table($this->f->slta));
+});
+
+it('AC-6 (F010): refuses to delete a unit with applicants even when the action is forced', function () {
+    Applicant::factory()->create(['unit_id' => $this->f->sltp->id]);
+
+    try {
+        Livewire::test(ManageUnits::class)->callAction(TestAction::make('delete')->table($this->f->sltp));
+    } catch (Throwable) {
+    }
+
+    expect(Unit::query()->whereKey($this->f->sltp->id)->exists())->toBeTrue();
 });

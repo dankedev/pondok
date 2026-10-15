@@ -100,9 +100,10 @@ class InvoiceResource extends Resource
                             ->label(__('pondok.invoice.invoice_no')),
                         TextEntry::make('student')
                             ->label(__('pondok.invoice.student'))
-                            ->state(fn (Invoice $record): string => "{$record->student?->nis} — {$record->student?->name}"),
-                        TextEntry::make('student.unit.name')
+                            ->state(fn (Invoice $record): string => static::ownerLabel($record)),
+                        TextEntry::make('unit')
                             ->label(__('pondok.invoice.unit'))
+                            ->state(fn (Invoice $record): ?string => $record->student?->unit?->name ?? $record->applicant?->unit?->name)
                             ->placeholder('-'),
                         TextEntry::make('academicYear.name')
                             ->label(__('pondok.invoice.academic_year')),
@@ -175,17 +176,20 @@ class InvoiceResource extends Resource
     {
         return $table
             ->defaultSort(fn (Builder $query): Builder => $query->orderByDesc('period')->orderBy('invoice_no'))
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['student.unit']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['student.unit', 'applicant']))
             ->columns([
                 TextColumn::make('invoice_no')
                     ->label(__('pondok.invoice.invoice_no'))
                     ->searchable(),
+                // Tagihan pendaftar (tanpa santri) menampilkan nomor pendaftaran dan nama pendaftar.
                 TextColumn::make('student.nis')
                     ->label(__('pondok.invoice.nis'))
-                    ->searchable(),
+                    ->state(fn (Invoice $record): ?string => $record->student?->nis ?? $record->applicant?->registration_no)
+                    ->searchable(query: fn (Builder $query, string $search): Builder => static::searchOwner($query, 'nis', 'registration_no', $search)),
                 TextColumn::make('student.name')
                     ->label(__('pondok.invoice.student_name'))
-                    ->searchable(),
+                    ->state(fn (Invoice $record): ?string => $record->student?->name ?? $record->applicant?->name)
+                    ->searchable(query: fn (Builder $query, string $search): Builder => static::searchOwner($query, 'name', 'name', $search)),
                 TextColumn::make('period')
                     ->label(__('pondok.invoice.period'))
                     ->formatStateUsing(fn (CarbonInterface $state): string => static::periodLabel($state))
@@ -234,7 +238,7 @@ class InvoiceResource extends Resource
                     ->options(fn (): array => Unit::query()->accessible()->orderBy('sort_order')->pluck('name', 'id')->all())
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['value'] ?? null,
-                        fn (Builder $query, mixed $unitId) => $query->whereHas('student', fn (Builder $query) => $query->where('unit_id', $unitId)),
+                        fn (Builder $query, mixed $unitId) => static::whereOwnerUnit($query, $unitId),
                     )),
                 SelectFilter::make('status')
                     ->label(__('pondok.invoice.status'))
@@ -471,6 +475,42 @@ class InvoiceResource extends Resource
                     ->success()
                     ->send();
             });
+    }
+
+    /**
+     * "NIS — Nama" untuk tagihan santri, "Pendaftar: PSB-… — Nama" untuk tagihan pendaftar.
+     */
+    public static function ownerLabel(Invoice $invoice): string
+    {
+        if ($invoice->student === null && $invoice->applicant !== null) {
+            return __('pondok.invoice.applicant_owner', [
+                'number' => $invoice->applicant->registration_no,
+                'name' => $invoice->applicant->name,
+            ]);
+        }
+
+        return "{$invoice->student?->nis} — {$invoice->student?->name}";
+    }
+
+    /**
+     * Mencari tagihan lewat kolom santri atau, untuk tagihan tanpa santri, kolom pendaftar.
+     * Dipakai juga oleh `PaymentResource` dengan relasi berawalan `invoice.`.
+     */
+    public static function searchOwner(Builder $query, string $studentColumn, string $applicantColumn, string $search, string $prefix = ''): Builder
+    {
+        return $query
+            ->whereHas("{$prefix}student", fn (Builder $query) => $query->whereLike($studentColumn, "%{$search}%"))
+            ->orWhereHas("{$prefix}applicant", fn (Builder $query) => $query->whereLike($applicantColumn, "%{$search}%"));
+    }
+
+    /**
+     * Tagihan santri jenjang `$unitId` atau tagihan pendaftar jenjang `$unitId`.
+     */
+    public static function whereOwnerUnit(Builder $query, mixed $unitId, string $prefix = ''): Builder
+    {
+        return $query->where(fn (Builder $query) => $query
+            ->whereHas("{$prefix}student", fn (Builder $query) => $query->where('unit_id', $unitId))
+            ->orWhereHas("{$prefix}applicant", fn (Builder $query) => $query->where('unit_id', $unitId)));
     }
 
     public static function periodLabel(CarbonInterface $period): string

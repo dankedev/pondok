@@ -67,7 +67,7 @@ class UnitResource extends Resource
     {
         return $table
             ->defaultSort('sort_order')
-            ->modifyQueryUsing(fn (Builder $query) => $query->withExists(['feeRates', 'admissionRequirements']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->withExists(['feeRates', 'admissionRequirements', 'applicants' => fn (Builder $query) => $query->withoutGlobalScopes()]))
             ->columns([
                 TextColumn::make('code')
                     ->label(__('pondok.unit.code'))
@@ -82,9 +82,9 @@ class UnitResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                // Jenjang yang punya tarif atau syarat berkas tidak bisa dihapus (FK restrict).
+                // Jenjang yang punya tarif, syarat berkas, atau pendaftar (termasuk terhapus) tidak bisa dihapus (FK restrict).
                 DeleteAction::make()
-                    ->hidden(fn (Unit $record): bool => $record->fee_rates_exists || $record->admission_requirements_exists),
+                    ->hidden(fn (Unit $record): bool => $record->fee_rates_exists || $record->admission_requirements_exists || $record->applicants_exists),
             ]);
     }
 

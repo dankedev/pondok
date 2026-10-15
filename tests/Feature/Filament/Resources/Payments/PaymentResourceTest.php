@@ -9,6 +9,7 @@ use App\Filament\Resources\Payments\Pages\ListPayments;
 use App\Filament\Resources\Payments\Pages\ViewPayment;
 use App\Filament\Resources\Payments\PaymentResource;
 use App\Filament\Resources\Scholarships\ScholarshipResource;
+use App\Models\Applicant;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
@@ -89,7 +90,7 @@ it('AC-29: scopes the unit filter options and the unit filter itself', function 
 });
 
 it('AC-29: lists and opens payments of invoices without a student', function () {
-    $applicantInvoice = Invoice::factory()->create(['academic_year_id' => $this->f->year->id, 'student_id' => null, 'applicant_id' => 5, 'billing_group' => 'PSB', 'total' => 300000]);
+    $applicantInvoice = Invoice::factory()->create(['academic_year_id' => $this->f->year->id, 'student_id' => null, 'applicant_id' => Applicant::factory()->create()->id, 'billing_group' => 'PSB', 'total' => 300000]);
     $payment = Payment::factory()->create(['invoice_id' => $applicantInvoice->id, 'amount' => 300000]);
     $this->actingAs(keuanganUser('super-admin'));
 
@@ -340,4 +341,18 @@ it('AC-47: has no raw lang keys', function () {
     foreach ([tagihanPlainText($list), tagihanPlainText($detail), tagihanPlainText($cancel)] as $text) {
         expect($text)->not->toContain('pondok.payment.')->not->toContain('pondok.receipt.')->not->toContain('pondok.navigation.');
     }
+});
+
+it('AC-39: shows the applicant owner in the payment list and detail', function () {
+    $applicant = Applicant::factory()->create(['unit_id' => $this->f->sltp->id, 'registration_no' => 'PSB-2027-0001', 'name' => 'Ahmad Fauzan']);
+    $invoice = Invoice::factory()->create(['academic_year_id' => $this->f->year->id, 'student_id' => null, 'applicant_id' => $applicant->id, 'billing_group' => 'PSB_DAFTAR', 'total' => 250000]);
+    $payment = Payment::factory()->create(['invoice_id' => $invoice->id, 'amount' => 250000]);
+    $this->actingAs(keuanganUser('bendahara'));
+
+    $list = Livewire::test(ListPayments::class)->assertCanSeeTableRecords([$payment]);
+
+    expect(tagihanPlainText($list))->toContain('PSB-2027-0001')->toContain('Ahmad Fauzan')
+        ->and(tagihanPlainText(Livewire::test(ViewPayment::class, ['record' => $payment->id])))->toContain('PSB-2027-0001 — Ahmad Fauzan');
+
+    Livewire::test(ListPayments::class)->searchTable('PSB-2027-0001')->assertCanSeeTableRecords([$payment]);
 });

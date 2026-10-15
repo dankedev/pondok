@@ -20,10 +20,12 @@ class ShowPaymentReceipt extends Controller
     {
         Gate::authorize('view', $payment);
 
-        $payment->load(['invoice.student.unit', 'invoice.student.guardians', 'allocations.invoiceItem', 'receiver']);
+        $payment->load(['invoice.student.unit', 'invoice.student.guardians', 'invoice.applicant.unit', 'allocations.invoiceItem', 'receiver']);
 
         $invoice = $payment->invoice;
         $student = $invoice?->student;
+        // Tagihan pendaftar (belum jadi santri): pemilik pendaftar, pembayar wali pendaftar.
+        $applicant = $student === null ? $invoice?->applicant : null;
         // Kontak tagihan dengan id wali terkecil bila lebih dari satu; tanpa kontak, nama santri.
         $billingContact = $student?->guardians
             ->filter(fn ($guardian): bool => (bool) $guardian->pivot->is_billing_contact)
@@ -35,7 +37,8 @@ class ShowPaymentReceipt extends Controller
             'payment' => $payment,
             'invoice' => $invoice,
             'student' => $student,
-            'receivedFrom' => $billingContact?->name ?? $student?->name,
+            'applicant' => $applicant,
+            'receivedFrom' => $applicant?->guardian_name ?? $billingContact?->name ?? $student?->name,
             'period' => $invoice?->period !== null ? InvoiceResource::periodLabel($invoice->period) : null,
             'school' => [
                 'name' => Setting::get('school.name', config('app.name')),

@@ -79,8 +79,15 @@
             <dd>{{ $payment->paid_on->locale('id')->translatedFormat('j M Y') }}</dd>
             <dt>{{ __('pondok.receipt.received_from') }}</dt>
             <dd>{{ $receivedFrom ?? '-' }}</dd>
-            <dt>{{ __('pondok.receipt.student') }}</dt>
-            <dd>{{ $student ? "{$student->nis} — {$student->name}" : '-' }}@if ($student?->unit) ({{ $student->unit->name }})@endif</dd>
+            @if ($applicant)
+                <dt>{{ __('pondok.receipt.applicant') }}</dt>
+                <dd>{{ $applicant->name }}@if ($applicant->unit) ({{ $applicant->unit->name }})@endif</dd>
+                <dt>{{ __('pondok.receipt.registration_no') }}</dt>
+                <dd style="font-variant-numeric: tabular-nums">{{ $applicant->registration_no }}</dd>
+            @else
+                <dt>{{ __('pondok.receipt.student') }}</dt>
+                <dd>{{ $student ? "{$student->nis} — {$student->name}" : '-' }}@if ($student?->unit) ({{ $student->unit->name }})@endif</dd>
+            @endif
             <dt>{{ __('pondok.receipt.invoice') }}</dt>
             <dd>{{ $invoice?->invoice_no ?? '-' }}</dd>
             <dt>{{ __('pondok.receipt.period') }}</dt>

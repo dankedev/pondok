@@ -114,8 +114,9 @@ class PaymentResource extends Resource
                             ->label(__('pondok.payment.student'))
                             ->state(fn (Payment $record): ?string => static::studentLabel($record))
                             ->placeholder('-'),
-                        TextEntry::make('invoice.student.unit.name')
+                        TextEntry::make('unit')
                             ->label(__('pondok.payment.unit'))
+                            ->state(fn (Payment $record): ?string => $record->invoice?->student?->unit?->name ?? $record->invoice?->applicant?->unit?->name)
                             ->placeholder('-'),
                         TextEntry::make('invoice.period')
                             ->label(__('pondok.payment.period'))
@@ -167,19 +168,22 @@ class PaymentResource extends Resource
     {
         return $table
             ->defaultSort('id', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['invoice.student.unit', 'receiver']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['invoice.student.unit', 'invoice.applicant', 'receiver']))
             ->columns([
                 TextColumn::make('receipt_no')
                     ->label(__('pondok.payment.receipt_no'))
                     ->searchable(),
+                // Pembayaran tagihan pendaftar menampilkan nomor pendaftaran dan nama pendaftar.
                 TextColumn::make('invoice.student.nis')
                     ->label(__('pondok.payment.nis'))
+                    ->state(fn (Payment $record): ?string => $record->invoice?->student?->nis ?? $record->invoice?->applicant?->registration_no)
                     ->placeholder('-')
-                    ->searchable(),
+                    ->searchable(query: fn (Builder $query, string $search): Builder => InvoiceResource::searchOwner($query, 'nis', 'registration_no', $search, 'invoice.')),
                 TextColumn::make('invoice.student.name')
                     ->label(__('pondok.payment.student_name'))
+                    ->state(fn (Payment $record): ?string => $record->invoice?->student?->name ?? $record->invoice?->applicant?->name)
                     ->placeholder('-')
-                    ->searchable(),
+                    ->searchable(query: fn (Builder $query, string $search): Builder => InvoiceResource::searchOwner($query, 'name', 'name', $search, 'invoice.')),
                 TextColumn::make('invoice.invoice_no')
                     ->label(__('pondok.payment.invoice'))
                     ->searchable()
@@ -220,7 +224,7 @@ class PaymentResource extends Resource
                     ->options(fn (): array => Unit::query()->accessible()->orderBy('sort_order')->pluck('name', 'id')->all())
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['value'] ?? null,
-                        fn (Builder $query, mixed $unitId) => $query->whereHas('invoice.student', fn (Builder $query) => $query->where('unit_id', $unitId)),
+                        fn (Builder $query, mixed $unitId) => InvoiceResource::whereOwnerUnit($query, $unitId, 'invoice.'),
                     )),
                 Filter::make('paid_on')
                     ->schema([
@@ -333,13 +337,11 @@ class PaymentResource extends Resource
     }
 
     /**
-     * "NIS — Nama" santri pemilik tagihan; null untuk tagihan pendaftar.
+     * "NIS — Nama" santri pemilik tagihan, atau "Pendaftar: PSB-… — Nama" untuk tagihan pendaftar.
      */
     public static function studentLabel(Payment $payment): ?string
     {
-        $student = $payment->invoice?->student;
-
-        return $student === null ? null : "{$student->nis} — {$student->name}";
+        return $payment->invoice === null ? null : InvoiceResource::ownerLabel($payment->invoice);
     }
 
     public static function dateLabel(string $date): string

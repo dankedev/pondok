@@ -110,6 +110,18 @@ Jika fitur dialihkan ke agent/sesi lain (konteks hampir habis, ganti sesi, atau 
 2. Di `feature_list.json`: status `handoff`, isi `handoff` dengan path file tersebut.
 3. Agent penerima membaca handoff, memverifikasi kondisi repo, lalu mengubah status ke `in-progress` dan `owner` ke namanya. File handoff lama tidak dihapus.
 
+### 4. Tim subagent (`.claude/agents/`)
+
+Satu siklus fitur dijalankan sesi utama (orkestrator) secara berurutan:
+
+1. `product-manager` — pilih fitur, klaim di `feature_list.json`, tulis `docs/plans/<ID>-plan.md`.
+2. `plan-reviewer` — verdict `APPROVED` / `CHANGES_REQUESTED`. Bila ditolak, kembali ke langkah 1 (maks. 3 putaran, lalu tanya user).
+3. `red-tester` mode RED — test Pest dari kriteria penerimaan, semuanya gagal karena alasan yang benar.
+4. `green-coder` — implementasi sampai hijau, refactor, Pint. Tidak boleh mengubah test.
+5. `red-tester` mode VERIFY — cari celah. `FAIL` → kembali ke langkah 4.
+
+Setelah VERIFY `PASS`, orkestrator melaporkan ke user. Commit dan status `done` hanya atas permintaan user (lihat bagian 1 dan 2).
+
 ## Urutan pengembangan
 
 Rincian per fitur dan statusnya ada di `feature_list.json`.

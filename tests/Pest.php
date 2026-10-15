@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Keuangan\CancelPayment;
+use App\Actions\Keuangan\FinanceReportFilter;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
 use App\Models\AcademicYear;
@@ -13,6 +15,7 @@ use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\Room;
 use App\Models\RoomAssignment;
+use App\Models\Scholarship;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
@@ -742,4 +745,215 @@ function bayarHtmlText(string $html): string
     $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
     return trim((string) preg_replace('/[\s\x{00A0}\x{202F}]+/u', ' ', $text));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper laporan keuangan (F008)
+|--------------------------------------------------------------------------
+|
+| Berawalan `laporan`. Memakai `tagihanFixture`, `tagihanStudent`, `tagihanInvoice`,
+| `keuanganUser`. Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta (diatur test pemanggil).
+|
+*/
+
+/**
+ * Fixture tanpa tarif: tahun ajaran 2026/2027, jenjang SLTP dan SLTA, jenis biaya SPP/ASRAMA/MAKAN.
+ */
+function laporanFixture(): object
+{
+    return tagihanFixture(withRates: false);
+}
+
+/**
+ * Santri aktif jenjang `sltp` atau `slta`.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function laporanStudent(object $f, string $unit = 'sltp', array $attributes = []): Student
+{
+    return tagihanStudent($f, attributes: $attributes, cohort: $unit === 'slta' ? $f->cohortSlta : $f->cohort);
+}
+
+/**
+ * Tagihan lewat factory dengan status turunan dari `paid` dan `total` bila `$status` kosong.
+ * `$dueOn` bawaan: tanggal 10 periode.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function laporanInvoice(object $f, Student $student, string $period, int $total, int $paid = 0, ?string $status = null, ?string $dueOn = null, string $group = 'BULANAN', array $attributes = []): Invoice
+{
+    $status ??= match (true) {
+        $paid >= $total => Invoice::STATUS_PAID,
+        $paid === 0 => Invoice::STATUS_UNPAID,
+        default => Invoice::STATUS_PARTIAL,
+    };
+
+    return tagihanInvoice($student, $f->year, [
+        'period' => CarbonImmutable::parse($period, 'Asia/Jakarta')->startOfMonth(),
+        'total' => $total,
+        'paid_total' => $paid,
+        'status' => $status,
+        'billing_group' => $group,
+        ...($dueOn !== null ? ['due_on' => $dueOn] : []),
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Item tagihan snapshot; `amount = base - discount`.
+ */
+function laporanItem(Invoice $invoice, FeeType $type, int $base, int $discount = 0, ?FeeOverride $override = null): InvoiceItem
+{
+    return InvoiceItem::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_type_id' => $type->id,
+        'base_amount' => $base,
+        'discount_amount' => $discount,
+        'amount' => $base - $discount,
+        'fee_override_id' => $override?->id,
+    ]);
+}
+
+function laporanScholarship(string $name, ?string $sponsor = null): Scholarship
+{
+    return Scholarship::factory()->create(['name' => $name, 'sponsor' => $sponsor]);
+}
+
+function laporanOverride(Student $student, FeeType $type, ?Scholarship $scholarship = null): FeeOverride
+{
+    return FeeOverride::factory()->create([
+        'student_id' => $student->id,
+        'fee_type_id' => $type->id,
+        'scholarship_id' => $scholarship?->id,
+    ]);
+}
+
+/**
+ * Pembayaran lewat factory (tanpa alokasi dan tanpa mengubah `paid_total`).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function laporanPayment(Invoice $invoice, int $amount, string $paidOn, string $method = 'tunai', array $attributes = []): Payment
+{
+    return Payment::factory()->create([
+        'invoice_id' => $invoice->id,
+        'amount' => $amount,
+        'paid_on' => $paidOn,
+        'method' => $method,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Filter laporan lewat `FinanceReportFilter::make` (bulan `Y-m`; `$to` bawaan = `$from`).
+ */
+function laporanFilter(string $from = '2026-10', ?string $to = null, ?int $unitId = null, ?string $group = null): FinanceReportFilter
+{
+    return FinanceReportFilter::make($from, $to ?? $from, $unitId, $group);
+}
+
+/**
+ * Pola regex untuk pesan `pondok.finance_report.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function laporanMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.finance_report.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.finance_report.errors.<reason>` pada `$field`.
+ */
+function laporanAssertRejected(Closure $callback, string $reason, string $field): void
+{
+    expect(__("pondok.finance_report.errors.{$reason}"))->not->toBe("pondok.finance_report.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        expect($errors)->toHaveKey($field);
+
+        $matches = collect($errors[$field])->contains(fn (string $message): bool => preg_match(laporanMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.finance_report.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Tagihan dengan item per kode jenis biaya (SPP, ASRAMA, MAKAN) sehingga bisa dibayar lewat `RecordPayment`.
+ *
+ * @param  array<string, int>  $amounts  kode jenis biaya => nominal
+ */
+function laporanInvoiceWithItems(object $f, Student $student, array $amounts, string $period = '2026-10-01', string $group = 'BULANAN'): Invoice
+{
+    $types = ['SPP' => $f->spp, 'ASRAMA' => $f->asrama, 'MAKAN' => $f->makan];
+    $invoice = laporanInvoice($f, $student, $period, array_sum($amounts), 0, null, null, $group);
+
+    foreach ($amounts as $code => $amount) {
+        laporanItem($invoice, $types[$code], $amount);
+    }
+
+    return $invoice;
+}
+
+/**
+ * Fixture AC-11: Tahfidz (A 250.000 SPP, B 500.000), Yatim (A 300.000 MAKAN), Anak Ustadz (C 100.000),
+ * keringanan tanpa beasiswa (D 50.000), diskon di tagihan batal (E 400.000), diskon bulan September (F 999.000).
+ */
+function laporanSubsidyFixture(object $f): object
+{
+    $tahfidz = laporanScholarship('Beasiswa Tahfidz', 'Yayasan Al-Khair');
+    $yatim = laporanScholarship('Yatim', 'Yayasan Al-Khair');
+    $ustadz = laporanScholarship('Anak Ustadz');
+    laporanScholarship('Program Kosong', 'Yayasan Al-Khair');
+
+    $a = laporanStudent($f);
+    $b = laporanStudent($f);
+    $c = laporanStudent($f);
+    $d = laporanStudent($f);
+    $e = laporanStudent($f);
+    $g = laporanStudent($f);
+
+    $invoiceA = laporanInvoice($f, $a, '2026-10-01', 450000);
+    $tahfidzA = laporanOverride($a, $f->spp, $tahfidz);
+    laporanItem($invoiceA, $f->spp, 500000, 250000, $tahfidzA);
+    laporanItem($invoiceA, $f->makan, 500000, 300000, laporanOverride($a, $f->makan, $yatim));
+
+    $tahfidzB = laporanOverride($b, $f->spp, $tahfidz);
+    laporanItem(laporanInvoice($f, $b, '2026-10-01', 0), $f->spp, 500000, 500000, $tahfidzB);
+
+    laporanItem(laporanInvoice($f, $c, '2026-10-01', 400000), $f->spp, 500000, 100000, laporanOverride($c, $f->spp, $ustadz));
+    laporanItem(laporanInvoice($f, $d, '2026-10-01', 450000), $f->spp, 500000, 50000, laporanOverride($d, $f->spp));
+    laporanItem(laporanInvoice($f, $e, '2026-10-01', 100000, 0, Invoice::STATUS_CANCELLED), $f->spp, 500000, 400000, laporanOverride($e, $f->spp, $tahfidz));
+    laporanItem(laporanInvoice($f, $g, '2026-09-01', 1000), $f->spp, 1000000, 999000, laporanOverride($g, $f->spp, $tahfidz));
+    // Item tanpa override tidak dihitung walau ada diskon.
+    laporanItem(laporanInvoice($f, laporanStudent($f), '2026-10-01', 300000), $f->spp, 500000, 200000);
+
+    return (object) ['tahfidz' => $tahfidz, 'tahfidzA' => $tahfidzA, 'a' => $a];
+}
+
+/**
+ * Fixture AC-14: santri mukim (1.200.000 dibayar 600.000 tunai 15 Okt), santri SLTP kelompok LAIN (SPP 500.000, transfer 150.000
+ * 14 Okt), santri SLTA (SPP 500.000, tunai 70.000 15 Okt), dan satu pembayaran yang dibatalkan.
+ */
+function laporanCashFixture(object $f): void
+{
+    $first = laporanInvoiceWithItems($f, laporanStudent($f), ['MAKAN' => 400000, 'ASRAMA' => 300000, 'SPP' => 500000]);
+    $second = laporanInvoiceWithItems($f, laporanStudent($f), ['SPP' => 500000], group: 'LAIN');
+    $third = laporanInvoiceWithItems($f, laporanStudent($f, 'slta'), ['SPP' => 500000], group: 'SLTA');
+    $fourth = laporanInvoiceWithItems($f, laporanStudent($f), ['MAKAN' => 400000], group: 'LAIN2');
+
+    bayarRecord($first, 600000);
+    bayarRecord($second, 150000, ['method' => 'transfer', 'paid_on' => '2026-10-14']);
+    bayarRecord($third, 70000);
+    $cancelled = bayarRecord($fourth, 100000);
+    app(CancelPayment::class)->handle($cancelled, User::factory()->create(), 'Salah input');
 }

@@ -22,8 +22,21 @@ trait ShowsActionErrorsOnForm
      */
     protected static function saveShowingFormErrors(Action $action, Closure $save): Model
     {
+        return static::runShowingFormErrors($action, $save);
+    }
+
+    /**
+     * Sama dengan `saveShowingFormErrors`, untuk Action yang tidak mengembalikan model.
+     *
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $run
+     * @return TResult
+     */
+    protected static function runShowingFormErrors(Action $action, Closure $run): mixed
+    {
         try {
-            return $save();
+            return $run();
         } catch (ValidationException $exception) {
             $statePath = "mountedActions.{$action->getNestingIndex()}.data";
 

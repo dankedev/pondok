@@ -58,6 +58,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:fee-rate', 'view:fee-rate', 'create:fee-rate', 'update:fee-rate',
         'view-any:scholarship', 'view:scholarship', 'create:scholarship', 'update:scholarship',
         'view-any:fee-override', 'view:fee-override', 'create:fee-override', 'update:fee-override',
+        'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice',
     ]],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
     'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],
@@ -101,4 +102,22 @@ it('forbids a role from abilities outside its permissions', function () {
     expect($user->can('view-finance-metrics'))->toBeTrue()
         ->and($user->can('view-student-metrics'))->toBeFalse()
         ->and($user->can('view-any:user'))->toBeFalse();
+});
+
+it('AC-52: creates the invoice resource and action permissions', function () {
+    expect(Permission::query()->pluck('name')->all())->toContain(
+        'view-any:invoice', 'view:invoice', 'create:invoice', 'update:invoice', 'delete:invoice', 'delete-any:invoice',
+        'generate:invoice', 'cancel:invoice',
+    );
+});
+
+it('AC-52: does not let bendahara create, update or delete invoices', function () {
+    $user = User::factory()->create()->assignRole('bendahara');
+
+    expect($user->can('generate:invoice'))->toBeTrue()
+        ->and($user->can('cancel:invoice'))->toBeTrue()
+        ->and($user->can('create:invoice'))->toBeFalse()
+        ->and($user->can('update:invoice'))->toBeFalse()
+        ->and($user->can('delete:invoice'))->toBeFalse()
+        ->and($user->can('delete-any:invoice'))->toBeFalse();
 });

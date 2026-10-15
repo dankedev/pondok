@@ -32,7 +32,7 @@ class RolePermissionSeeder extends Seeder
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
-        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride',
+        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -40,6 +40,8 @@ class RolePermissionSeeder extends Seeder
     /** Aksi tambahan per model, misalnya pemulihan untuk model soft delete. */
     public const EXTRA_RESOURCE_ACTIONS = [
         'Student' => ['restore', 'restoreAny'],
+        // Tagihan hanya dibuat generator dan dibatalkan, tidak dibuat manual atau dihapus.
+        'Invoice' => ['generate', 'cancel'],
     ];
 
     public function run(): void
@@ -103,7 +105,8 @@ class RolePermissionSeeder extends Seeder
             'super-admin' => self::allPermissions(),
             // Mengatur jenis biaya, tarif, program beasiswa, dan keringanan. Tidak ada yang
             // dihapus: jenis biaya dan program dinonaktifkan, tarif dikoreksi lewat edit,
-            // keringanan diakhiri lewat tanggal berakhir.
+            // keringanan diakhiri lewat tanggal berakhir. Tagihan dibuat generator dan
+            // dibatalkan, tidak dibuat manual, diubah, atau dihapus.
             'bendahara' => [
                 'view-dashboard',
                 'view-finance-metrics',
@@ -111,6 +114,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('FeeRate', $withoutDelete),
                 ...self::resourcePermissions('Scholarship', $withoutDelete),
                 ...self::resourcePermissions('FeeOverride', $withoutDelete),
+                ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel']),
             ],
             'admin-konten' => ['view-dashboard', 'view-content-metrics'],
             'admin-sekolah' => [

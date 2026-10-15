@@ -3,6 +3,7 @@
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Models\FeeOverride;
+use App\Models\Invoice;
 use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -78,5 +79,15 @@ it('AC-35: hides delete for users who approved overrides', function () {
     FeeOverride::factory()->create(['approved_by' => $approver->id]);
 
     Livewire::test(EditUser::class, ['record' => $approver->id])->assertActionHidden('delete');
+    Livewire::test(EditUser::class, ['record' => $plain->id])->assertActionVisible('delete');
+});
+
+it('AC-53: hides delete for users who generated invoices', function () {
+    $this->actingAs(User::factory()->create()->assignRole('super-admin'));
+    $generator = User::factory()->create();
+    $plain = User::factory()->create();
+    Invoice::factory()->create(['generated_by' => $generator->id]);
+
+    Livewire::test(EditUser::class, ['record' => $generator->id])->assertActionHidden('delete');
     Livewire::test(EditUser::class, ['record' => $plain->id])->assertActionVisible('delete');
 });

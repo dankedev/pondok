@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Invoice;
 use App\Models\Setting;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -83,4 +84,36 @@ it('AC-29: shows the scholarship and override menu when the module is enabled', 
     $this->actingAs(keuanganUser('bendahara'))->get('/admin')->assertOk()
         ->assertSee(__('pondok.scholarship.plural'))
         ->assertSee(__('pondok.fee_override.plural'));
+});
+
+it('AC-44: lets bendahara and super-admin open invoices', function (string $role) {
+    $invoice = Invoice::factory()->create();
+    $user = keuanganUser($role);
+
+    $this->actingAs($user)->get('/admin/invoices')->assertOk();
+    $this->actingAs($user)->get("/admin/invoices/{$invoice->id}")->assertOk();
+})->with(['bendahara', 'super-admin']);
+
+it('AC-44: forbids invoices to other roles', function (string $role) {
+    $invoice = Invoice::factory()->create();
+    $user = keuanganUser($role);
+
+    $this->actingAs($user)->get('/admin/invoices')->assertForbidden();
+    $this->actingAs($user)->get("/admin/invoices/{$invoice->id}")->assertForbidden();
+})->with(['admin-sekolah', 'kesantrian', 'musyrif', 'admin-konten', 'admin-psb', 'ustadz-tahfidz', 'petugas-pos']);
+
+it('AC-44: shows the invoice menu to bendahara', function () {
+    expect(__('pondok.invoice.plural'))->not->toBe('pondok.invoice.plural');
+
+    $this->actingAs(keuanganUser('bendahara'))->get('/admin')->assertOk()->assertSee(__('pondok.invoice.plural'));
+});
+
+it('AC-45: hides invoices when the module is disabled', function () {
+    $invoice = Invoice::factory()->create();
+    Setting::set('modules.keuangan.enabled', false);
+    $user = keuanganUser('super-admin');
+
+    $this->actingAs($user)->get('/admin/invoices')->assertForbidden();
+    $this->actingAs($user)->get("/admin/invoices/{$invoice->id}")->assertForbidden();
+    $this->actingAs($user)->get('/admin')->assertOk()->assertDontSee(__('pondok.invoice.plural'));
 });

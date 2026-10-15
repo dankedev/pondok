@@ -17,6 +17,8 @@ class Setting extends Model
 
     public $incrementing = false;
 
+    public const CACHE_BINDING = 'pondok.settings';
+
     protected function casts(): array
     {
         return [
@@ -24,9 +26,30 @@ class Setting extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(fn (Setting $setting) => static::forget($setting->key));
+        static::deleted(fn (Setting $setting) => static::forget($setting->key));
+    }
+
+    /**
+     * Nilai dibaca sekali per key per request lewat binding `scoped`, karena
+     * cek saklar modul dipanggil di setiap otorisasi resource Filament.
+     */
     public static function get(string $key, mixed $default = null): mixed
     {
-        return static::query()->find($key)?->value ?? $default;
+        $cache = app(self::CACHE_BINDING);
+
+        if (! $cache->offsetExists($key)) {
+            $cache[$key] = static::query()->find($key)?->value;
+        }
+
+        return $cache[$key] ?? $default;
+    }
+
+    public static function forget(string $key): void
+    {
+        app(self::CACHE_BINDING)->offsetUnset($key);
     }
 
     public static function set(string $key, mixed $value): void

@@ -27,6 +27,11 @@ class RolePermissionSeeder extends Seeder
         'view-settings-metrics',
     ];
 
+    /** Halaman Filament kustom, dengan format nama permission page Shield (`view:<slug>`). */
+    public const PAGE_PERMISSIONS = [
+        'view:finance-report',
+    ];
+
     /** Model yang punya resource Filament, beserta aksi policy-nya. */
     public const RESOURCE_MODELS = [
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
@@ -91,7 +96,7 @@ class RolePermissionSeeder extends Seeder
             self::RESOURCE_MODELS,
         ));
 
-        return [...self::DASHBOARD_PERMISSIONS, ...$resource];
+        return [...self::DASHBOARD_PERMISSIONS, ...$resource, ...self::PAGE_PERMISSIONS];
     }
 
     /**
@@ -109,7 +114,8 @@ class RolePermissionSeeder extends Seeder
             // dihapus: jenis biaya dan program dinonaktifkan, tarif dikoreksi lewat edit,
             // keringanan diakhiri lewat tanggal berakhir. Tagihan dibuat generator dan
             // dibatalkan, tidak dibuat manual, diubah, atau dihapus. Pembayaran dicatat dan
-            // dibatalkan, tidak diubah atau dihapus.
+            // dibatalkan, tidak diubah atau dihapus. Laporan keuangan (termasuk unduh CSV)
+            // memakai satu permission halaman.
             'bendahara' => [
                 'view-dashboard',
                 'view-finance-metrics',
@@ -119,6 +125,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('FeeOverride', $withoutDelete),
                 ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel']),
                 ...self::resourcePermissions('Payment', ['viewAny', 'view', 'create', 'cancel']),
+                'view:finance-report',
             ],
             'admin-konten' => ['view-dashboard', 'view-content-metrics'],
             'admin-sekolah' => [

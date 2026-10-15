@@ -60,6 +60,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:fee-override', 'view:fee-override', 'create:fee-override', 'update:fee-override',
         'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice',
         'view-any:payment', 'view:payment', 'create:payment', 'cancel:payment',
+        'view:finance-report',
     ]],
     'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
     'admin-psb' => ['admin-psb', ['view-dashboard', 'view-psb-metrics']],
@@ -142,4 +143,18 @@ it('AC-30: creates payment permissions and keeps bendahara from deleting payment
 
 it('AC-30: gives payment permissions to no other role except super-admin', function (string $role) {
     expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':payment'))->all())->toBe([]);
+})->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-23: creates the finance report permission for bendahara only', function () {
+    expect(Permission::query()->pluck('name')->all())->toContain('view:finance-report');
+
+    $bendahara = User::factory()->create()->assignRole('bendahara');
+    $admin = User::factory()->create()->assignRole('admin-sekolah');
+
+    expect($bendahara->can('view:finance-report'))->toBeTrue()
+        ->and($admin->can('view:finance-report'))->toBeFalse();
+});
+
+it('AC-23: gives the finance report permission to no other role', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->contains('view:finance-report'))->toBeFalse();
 })->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);

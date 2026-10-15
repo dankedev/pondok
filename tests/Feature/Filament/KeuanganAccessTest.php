@@ -185,3 +185,36 @@ it('AC-32: answers 403 for receipts and proofs of unknown ids when the module is
     $this->actingAs($user)->get('/admin/receipts/999999')->assertForbidden();
     $this->actingAs($user)->get('/admin/payment-proofs/999999')->assertForbidden();
 });
+
+/*
+|--------------------------------------------------------------------------
+| F008: laporan keuangan
+|--------------------------------------------------------------------------
+*/
+
+it('AC-18: lets bendahara and super-admin open the finance report', function (string $role) {
+    $this->actingAs(keuanganUser($role))->get('/admin/finance-report')->assertOk();
+})->with(['bendahara', 'super-admin']);
+
+it('AC-18: forbids the finance report to other roles', function (string $role) {
+    $this->actingAs(keuanganUser($role))->get('/admin/finance-report')->assertForbidden();
+})->with(['admin-sekolah', 'kesantrian', 'musyrif', 'admin-konten', 'admin-psb', 'ustadz-tahfidz', 'petugas-pos']);
+
+it('AC-18: sends guests to the login page', function () {
+    $this->get('/admin/finance-report')->assertRedirect('/admin/login');
+});
+
+it('AC-18: shows the finance report menu to bendahara but not to admin-sekolah', function () {
+    expect(__('pondok.finance_report.title'))->not->toBe('pondok.finance_report.title');
+
+    $this->actingAs(keuanganUser('bendahara'))->get('/admin')->assertOk()->assertSee(__('pondok.finance_report.title'));
+    $this->actingAs(keuanganUser('admin-sekolah'))->get('/admin')->assertOk()->assertDontSee(__('pondok.finance_report.title'));
+});
+
+it('AC-19: hides the finance report when the keuangan module is disabled', function () {
+    Setting::set('modules.keuangan.enabled', false);
+    $user = keuanganUser('super-admin');
+
+    $this->actingAs($user)->get('/admin/finance-report')->assertForbidden();
+    $this->actingAs($user)->get('/admin')->assertOk()->assertDontSee(__('pondok.finance_report.title'));
+});

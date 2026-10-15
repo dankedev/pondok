@@ -34,4 +34,9 @@ class Cohort extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    public function feeRates(): HasMany
+    {
+        return $this->hasMany(FeeRate::class);
+    }
 }

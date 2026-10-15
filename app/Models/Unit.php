@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 
 #[Fillable(['code', 'name', 'sort_order'])]
@@ -33,5 +34,10 @@ class Unit extends Model
         if ($unitIds !== []) {
             $query->whereKey($unitIds);
         }
+    }
+
+    public function feeRates(): HasMany
+    {
+        return $this->hasMany(FeeRate::class);
     }
 }

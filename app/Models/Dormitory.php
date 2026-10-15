@@ -35,4 +35,9 @@ class Dormitory extends Model
     {
         return $this->hasMany(DormitorySupervisor::class);
     }
+
+    public function feeRates(): HasMany
+    {
+        return $this->hasMany(FeeRate::class);
+    }
 }

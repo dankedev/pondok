@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'starts_on', 'ends_on', 'is_active'])]
 class AcademicYear extends Model
@@ -31,5 +32,13 @@ class AcademicYear extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('is_active', true);
+    }
+
+    /**
+     * Tarif yang berlaku mulai tahun ajaran ini.
+     */
+    public function feeRates(): HasMany
+    {
+        return $this->hasMany(FeeRate::class, 'effective_from_year_id');
     }
 }

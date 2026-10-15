@@ -16,11 +16,13 @@ use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\ApplicantDocument;
 use App\Models\Cohort;
+use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Dormitory;
 use App\Models\FeeOverride;
 use App\Models\FeeRate;
 use App\Models\FeeType;
+use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
@@ -28,6 +30,7 @@ use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Scholarship;
 use App\Models\Setting;
+use App\Models\Staff;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
@@ -42,12 +45,14 @@ use Filament\Facades\Filament;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportTesting\Testable;
@@ -2018,4 +2023,254 @@ function seleksiSummaryApplicants(int $count, string $status, array $attributes 
 function seleksiStatValue(string $text, string $label): ?int
 {
     return preg_match('/'.preg_quote($label, '/').'\s+(\d+)/u', $text, $matches) === 1 ? (int) $matches[1] : null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper repositori dokumen (F013)
+|--------------------------------------------------------------------------
+|
+| Berawalan `dokumen`. Memakai `keuanganUser`, `dashboardUserWith`, `tagihanPlainText`,
+| `asramaNotifications`, `pendaftaranRealFile`. Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta.
+| Dokumen dibuat lewat `dokumenCreate` (forceFill, tanpa factory `Document`), alias morph ditulis
+| langsung (`student`, `guardian`, `staff`) agar tidak bergantung pada morph map.
+|
+*/
+
+/**
+ * Fixture: jenjang (UnitSeeder), jenis dokumen (DocumentTypeSeeder), peran, saklar (modul `dokumen` dipaksa aktif),
+ * panel admin, waktu dibekukan, disk private/public palsu, santri `s1` (SD, NIS 1001) dan `s2` (SLTP, NIS 2002),
+ * wali `g1` (terhubung ke `s1`), staff `t1`, dan user `admin-sekolah` tanpa cakupan (`admin`, user pertama).
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit, cohortSd: Cohort, cohortSltp: Cohort, s1: Student, s2: Student, g1: Guardian, t1: Staff, admin: User, types: Collection<string, DocumentType>}
+ */
+function dokumenFixture(): object
+{
+    test()->seed([UnitSeeder::class, DocumentTypeSeeder::class, RolePermissionSeeder::class, SettingSeeder::class]);
+    Setting::set('modules.dokumen.enabled', true);
+    Filament::setCurrentPanel('admin');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('private');
+    Storage::fake('public');
+
+    $admin = keuanganUser('admin-sekolah');
+    $sd = Unit::query()->where('code', 'SD')->firstOrFail();
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+    $cohortSd = Cohort::factory()->create(['unit_id' => $sd->id, 'entry_year' => 2026]);
+    $cohortSltp = Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2026]);
+    $s1 = Student::factory()->forCohort($cohortSd)->create(['name' => 'Ahmad Satu', 'nis' => '1001']);
+    $s2 = Student::factory()->forCohort($cohortSltp)->create(['name' => 'Budi Dua', 'nis' => '2002']);
+    $g1 = Guardian::factory()->create(['name' => 'Wali Satu']);
+    $s1->guardians()->attach($g1->id, ['relation' => 'ayah', 'is_billing_contact' => false]);
+
+    return (object) [
+        'sd' => $sd,
+        'sltp' => $sltp,
+        'slta' => Unit::query()->where('code', 'SLTA')->firstOrFail(),
+        'cohortSd' => $cohortSd,
+        'cohortSltp' => $cohortSltp,
+        's1' => $s1,
+        's2' => $s2,
+        'g1' => $g1,
+        't1' => Staff::factory()->create(['name' => 'Staff Satu']),
+        'admin' => $admin,
+        'types' => DocumentType::query()->get()->keyBy('code'),
+    ];
+}
+
+/**
+ * Dokumen langsung lewat forceFill (tanpa Action). Berkas `content` ditulis ke disk `private` (harus sudah di-fake).
+ * Bawaan: status `menunggu`, berkas PDF acak di `documents/{alias}/{id}/`, pengunggah = user pertama (dibuat bila belum ada).
+ * Kunci khusus `$attributes`: `content` (isi berkas), `valid` (true → status valid, verifikator = pengunggah).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function dokumenCreate(Model $owner, DocumentType|string $type, array $attributes = []): Document
+{
+    $type = $type instanceof DocumentType ? $type : DocumentType::query()->where('code', $type)->firstOrFail();
+    $alias = match (true) {
+        $owner instanceof Student => 'student',
+        $owner instanceof Guardian => 'guardian',
+        $owner instanceof Staff => 'staff',
+    };
+    $content = $attributes['content'] ?? 'isi-dokumen';
+    $valid = $attributes['valid'] ?? false;
+    unset($attributes['content'], $attributes['valid']);
+
+    $path = $attributes['file_path'] ?? "documents/{$alias}/{$owner->getKey()}/".Str::random(24).'.pdf';
+    Storage::disk('private')->put($path, $content);
+    $uploader = $attributes['uploaded_by'] ?? (User::query()->oldest('id')->value('id') ?? User::factory()->create()->id);
+
+    $document = new Document;
+    $document->forceFill([
+        'document_type_id' => $type->id,
+        'documentable_type' => $alias,
+        'documentable_id' => $owner->getKey(),
+        'file_path' => $path,
+        'original_name' => 'asli-'.Str::lower($type->code).'.pdf',
+        'mime_type' => 'application/pdf',
+        'size_kb' => 10,
+        'status' => $valid ? 'valid' : 'menunggu',
+        'verified_by' => $valid ? $uploader : null,
+        'verified_at' => $valid ? now() : null,
+        'uploaded_by' => $uploader,
+        ...$attributes,
+    ])->save();
+
+    return $document->fresh();
+}
+
+/**
+ * Dokumen berstatus `valid`.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function dokumenValid(Model $owner, DocumentType|string $type, array $attributes = []): Document
+{
+    return dokumenCreate($owner, $type, ['valid' => true, ...$attributes]);
+}
+
+/**
+ * Berkas PDF palsu (MIME dilaporkan sesuai argumen).
+ */
+function dokumenPdf(string $name = 'kk.pdf', int $kb = 300): UploadedFile
+{
+    return UploadedFile::fake()->create($name, $kb, 'application/pdf');
+}
+
+/**
+ * Data masukan UploadDocument yang valid untuk jenis `$code` (PDF 300 KB).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function dokumenUploadData(object $f, string $code = 'KK', array $overrides = []): array
+{
+    return [
+        'document_type_id' => $f->types[$code]->id,
+        'file' => dokumenPdf(),
+        ...$overrides,
+    ];
+}
+
+/**
+ * Jenis dokumen langsung lewat factory.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function dokumenType(array $attributes = []): DocumentType
+{
+    return DocumentType::factory()->create($attributes);
+}
+
+/**
+ * Daftar berkas di disk `private`.
+ *
+ * @return list<string>
+ */
+function dokumenPrivateFiles(): array
+{
+    return Storage::disk('private')->allFiles();
+}
+
+/**
+ * Activity log `dokumen`.
+ *
+ * @return Collection<int, Activity>
+ */
+function dokumenActivities(): Collection
+{
+    return Activity::query()->where('log_name', 'dokumen')->orderBy('id')->get();
+}
+
+/**
+ * Pola regex untuk pesan `pondok.dokumen.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function dokumenMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.dokumen.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.dokumen.errors.<reason>` pada `$field`.
+ */
+function dokumenAssertRejected(Closure $callback, string $reason, string $field): void
+{
+    expect(__("pondok.dokumen.errors.{$reason}"))->not->toBe("pondok.dokumen.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        expect($errors)->toHaveKey($field);
+
+        $matches = collect($errors[$field])->contains(fn (string $message): bool => preg_match(dokumenMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.dokumen.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Apakah pesan `pondok.dokumen.errors.<reason>` terlihat di halaman komponen, galat form, atau notifikasi.
+ */
+function dokumenSeeMessage(Testable $component, string $reason): bool
+{
+    $message = __("pondok.dokumen.errors.{$reason}");
+    expect($message)->not->toBe("pondok.dokumen.errors.{$reason}");
+
+    $pattern = '/'.implode('.+?', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $message))).'/su';
+    $notifications = asramaNotifications()->map(fn (array $n): string => ($n['title'] ?? '').' '.($n['body'] ?? ''))->implode("\n");
+    $haystack = tagihanPlainText($component).' '.$notifications.' '.collect($component->errors()->all())->implode(' ');
+
+    return preg_match($pattern, $haystack) === 1;
+}
+
+/**
+ * Teks notifikasi Filament pada request Livewire terakhir.
+ */
+function dokumenNotificationText(): string
+{
+    return asramaNotifications()->map(fn (array $n): string => ($n['title'] ?? '').' '.($n['body'] ?? ''))->implode("\n");
+}
+
+/**
+ * Teks menu navigasi (hanya `<nav>`) halaman `/admin` sebagai user.
+ */
+function dokumenNavigationText(User $user): string
+{
+    $html = test()->actingAs($user)->get('/admin')->assertOk()->getContent();
+    preg_match_all('#<nav\b.*?</nav>#is', $html, $navigation);
+
+    expect($navigation[0])->not->toBeEmpty();
+
+    return bayarHtmlText(implode(' ', $navigation[0]));
+}
+
+/**
+ * Banyaknya query yang dijalankan callback.
+ */
+function dokumenQueryCount(Closure $callback): int
+{
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $callback();
+    $count = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    return $count;
+}
+
+/**
+ * Jenis dokumen santri wajib + berlaku sementara (untuk uji kedaluwarsa kelengkapan).
+ */
+function dokumenRequiredExpiringType(string $code = 'KIP'): DocumentType
+{
+    return dokumenType(['code' => $code, 'name' => 'Kartu Indonesia Pintar', 'owner' => 'santri', 'is_required' => true, 'has_expiry' => true]);
 }

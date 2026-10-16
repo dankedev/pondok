@@ -110,7 +110,7 @@ erDiagram
     bigint id PK
     bigint unit_id FK "jenjang saat ini"
     bigint cohort_id FK "angkatan di jenjang ini"
-    bigint applicant_id FK "asal PSB, nullable"
+    bigint applicant_id FK "asal PSB, nullable, unique"
     string nis UK
     string nisn UK "nullable"
     string name
@@ -119,7 +119,7 @@ erDiagram
     date birth_date
     text address
     enum status "aktif | lulus | keluar | pindah"
-    date entered_on
+    date entered_on "bulan pertama ditagih bulanan"
     string photo_path "nullable"
     timestamp deleted_at "soft delete"
   }
@@ -410,7 +410,7 @@ erDiagram
     timestamp verified_at "nullable"
     bigint uploaded_by FK "users"
     bigint replaced_by_id FK "nullable, unique, versi lebih baru"
-    bigint source_applicant_document_id "nullable, asal berkas PSB; FK ditambahkan F012"
+    bigint source_applicant_document_id FK "nullable, asal berkas PSB (restrict)"
   }
   issued_letters {
     bigint id PK
@@ -443,7 +443,7 @@ erDiagram
 - **Berkas PSB tidak perlu diunggah ulang.** `admission_requirements` kini merujuk ke `document_types`. Saat pendaftar menjadi santri, berkas yang sudah valid disalin menjadi `documents` milik santri.
 - **Kelengkapan berkas** bisa dicek otomatis: jenis dokumen yang `is_required` tapi belum ada atau belum valid. Hasilnya bisa tampil sebagai widget di dashboard dan sebagai pengingat di portal wali.
 - **Riwayat versi:** dokumen yang diperbarui (misalnya KK baru) tidak menimpa yang lama. Dokumen lama ditandai lewat `replaced_by_id`.
-- **Alias morph:** `documentable_type` menyimpan alias (`student`, `guardian`, `staff`, `achievement`) lewat `Relation::morphMap` yang tidak dipaksakan. `number` bertipe `text` karena ciphertext `encrypted` lebih panjang dari 255 karakter. `replaced_by_id` unik: satu versi baru hanya menggantikan satu dokumen. FK `source_applicant_document_id` ke `applicant_documents` ditunda sampai penyalinan berkas PSB (F012).
+- **Alias morph:** `documentable_type` menyimpan alias (`student`, `guardian`, `staff`, `achievement`) lewat `Relation::morphMap` yang tidak dipaksakan. `number` bertipe `text` karena ciphertext `encrypted` lebih panjang dari 255 karakter. `replaced_by_id` unik: satu versi baru hanya menggantikan satu dokumen. FK `source_applicant_document_id` ke `applicant_documents` (`restrictOnDelete`) ditambahkan F012; idempotensi penyalinan dijaga Action, index-nya tidak unique.
 - **Jenis pemilik per peran:** selain cakupan jenjang (dokumen santri lewat jenjang santri, dokumen wali lewat santri terhubung, dokumen staff tidak berjenjang), dokumen wali hanya terlihat oleh pemegang `update:guardian` dan dokumen staff oleh pemegang `update:staff`; tipe lain hanya super-admin.
 - **Data pribadi:** nomor KK dan NIK disimpan dengan cast `encrypted` Laravel. File tersimpan di disk private dan dokumen `is_confidential` hanya bisa dibuka peran yang punya permission khusus. Ini sejalan dengan kewajiban perlindungan data di UU PDP.
 - **Surat keluar** (keterangan aktif, rekomendasi, pindah, syahadah, kartu santri) diberi nomor otomatis dan kode verifikasi. Pihak luar bisa memindai QR untuk mengecek keasliannya di `/verifikasi-surat/{kode}` (data minimal, nama termasker).
@@ -573,7 +573,15 @@ erDiagram
 ```
 
 - Pendaftar tidak perlu akun di tabel `users`. Mereka cek status dan unggah ulang berkas dengan nomor pendaftaran + token (disimpan dalam bentuk hash).
-- Status *diterima* tidak langsung membuat `students`. Baris `students` (dengan `applicant_id` terisi, data wali disalin ke `guardians`) dibuat saat daftar ulang (F012), sesuai PRD 3.4.
+- Status *diterima* tidak langsung membuat `students`. Baris `students` dibuat saat daftar ulang (F012, `ReRegisterApplicant`, permission `re-register:applicant`), sesuai PRD 3.4. Status pendaftar tetap `diterima`; "sudah daftar ulang" diturunkan dari adanya santri ber-`applicant_id` itu (termasuk santri terhapus). Satu santri per pendaftar (unique `students.applicant_id`).
+- **Daftar ulang (F012)** dalam satu transaksi:
+  - Syarat: modul keuangan aktif → persen terbayar tagihan **penerimaan** aktif (bukan `batal`, memuat biaya `saat_diterima`; formulir tidak dihitung; total 0 = 100%) minimal `psb.min_paid_percent`. Tanpa tagihan penerimaan padahal ada biaya `saat_diterima` bertarif → ditolak.
+  - Santri: data disalin dari pendaftar (snapshot), status `aktif`. Angkatan = (`unit_id`, tahun awal tahun ajaran gelombang), dibuat otomatis ("Angkatan 2027") bila belum ada. NIS manual atau otomatis dari `students.nis_format`. NISN yang sudah dipakai santri lain ditolak.
+  - `entered_on` = bulan pertama santri ditagih bulanan: bawaan `max(awal bulan depan, awal tahun ajaran gelombang)`, paling cepat awal bulan depan.
+  - Wali: dipakai ulang hanya bila nomor HP cocok (varian `08`/`62`/`+62`) **dan** nama sama (tanpa beda huruf besar/spasi), datanya tidak diubah; selain itu wali baru. Wali dihubungkan sebagai kontak tagihan dengan hubungan pilihan panitia (bawaan `wali`).
+  - Berkas `valid` disalin ke `documents` (file baru di disk `private`, `source_applicant_document_id` terisi): owner `santri` ke santri, owner `wali` ke wali. Dilewati bila wali sudah punya dokumen current jenis sama (dokumen lama tidak disentuh), owner lain, atau file hilang. Berkas sumber tetap tersimpan.
+  - Activity: `psb`/`converted`, `keuangan`/`applicant_billing_transferred`, `dokumen`/`copied_from_applicant` per berkas.
+  - Setelah konversi, tagihan penerimaan baru, beasiswa jalur, keringanan baru untuk pendaftar, penolakan, dan penghapusan pendaftar ditolak (`applicant_converted`). Rombel dan kamar ditempatkan sesudahnya.
 - **Transisi status** (F011, `Applicant::TRANSITIONS`): `diajukan` → `diverifikasi` (formulir lunas dan semua berkas wajib `valid`) atau `ditolak`; `diverifikasi` → `diajukan` (dikembalikan untuk unggah ulang), `cadangan`, `diterima`, atau `ditolak`; `cadangan` → `diterima` atau `ditolak`; `diterima` → `ditolak` (pembatalan penerimaan, hanya bila belum menjadi santri dan tagihan penerimaan belum dibayar); `ditolak` → `diajukan` (pemulihan, permission `reopen:applicant`). `draft` tidak punya transisi keluar. Setiap keputusan mengisi `reviewed_by`, `reviewed_at`, `review_note` (catatan internal, tidak tampil ke pendaftar) dan tepat satu activity log `psb`.
 - **Penolakan/pembatalan penerimaan** membatalkan (status `batal`) semua tagihan aktif pendaftar yang belum dibayar dan mengakhiri keringanan jalur yang masih berlaku (`valid_until` = hari itu). Pemulihan tidak memulihkan tagihan atau keringanan tersebut.
 - Berkas disimpan di disk `private` (bukan `public`) dan diakses lewat route yang dicek permission-nya, karena berisi KK dan akta.
@@ -590,16 +598,17 @@ Biaya PSB memakai mekanisme yang sama dengan SPP: jenis biaya, tarif yang berlak
 | Daftar online | Status *diajukan* | Biaya formulir dibuat otomatis dari jenis biaya `saat_daftar`. Tarif bisa dibedakan per gelombang dan jenjang. |
 | Formulir lunas | Unggah berkas dan jadwal tes dibuka | Lunas ditandai lewat pembayaran yang dicatat bendahara (`RecordPayment`), bukan oleh panitia. |
 | Diterima | Status *diterima* | Uang pangkal, seragam, kitab dibuat dari jenis biaya `saat_diterima`. Potongan jalur diterapkan otomatis, dan pembayaran bisa dicicil. |
-| Daftar ulang | Data santri dibuat | Tagihan dan keringanan yang belum selesai ikut pindah ke santri. Tagihan bulanan dimulai bulan berikutnya. |
+| Daftar ulang | Data santri dibuat | Semua tagihan dan keringanan pendaftar (status apa pun) ikut pindah ke santri. Tagihan bulanan mulai bulan `entered_on`: paling cepat bulan berikutnya, bawaan awal tahun ajaran bila belum mulai. |
 
 - **Tarif per gelombang:** `fee_rates.admission_wave_id` memungkinkan gelombang 1 lebih murah dari gelombang 2. Kalau kosong, tarif berlaku untuk semua gelombang. Kolom biaya di `admission_waves` dihapus agar semua tarif ada di satu tempat.
 - **Berubah tiap tahun atau tetap:** sama seperti SPP, lewat `effective_from_year_id`.
 - **Jalur pendaftaran:** `admission_tracks` seperti Tahfidz atau Yatim bisa dihubungkan ke program beasiswa. Saat pendaftar jalur itu diterima, keringanannya dibuat otomatis (`fee_overrides.applicant_id`, mode dan nilai snapshot dari program, berlaku mulai tanggal penerimaan tanpa akhir), misalnya uang pangkal gratis atau SPP potong 50%. Jenis biaya penerimanya dipetakan di `admission_track_fee_type` (frekuensi `saat_diterima`, `bulanan`, atau `tahunan`); **pemetaan kosong berarti semua jenis biaya `saat_diterima` yang aktif**. Keringanan khusus pendaftar yang sudah ada untuk jenis biaya yang sama tidak ditimpa.
 - **Tagihan penerimaan:** dibuat setelah beasiswa jalur diterapkan, per `billing_group`, dengan `period` awal bulan penerimaan dan `due_on` = awal tahun ajaran tujuan bila masih di depan, selain itu tanggal penerimaan. Idempotent: kelompok yang sudah punya tagihan aktif dilewati. Kegagalan pembuatan tagihan tidak membatalkan penerimaan; panitia mengulang lewat aksi "Buat tagihan penerimaan".
 - **Keringanan khusus:** panitia bisa memberi potongan per pendaftar (misalnya diskon saudara kandung) lewat `fee_overrides.applicant_id`, termasuk potongan SPP yang mulai berlaku setelah jadi santri.
-- **Pindah ke santri:** saat santri dibuat, `student_id` diisi pada tagihan dan keringanan milik pendaftar. `applicant_id` tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.
+- **Pindah ke santri:** saat santri dibuat, `student_id` diisi pada semua tagihan (termasuk `lunas` dan `batal`) dan keringanan (termasuk yang sudah berakhir) milik pendaftar; nominal, item, dan pembayaran tidak berubah. `applicant_id` tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.
 - **Pemisahan `billing_group`:** satu kelompok tagihan hanya boleh berisi jenis biaya dari kelas frekuensi yang sama: `saat_daftar`, `saat_diterima`, atau lainnya (`bulanan`, `tahunan`, `manual`). Tagihan formulir tidak menghalangi tagihan saat diterima, dan setelah konversi tidak bertabrakan dengan generator bulanan.
-- Syarat minimal pembayaran untuk daftar ulang (misalnya lunas atau minimal 50%) diatur di `settings` sebagai `psb.min_paid_percent`.
+- Syarat minimal pembayaran untuk daftar ulang diatur di `settings` sebagai `psb.min_paid_percent` (bilangan bulat 0–100, bawaan 50; nilai tidak valid memakai 50). Basisnya tagihan penerimaan aktif saja.
+- Format NIS otomatis diatur di `settings` sebagai `students.nis_format` (bawaan `{YYYY}{NNNN}`, mis. `20270001`). Token `{YYYY}`, `{YY}`, `{UNIT}`, dan satu token urut `{NNN}`–`{NNNNNN}` di akhir; literal huruf, angka, `.`, `-`, `/`; maksimal 30 karakter. Urutan melanjutkan nomor terbesar yang cocok (santri terhapus ikut dihitung). Format tidak valid memakai bawaan. Kedua setting belum punya halaman pengaturan.
 
 ## Keuangan & Tagihan
 
@@ -914,7 +923,7 @@ foreach (students aktif as $s) {
 | `invoices` | index (`status`, `period`) | Widget tunggakan dan rasio koleksi di dashboard |
 | `fee_rates` | unique (`fee_type_id`, `effective_from_year_id`, `unit_id`, `cohort_key`, `dormitory_key`, `wave_key`) | Satu tarif per kombinasi. Lihat catatan NULL di bawah |
 | `enrollments` | unique (`student_id`, `academic_year_id`) | Satu kelas per santri per tahun ajaran |
-| `students` | unique `nis`; index (`unit_id`, `status`) | Hitungan santri aktif per jenjang |
+| `students` | unique `nis`; unique `nisn` (nullable); unique `applicant_id` (nullable); index (`unit_id`, `status`) | Hitungan santri aktif per jenjang; satu santri per pendaftar PSB (F012) |
 | `cohorts` | unique (`unit_id`, `entry_year`) | Tidak ada angkatan ganda dalam satu jenjang |
 | `classrooms` | unique (`academic_year_id`, `unit_id`, `name`) | 1A hanya ada satu per jenjang per tahun ajaran |
 | `room_assignments` | index (`student_id`, `end_on`), (`room_id`, `end_on`) | Cari kamar aktif santri dan hitung sisa kapasitas kamar |
@@ -924,7 +933,7 @@ foreach (students aktif as $s) {
 | `halaqah_members` | index (`student_id`, `left_on`) | Cari halaqah aktif santri |
 | `leave_requests` | index (`status`, `return_due`), (`student_id`, `status`) | Daftar santri yang sedang di luar dan yang terlambat kembali |
 | `leave_requests` | unique (`student_id`, `homecoming_period_id`) | Satu izin pulang massal per santri per periode |
-| `documents` | index (`documentable_type`, `documentable_id`, `document_type_id`), (`expires_on`) | Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa |
+| `documents` | index (`documentable_type`, `documentable_id`, `document_type_id`), (`expires_on`); FK `source_applicant_document_id` → `applicant_documents` (`restrictOnDelete`) | Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa; berkas PSB yang sudah disalin tidak bisa dihapus |
 | `achievements` | index (`academic_year_id`, `category`, `level`) | Rekap prestasi per tahun, kategori, dan tingkat |
 | `applicant_documents` | unique (`applicant_id`, `admission_requirement_id`) | Unggah ulang menimpa berkas lama, tidak menumpuk |
 | `admission_waves` | unique (`academic_year_id`, `name`) | Nama gelombang tidak ganda dalam satu tahun ajaran (keputusan F009). Rentang tanggal gelombang dalam satu tahun ajaran juga tidak beririsan, dijaga Action `SaveAdmissionWave` |

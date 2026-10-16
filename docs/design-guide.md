@@ -82,6 +82,7 @@ Aturan:
 | Rekap / laporan | `ChartBar` |
 | Tahfidz | `BookOpen` |
 | Perizinan | `ArrowRightStartOnRectangle` |
+| Masuk ke panel (login) | `ArrowRightEndOnRectangle` |
 | Konten / berita | `Newspaper` |
 | Pengaturan | `Cog6Tooth` |
 | Pindah (jenjang, kamar, kelas) | `ArrowsRightLeft` |
@@ -94,6 +95,7 @@ Aturan:
 | Kembalikan ke tahap sebelumnya | `ArrowUturnLeft` |
 | Pulihkan | `ArrowPath` |
 | Cadangan | `Clock` |
+| Daftar ulang | `AcademicCap` |
 
 ## 4. Status & badge
 
@@ -111,7 +113,9 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Tagihan / pembayaran | batal | `danger` (teks dicoret tidak dipakai) |
 | PSB | draft, diajukan (terdaftar) | `gray` |
 | PSB | diverifikasi, tes | `info` |
-| PSB | diterima, daftar ulang | `success` |
+| PSB | diterima | `success` |
+| Daftar ulang | sudah daftar ulang, memenuhi syarat | `success` |
+| Daftar ulang | belum memenuhi syarat | `warning` |
 | PSB | cadangan | `warning` |
 | PSB | ditolak, mengundurkan diri | `danger` |
 | Berkas PSB | menunggu | `warning` |

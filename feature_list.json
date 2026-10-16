@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F034",
+  "next_id": "F035",
   "features": [
     {
       "id": "F001",
@@ -567,6 +567,27 @@
       "handoff": null,
       "evidence": "commit b4a74d0; tests/Feature/Models/SettingTest.php + suite penuh 303 test lulus di PHP 8.4, test Filament lulus di 8.3",
       "notes": "Ditemukan red-tester saat VERIFY F004."
+    },
+    {
+      "id": "F034",
+      "key": "inti-seeder-demo",
+      "name": "Seeder data demo Ma'had Al-Khair Belitang",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F002", "F003", "F007", "F008", "F012", "F014", "F015", "F017", "F018", "F019"],
+      "description": "DemoSeeder terpisah (db:seed --class=DemoSeeder, tidak dipanggil DatabaseSeeder/InstallSeeder) berisi data dikurasi dan deterministik untuk pondok fiktif Ma'had Al-Khair Belitang: akademik, asrama, keuangan (tarif, beasiswa, tagihan, pembayaran), PSB semua status, dokumen, surat, prestasi, konten portal, dan satu akun demo per peran. Dibuat lewat Action yang ada.",
+      "acceptance": [
+        "Menolak berjalan di APP_ENV=production tanpa menulis data",
+        "Idempotent: jalan dua kali tidak menggandakan data",
+        "Data minimal per modul terisi dan aturan bisnis berlaku (lewat Action)",
+        "Tanggal relatif terhadap hari ini tetapi deterministik; pembayaran tidak di masa depan",
+        "Satu akun demo per peran, password dari DEMO_PASSWORD, didokumentasikan di docs/demo.md"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit ac9b141, f5070f9. DemoSeederTest 6/6 lulus (±12 detik); full suite 4001/4002 di PHP 8.4 dan 8.3, satu-satunya kegagalan AC-48 (DEMO_PASSWORD belum ada di .env.production.example) sudah diperbaiki dan lulus; MySQL: migrate:fresh --seed lalu DemoSeeder dua kali, jumlah baris dan total uang identik; Pint lulus.",
+      "notes": "Konten demo mengikuti manhaj ahlus sunnah: tanpa perayaan selain Idul Fitri dan Idul Adha. ID YouTube rekaan; password bawaan publik, isi DEMO_PASSWORD di instance yang bisa diakses orang lain."
     }
   ]
 }

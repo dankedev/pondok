@@ -257,13 +257,13 @@
       "name": "Surat keluar & QR verifikasi",
       "phase": 1,
       "module": "Dokumen",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F013", "F016"],
       "description": "Surat keterangan aktif, rekomendasi, pindah, syahadah, kartu santri dengan penomoran otomatis dan halaman publik verifikasi QR.",
       "acceptance": [
         "Nomor surat unik dan berurutan"
       ],
-      "owner": null,
+      "owner": "tim-agent-fase1",
       "handoff": null,
       "evidence": "",
       "notes": "Format nomor surat masih pertanyaan terbuka di PRD §7."
@@ -291,15 +291,15 @@
       "name": "Konten (CMS) di panel",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001"],
       "description": "posts (soft delete) untuk berita/kegiatan/prestasi, galeri berkategori, video YouTube, halaman statis, profil sekolah lewat settings.",
       "acceptance": [
         "Gambar konten di disk public"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit e86ec6b, d40b09e, 4f74366, f958ff9; 2895 test Pest lulus di PHP 8.4 dan 8.3 (parallel): Actions/Konten/*, KontenConstraints, KontenSeeders, KontenAccess, Posts, Categories, Albums, Videos, StaticPages, SchoolProfile, ContentOverviewWidget, KontenVerifyGaps; migrate:fresh --seed MySQL",
       "notes": "Dari F018: isi widget jumlah konten."
     },
     {

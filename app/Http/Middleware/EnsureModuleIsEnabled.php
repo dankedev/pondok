@@ -8,16 +8,23 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Menolak route modul non-inti (403) bila saklar `modules.<nama>.enabled` mati.
+ * Menolak route modul non-inti bila saklar `modules.<nama>.enabled` mati.
  *
- * Didaftarkan di daftar prioritas sebelum `SubstituteBindings`, sehingga id
- * yang tidak ada pun dijawab 403 (bukan 404) saat modul mati.
+ * Bawaan 403 dengan pesan; parameter `404` (mis. `:konten,404`) untuk route publik
+ * agar pengunjung tidak melihat pesan admin. Didaftarkan di daftar prioritas sebelum
+ * `SubstituteBindings`, sehingga id yang tidak ada pun dijawab sesuai saklar saat modul mati.
  */
 class EnsureModuleIsEnabled
 {
-    public function handle(Request $request, Closure $next, string $module): Response
+    public function handle(Request $request, Closure $next, string $module, string $status = '403'): Response
     {
-        abort_unless(Setting::moduleEnabled($module), 403, __('pondok.common.module_disabled'));
+        if (! Setting::moduleEnabled($module)) {
+            if ($status === '404') {
+                abort(404);
+            }
+
+            abort(403, __('pondok.common.module_disabled'));
+        }
 
         return $next($request);
     }

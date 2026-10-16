@@ -18,4 +18,14 @@ return [
     */
     'trusted_proxies' => env('TRUSTED_PROXIES'),
 
+    /*
+    | Portal publik (F017). `cache_max_age` dalam detik untuk Cache-Control
+    | publik respons 200 (0 = tanpa cache publik). `csp_enabled` mengirim
+    | Content-Security-Policy portal (otomatis tidak dikirim saat Vite hot).
+    */
+    'portal' => [
+        'cache_max_age' => (int) env('PORTAL_CACHE_MAX_AGE', 300),
+        'csp_enabled' => (bool) env('PORTAL_CSP', true),
+    ],
+
 ];

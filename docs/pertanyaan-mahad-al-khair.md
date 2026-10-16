@@ -4,6 +4,26 @@ Daftar keputusan yang perlu dijawab pihak pondok sebelum aplikasi Pondok dipakai
 
 Sumber: PRD §7, catatan di `feature_list.json`, dan usulan dari mockup portal wali.
 
+## Jawaban user (16 Okt 2026)
+
+Prinsip umum: aplikasi dipakai banyak lembaga, jadi nilai-nilai ini **diatur oleh admin**, bukan ditentukan aplikasi.
+
+| No | Topik | Keputusan | Kondisi aplikasi saat ini |
+|---|---|---|---|
+| 1 | Format NIS | Bisa diatur admin | Setting `students.nis_format` ada, tapi belum ada halaman admin untuk mengubahnya |
+| 2 | Format nomor kuitansi | Bisa diatur admin | Masih tetap `KW-{Ym}-NNNNN` di kode |
+| 3 | Format nomor tagihan | Bisa diatur admin | Masih tetap `INV-{Ym}-NNNNN` di kode |
+| 4 | Format nomor surat | Bisa diatur admin | Sudah bisa diatur di panel (surat keluar) |
+| 5 | Syarat bayar daftar ulang | Admin mengisi **nominal** minimal, bukan persen | Masih persen (`psb.min_paid_percent`, bawaan 50) |
+| 6 | Tagihan digabung/dipisah | (tidak dijawab) | Sudah bisa diatur lewat `billing_group` jenis biaya |
+| 6a | Biaya daftar ulang tahunan | Diisi admin | Bisa dibuat sebagai jenis biaya tahunan + tarif; pembuatan tagihannya perlu dicek |
+| 7 | Masa simpan data surat | Nanti lewat fitur backup dan pembersihan data lama per periode | Belum ada |
+| 8 | Identitas lembaga | Diisi lewat profil lembaga | Dikerjakan di F036 |
+| 9 | Pembayaran online / VA | Nanti; cara utama tetap pembayaran manual | Manual sudah ada |
+| 10 | Notifikasi WhatsApp | Nanti | Belum ada |
+| 11 | Portal wali | Nanti | Belum ada |
+| 12 | Tahfidz | Mushaf Madinah 15 baris; target hafalan diatur admin | Bawaan 15 baris; target per jenjang/tingkat ada di skema `tahfidz_targets` (Fase 3) |
+
 ## A. Perlu dijawab sebelum dipakai (Fase 1)
 
 ### 1. Format nomor induk santri (NIS)
@@ -40,6 +60,11 @@ Sumber: PRD §7, catatan di `feature_list.json`, dan usulan dari mockup portal w
 
 - **Pilihan:** SPP, asrama, dan makan bisa digabung dalam satu tagihan bulanan, atau dipisah per kelompok.
 - **Pertanyaan:** bagaimana tagihan biasanya diberikan ke wali, satu lembar untuk semua atau terpisah? Bila ada cicilan, biaya mana yang dilunasi lebih dulu (misalnya makan, lalu asrama, lalu SPP)?
+
+### 6a. Biaya daftar ulang tahunan
+
+- **Sekarang:** brosur menyebut daftar ulang tahunan (buku, pengembangan kurikulum, kegiatan santri, kesehatan) tanpa nominal. Data demo memakai Rp1.500.000 sebagai contoh.
+- **Pertanyaan:** berapa nominalnya, kapan ditagihkan (misalnya setiap Juli), dan apakah berbeda per tingkat?
 
 ### 7. Masa simpan data surat (UU PDP)
 

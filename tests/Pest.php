@@ -13,8 +13,10 @@ use App\Models\AcademicYear;
 use App\Models\AdmissionRequirement;
 use App\Models\AdmissionTrack;
 use App\Models\AdmissionWave;
+use App\Models\Album;
 use App\Models\Applicant;
 use App\Models\ApplicantDocument;
+use App\Models\Category;
 use App\Models\Cohort;
 use App\Models\Document;
 use App\Models\DocumentType;
@@ -26,6 +28,8 @@ use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
+use App\Models\Photo;
+use App\Models\Post;
 use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Scholarship;
@@ -34,12 +38,14 @@ use App\Models\Staff;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Video;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Seeders\AdmissionTrackSeeder;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
+use Database\Seeders\StaticPageSeeder;
 use Database\Seeders\UnitSeeder;
 use Filament\Facades\Filament;
 use Filament\Notifications\Livewire\Notifications;
@@ -2273,4 +2279,272 @@ function dokumenQueryCount(Closure $callback): int
 function dokumenRequiredExpiringType(string $code = 'KIP'): DocumentType
 {
     return dokumenType(['code' => $code, 'name' => 'Kartu Indonesia Pintar', 'owner' => 'santri', 'is_required' => true, 'has_expiry' => true]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper konten / CMS (F016)
+|--------------------------------------------------------------------------
+|
+| Berawalan `konten`. Model Post/Album/Photo/Video/Category dibuat lewat forceFill (tanpa factory)
+| agar test tidak bergantung pada factory yang dibuat implementer. Waktu uji bawaan:
+| 2026-10-15 10:00 Asia/Jakarta. Disk `public` dan `private` dipalsukan.
+|
+*/
+
+/**
+ * Seed jenjang, peran, saklar (modul `konten` aktif lewat ENABLED_BY_DEFAULT), panel admin, waktu, dan disk palsu.
+ * Dengan `$withPages` ikut `StaticPageSeeder` (tiga halaman statis).
+ *
+ * @return object{sd: Unit, sltp: Unit}
+ */
+function kontenBoot(bool $withPages = false): object
+{
+    test()->seed([UnitSeeder::class, RolePermissionSeeder::class, SettingSeeder::class]);
+
+    if ($withPages) {
+        test()->seed(StaticPageSeeder::class);
+    }
+
+    Filament::setCurrentPanel('admin');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('public');
+    Storage::fake('private');
+
+    return (object) [
+        'sd' => Unit::query()->where('code', 'SD')->firstOrFail(),
+        'sltp' => Unit::query()->where('code', 'SLTP')->firstOrFail(),
+    ];
+}
+
+/**
+ * @param  list<string>  $unitCodes
+ */
+function kontenUser(string $role, array $unitCodes = []): User
+{
+    return keuanganUser($role, $unitCodes);
+}
+
+/**
+ * Pola regex untuk pesan `pondok.konten.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function kontenMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.konten.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.konten.errors.<reason>`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function kontenAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    expect(__("pondok.konten.errors.{$reason}"))->not->toBe("pondok.konten.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(kontenMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.konten.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Apakah pesan `pondok.konten.errors.<reason>` terlihat di halaman komponen, galat form, atau notifikasi.
+ */
+function kontenSeeMessage(Testable $component, string $reason): bool
+{
+    $message = __("pondok.konten.errors.{$reason}");
+    expect($message)->not->toBe("pondok.konten.errors.{$reason}");
+
+    $pattern = '/'.implode('.+?', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $message))).'/su';
+    $notifications = asramaNotifications()->map(fn (array $n): string => ($n['title'] ?? '').' '.($n['body'] ?? ''))->implode("\n");
+    $haystack = tagihanPlainText($component).' '.$notifications.' '.collect($component->errors()->all())->implode(' ');
+
+    return preg_match($pattern, $haystack) === 1;
+}
+
+/**
+ * Gambar uji (JPEG sungguhan dibuat GD, ukuran yang dilaporkan `$kb` KB).
+ */
+function kontenImage(string $name = 'a.jpg', int $kb = 500): UploadedFile
+{
+    return UploadedFile::fake()->image($name, 800, 600)->size($kb);
+}
+
+/**
+ * Berkas PDF uji (MIME dilaporkan application/pdf).
+ */
+function kontenPdf(string $name = 'a.pdf', int $kb = 100): UploadedFile
+{
+    return UploadedFile::fake()->create($name, $kb, 'application/pdf');
+}
+
+/**
+ * Masukan `SavePost` yang valid; `$overrides` menimpa.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function kontenPostData(array $overrides = []): array
+{
+    return [
+        'type' => 'berita',
+        'title' => 'Wisuda Tahfidz 2026',
+        'body' => '<p>Alhamdulillah</p>',
+        'status' => 'draft',
+        ...$overrides,
+    ];
+}
+
+/**
+ * Post langsung lewat forceFill (tanpa Action). Bawaan: berita draft dengan judul unik.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function kontenPost(array $attributes = []): Post
+{
+    static $counter = 0;
+    $counter++;
+
+    $title = $attributes['title'] ?? "Berita uji {$counter}";
+    $post = new Post;
+    $post->forceFill([
+        'type' => 'berita',
+        'title' => $title,
+        'slug' => Str::slug($title),
+        'body' => '<p>Isi berita</p>',
+        'status' => 'draft',
+        'published_at' => null,
+        ...$attributes,
+    ])->save();
+
+    return $post;
+}
+
+/**
+ * Kategori langsung lewat forceFill.
+ */
+function kontenCategory(string $type = 'album', string $name = 'Fasilitas', ?string $slug = null): Category
+{
+    $category = new Category;
+    $category->forceFill(['type' => $type, 'name' => $name, 'slug' => $slug ?? Str::slug($name)])->save();
+
+    return $category;
+}
+
+/**
+ * Album langsung lewat forceFill (kategori album dibuat bila `category_id` tidak diberikan).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function kontenAlbum(array $attributes = []): Album
+{
+    static $counter = 0;
+    $counter++;
+
+    $title = $attributes['title'] ?? "Album uji {$counter}";
+    $categoryId = $attributes['category_id'] ?? (Category::query()->where('type', 'album')->value('id') ?? kontenCategory()->id);
+    $album = new Album;
+    $album->forceFill(['title' => $title, 'slug' => Str::slug($title), 'description' => null, ...$attributes, 'category_id' => $categoryId])->save();
+
+    return $album;
+}
+
+/**
+ * Foto langsung lewat forceFill; berkasnya ditulis ke disk `public` (harus sudah dipalsukan).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function kontenPhoto(Album $album, array $attributes = []): Photo
+{
+    $path = $attributes['path'] ?? "albums/{$album->id}/".Str::uuid().'.jpg';
+    Storage::disk('public')->put($path, 'gambar');
+
+    $photo = new Photo;
+    $photo->forceFill(['album_id' => $album->id, 'caption' => null, 'sort_order' => 0, ...$attributes, 'path' => $path])->save();
+
+    return $photo;
+}
+
+/**
+ * Video langsung lewat forceFill.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function kontenVideo(array $attributes = []): Video
+{
+    $video = new Video;
+    $video->forceFill([
+        'title' => 'Video uji',
+        'youtube_id' => 'dQw4w9WgXcQ',
+        'description' => null,
+        'is_featured' => false,
+        'sort_order' => 0,
+        ...$attributes,
+    ])->save();
+
+    return $video;
+}
+
+/**
+ * Daftar berkas pada disk (bawaan `public`).
+ *
+ * @return list<string>
+ */
+function kontenFiles(string $disk = 'public'): array
+{
+    return Storage::disk($disk)->allFiles();
+}
+
+/**
+ * Activity log `konten`.
+ *
+ * @return Collection<int, Activity>
+ */
+function kontenActivities(): Collection
+{
+    return Activity::query()->where('log_name', 'konten')->orderBy('id')->get();
+}
+
+/**
+ * Teks menu navigasi (hanya `<nav>`) halaman `/admin` sebagai user.
+ */
+function kontenNavigationText(User $user): string
+{
+    $html = test()->actingAs($user)->get('/admin')->assertOk()->getContent();
+    preg_match_all('#<nav\b.*?</nav>#is', $html, $navigation);
+
+    expect($navigation[0])->not->toBeEmpty();
+
+    return bayarHtmlText(implode(' ', $navigation[0]));
+}
+
+/**
+ * Teks polos respons HTTP halaman admin sebagai user (status 200 diwajibkan).
+ */
+function kontenPageText(User $user, string $url): string
+{
+    return bayarHtmlText(test()->actingAs($user)->get($url)->assertOk()->getContent());
+}
+
+/**
+ * Body Arab: `<p>` + `$letters` huruf "ب" (2 byte per huruf) + `</p>`.
+ */
+function kontenArabicBody(int $letters): string
+{
+    return '<p>'.str_repeat('ب', $letters).'</p>';
 }

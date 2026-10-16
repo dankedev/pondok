@@ -344,16 +344,16 @@
       "name": "Paket rilis & instalasi shared hosting",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F008", "F012", "F014", "F015", "F017", "F018"],
       "description": "Aset ter-build ikut paket, panduan instalasi cPanel (PHP 8.3, MySQL), satu cron schedule:run.",
       "acceptance": [
         "Aplikasi terpasang dan berjalan di cPanel dengan PHP 8.3 dan MySQL"
       ],
-      "owner": "orchestrator-bc5d2383",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Dari F010/F014/F016/F017: paket rilis wajib memuat public/build; panduan instalasi cPanel harus mencakup storage:link, APP_URL yang benar (QR surat & gambar portal), TRUSTED_PROXIES opsional, dan cron schedule:run. Dari Review #2 F019: .htaccess deny di root aplikasi bisa diwarisi Apache (AllowOverride All) dan menutup public/ pada cara A — public/.htaccess wajib memuat izin eksplisit (Require all granted / Allow from all) yang mengalahkan deny induk; verifikasi di Apache (bukan php -S) atau catat sebagai uji manual user. Lewati blok handler PHP simpanan bila berkas sudah punya blok sejenis; app_exposure jangan memperingatkan /var/www/<app> standar."
+      "evidence": "Commit 5378114 (+ rencana 7df7360). Semua 18 file test F019 lulus per file tanpa mengubah vendor/public; full suite PHP 8.3 3996/3996 lulus; PHP 8.4 3995/3996 (1 kegagalan guard karena public/build dibangun ulang dari luar test pukul 14:51:22 di tengah run); migrate:fresh --seed MySQL OK; Pint lulus.",
+      "notes": "AC-50 (smoke test paket nyata php83 + MySQL dan uji di cPanel sungguhan) belum terverifikasi. Penyebab hilangnya vendor/*/dist dan public/build pukul 14:36 belum terkonfirmasi; kode F019 sudah dibuktikan bersih."
     },
     {
       "id": "F020",

@@ -115,8 +115,11 @@ it('AC-2: cascades photos when an album is deleted', function () {
         ->and(DB::table('photos')->where('id', $other->id)->exists())->toBeTrue();
 });
 
-it('AC-2: leaves achievement_id without a foreign key', function () {
-    $post = kontenPost(['achievement_id' => 987654]);
+// F015 menambah FK `achievement_id` ke `achievements` (lihat PostAchievementForeignKeyTest); di sini cukup nullable.
+it('AC-2: keeps achievement_id nullable and accepts an existing achievement', function () {
+    $plain = kontenPost();
+    $linked = kontenPost(['achievement_id' => prestasiRawAchievement()]);
 
-    expect($post->fresh()->achievement_id)->toBe(987654);
+    expect($plain->fresh()->achievement_id)->toBeNull()
+        ->and($linked->fresh()->achievement_id)->not->toBeNull();
 });

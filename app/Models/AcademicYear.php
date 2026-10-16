@@ -54,4 +54,12 @@ class AcademicYear extends Model
     {
         return $this->hasMany(FeeRate::class, 'effective_from_year_id');
     }
+
+    /**
+     * Prestasi yang tahun ajarannya diturunkan dari tanggal prestasi (F015).
+     */
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(Achievement::class);
+    }
 }

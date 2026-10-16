@@ -72,6 +72,14 @@ class Post extends Model
     }
 
     /**
+     * Prestasi sumber berita (F015). `achievement_id` diisi `PublishAchievementAsPost`.
+     */
+    public function achievement(): BelongsTo
+    {
+        return $this->belongsTo(Achievement::class);
+    }
+
+    /**
      * Post yang tampil di portal: terbit dan waktu terbitnya sudah lewat.
      */
     public function scopePublished(Builder $query, ?CarbonInterface $now = null): void

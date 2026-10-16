@@ -7,11 +7,13 @@ use App\Actions\Keuangan\FinanceReportFilter;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
+use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
 use App\Actions\Psb\SubmitApplication;
 use App\Filament\Resources\Applicants\Pages\ViewApplicant;
 use App\Models\AcademicYear;
+use App\Models\Achievement;
 use App\Models\AdmissionRequirement;
 use App\Models\AdmissionTrack;
 use App\Models\AdmissionWave;
@@ -2872,4 +2874,319 @@ function suratAssertPrivacyHeaders(TestResponse $response): void
     expect($response->headers->get('X-Robots-Tag'))->toContain('noindex')
         ->and($response->headers->get('Referrer-Policy'))->toBe('no-referrer')
         ->and($response->headers->get('Cache-Control'))->toContain('no-store');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper modul Prestasi (F015)
+|--------------------------------------------------------------------------
+|
+| Berawalan `prestasi`. Prestasi dan pesertanya dibuat langsung (forceFill + DB::table, tanpa factory)
+| agar test tidak bergantung pada factory yang dibuat implementer. Memakai `keuanganUser`,
+| `tagihanPlainText`, `asramaNotifications`. Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta.
+|
+*/
+
+/**
+ * Fixture: jenjang, peran, saklar (prestasi, konten, dokumen aktif), jenis dokumen, panel admin, waktu dibekukan,
+ * disk palsu, tahun ajaran 2025/2026 (`y1`) dan 2026/2027 aktif (`y2`), santri `s1` (SD, "Ahmad Satu"),
+ * `s2` (SLTP, "Budi Dua"), `s3` (SLTP, "Candra Tiga"), serta user `k` (kesantrian), `a` (admin-sekolah),
+ * `c` (admin-konten), `k2` (kesantrian SLTP), `a2` (admin-sekolah SLTP), `admin` (super-admin).
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit, y1: AcademicYear, y2: AcademicYear, s1: Student, s2: Student, s3: Student, k: User, a: User, c: User, k2: User, a2: User, admin: User, types: Collection<string, DocumentType>}
+ */
+function prestasiFixture(): object
+{
+    test()->seed([UnitSeeder::class, RolePermissionSeeder::class, SettingSeeder::class, DocumentTypeSeeder::class]);
+
+    foreach (['prestasi', 'konten', 'dokumen'] as $module) {
+        Setting::set("modules.{$module}.enabled", true);
+    }
+
+    Filament::setCurrentPanel('admin');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('private');
+    Storage::fake('public');
+
+    $sd = Unit::query()->where('code', 'SD')->firstOrFail();
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+    $y1 = AcademicYear::factory()->create(['name' => '2025/2026', 'starts_on' => '2025-07-01', 'ends_on' => '2026-06-30']);
+    $y2 = AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']);
+    $cohortSd = Cohort::factory()->create(['unit_id' => $sd->id, 'entry_year' => 2026]);
+    $cohortSltp = Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2026]);
+
+    return (object) [
+        'sd' => $sd,
+        'sltp' => $sltp,
+        'slta' => Unit::query()->where('code', 'SLTA')->firstOrFail(),
+        'y1' => $y1,
+        'y2' => $y2,
+        'cohortSd' => $cohortSd,
+        'cohortSltp' => $cohortSltp,
+        's1' => Student::factory()->forCohort($cohortSd)->create(['name' => 'Ahmad Satu', 'nis' => '1001']),
+        's2' => Student::factory()->forCohort($cohortSltp)->create(['name' => 'Budi Dua', 'nis' => '2002']),
+        's3' => Student::factory()->forCohort($cohortSltp)->create(['name' => 'Candra Tiga', 'nis' => '3003']),
+        'k' => keuanganUser('kesantrian'),
+        'a' => keuanganUser('admin-sekolah'),
+        'c' => keuanganUser('admin-konten'),
+        'k2' => keuanganUser('kesantrian', ['SLTP']),
+        'a2' => keuanganUser('admin-sekolah', ['SLTP']),
+        'admin' => keuanganUser('super-admin'),
+        'types' => DocumentType::query()->get()->keyBy('code'),
+    ];
+}
+
+/**
+ * Santri tambahan di jenjang `$unit` ('SD' atau 'SLTP').
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function prestasiStudent(object $f, string $unit = 'SLTP', array $attributes = []): Student
+{
+    return Student::factory()->forCohort($unit === 'SD' ? $f->cohortSd : $f->cohortSltp)->create($attributes);
+}
+
+/**
+ * Prestasi langsung lewat forceFill (tanpa Action). `$participants` berisi Student atau `[Student, rank, role]`.
+ * Kunci khusus `$attributes`: `verified` (true -> `verified_by` = `a`, bawaan belum diverifikasi), `public` (is_public).
+ * Bawaan: tahfidz, kabupaten, `kind` mengikuti jumlah peserta, 2026-08-17, tahun 2026/2027, dicatat `k`, peringkat "Juara 1".
+ *
+ * @param  list<Student|array{0: Student, 1?: string, 2?: ?string}>  $participants
+ * @param  array<string, mixed>  $attributes
+ */
+function prestasiCreate(object $f, array $participants, array $attributes = []): Achievement
+{
+    static $counter = 0;
+    $counter++;
+
+    $verified = $attributes['verified'] ?? false;
+    $public = $attributes['public'] ?? false;
+    unset($attributes['verified'], $attributes['public']);
+
+    $achievement = new Achievement;
+    $achievement->forceFill([
+        'academic_year_id' => $f->y2->id,
+        'category' => 'tahfidz',
+        'title' => "Prestasi uji {$counter}",
+        'event_name' => 'MTQ Tingkat Kabupaten 2026',
+        'organizer' => null,
+        'level' => 'kabupaten',
+        'kind' => count($participants) > 1 ? 'beregu' : 'individu',
+        'achieved_on' => '2026-08-17',
+        'recorded_by' => $f->k->id,
+        'verified_by' => $verified ? $f->a->id : null,
+        'is_public' => $public,
+        ...$attributes,
+    ])->save();
+
+    foreach ($participants as $participant) {
+        [$student, $rank, $role] = is_array($participant) ? [$participant[0], $participant[1] ?? 'Juara 1', $participant[2] ?? null] : [$participant, 'Juara 1', null];
+
+        DB::table('achievement_student')->insert([
+            'achievement_id' => $achievement->id,
+            'student_id' => $student->id,
+            'rank' => $rank,
+            'role' => $role,
+        ]);
+    }
+
+    return Achievement::withoutUnitScope()->findOrFail($achievement->id);
+}
+
+/**
+ * Satu baris `achievements` lewat query builder (tanpa model, tanpa peserta), untuk test yang hanya butuh FK.
+ * Membuat tahun ajaran dan user pencatat bila belum ada.
+ */
+function prestasiRawAchievement(?int $recordedBy = null): int
+{
+    static $counter = 0;
+    $counter++;
+
+    $year = AcademicYear::query()->first() ?? AcademicYear::factory()->create();
+
+    return DB::table('achievements')->insertGetId([
+        'academic_year_id' => $year->id,
+        'category' => 'tahfidz',
+        'title' => "Prestasi mentah {$counter}",
+        'event_name' => 'Lomba',
+        'level' => 'pondok',
+        'kind' => 'individu',
+        'achieved_on' => '2026-08-17',
+        'recorded_by' => $recordedBy ?? User::query()->oldest('id')->value('id') ?? User::factory()->create()->id,
+        'is_public' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
+
+/**
+ * Masukan SaveAchievement yang valid (individu, peserta `s2`); `$overrides` menimpa.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function prestasiData(object $f, array $overrides = []): array
+{
+    return [
+        'category' => 'tahfidz',
+        'title' => 'Juara 1 MTQ Tahfidz 10 Juz',
+        'event_name' => 'MTQ Tingkat Kabupaten 2026',
+        'level' => 'kabupaten',
+        'kind' => 'individu',
+        'achieved_on' => '2026-08-17',
+        'participants' => [['student_id' => $f->s2->id, 'rank' => 'Juara 1']],
+        ...$overrides,
+    ];
+}
+
+/**
+ * Jalankan SaveAchievement (user login diatur test pemanggil lewat `actingAs`).
+ *
+ * @param  array<string, mixed>  $data
+ */
+function prestasiSave(array $data, User $actor, ?Achievement $achievement = null): Achievement
+{
+    return app(SaveAchievement::class)->handle($data, $actor, $achievement);
+}
+
+/**
+ * Pola regex untuk pesan `pondok.prestasi.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function prestasiMessagePattern(string $reason): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.prestasi.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.prestasi.errors.<reason>`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function prestasiAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    expect(__("pondok.prestasi.errors.{$reason}"))->not->toBe("pondok.prestasi.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(prestasiMessagePattern($reason), $message) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.prestasi.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Apakah pesan `pondok.prestasi.errors.<reason>` terlihat di halaman komponen, galat form, atau notifikasi.
+ */
+function prestasiSeeMessage(Testable $component, string $reason): bool
+{
+    $message = __("pondok.prestasi.errors.{$reason}");
+    expect($message)->not->toBe("pondok.prestasi.errors.{$reason}");
+
+    $pattern = '/'.implode('.+?', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $message))).'/su';
+    $notifications = asramaNotifications()->map(fn (array $n): string => ($n['title'] ?? '').' '.($n['body'] ?? ''))->implode("\n");
+    $haystack = tagihanPlainText($component).' '.$notifications.' '.collect($component->errors()->all())->implode(' ');
+
+    return preg_match($pattern, $haystack) === 1;
+}
+
+/**
+ * Dokumen milik prestasi langsung lewat forceFill (berkas ditulis ke disk `private`, harus sudah di-fake).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function prestasiDocument(object $f, Achievement $achievement, string $code = 'SERTIFIKAT', array $attributes = []): Document
+{
+    $path = "documents/achievement/{$achievement->id}/".Str::random(24).'.pdf';
+    Storage::disk('private')->put($path, 'isi-sertifikat');
+
+    $document = new Document;
+    $document->forceFill([
+        'document_type_id' => $f->types[$code]->id,
+        'documentable_type' => 'achievement',
+        'documentable_id' => $achievement->id,
+        'file_path' => $path,
+        'original_name' => 'sertifikat.pdf',
+        'mime_type' => 'application/pdf',
+        'size_kb' => 10,
+        'status' => 'menunggu',
+        'uploaded_by' => $f->k->id,
+        ...$attributes,
+    ])->save();
+
+    return Document::withoutUnitScope()->findOrFail($document->id);
+}
+
+/**
+ * Banyaknya query yang dijalankan callback.
+ */
+function prestasiQueryCount(Closure $callback): int
+{
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $callback();
+    $count = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    return $count;
+}
+
+/**
+ * Notifikasi Filament pada request Livewire terakhir sebagai teks.
+ */
+function prestasiNotificationText(): string
+{
+    return asramaNotifications()->map(fn (array $n): string => ($n['title'] ?? '').' '.($n['body'] ?? ''))->implode("\n");
+}
+
+/**
+ * Teks menu navigasi (hanya `<nav>`) halaman `/admin` sebagai user.
+ */
+function prestasiNavigationText(User $user): string
+{
+    $html = test()->actingAs($user)->get('/admin')->assertOk()->getContent();
+    preg_match_all('#<nav\b.*?</nav>#is', $html, $navigation);
+
+    expect($navigation[0])->not->toBeEmpty();
+
+    return bayarHtmlText(implode(' ', $navigation[0]));
+}
+
+/**
+ * Peserta pivot sebagai `[student_id => [rank, role]]`.
+ *
+ * @return array<int, array{0: string, 1: ?string}>
+ */
+function prestasiPivot(Achievement $achievement): array
+{
+    return DB::table('achievement_student')->where('achievement_id', $achievement->id)->orderBy('student_id')->get()
+        ->mapWithKeys(fn (object $row): array => [$row->student_id => [$row->rank, $row->role]])->all();
+}
+
+/**
+ * Data AC-19: 2026/2027 P1 (tahfidz, kabupaten, S2), P2 (tahfidz, pondok, S2+S3), P3 (olahraga, provinsi, S1),
+ * PU (akademik, nasional, S3, belum diverifikasi); 2025/2026 P4 (seni, nasional, S2). Selain PU semuanya terverifikasi.
+ *
+ * @return object{p1: Achievement, p2: Achievement, p3: Achievement, pu: Achievement, p4: Achievement}
+ */
+function prestasiRecapData(object $f): object
+{
+    return (object) [
+        'p1' => prestasiCreate($f, [$f->s2], ['verified' => true, 'category' => 'tahfidz', 'level' => 'kabupaten']),
+        'p2' => prestasiCreate($f, [$f->s2, $f->s3], ['verified' => true, 'category' => 'tahfidz', 'level' => 'pondok']),
+        'p3' => prestasiCreate($f, [$f->s1], ['verified' => true, 'category' => 'olahraga', 'level' => 'provinsi']),
+        'pu' => prestasiCreate($f, [$f->s3], ['category' => 'akademik', 'level' => 'nasional']),
+        'p4' => prestasiCreate($f, [$f->s2], ['verified' => true, 'category' => 'seni', 'level' => 'nasional', 'academic_year_id' => $f->y1->id, 'achieved_on' => '2026-03-10']),
+    ];
 }

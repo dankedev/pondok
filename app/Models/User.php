@@ -102,6 +102,22 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Prestasi yang dicatat user ini (F015). Selama ada, user tidak bisa dihapus.
+     */
+    public function recordedAchievements(): HasMany
+    {
+        return $this->hasMany(Achievement::class, 'recorded_by');
+    }
+
+    /**
+     * Prestasi yang diverifikasi user ini (F015). Selama ada, user tidak bisa dihapus.
+     */
+    public function verifiedAchievements(): HasMany
+    {
+        return $this->hasMany(Achievement::class, 'verified_by');
+    }
+
+    /**
      * ID jenjang yang boleh dilihat user. Array kosong berarti tanpa batasan.
      *
      * @return list<int>

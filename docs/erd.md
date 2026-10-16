@@ -443,7 +443,7 @@ erDiagram
 - **Berkas PSB tidak perlu diunggah ulang.** `admission_requirements` kini merujuk ke `document_types`. Saat pendaftar menjadi santri, berkas yang sudah valid disalin menjadi `documents` milik santri.
 - **Kelengkapan berkas** bisa dicek otomatis: jenis dokumen yang `is_required` tapi belum ada atau belum valid. Hasilnya bisa tampil sebagai widget di dashboard dan sebagai pengingat di portal wali.
 - **Riwayat versi:** dokumen yang diperbarui (misalnya KK baru) tidak menimpa yang lama. Dokumen lama ditandai lewat `replaced_by_id`.
-- **Alias morph:** `documentable_type` menyimpan alias (`student`, `guardian`, `staff`; `achievement` menyusul di F015) lewat `Relation::morphMap` yang tidak dipaksakan. `number` bertipe `text` karena ciphertext `encrypted` lebih panjang dari 255 karakter. `replaced_by_id` unik: satu versi baru hanya menggantikan satu dokumen. FK `source_applicant_document_id` ke `applicant_documents` ditunda sampai penyalinan berkas PSB (F012).
+- **Alias morph:** `documentable_type` menyimpan alias (`student`, `guardian`, `staff`, `achievement`) lewat `Relation::morphMap` yang tidak dipaksakan. `number` bertipe `text` karena ciphertext `encrypted` lebih panjang dari 255 karakter. `replaced_by_id` unik: satu versi baru hanya menggantikan satu dokumen. FK `source_applicant_document_id` ke `applicant_documents` ditunda sampai penyalinan berkas PSB (F012).
 - **Jenis pemilik per peran:** selain cakupan jenjang (dokumen santri lewat jenjang santri, dokumen wali lewat santri terhubung, dokumen staff tidak berjenjang), dokumen wali hanya terlihat oleh pemegang `update:guardian` dan dokumen staff oleh pemegang `update:staff`; tipe lain hanya super-admin.
 - **Data pribadi:** nomor KK dan NIK disimpan dengan cast `encrypted` Laravel. File tersimpan di disk private dan dokumen `is_confidential` hanya bisa dibuka peran yang punya permission khusus. Ini sejalan dengan kewajiban perlindungan data di UU PDP.
 - **Surat keluar** (keterangan aktif, rekomendasi, pindah, syahadah, kartu santri) diberi nomor otomatis dan kode verifikasi. Pihak luar bisa memindai QR untuk mengecek keasliannya di `/verifikasi-surat/{kode}` (data minimal, nama termasker).
@@ -484,7 +484,10 @@ erDiagram
 
 - **Prestasi tercatat di profil santri,** tidak hanya sebagai berita di website. Rekap per santri, per kategori, dan per tingkat bisa ditampilkan di rapor, portal wali, dan surat rekomendasi.
 - **Prestasi beregu** cukup dicatat sekali lalu dihubungkan ke semua santri anggotanya lewat `achievement_student`, masing-masing dengan peringkat dan perannya.
-- **Sertifikat dan foto** disimpan di tabel `documents` dengan pemilik `Achievement`.
+- **Sertifikat dan foto** disimpan di tabel `documents` dengan pemilik `Achievement` (alias morph `achievement`, jenis `SERTIFIKAT` dan `FOTO_PRESTASI`).
+- `achievement_student` ber-primary key komposit (`achievement_id`, `student_id`) dengan index `student_id`; FK `achievement_id` `cascadeOnDelete`, `student_id` `restrictOnDelete`. `achievements` punya index `achieved_on`; FK `academic_year_id`, `recorded_by`, `verified_by` `restrictOnDelete`.
+- `academic_year_id` diturunkan dari `achieved_on` (tahun ajaran yang mencakup tanggal itu) setiap simpan. `verified_by` NULL berarti belum diverifikasi; perubahan isi membatalkan verifikasi, dan rekap resmi hanya menghitung prestasi terverifikasi.
+- **Cakupan jenjang** lewat santri peserta (termasuk terarsip): prestasi terlihat bila minimal satu peserta dalam cakupan user, dan hanya bisa diubah, dihapus, atau diverifikasi bila semua peserta dalam cakupan.
 - **Publikasi ke website:** prestasi dengan `is_public` bisa diterbitkan menjadi berita lewat `posts.achievement_id`. Data prestasi tetap satu sumber, dan widget prestasi di dashboard serta halaman publik mengambil dari tabel yang sama.
 - Kelulusan ujian khataman di modul tahfidz bisa otomatis diusulkan sebagai prestasi kategori tahfidz tingkat pondok.
 - Nanti, modul kedisiplinan bisa memakai prestasi ini sebagai poin positif yang mengimbangi poin pelanggaran.
@@ -755,7 +758,7 @@ erDiagram
     longtext body
     string cover_path "nullable"
     string youtube_url "nullable"
-    bigint achievement_id FK "nullable, untuk berita prestasi; FK ditambah F015"
+    bigint achievement_id FK "nullable, unique, untuk berita prestasi"
     json meta "data tambahan, nullable"
     enum status "draft | terbit"
     timestamp published_at "nullable"
@@ -800,7 +803,7 @@ erDiagram
 
 - Kegiatan, prestasi, dan berita disatukan di `posts` dengan kolom `type`. Berita prestasi merujuk ke `achievements` lewat `achievement_id`, jadi data tingkat, peringkat, dan santri yang terlibat tidak ditulis ulang.
 - `settings` menyimpan profil sekolah sebagai key-value, sehingga instalasi baru cukup mengisi lewat panel tanpa ubah kode. Key profil: `school.name`, `school.tagline`, `school.logo_path` (disk `public`), `school.address`, `school.phone`, `school.whatsapp`, `school.email`, `school.instagram_url`, `school.facebook_url`, `school.youtube_url`. Key kosong bernilai null.
-- `posts.author_id` nullable dengan `nullOnDelete`: menghapus user tidak menghapus atau menahan beritanya. `posts.achievement_id` sementara tanpa FK sampai tabel `achievements` dibuat (F015).
+- `posts.author_id` nullable dengan `nullOnDelete`: menghapus user tidak menghapus atau menahan beritanya. `posts.achievement_id` unique (satu berita per prestasi, termasuk berita terhapus) dengan FK `restrictOnDelete` ke `achievements` (F015; id yatim dibersihkan saat migrasi).
 - Nama dan slug kategori unik per `type`. `posts.body` dan `pages.body` adalah HTML tersanitasi; tabel model `pages` adalah `StaticPage` di kode.
 - Kolom `type`/`status` konten disimpan sebagai string dan divalidasi di Action (portabel SQLite/MySQL/Postgres).
 

@@ -423,11 +423,14 @@ it('AC-17: keeps the original author when another user edits the post', function
 
 it('AC-17: does not touch achievement_id or meta', function () {
     $post = kontenSave();
-    $post->forceFill(['achievement_id' => 42, 'meta' => ['kunci' => 'nilai']])->save();
+    // F015: achievement_id kini punya FK, jadi memakai baris prestasi sungguhan.
+    $first = prestasiRawAchievement($this->editor->id);
+    $second = prestasiRawAchievement($this->editor->id);
+    $post->forceFill(['achievement_id' => $first, 'meta' => ['kunci' => 'nilai']])->save();
 
-    kontenSave(['title' => 'Diubah', 'achievement_id' => 7, 'meta' => ['x' => 1]], post: $post);
+    kontenSave(['title' => 'Diubah', 'achievement_id' => $second, 'meta' => ['x' => 1]], post: $post);
 
-    expect($post->fresh())->achievement_id->toBe(42)->meta->toBe(['kunci' => 'nilai']);
+    expect($post->fresh())->achievement_id->toBe($first)->meta->toBe(['kunci' => 'nilai']);
 });
 
 it('AC-21: soft deletes and restores through the actions', function () {

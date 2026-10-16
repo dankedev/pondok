@@ -93,6 +93,14 @@ class Student extends Model
     /**
      * Surat keluar untuk santri ini (F014).
      */
+    /**
+     * Prestasi yang diikuti santri (F015), dengan peringkat dan peran.
+     */
+    public function achievements(): BelongsToMany
+    {
+        return $this->belongsToMany(Achievement::class)->withPivot(['rank', 'role']);
+    }
+
     public function issuedLetters(): HasMany
     {
         return $this->hasMany(IssuedLetter::class);

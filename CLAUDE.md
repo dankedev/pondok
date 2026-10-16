@@ -50,6 +50,7 @@ Target utama adalah **shared hosting cPanel** atau VPS kecil, karena sekolah pen
 - Nomor KK, NIK, dan sejenisnya memakai cast `encrypted`. Dokumen pribadi hanya di disk `private` dan diunduh lewat route yang dicek permission.
 - Unique key dengan kolom nullable memakai generated column `COALESCE(col, 0)` (lihat `fee_rates` di ERD).
 - Riwayat disimpan dengan baris baru, bukan menimpa: kelas (`enrollments`), kamar (`room_assignments`), halaqah (`halaqah_members`), musyrif (`dormitory_supervisors`), dokumen (`replaced_by_id`).
+- **Konten keagamaan** (seeder demo, contoh konten, mockup, teks bawaan) mengikuti aqidah Ahlus Sunnah wal Jama'ah dengan pemahaman para sahabat. Hari besar hanya Idul Fitri dan Idul Adha; jangan menampilkan Maulid, Isra' Mi'raj, Nuzulul Qur'an, Tahun Baru Hijriah, Nisfu Sya'ban, haul, tahlilan, harlah, hadrah, atau shalawatan berirama. Kegiatan contoh yang sesuai: kajian kitab, daurah tahfidz, ujian tasmi', shalat Id dan qurban, persiapan Ramadhan.
 
 ## Otorisasi
 

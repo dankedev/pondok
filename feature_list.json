@@ -257,16 +257,16 @@
       "name": "Surat keluar & QR verifikasi",
       "phase": 1,
       "module": "Dokumen",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F013", "F016"],
       "description": "Surat keterangan aktif, rekomendasi, pindah, syahadah, kartu santri dengan penomoran otomatis dan halaman publik verifikasi QR.",
       "acceptance": [
         "Nomor surat unik dan berurutan"
       ],
-      "owner": "tim-agent-fase1",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Format nomor surat masih pertanyaan terbuka di PRD §7."
+      "evidence": "Commit 992e5b7, 0ad9bfc, a847191, 2121aa2. 486 test F014 lulus (termasuk LetterVerificationGapsTest dari VERIFY); full suite 3276/3276 lulus di PHP 8.4 dan 8.3; migrate:fresh --seed MySQL OK; Pint lulus.",
+      "notes": "QR memakai chillerlan/php-qrcode transitif dari Filament (keputusan user: require langsung?). Retensi snapshot (Q17) dan format nomor resmi menunggu user. Cek visual 360px belum."
     },
     {
       "id": "F015",
@@ -274,13 +274,13 @@
       "name": "Prestasi santri",
       "phase": 1,
       "module": "Prestasi",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F002", "F013", "F016", "F018"],
       "description": "Prestasi individu/beregu dengan kategori, tingkat, peringkat, sertifikat, foto. Rekap per santri dan per tahun.",
       "acceptance": [
         "Prestasi bisa diterbitkan menjadi berita (terhubung F016)"
       ],
-      "owner": null,
+      "owner": "orchestrator-bc5d2383",
       "handoff": null,
       "evidence": "",
       "notes": "Dari F013: tambahkan alias achievement ke Document::DOCUMENTABLE_TYPES / morph map dan cabang achievement di Document::applyUnitScope; sertifikat dan foto prestasi disimpan di documents. Dari F018: isi widget prestasi terbaru."

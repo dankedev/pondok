@@ -12,6 +12,7 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Demo\DemoData;
 use Database\Seeders\DemoSeeder;
+use Database\Seeders\InstallSeeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -32,7 +33,7 @@ const DEMO_ACCOUNTS = [
     'admin-sekolah' => ['SLTP'],
     'admin-psb' => [],
     'admin-konten' => [],
-    'kesantrian' => ['SLTP', 'SLTA'],
+    'kesantrian' => ['SLTA'],
     'musyrif' => [],
     'ustadz-tahfidz' => [],
     'petugas-pos' => [],
@@ -80,6 +81,55 @@ function demoCheck(bool $condition, string $message): void
     test()->assertTrue($condition, $message);
 }
 
+/**
+ * Deret angka (telepon, rekening) dari brosur, diambil saat test berjalan:
+ * angka 8 digit atau lebih setelah tanda hubung dan spasi dibuang.
+ *
+ * @return list<string>
+ */
+function demoBrochureNumbers(): array
+{
+    $text = (string) file_get_contents(base_path('docs/brand/brosur-psb-2027-2028.md'));
+    preg_match_all('/\d[\d -]{6,}\d/', $text, $matches);
+
+    return collect($matches[0])
+        ->map(fn (string $raw): string => preg_replace('/\D/', '', $raw))
+        ->filter(fn (string $digits): bool => strlen($digits) >= 8)
+        ->unique()->values()->all();
+}
+
+/**
+ * Pola nama orang dan usaha dari brosur. Ditulis literal karena baris brosur
+ * tidak stabil untuk diekstrak (gelar dan jabatan menempel). Sumber:
+ * docs/brand/brosur-psb-2027-2028.md baris Binaan, Alamat, dan Kontak.
+ *
+ * @return list<string>
+ */
+function demoBrochureForbiddenPatterns(): array
+{
+    return ['/\bWujud\b/u', '/Said Yai/u', '/Rendi Sulistiawan/u', '/Arwitra/u', '/Waterboom/u'];
+}
+
+/**
+ * @param  array<string, list<string>>  $columnsByTable
+ * @return list<string> lokasi yang cocok
+ */
+function demoScanColumns(array $columnsByTable, callable $matcher): array
+{
+    $hits = [];
+    foreach ($columnsByTable as $table => $columns) {
+        foreach ($columns as $column) {
+            foreach (DB::table($table)->whereNotNull($column)->pluck($column) as $value) {
+                if ($matcher((string) $value)) {
+                    $hits[] = "{$table}.{$column}";
+                }
+            }
+        }
+    }
+
+    return $hits;
+}
+
 it('AC-1: menolak berjalan di production tanpa menulis data', function () {
     app()->detectEnvironment(fn () => 'production');
 
@@ -114,6 +164,9 @@ it('AC-24: dokumentasi demo dan env contoh tersedia', function () {
     foreach (array_keys(DEMO_ACCOUNTS) as $role) {
         expect($doc)->toContain($role.'@demo.test');
     }
+    expect($doc)->toContain('migrate:fresh');
+    $daftarUlangLine = collect(explode("\n", $doc))->first(fn (string $line) => stripos($line, 'DAFTAR_ULANG') !== false || stripos($line, 'daftar ulang') !== false);
+    demoCheck($daftarUlangLine !== null && stripos($daftarUlangLine, 'contoh') !== false, 'AC-12 docs: baris daftar ulang bertanda contoh');
     expect($doc)->toContain('DEMO_PASSWORD')
         ->toContain(DemoSeeder::DEFAULT_PASSWORD)
         ->toContain('php artisan db:seed --class=DemoSeeder');
@@ -156,15 +209,25 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
 
     // AC-5
     expect(Setting::get('school.name'))->toBe("Ma'had Al-Khair Belitang");
-    expect(Setting::get('school.address'))->toContain('Belitang');
-    demoCheck(str_contains((string) Setting::get('school.address'), 'Ogan Komering Ulu Timur') || str_contains((string) Setting::get('school.address'), 'OKU Timur'), 'AC-5 alamat');
-    demoCheck(filled(Setting::get('school.phone')) && filled(Setting::get('school.email')), 'AC-5 telepon dan email');
-    foreach (['profil', 'visi-misi', 'kontak'] as $slug) {
-        demoCheck(filled(DB::table('pages')->where('slug', $slug)->value('body')), "AC-5 halaman {$slug}");
+    expect(Setting::get('school.tagline'))->toBe("Generasi Beradab Bersama Al-Qur'an");
+    foreach (['Mojosari', 'Belitang', 'OKU Timur'] as $part) {
+        expect((string) Setting::get('school.address'))->toContain($part);
     }
+    demoCheck(filled(Setting::get('school.phone')) && filled(Setting::get('school.email')), 'AC-5 telepon dan email');
+    $profil = (string) DB::table('pages')->where('slug', 'profil')->value('body');
+    foreach (['Tentang Yayasan', 'Selayang Pandang', 'Pengurus Al-Khair', 'khusus putra'] as $part) {
+        demoCheck(str_contains($profil, $part), "AC-5 profil memuat {$part}");
+    }
+    demoCheck(str_contains((string) DB::table('pages')->where('slug', 'kontak')->value('body'), 'Mojosari'), 'AC-5 kontak memuat Mojosari');
+    demoCheck(filled(DB::table('pages')->where('slug', 'visi-misi')->value('body')), 'AC-5 visi-misi');
     foreach ([['posts', 'body'], ['posts', 'title'], ['pages', 'body']] as [$table, $column]) {
         demoCheck(DB::table($table)->where($column, 'like', '%lorem%')->count() === 0, "AC-5 lorem di {$table}.{$column}");
     }
+
+    // AC-25 (bagian 1)
+    expect(Unit::query()->where('code', 'SLTP')->value('name'))->toBe('MTW/SMP');
+    expect(Unit::query()->where('code', 'SLTA')->value('name'))->toBe('TSN/SMA');
+    expect(Unit::query()->where('code', 'SD')->exists())->toBeTrue();
 
     // AC-6 (bagian data)
     $demoUsers = User::query()->where('email', 'like', '%@demo.test')->get();
@@ -175,6 +238,9 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         demoCheck((bool) $user->is_active && $user->email_verified_at !== null, "AC-6 {$role} aktif dan terverifikasi");
         $expected = collect($unitCodes)->map(fn ($c) => demoUnitId($c))->sort()->values()->all();
         expect($user->scopedUnitIds())->toEqualCanonicalizing($expected);
+    }
+    foreach ($demoUsers as $user) {
+        demoCheck(! in_array(demoUnitId('SD'), $user->scopedUnitIds(), true), "AC-6 {$user->email} tanpa cakupan SD");
     }
     foreach (['musyrif', 'ustadz-tahfidz', 'bendahara'] as $role) {
         expect(DB::table('staff')->where('user_id', demoUser($role)->id)->count())->toBe(1);
@@ -187,23 +253,25 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
 
     // AC-8
     $staff = DB::table('staff')->where('is_active', true)->get();
-    demoCheck($staff->count() >= 22, 'AC-8 staff aktif >= 22');
-    foreach (['ustadz', 'musyrif', 'TU'] as $position) {
+    demoCheck($staff->count() >= 20, 'AC-8 staff aktif >= 20');
+    foreach (['ustadz', 'musyrif', 'Mudir'] as $position) {
         demoCheck($staff->contains('position', $position), "AC-8 posisi {$position}");
     }
+    foreach ($staff->whereIn('position', ['ustadz', 'musyrif', 'Mudir']) as $person) {
+        demoCheck($person->gender === 'L', "AC-8 staff {$person->name} berjenis kelamin L");
+    }
     $classroomsA = DB::table('classrooms')->where('academic_year_id', $yearA)->get();
-    expect($classroomsA)->toHaveCount(15);
-    expect(DB::table('classrooms')->where('academic_year_id', $yearP)->count())->toBe(15);
-    expect($classroomsA->where('unit_id', demoUnitId('SD'))->where('gender', 'campur'))->toHaveCount(3);
-    foreach ([$sltp, $slta] as $unitId) {
-        expect($classroomsA->where('unit_id', $unitId)->where('gender', 'L'))->toHaveCount(3);
-        expect($classroomsA->where('unit_id', $unitId)->where('gender', 'P'))->toHaveCount(3);
+    $classroomsP = DB::table('classrooms')->where('academic_year_id', $yearP)->get();
+    foreach ([$classroomsA, $classroomsP] as $classrooms) {
+        expect($classrooms)->toHaveCount(6);
+        expect($classrooms->pluck('name')->sort()->values()->all())->toBe(['10A', '11A', '12A', '7A', '8A', '9A']);
+        foreach ($classrooms as $classroom) {
+            demoCheck($classroom->gender === 'L', "AC-8 rombel {$classroom->name} gender L");
+            demoCheck($classroom->unit_id === ($classroom->grade <= 9 ? $sltp : $slta), "AC-8 jenjang rombel {$classroom->name}");
+        }
     }
     foreach ($classroomsA as $classroom) {
-        demoCheck($classroom->homeroom_staff_id !== null, "AC-8 wali kelas {$classroom->name}");
-        if ($classroom->gender === 'P') {
-            expect(DB::table('staff')->where('id', $classroom->homeroom_staff_id)->value('gender'))->toBe('P');
-        }
+        demoCheck($classroom->homeroom_staff_id !== null && DB::table('staff')->where('id', $classroom->homeroom_staff_id)->value('gender') === 'L', "AC-8 wali kelas {$classroom->name} laki-laki");
     }
 
     // AC-9
@@ -216,19 +284,23 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect($nonPsb->pluck('name')->diff($demoNames)->all())->toBe([]);
     expect($demoNis->diff($students->pluck('nis'))->all())->toBe([]);
     expect($nonPsb)->toHaveCount($demoNis->count());
+    demoCheck($students->every(fn ($s) => $s->gender === 'L'), 'AC-9 semua santri L');
+    $sd = demoUnitId('SD');
+    demoCheck($students->where('unit_id', $sd)->isEmpty(), 'AC-9 tanpa santri SD');
+    foreach (['cohorts', 'classrooms', 'fee_rates', 'admission_requirements', 'applicants'] as $table) {
+        demoCheck(DB::table($table)->where('unit_id', $sd)->count() === 0, "AC-9 tanpa {$table} SD");
+    }
     $byStatus = $students->groupBy('status')->map->count();
-    demoCheck($byStatus->get('aktif', 0) >= 75 && $byStatus->get('lulus', 0) >= 5 && $byStatus->get('keluar', 0) >= 1 && $byStatus->get('pindah', 0) >= 1, 'AC-9 komposisi status');
-    foreach (['SD', 'SLTP', 'SLTA'] as $code) {
-        foreach (['L', 'P'] as $gender) {
-            demoCheck($students->where('status', 'aktif')->where('unit_id', demoUnitId($code))->where('gender', $gender)->isNotEmpty(), "AC-9 {$code} {$gender} aktif");
-        }
+    demoCheck($byStatus->get('aktif', 0) >= 65 && $byStatus->get('lulus', 0) >= 5 && $byStatus->get('keluar', 0) >= 1 && $byStatus->get('pindah', 0) >= 1, 'AC-9 komposisi status');
+    foreach ([$sltp, $slta] as $unitId) {
+        demoCheck($students->where('status', 'aktif')->where('unit_id', $unitId)->isNotEmpty(), 'AC-9 santri aktif per jenjang');
     }
     $contacts = DB::table('student_guardian')->where('is_billing_contact', true)->groupBy('student_id')->selectRaw('student_id, count(*) as c')->pluck('c', 'student_id');
     foreach ($students as $student) {
         demoCheck(($contacts[$student->id] ?? 0) === 1, "AC-9 kontak tagihan santri {$student->nis}");
     }
     $familySizes = DB::table('student_guardian')->groupBy('guardian_id')->selectRaw('count(*) as c')->pluck('c');
-    demoCheck($familySizes->filter(fn ($c) => $c >= 2)->count() >= 8 && $familySizes->max() >= 3, 'AC-9 keluarga bersaudara');
+    demoCheck($familySizes->filter(fn ($c) => $c >= 2)->count() >= 5 && $familySizes->max() >= 3, 'AC-9 keluarga bersaudara');
     expect(DB::table('students')->join('cohorts', 'cohorts.id', '=', 'students.cohort_id')->whereColumn('cohorts.unit_id', '!=', 'students.unit_id')->count())->toBe(0);
 
     // AC-10
@@ -239,17 +311,14 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $enrolledA = $enrollments->where('academic_year_id', $yearA)->keyBy('student_id');
     $enrolledP = $enrollments->where('academic_year_id', $yearP)->keyBy('student_id');
     $cohortYear = DB::table('cohorts')->pluck('entry_year', 'id');
-    foreach ($students->where('status', 'aktif') as $student) {
-        if ($cohortYear[$student->cohort_id] <= 2026) {
-            demoCheck($enrolledA->has($student->id), "AC-10 enrollment A {$student->nis}");
-        }
+    foreach ($students->where('status', 'aktif')->whereNull('applicant_id') as $student) {
+        demoCheck($enrolledA->has($student->id), "AC-10 enrollment A {$student->nis}");
     }
     foreach ($students->where('status', '!=', 'aktif') as $student) {
         demoCheck(! $enrolledA->has($student->id), "AC-10 non-aktif tanpa enrollment A {$student->nis}");
     }
     $promoted = $enrolledP->filter(fn ($p, $id) => $enrolledA->has($id) && $enrolledA[$id]->grade === $p->grade + 1);
     demoCheck($promoted->count() >= 20, 'AC-10 kenaikan kelas >= 20');
-    demoCheck($enrolledP->contains(fn ($p, $id) => $p->classroom_unit === demoUnitId('SD') && $enrolledA->has($id) && $enrolledA[$id]->classroom_unit === $sltp), 'AC-10 SD ke SLTP');
     demoCheck($enrolledP->contains(fn ($p, $id) => $p->classroom_unit === $sltp && $enrolledA->has($id) && $enrolledA[$id]->classroom_unit === $slta), 'AC-10 SLTP ke SLTA');
     foreach ($enrolledA as $studentId => $row) {
         demoCheck($row->classroom_unit === $students->firstWhere('id', $studentId)->unit_id, "AC-10 jenjang rombel A santri {$studentId}");
@@ -257,56 +326,75 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
 
     // AC-11
     $dormitories = DB::table('dormitories')->where('is_active', true)->get();
-    expect($dormitories->pluck('gender')->sort()->values()->all())->toBe(['L', 'P']);
+    expect($dormitories)->toHaveCount(2);
+    expect($dormitories->pluck('gender')->unique()->all())->toBe(['L']);
+    expect($dormitories->pluck('code')->sort()->values()->all())->toBe(['ABK', 'UMR']);
     expect(DB::table('rooms')->count())->toBe(8);
     $active = DB::table('room_assignments')->whereNull('end_on')
         ->join('rooms', 'rooms.id', '=', 'room_assignments.room_id')
-        ->join('dormitories', 'dormitories.id', '=', 'rooms.dormitory_id')
-        ->select('room_assignments.student_id', 'room_assignments.room_id', 'rooms.capacity', 'dormitories.gender as dorm_gender')
+        ->select('room_assignments.student_id', 'room_assignments.room_id', 'rooms.capacity')
         ->get();
-    demoCheck($active->count() >= 40, 'AC-11 penempatan aktif >= 40');
+    $housed = $active->pluck('student_id')->all();
+    foreach ($students->where('status', 'aktif') as $student) {
+        if ($enrolledA->has($student->id)) {
+            demoCheck(in_array($student->id, $housed, true), "AC-11 santri {$student->nis} mukim");
+        } else {
+            demoCheck($student->applicant_id !== null, "AC-11 nonmukim hanya hasil daftar ulang {$student->nis}");
+        }
+    }
     foreach ($active as $row) {
-        $student = $students->firstWhere('id', $row->student_id);
-        demoCheck($student->status === 'aktif' && $student->unit_id !== demoUnitId('SD') && $student->gender === $row->dorm_gender, "AC-11 penempatan sah santri {$student->nis}");
+        demoCheck($students->firstWhere('id', $row->student_id)->status === 'aktif', 'AC-11 penghuni aktif');
     }
     foreach ($active->groupBy('room_id') as $rows) {
         demoCheck($rows->count() <= $rows->first()->capacity, 'AC-11 kapasitas kamar');
     }
-    demoCheck(DB::table('room_assignments')->groupBy('student_id')->selectRaw('student_id, count(*) as c, count(end_on) as closed')->get()->contains(fn ($r) => $r->c >= 2 && $r->closed >= 1), 'AC-11 pindah kamar');
+    demoCheck(DB::table('room_assignments')->groupBy('student_id')->selectRaw('student_id, count(*) as c')->get()->contains(fn ($r) => $r->c >= 2), 'AC-11 pindah kamar');
+    foreach (DB::table('rooms')->get() as $room) {
+        $musyrif = DB::table('dormitory_supervisors')->where('room_id', $room->id)->where('role', 'musyrif')->whereNull('end_on')->get();
+        expect($musyrif)->toHaveCount(1);
+        expect(DB::table('staff')->where('id', $musyrif->first()->staff_id)->value('gender'))->toBe('L');
+    }
     foreach ($dormitories as $dormitory) {
-        $rows = DB::table('dormitory_supervisors')->where('dormitory_id', $dormitory->id)->where('academic_year_id', $yearA)->whereNull('end_on')->get();
-        expect($rows->where('role', 'kepala_asrama'))->toHaveCount(1);
-        demoCheck($rows->where('role', 'musyrif')->count() >= 1, 'AC-11 musyrif asrama');
+        expect(DB::table('dormitory_supervisors')->where('dormitory_id', $dormitory->id)->where('role', 'kepala_asrama')->whereNull('end_on')->count())->toBe(1);
     }
 
     // AC-12
     $expectedTypes = [
-        'SPP' => ['bulanan', 'semua', 'BULANAN', 30], 'ASRAMA' => ['bulanan', 'mukim', 'BULANAN', 20], 'MAKAN' => ['bulanan', 'mukim', 'BULANAN', 10],
-        'FORMULIR' => ['saat_daftar', 'semua', 'PSB_DAFTAR', 10], 'UANG_PANGKAL' => ['saat_diterima', 'semua', 'PSB_TERIMA', 30],
-        'SERAGAM' => ['saat_diterima', 'semua', 'PSB_TERIMA', 20], 'KITAB' => ['saat_diterima', 'semua', 'PSB_TERIMA', 10],
+        'SPP' => ['bulanan', 'semua', 'BULANAN', 10], 'FORMULIR' => ['saat_daftar', 'semua', 'PSB_DAFTAR', 10],
+        'UANG_MASUK' => ['saat_diterima', 'semua', 'PSB_TERIMA', 10], 'DAFTAR_ULANG' => ['tahunan', 'semua', 'DAFTAR_ULANG', 20],
     ];
     $types = DB::table('fee_types')->get()->keyBy('code');
+    expect($types->keys()->sort()->values()->all())->toBe(['DAFTAR_ULANG', 'FORMULIR', 'SPP', 'UANG_MASUK']);
     foreach ($expectedTypes as $code => [$frequency, $appliesTo, $group, $priority]) {
-        demoCheck(isset($types[$code]) && [$types[$code]->frequency, $types[$code]->applies_to, $types[$code]->billing_group, (int) $types[$code]->priority] === [$frequency, $appliesTo, $group, $priority], "AC-12 jenis biaya {$code}");
+        demoCheck([$types[$code]->frequency, $types[$code]->applies_to, $types[$code]->billing_group, (int) $types[$code]->priority] === [$frequency, $appliesTo, $group, $priority], "AC-12 jenis biaya {$code}");
     }
     $rates = DB::table('fee_rates')->get();
     foreach ($rates as $rate) {
-        demoCheck($rate->amount % 1000 === 0 && $rate->amount >= 50000 && $rate->amount <= 5000000, "AC-12 nominal tarif {$rate->amount}");
+        demoCheck($rate->amount % 1000 === 0 && $rate->amount >= 50000 && $rate->amount <= 10000000, "AC-12 nominal tarif {$rate->amount}");
     }
-    demoCheck($rates->whereNotNull('cohort_id')->isNotEmpty() && $rates->whereNotNull('dormitory_id')->isNotEmpty(), 'AC-12 tarif angkatan dan asrama');
-    demoCheck($rates->whereNull('cohort_id')->whereNull('dormitory_id')->every(fn ($r) => (int) $r->effective_from_year_id === $yearP), 'AC-12 tarif dasar mulai P');
+    $expectedRates = ['SPP' => 1600000, 'FORMULIR' => 300000, 'UANG_MASUK' => 10000000, 'DAFTAR_ULANG' => 1500000];
+    foreach ([$sltp, $slta] as $unitId) {
+        foreach ($expectedRates as $code => $amount) {
+            $base = $rates->where('fee_type_id', $types[$code]->id)->where('unit_id', $unitId)->whereNull('cohort_id')->whereNull('dormitory_id');
+            demoCheck($base->count() === 1 && $base->first()->amount === $amount && (int) $base->first()->effective_from_year_id === $yearP, "AC-12 tarif dasar {$code}");
+        }
+    }
+    $cohortRates = $rates->whereNotNull('cohort_id');
+    expect($cohortRates)->toHaveCount(1);
+    demoCheck($cohortRates->first()->fee_type_id === $types['SPP']->id && $cohortRates->first()->unit_id === $slta && $cohortRates->first()->amount === 1500000, 'AC-12 tarif angkatan SLTA 1.500.000');
+    demoCheck($rates->whereNotNull('dormitory_id')->isEmpty(), 'AC-12 tanpa tarif asrama');
 
     // AC-13
     $scholarships = DB::table('scholarships')->where('is_active', true)->get();
     expect($scholarships->pluck('mode')->sort()->values()->all())->toBe(['nominal', 'persen', 'potongan']);
     $overrides = DB::table('fee_overrides')->get();
-    demoCheck($overrides->whereNotNull('student_id')->pluck('mode')->unique()->count() === 3, 'AC-13 tiga mode override');
-    demoCheck($overrides->whereNull('scholarship_id')->isNotEmpty(), 'AC-13 override tanpa program');
-    demoCheck($overrides->whereNotNull('student_id')->whereNull('applicant_id')->every(fn ($o) => (int) $o->approved_by === demoUser('bendahara')->id), 'AC-13 disetujui bendahara');
+    $owners = $overrides->whereNotNull('scholarship_id')->map(fn ($o) => $o->student_id !== null ? 's'.$o->student_id : 'a'.$o->applicant_id)->unique();
+    demoCheck($owners->count() <= 3, "AC-13 pemilik beasiswa <= 3 (ada {$owners->count()})");
+    expect($overrides->whereNull('scholarship_id'))->toHaveCount(1);
+    demoCheck($overrides->whereNull('applicant_id')->every(fn ($o) => (int) $o->approved_by === demoUser('bendahara')->id), 'AC-13 keringanan santri disetujui bendahara');
     demoCheck($overrides->whereNotNull('applicant_id')->every(fn ($o) => in_array((int) $o->approved_by, [demoUser('admin-psb')->id, demoUser('bendahara')->id], true)), 'AC-13 keringanan jalur PSB disetujui aktor penerima');
 
     // AC-14
-    $mukimIds = DB::table('room_assignments')->whereNull('end_on')->pluck('student_id')->all();
     $items = DB::table('invoice_items')->join('fee_types', 'fee_types.id', '=', 'invoice_items.fee_type_id')
         ->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')
         ->where('invoices.billing_group', 'BULANAN')->where('invoices.status', '!=', 'batal')
@@ -318,23 +406,21 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         expect($invoices->count())->toBe($eligible, "AC-14 jumlah tagihan {$period}");
         expect($invoices->unique('student_id')->count())->toBe($invoices->count());
     }
-    foreach ($items->groupBy('student_id') as $studentId => $studentItems) {
-        $codes = $studentItems->pluck('code')->unique();
-        if (in_array($studentId, $mukimIds, true)) {
-            demoCheck($codes->contains('ASRAMA') && $codes->contains('MAKAN'), "AC-14 mukim {$studentId}");
-        } else {
-            demoCheck(! $codes->contains('ASRAMA') && ! $codes->contains('MAKAN'), "AC-14 nonmukim {$studentId}");
-        }
+    foreach ($items->groupBy('invoice_id') as $invoiceItems) {
+        demoCheck($invoiceItems->count() === 1 && $invoiceItems->first()->code === 'SPP', 'AC-14 satu item SPP per tagihan');
     }
-    demoCheck($items->where('code', 'SPP')->whereNotNull('fee_override_id')->every(fn ($i) => $i->discount_amount > 0), 'AC-14 diskon item SPP');
-    $yatimIds = DB::table('fee_overrides')->join('scholarships', 'scholarships.id', '=', 'fee_overrides.scholarship_id')->where('scholarships.name', 'Beasiswa Yatim')->pluck('fee_overrides.student_id');
-    demoCheck($yatimIds->isNotEmpty() && $items->where('code', 'SPP')->whereIn('student_id', $yatimIds)->every(fn ($i) => $i->amount === 0), 'AC-14 SPP yatim gratis');
-    $sltaY = $students->where('unit_id', $slta)->filter(fn ($s) => $cohortYear[$s->cohort_id] === 2026)->pluck('id');
-    $sppSlta = $items->where('code', 'SPP')->whereIn('student_id', $sltaY)->filter(fn ($i) => ! in_array($i->student_id, $yatimIds->all(), true) && $i->fee_override_id === null);
-    demoCheck($sppSlta->isNotEmpty() && $sppSlta->every(fn ($i) => $i->base_amount === 325000), 'AC-14 tarif angkatan SLTA 2026');
-    $khdIds = DB::table('room_assignments')->whereNull('end_on')->join('rooms', 'rooms.id', '=', 'room_assignments.room_id')->join('dormitories', 'dormitories.id', '=', 'rooms.dormitory_id')->where('dormitories.code', 'KHD')->pluck('student_id')->all();
-    $asramaKhd = $items->where('code', 'ASRAMA')->filter(fn ($i) => in_array($i->student_id, $khdIds, true));
-    demoCheck($asramaKhd->isNotEmpty() && $asramaKhd->every(fn ($i) => $i->base_amount === 225000), 'AC-14 tarif asrama KHD');
+    foreach ($items as $item) {
+        $student = $students->firstWhere('id', $item->student_id);
+        $expectedBase = ($student->unit_id === $slta && $cohortYear[$student->cohort_id] === 2024) ? 1500000 : 1600000;
+        demoCheck($item->base_amount === $expectedBase, "AC-14 base_amount santri {$student->nis}");
+    }
+    $overrideOwner = fn (string $scholarship) => DB::table('fee_overrides')->join('scholarships', 'scholarships.id', '=', 'fee_overrides.scholarship_id')->where('scholarships.name', $scholarship)->whereNotNull('fee_overrides.student_id')->pluck('fee_overrides.student_id');
+    $yatim = $overrideOwner('Subsidi Yatim');
+    $tahfidz = $overrideOwner('Beasiswa Tahfidz');
+    demoCheck($yatim->count() === 1 && $items->whereIn('student_id', $yatim)->isNotEmpty() && $items->whereIn('student_id', $yatim)->every(fn ($i) => $i->amount === 800000), 'AC-14 Subsidi Yatim bayar 800.000');
+    demoCheck($tahfidz->count() === 1 && $items->whereIn('student_id', $tahfidz)->isNotEmpty() && $items->whereIn('student_id', $tahfidz)->every(fn ($i) => $i->amount === intdiv($i->base_amount, 2)), 'AC-14 Beasiswa Tahfidz 50%');
+    $interview = DB::table('fee_overrides')->whereNull('scholarship_id')->pluck('student_id');
+    demoCheck($interview->count() === 1 && $items->whereIn('student_id', $interview)->isNotEmpty() && $items->whereIn('student_id', $interview)->every(fn ($i) => $i->discount_amount === 300000), 'AC-14 keringanan wawancara 300.000');
 
     // AC-15
     $monthly = DB::table('invoices')->where('billing_group', 'BULANAN')->where('status', '!=', 'batal')->get();
@@ -349,47 +435,51 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $cancelled = DB::table('payments')->where('status', 'batal')->get();
     expect($cancelled)->toHaveCount(1);
     demoCheck(filled($cancelled->first()->cancel_reason), 'AC-15 alasan batal');
-    $itemsByInvoice = DB::table('invoice_items')->join('fee_types', 'fee_types.id', '=', 'invoice_items.fee_type_id')->select('invoice_items.*', 'fee_types.priority', 'fee_types.code')->get()->groupBy('invoice_id');
-    $mealPaidSppUnpaid = false;
     foreach ($monthly->where('status', 'sebagian') as $invoice) {
-        $rows = $itemsByInvoice[$invoice->id];
-        foreach ($rows as $paidRow) {
-            foreach ($rows as $other) {
-                if ($paidRow->paid_amount > 0 && $other->priority < $paidRow->priority) {
-                    demoCheck($other->paid_amount >= $other->amount, "AC-15 prioritas {$invoice->invoice_no}");
-                }
-            }
-        }
-        $meal = $rows->firstWhere('code', 'MAKAN');
-        $spp = $rows->firstWhere('code', 'SPP');
-        if ($meal && $spp && $meal->paid_amount === $meal->amount && $spp->amount > 0 && $spp->paid_amount === 0) {
-            $mealPaidSppUnpaid = true;
-        }
+        demoCheck($invoice->paid_total % 1000 === 0 && $invoice->paid_total < $invoice->total, "AC-15 cicilan {$invoice->invoice_no}");
     }
-    demoCheck($mealPaidSppUnpaid, 'AC-15 sebagian mukim: MAKAN lunas, SPP belum');
 
     // AC-16
-    $wave = AdmissionWave::query()->where('name', 'Gelombang 1')->where('academic_year_id', $yearN)->firstOrFail();
-    demoCheck($wave->isAcceptingRegistrationsOn($t1), 'AC-16 gelombang menerima pendaftaran');
+    $waves = AdmissionWave::query()->where('academic_year_id', $yearN)->orderBy('opens_on')->get();
+    expect($waves)->toHaveCount(2);
+    expect($waves->pluck('name')->all())->toBe(['Gelombang I', 'Gelombang II']);
+    expect([$waves[0]->opens_on->toDateString(), $waves[0]->closes_on->toDateString(), $waves[0]->quota])->toBe(['2026-10-05', '2027-02-07', 40]);
+    expect([$waves[1]->opens_on->toDateString(), $waves[1]->closes_on->toDateString(), $waves[1]->quota])->toBe(['2027-02-08', '2027-10-04', 20]);
+    expect($waves->filter(fn ($w) => $w->isAcceptingRegistrationsOn($t1))->pluck('name')->all())->toBe(['Gelombang I']);
+    $tracks = DB::table('admission_tracks')->where('is_active', true)->get();
+    expect($tracks->pluck('code')->sort()->values()->all())->toBe(['REGULER', 'SUBSIDI']);
+    expect((int) $tracks->firstWhere('code', 'SUBSIDI')->scholarship_id)->toBe((int) DB::table('scholarships')->where('name', 'Subsidi Uang Masuk')->value('id'));
+    $requirements = DB::table('admission_requirements')->join('document_types', 'document_types.id', '=', 'admission_requirements.document_type_id')->pluck('admission_requirements.is_required', 'document_types.code');
+    foreach (['KK', 'AKTA', 'RAPOR', 'FOTO'] as $code) {
+        demoCheck((bool) ($requirements[$code] ?? false), "AC-16 syarat wajib {$code}");
+    }
+    demoCheck(isset($requirements['IJAZAH']) && ! $requirements['IJAZAH'], 'AC-16 IJAZAH tidak wajib');
     $applicants = DB::table('applicants')->get();
     expect($applicants)->toHaveCount(14);
+    demoCheck($applicants->every(fn ($a) => $a->gender === 'L' && in_array($a->unit_id, [$sltp, $slta], true)), 'AC-16 pendaftar putra SLTP/SLTA');
     expect($applicants->groupBy('status')->map->count()->all())
         ->toEqualCanonicalizing(['cadangan' => 1, 'diajukan' => 4, 'diterima' => 5, 'diverifikasi' => 2, 'draft' => 1, 'ditolak' => 1]);
     foreach ($applicants->where('status', '!=', 'draft') as $applicant) {
-        demoCheck(DB::table('invoices')->where('applicant_id', $applicant->id)->where('billing_group', 'PSB_DAFTAR')->exists(), "AC-16 tagihan daftar {$applicant->name}");
+        demoCheck(DB::table('invoices')->where('applicant_id', $applicant->id)->where('billing_group', 'PSB_DAFTAR')->where('total', 300000)->exists(), "AC-16 tagihan daftar {$applicant->name}");
     }
     foreach ($applicants->where('status', 'ditolak') as $applicant) {
         expect(DB::table('invoices')->where('applicant_id', $applicant->id)->where('status', 'belum')->count())->toBe(0);
     }
+    $uangMasukId = $types['UANG_MASUK']->id;
+    foreach (DB::table('invoices')->whereNotNull('applicant_id')->where('billing_group', 'PSB_TERIMA')->where('status', '!=', 'batal')->get() as $invoice) {
+        $rows = DB::table('invoice_items')->where('invoice_id', $invoice->id)->get();
+        demoCheck($rows->count() === 1 && $rows->first()->fee_type_id === $uangMasukId, "AC-16 tagihan penerimaan {$invoice->invoice_no} satu item UANG_MASUK");
+    }
+    $subsidiId = $tracks->firstWhere('code', 'SUBSIDI')->id;
+    $subsidiAccepted = $applicants->where('admission_track_id', $subsidiId)->where('status', 'diterima');
+    expect($subsidiAccepted)->toHaveCount(1);
     $converted = DB::table('students')->whereNotNull('applicant_id')->get();
     expect($converted)->toHaveCount(3);
+    demoCheck($converted->contains('applicant_id', $subsidiAccepted->first()->id), 'AC-16 pendaftar SUBSIDI sudah daftar ulang');
+    demoCheck(DB::table('invoice_items')->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')->where('invoices.applicant_id', $subsidiAccepted->first()->id)->where('invoice_items.fee_type_id', $uangMasukId)->where('invoice_items.discount_amount', 5000000)->exists(), 'AC-16 diskon uang masuk SUBSIDI 5.000.000');
     foreach ($converted as $student) {
         expect(DB::table('invoices')->where('applicant_id', $student->applicant_id)->whereNull('student_id')->count())->toBe(0);
         expect(DB::table('fee_overrides')->where('applicant_id', $student->applicant_id)->whereNull('student_id')->count())->toBe(0);
-    }
-    foreach (['Beasiswa Tahfidz', 'Beasiswa Yatim'] as $name) {
-        $scholarshipId = DB::table('scholarships')->where('name', $name)->value('id');
-        demoCheck(DB::table('fee_overrides')->whereNotNull('applicant_id')->where('scholarship_id', $scholarshipId)->exists(), "AC-16 override jalur {$name}");
     }
     $reusedGuardian = $converted->contains(fn ($s) => DB::table('student_guardian')->whereIn('guardian_id', DB::table('student_guardian')->where('student_id', $s->id)->select('guardian_id'))->count() >= 2);
     demoCheck($reusedGuardian, 'AC-16 wali dipakai ulang');
@@ -427,37 +517,90 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $achievements = DB::table('achievements')->get();
     expect($achievements)->toHaveCount(6);
     expect($achievements->whereNotNull('verified_by'))->toHaveCount(4);
-    $participants = DB::table('achievement_student')->join('students', 'students.id', '=', 'achievement_student.student_id')->select('achievement_student.*', 'students.entered_on')->get();
+    $participants = DB::table('achievement_student')->join('students', 'students.id', '=', 'achievement_student.student_id')->select('achievement_student.*', 'students.entered_on', 'students.gender')->get();
     $team = $achievements->where('kind', 'beregu')->filter(fn ($a) => $participants->where('achievement_id', $a->id)->count() >= 3);
     demoCheck($team->count() >= 2, 'AC-19 prestasi beregu >= 3 peserta');
     demoCheck($participants->contains(fn ($p) => strtolower((string) $p->role) === 'ketua tim'), 'AC-19 ketua tim');
+    demoCheck($participants->every(fn ($p) => $p->gender === 'L'), 'AC-19 peserta putra');
+    demoCheck($achievements->every(fn ($a) => stripos($a->title, 'Putri') === false), 'AC-19 tanpa judul Putri');
     $achievementPosts = DB::table('posts')->whereNotNull('achievement_id')->get();
     expect($achievementPosts)->toHaveCount(1);
     demoCheck($achievementPosts->first()->type === 'prestasi' && $achievementPosts->first()->status === 'terbit' && substr($achievementPosts->first()->published_at, 0, 10) <= $today, 'AC-19 berita prestasi');
+    expect(DB::table('categories')->where('id', $achievementPosts->first()->category_id)->value('name'))->toBe('Prestasi Al-Khair');
     foreach ($participants as $participant) {
         $achievedOn = $achievements->firstWhere('id', $participant->achievement_id)->achieved_on;
         demoCheck(substr($participant->entered_on, 0, 10) <= substr($achievedOn, 0, 10), 'AC-19 peserta masuk sebelum prestasi');
     }
 
     // AC-20
-    demoCheck(DB::table('categories')->where('type', 'post')->count() >= 3, 'AC-20 kategori berita');
+    $briefCategories = ['Kegiatan Al-Khair', 'Prestasi Al-Khair', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
+    $postCategories = DB::table('categories')->where('type', 'post')->get();
+    expect($postCategories->pluck('name')->sort()->values()->all())->toBe(collect($briefCategories)->sort()->values()->all());
     $posts = DB::table('posts')->get();
+    demoCheck($postCategories->filter(fn ($c) => $posts->where('category_id', $c->id)->isNotEmpty())->count() >= 6, 'AC-20 >= 6 kategori terpakai');
     demoCheck($posts->where('status', 'terbit')->filter(fn ($p) => substr($p->published_at, 0, 10) <= $today)->count() >= 8, 'AC-20 berita terbit >= 8');
     demoCheck($posts->where('status', 'draft')->count() >= 1, 'AC-20 draft');
     $albums = DB::table('albums')->get();
     expect($albums)->toHaveCount(3);
     foreach ($albums as $album) {
         $paths = DB::table('photos')->where('album_id', $album->id)->pluck('path');
-        demoCheck($paths->count() >= 4 && $paths->every(fn ($p) => Storage::disk('public')->exists($p)), "AC-20 foto album {$album->slug}");
+        $minimum = $album->title === "Fasilitas Ma'had" ? 6 : 4;
+        demoCheck($paths->count() >= $minimum && $paths->every(fn ($p) => Storage::disk('public')->exists($p)), "AC-20 foto album {$album->slug}");
     }
+    demoCheck($albums->contains('title', "Fasilitas Ma'had") && DB::table('photos')->where('album_id', $albums->firstWhere('title', "Fasilitas Ma'had")->id)->count() === 6, 'AC-20 album Fasilitas 6 foto');
     demoCheck($posts->whereNotNull('cover_path')->filter(fn ($p) => Storage::disk('public')->exists($p->cover_path))->count() >= 4, 'AC-20 sampul berita');
     expect(DB::table('videos')->count())->toBe(3);
-    expect(DB::table('videos')->where('is_featured', true)->count())->toBe(1);
+    $featured = DB::table('videos')->where('is_featured', true)->get();
+    expect($featured)->toHaveCount(1);
+    demoCheck(str_contains($featured->first()->title, 'PSB'), 'AC-20 video unggulan PSB');
     $this->get(route('portal.home'))->assertOk()->assertSee("Ma'had Al-Khair Belitang");
     $this->get(route('portal.posts.index'))->assertOk();
     $this->get(route('portal.albums.index'))->assertOk();
     $this->get(route('portal.videos.index'))->assertOk();
     $this->get(route('portal.pages.show', 'profil'))->assertOk();
+
+    // AC-26
+    $patterns = demoBrochureForbiddenPatterns();
+    $numbers = demoBrochureNumbers();
+    demoCheck(count($numbers) >= 3, 'AC-26 brosur memuat nomor telepon dan rekening');
+    $brochureHits = demoScanColumns([
+        'settings' => ['value'], 'pages' => ['body'], 'posts' => ['title', 'body'], 'staff' => ['name', 'phone'],
+        'guardians' => ['name', 'phone'], 'applicants' => ['guardian_phone'], 'users' => ['name'],
+    ], function (string $value) use ($patterns, $numbers): bool {
+        $digits = preg_replace('/\D/', '', $value);
+        foreach ($numbers as $number) {
+            if (str_contains($digits, $number)) {
+                return true;
+            }
+        }
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $value) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+    expect($brochureHits)->toBe([]);
+
+    // AC-27
+    $terms = DemoData::FORBIDDEN_CONTENT_TERMS;
+    foreach (['maulid', 'isra mi', "isra' mi", 'haul', 'nisfu', 'tahun baru'] as $term) {
+        demoCheck(in_array($term, $terms, true), "AC-27 daftar memuat {$term}");
+    }
+    $contentHits = demoScanColumns([
+        'posts' => ['title', 'body'], 'pages' => ['body'], 'albums' => ['title', 'description'],
+        'photos' => ['caption'], 'videos' => ['title', 'description'],
+    ], function (string $value) use ($terms): bool {
+        foreach ($terms as $term) {
+            if (mb_stripos($value, $term) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+    expect($contentHits)->toBe([]);
 
     // AC-7c dan AC-22: ubah password, snapshot, seed kedua saat admin-sekolah login.
     DB::table('users')->where('email', 'musyrif@demo.test')->update(['password' => Hash::make('sudah-diganti-1')]);
@@ -492,6 +635,10 @@ it('AC-23 dan AC-7b: tanggal mengikuti hari ini dan password bawaan dipakai bila
     Storage::fake('public');
     config(['pondok.demo.password' => null]);
 
+    // AC-25 bagian 2: admin sudah mengganti nama jenjang SLTP sebelum seeding.
+    $this->seed(InstallSeeder::class);
+    Unit::query()->where('code', 'SLTP')->update(['name' => 'SMP IT']);
+
     $this->artisan('db:seed', ['--class' => DemoSeeder::class])
         ->expectsOutputToContain(__('pondok.demo.default_password_warning'))
         ->assertSuccessful();
@@ -502,10 +649,26 @@ it('AC-23 dan AC-7b: tanggal mengikuti hari ini dan password bawaan dipakai bila
         demoCheck(DB::table('invoices')->where('billing_group', 'BULANAN')->whereDate('period', $period)->exists(), "AC-23 tagihan {$period}");
     }
     expect(DB::table('payments')->whereDate('paid_on', '>', '2027-07-03')->count())->toBe(0);
-    $wave = AdmissionWave::query()->where('academic_year_id', demoYearId('2028/2029'))->firstOrFail();
-    demoCheck($wave->isAcceptingRegistrationsOn($t2), 'AC-23 gelombang menerima pendaftaran');
+    $accepting = AdmissionWave::query()->get()->filter(fn ($w) => $w->isAcceptingRegistrationsOn($t2));
+    expect($accepting)->toHaveCount(1);
+    expect($accepting->first()->name)->toBe('Gelombang II');
+    expect($accepting->first()->academic_year_id)->toBe(demoYearId('2027/2028'));
+    expect($accepting->first()->closes_on->toDateString())->toBe('2027-10-04');
+    expect(AcademicYear::query()->where('name', '2028/2029')->exists() ? AdmissionWave::query()->where('academic_year_id', demoYearId('2028/2029'))->count() : 0)->toBe(0);
     expect(DB::table('posts')->where('published_at', '>', '2027-07-03 23:59:59')->count())->toBe(0);
     expect(DB::table('achievements')->whereDate('achieved_on', '>', '2027-07-03')->count())->toBe(0);
+
+    // AC-25 (bagian 2): nama unit yang sudah diubah admin tidak ditimpa.
+    expect(Unit::query()->where('code', 'SLTP')->value('name'))->toBe('SMP IT');
+    expect(Unit::query()->where('code', 'SLTA')->value('name'))->toBe('TSN/SMA');
+
+    // Review #3 minor 5: NIS hasil daftar ulang tidak bentrok dengan NIS kurasi.
+    $allNis = DB::table('students')->pluck('nis');
+    expect($allNis->unique()->count())->toBe($allNis->count());
+    $curatedNisT2 = collect(DemoData::students())->map(fn (array $row): string => (2027 + $row['entry_offset']).str_pad((string) $row['seq'], 4, '0', STR_PAD_LEFT));
+    $convertedNis = DB::table('students')->whereNotNull('applicant_id')->pluck('nis');
+    expect($convertedNis)->toHaveCount(3);
+    expect($convertedNis->intersect($curatedNisT2)->all())->toBe([]);
 
     foreach (User::query()->where('email', 'like', '%@demo.test')->get() as $user) {
         demoCheck(Hash::check(DemoSeeder::DEFAULT_PASSWORD, $user->password), "AC-7b {$user->email}");
@@ -531,11 +694,14 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
     demoCheck($inactive->isNotEmpty(), 'VERIFY ada santri non-aktif');
     expect(DB::table('invoices')->whereIn('student_id', $inactive)->where('billing_group', 'BULANAN')->whereDate('period', '>=', '2026-07-01')->count())->toBe(0);
 
-    // Item ASRAMA/MAKAN hanya untuk santri yang pernah punya penempatan kamar.
-    $everHoused = DB::table('room_assignments')->pluck('student_id')->all();
-    $mukimItems = DB::table('invoice_items')->join('fee_types', 'fee_types.id', '=', 'invoice_items.fee_type_id')->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')
-        ->whereIn('fee_types.code', ['ASRAMA', 'MAKAN'])->pluck('invoices.student_id');
-    demoCheck($mukimItems->isNotEmpty() && $mukimItems->every(fn ($id) => in_array($id, $everHoused, true)), 'VERIFY biaya mukim hanya untuk penghuni');
+    // Tagihan bulanan hanya berisi SPP, dan santri hasil daftar ulang (belum serah terima) tidak ditagih.
+    $codes = DB::table('invoice_items')->join('fee_types', 'fee_types.id', '=', 'invoice_items.fee_type_id')->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')
+        ->where('invoices.billing_group', 'BULANAN')->pluck('fee_types.code')->unique()->all();
+    expect($codes)->toBe(['SPP']);
+    $fromPsb = DB::table('students')->whereNotNull('applicant_id')->pluck('id');
+    demoCheck($fromPsb->count() === 3, 'VERIFY tiga santri hasil daftar ulang');
+    expect(DB::table('invoices')->whereIn('student_id', $fromPsb)->where('billing_group', 'BULANAN')->count())->toBe(0);
+    expect(DB::table('room_assignments')->whereIn('student_id', $fromPsb)->count())->toBe(0);
 
     // Uang bulat (integer) di semua kolom nominal.
     foreach ([['invoices', ['total', 'paid_total']], ['invoice_items', ['base_amount', 'discount_amount', 'amount', 'paid_amount']], ['payments', ['amount']], ['fee_rates', ['amount']]] as [$table, $columns]) {
@@ -555,6 +721,88 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
         expect($curated)->not->toContain($real);
     }
 
+    // Khusus putra dan tanpa SD, ditegakkan lintas tabel (bukan hanya data yang dikurasi).
+    $sdId = demoUnitId('SD');
+    expect(DB::table('applicants')->where('gender', '!=', 'L')->count())->toBe(0);
+    expect(DB::table('students')->where('gender', '!=', 'L')->count())->toBe(0);
+    expect(DB::table('dormitories')->where('gender', '!=', 'L')->count())->toBe(0);
+    expect(DB::table('classrooms')->where('gender', '!=', 'L')->count())->toBe(0);
+    expect(DB::table('staff')->whereIn('position', ['ustadz', 'musyrif', 'Mudir'])->where('gender', '!=', 'L')->count())->toBe(0);
+    expect(DB::table('dormitory_supervisors')->join('staff', 'staff.id', '=', 'dormitory_supervisors.staff_id')->where('staff.gender', '!=', 'L')->count())->toBe(0);
+    expect(DB::table('enrollments')->join('classrooms', 'classrooms.id', '=', 'enrollments.classroom_id')->where('classrooms.unit_id', $sdId)->count())->toBe(0);
+    expect(DB::table('posts')->where('unit_id', $sdId)->count())->toBe(0);
+    expect(DB::table('unit_user')->where('unit_id', $sdId)->count())->toBe(0);
+    expect(DB::table('invoices')->join('students', 'students.id', '=', 'invoices.student_id')->where('students.unit_id', $sdId)->count())->toBe(0);
+    expect(DB::table('fee_overrides')->join('students', 'students.id', '=', 'fee_overrides.student_id')->where('students.unit_id', $sdId)->count())->toBe(0);
+
+    // Gelombang bersambung: tanpa celah dan tanpa tumpang tindih, tepat satu terbuka pada T1.
+    $allWaves = AdmissionWave::query()->orderBy('opens_on')->get();
+    foreach ($allWaves->slice(1)->values() as $index => $wave) {
+        $previous = $allWaves[$index];
+        demoCheck($previous->closes_on->addDay()->toDateString() === $wave->opens_on->toDateString(), "VERIFY gelombang {$previous->name} bersambung ke {$wave->name}");
+    }
+    expect($allWaves->filter(fn ($w) => $w->isAcceptingRegistrationsOn(CarbonImmutable::now('Asia/Jakarta')))->count())->toBe(1);
+
+    // Tidak ada data brosur di seluruh kolom semua tabel (termasuk nomor dokumen terenkripsi, snapshot surat, keterangan foto).
+    $numbers = demoBrochureNumbers();
+    $patterns = demoBrochureForbiddenPatterns();
+    $matches = static function (string $value) use ($numbers, $patterns): bool {
+        $digits = preg_replace('/\D/', '', $value);
+        foreach ($numbers as $number) {
+            if (str_contains($digits, $number)) {
+                return true;
+            }
+        }
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $value) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    $skipTables = ['migrations', 'cache', 'cache_locks', 'sessions', 'jobs', 'job_batches', 'failed_jobs', 'password_reset_tokens'];
+    $textTypes = ['varchar', 'text', 'longtext', 'mediumtext', 'json', 'string', 'char'];
+    $scan = [];
+    foreach (Schema::getTables() as $table) {
+        if (in_array($table['name'], $skipTables, true)) {
+            continue;
+        }
+        foreach (Schema::getColumns($table['name']) as $column) {
+            if (in_array(strtolower((string) $column['type_name']), $textTypes, true) && ! in_array($column['name'], ['password', 'remember_token', 'access_token_hash'], true)) {
+                $scan[$table['name']][] = $column['name'];
+            }
+        }
+    }
+    demoCheck(isset($scan['posts'], $scan['issued_letters'], $scan['photos'], $scan['activity_log']), 'VERIFY pemindaian mencakup tabel teks utama');
+    expect(demoScanColumns($scan, $matches))->toBe([]);
+    foreach (Document::query()->whereNotNull('number')->pluck('number') as $number) {
+        demoCheck(! $matches((string) $number), 'VERIFY nomor dokumen terdekripsi bebas data brosur');
+    }
+
+    // Manhaj: istilah terlarang tidak ada di prestasi, surat, dan seluruh konten publik.
+    $terms = DemoData::FORBIDDEN_CONTENT_TERMS;
+    $termMatcher = function (string $value) use ($terms): bool {
+        foreach ($terms as $term) {
+            if (mb_stripos($value, $term) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    expect(demoScanColumns([
+        'achievements' => ['title', 'event_name', 'organizer'], 'issued_letters' => ['purpose'],
+        'posts' => ['title', 'excerpt', 'body'], 'pages' => ['body'], 'albums' => ['title', 'description'],
+        'photos' => ['caption'], 'videos' => ['title', 'description'], 'categories' => ['name'],
+    ], $termMatcher))->toBe([]);
+
+    // Portal menampilkan data revisi.
+    $this->get('/')->assertOk()->assertSee("Generasi Beradab Bersama Al-Qur'an");
+    $this->get('/berita')->assertOk()->assertSee('Penerimaan Santri Baru');
+    $this->get('/profil')->assertOk()->assertSee('Selayang Pandang');
+    $this->get('/kontak')->assertOk()->assertSee('Mojosari');
+
     // Dashboard panel untuk setiap akun demo tidak error; portal terbit tampil.
     foreach (array_keys(DEMO_ACCOUNTS) as $role) {
         Auth::forgetGuards();
@@ -567,8 +815,9 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
     $this->get('/')->assertOk();
     $this->get('/berita')->assertOk()->assertSee('Penerimaan Santri Baru');
 
-    // Cakupan jenjang kesantrian (SLTP + SLTA) tidak melihat SD.
+    // Cakupan jenjang kesantrian (hanya TSN/SMA): tidak melihat SLTP, lebih sedikit dari total.
     $this->actingAs(demoUser('kesantrian'));
-    expect(Student::query()->where('unit_id', demoUnitId('SD'))->count())->toBe(0);
+    expect(Student::query()->where('unit_id', demoUnitId('SLTP'))->count())->toBe(0);
+    expect(Student::query()->count())->toBe(Student::withoutUnitScope()->where('unit_id', demoUnitId('SLTA'))->count());
     expect(DB::table('invoices')->count())->toBeGreaterThan(Invoice::query()->count());
 })->group('seeder-demo');

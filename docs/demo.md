@@ -1,6 +1,21 @@
 # Data demo Ma'had Al-Khair Belitang
 
-Data contoh untuk mencoba panel admin dan portal publik. Semua nama orang, alamat, nomor telepon, nomor KK, dan isi berita **fiktif**. Lembaga "Ma'had Al-Khair Belitang" (Belitang, Kab. OKU Timur, Sumatera Selatan) dipakai sebagai nama contoh.
+Data contoh untuk mencoba panel admin dan portal publik. Nama lembaga, alamat (Mojosari, Belitang, OKU Timur), tagline, program, dan nominal biaya mengikuti brosur PSB 2027/2028. Semua nama orang, nomor telepon, email, nomor KK, dan isi berita **fiktif**. Nomor telepon dan rekening brosur tidak dipakai.
+
+## Biaya demo
+
+Tarif berlaku untuk MTW/SMP dan TSN/SMA:
+
+| Kode | Biaya | Nominal |
+|---|---|---|
+| `SPP` | SPP bulanan (termasuk makan 3x sehari, laundry, operasional) | Rp1.600.000 |
+| `FORMULIR` | Biaya pendaftaran | Rp300.000 |
+| `UANG_MASUK` | Uang masuk | Rp10.000.000 |
+| `DAFTAR_ULANG` | Daftar ulang tahunan: nominal **contoh** Rp1.500.000, brosur tidak menyebut angka; sesuaikan dengan keputusan pondok | Rp1.500.000 (contoh) |
+
+- SPP TSN/SMA angkatan kelas 12 memakai tarif lama terkunci Rp1.500.000 (contoh tarif angkatan).
+- Tagihan tahunan tidak dibuat: belum ada generator tagihan tahunan, hanya jenis biaya dan tarifnya.
+- Subsidi dan beasiswa terbatas untuk 3 penerima: Subsidi Yatim (bayar SPP Rp800.000), Beasiswa Tahfidz (50% SPP), dan Subsidi Uang Masuk (potongan Rp5.000.000 lewat jalur PSB `SUBSIDI`). Satu santri lain mendapat keringanan SPP Rp300.000 dari wawancara biaya.
 
 ## Menjalankan
 
@@ -9,13 +24,19 @@ php artisan migrate:fresh --force
 php artisan db:seed --class=DemoSeeder
 ```
 
+- Jalankan `php artisan migrate:fresh` lebih dulu. Revisi data demo ini (khusus putra, tanpa SD, tarif brosur) tidak memigrasikan data demo versi lama.
 - Seeder memanggil `InstallSeeder` lebih dulu, jadi cukup dijalankan di database yang sudah dimigrasi.
 - Seeder **menolak berjalan** bila `APP_ENV=production`.
 - Seeder tidak dipanggil `DatabaseSeeder`, `InstallSeeder`, `pondok:install`, maupun `pondok:upgrade`.
 - Aman dijalankan ulang: data yang sudah ada dilewati, tidak ada baris, berkas, atau pembayaran ganda.
-- Tanggal dihitung dari hari ini (Asia/Jakarta): tahun ajaran lalu, aktif, dan tahun depan (gelombang PSB), tagihan empat bulan terakhir, serta pembayaran yang tidak pernah melewati hari ini.
+- Tanggal dihitung dari hari ini (Asia/Jakarta): tahun ajaran lalu, aktif, dan tahun depan, tagihan empat bulan terakhir, serta pembayaran yang tidak pernah melewati hari ini.
 - Bila seeding terputus di tengah, ulangi dari `php artisan migrate:fresh` agar alur PSB dan pembayaran lengkap.
 - Seeder melepas status login di proses yang menjalankannya (`Auth::forgetGuards()`), agar cakupan jenjang user login tidak memengaruhi data.
+
+## Perubahan pada data instalasi
+
+- Nama jenjang `SLTP` menjadi "MTW/SMP" dan `SLTA` menjadi "TSN/SMA", hanya bila namanya masih bawaan instalasi. Jenjang SD tetap ada tetapi tidak berisi data.
+- Jalur PSB `SUBSIDI` dibuat. Jalur bawaan `PRESTASI`, `TAHFIDZ`, dan `YATIM` dinonaktifkan (bila belum punya pendaftar), sehingga formulir hanya menampilkan `REGULER` dan `SUBSIDI`.
 
 ## Akun demo
 
@@ -23,10 +44,10 @@ php artisan db:seed --class=DemoSeeder
 |---|---|---|
 | super-admin | `super-admin@demo.test` | semua |
 | bendahara | `bendahara@demo.test` | semua |
-| admin-sekolah | `admin-sekolah@demo.test` | SLTP |
+| admin-sekolah | `admin-sekolah@demo.test` | MTW/SMP |
 | admin-psb | `admin-psb@demo.test` | semua |
 | admin-konten | `admin-konten@demo.test` | semua |
-| kesantrian | `kesantrian@demo.test` | SLTP dan SLTA |
+| kesantrian | `kesantrian@demo.test` | TSN/SMA |
 | musyrif | `musyrif@demo.test` | semua |
 | ustadz-tahfidz | `ustadz-tahfidz@demo.test` | semua |
 | petugas-pos | `petugas-pos@demo.test` | semua |
@@ -43,12 +64,12 @@ demo-alkhair-belitang
 
 ## Isi data
 
-- 3 tahun ajaran, 15 rombel per tahun (SD 4-6, SLTP dan SLTA putra/putri), 22 staff (Mudir, ustadz wali kelas, musyrif, TU).
-- 88 santri kurasi (aktif, lulus, keluar, pindah) beserta wali, riwayat kenaikan kelas, dan pindah jenjang; 3 santri tambahan dari daftar ulang PSB.
-- 2 asrama (putra dan putri), 8 kamar, penempatan dan pembina asrama.
-- Jenis biaya, tarif (termasuk tarif angkatan dan tarif asrama putri), beasiswa, keringanan, tagihan bulanan empat bulan terakhir dengan pola lunas, cicilan, dan tunggakan, serta satu pembayaran yang dibatalkan.
-- Gelombang PSB tahun depan dengan 14 pendaftar di semua status.
-- Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita, album foto (gambar placeholder), dan video.
+- Khusus putra. 3 tahun ajaran, 6 rombel per tahun (7A-9A MTW/SMP, 10A-12A TSN/SMA), 20 staff (Mudir, ustadz, musyrif, TU).
+- 76 santri kurasi (aktif, lulus, keluar, pindah) beserta wali, riwayat kenaikan kelas, dan pindah jenjang MTW ke TSN, ditambah 3 santri baru hasil proses PSB.
+- 2 asrama putra (Abu Bakar Ash-Shiddiq untuk MTW/SMP, Umar bin Khattab untuk TSN/SMA), 8 kamar, satu musyrif per kamar. Semua santri berombel tinggal di asrama; santri baru dari PSB belum ditempatkan sampai serah terima.
+- Tagihan SPP empat bulan terakhir dengan pola lunas, cicilan, dan tunggakan, serta satu pembayaran yang dibatalkan.
+- PSB: Gelombang I dan Gelombang II yang bersambung (pendaftaran dibuka sepanjang tahun selama kuota tersedia) dan 14 pendaftar di semua status.
+- Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori sesuai brief, album foto (gambar placeholder), dan video. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
 
 ## Keterbatasan
 

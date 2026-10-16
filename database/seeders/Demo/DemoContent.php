@@ -15,6 +15,7 @@ use App\Models\Post;
 use App\Models\Setting;
 use App\Models\StaticPage;
 use App\Models\Video;
+use RuntimeException;
 
 /**
  * Profil sekolah, halaman statis, kategori, berita, album, dan video demo.
@@ -32,7 +33,7 @@ final class DemoContent
             app(UpdateSchoolProfile::class)->handle(DemoData::SCHOOL, $this->context->user('super-admin'));
         }
 
-        foreach (DemoData::PAGES as $slug => $page) {
+        foreach (DemoData::pages() as $slug => $page) {
             $model = StaticPage::query()->where('slug', $slug)->first();
 
             if ($model !== null && blank($model->body)) {
@@ -43,8 +44,7 @@ final class DemoContent
 
     public function run(): void
     {
-        $categories = $this->seedCategories();
-        $this->seedPosts($categories);
+        $this->seedPosts($this->seedCategories());
         $this->seedAlbums();
         $this->seedVideos();
     }
@@ -69,7 +69,8 @@ final class DemoContent
      */
     private function seedPosts(array $categories): void
     {
-        $replace = ['{N}' => $this->context->nextYear->name, '{A}' => $this->context->activeYear->name];
+        $start = $this->context->calendar->admissionYear();
+        $replace = ['{S}' => $start.'/'.($start + 1)];
         $actor = $this->context->user('admin-konten');
 
         foreach (DemoData::POSTS as $index => $row) {
@@ -78,16 +79,18 @@ final class DemoContent
             }
 
             $title = strtr($row['title'], $replace);
+            $body = strtr($row['body'], $replace);
             $published = $row['offset'] !== null;
+            $this->ensureAllowedContent($title.' '.$row['excerpt'].' '.$body);
 
             app(SavePost::class)->handle([
                 'type' => $row['type'],
                 'title' => $title,
                 'slug' => $row['slug'],
-                'category_id' => isset($row['category']) ? $categories[$row['category']]->id : null,
-                'unit_id' => isset($row['unit']) ? $this->context->unit($row['unit'])->id : null,
+                'category_id' => $categories[$row['category']]->id,
+                'unit_id' => null,
                 'excerpt' => $row['excerpt'],
-                'body' => strtr($row['body'], $replace),
+                'body' => $body,
                 'status' => $published ? Post::STATUS_PUBLISHED : Post::STATUS_DRAFT,
                 'published_at' => $published ? $this->context->calendar->daysAgo($row['offset'])->setTime(8, 0)->format('Y-m-d H:i:s') : null,
                 'cover' => $row['cover'] ? $this->context->files->png('sampul-'.$row['slug'], $title, $index) : null,
@@ -130,6 +133,18 @@ final class DemoContent
                 'is_featured' => $row['featured'],
                 'sort_order' => $position + 1,
             ]);
+        }
+    }
+
+    /**
+     * Penjaga manhaj konten demo: gagal bila teks memuat istilah terlarang.
+     */
+    private function ensureAllowedContent(string $text): void
+    {
+        foreach (DemoData::FORBIDDEN_CONTENT_TERMS as $term) {
+            if (mb_stripos($text, $term) !== false) {
+                throw new RuntimeException("Konten demo memuat istilah terlarang: {$term}");
+            }
         }
     }
 }

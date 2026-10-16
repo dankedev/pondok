@@ -71,6 +71,36 @@ final class DemoCalendar
         return [$current->subMonthsNoOverflow(3), $current->subMonthsNoOverflow(2), $current->subMonthNoOverflow(), $current];
     }
 
+    /**
+     * Tahun mulai tahun ajaran tujuan PSB (`S`): tahun depan bila hari ini sudah
+     * melewati pembukaan Gelombang I tahun ini (5 Oktober), selain itu tahun ini.
+     */
+    public function admissionYear(): int
+    {
+        $year = $this->today->year;
+
+        return $this->today->gte(CarbonImmutable::create($year, 10, 5, 0, 0, 0, self::TIMEZONE)) ? $year + 1 : $year;
+    }
+
+    /**
+     * Dua gelombang bersambung tahun ajaran tujuan PSB (tanggal brosur untuk 2027/2028,
+     * digeser per tahun penuh untuk tahun lain).
+     *
+     * @return list<array{name: string, opens_on: string, closes_on: string, quota: int}>
+     */
+    public function admissionWaves(): array
+    {
+        $shift = $this->admissionYear() - 2027;
+        $first = CarbonImmutable::create(2026, 10, 5, 0, 0, 0, self::TIMEZONE)->addYears($shift);
+        $second = CarbonImmutable::create(2027, 2, 8, 0, 0, 0, self::TIMEZONE)->addYears($shift);
+        $nextFirst = $first->addYear();
+
+        return [
+            ['name' => 'Gelombang I', 'opens_on' => $first->toDateString(), 'closes_on' => $second->subDay()->toDateString(), 'quota' => 40],
+            ['name' => 'Gelombang II', 'opens_on' => $second->toDateString(), 'closes_on' => $nextFirst->subDay()->toDateString(), 'quota' => 20],
+        ];
+    }
+
     public function daysAgo(int $days): CarbonImmutable
     {
         return $this->today->subDays($days);

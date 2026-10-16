@@ -15,6 +15,7 @@ use App\Actions\Psb\SaveAdmissionWave;
 use App\Actions\Psb\SubmitApplication;
 use App\Actions\Psb\UploadApplicantDocument;
 use App\Actions\Psb\VerifyApplicantDocument;
+use App\Models\AcademicYear;
 use App\Models\AdmissionRequirement;
 use App\Models\AdmissionTrack;
 use App\Models\AdmissionWave;
@@ -31,11 +32,6 @@ use RuntimeException;
  */
 final class DemoAdmissions
 {
-    public const WAVE_NAME = 'Gelombang 1';
-
-    /** Syarat berkas semua jenjang: kode jenis dokumen => wajib. */
-    public const REQUIREMENTS = ['KK' => true, 'AKTA' => true, 'FOTO' => false];
-
     private AdmissionWave $wave;
 
     /** @var array<string, AdmissionRequirement> */
@@ -53,29 +49,34 @@ final class DemoAdmissions
         }
     }
 
+    /**
+     * Dua gelombang bersambung pada tahun ajaran tujuan PSB; pendaftar demo masuk ke
+     * gelombang yang menerima pendaftaran hari ini.
+     */
     private function seedWave(): void
     {
         $calendar = $this->context->calendar;
+        $start = $calendar->admissionYear();
+        $year = AcademicYear::query()->firstOrCreate(['name' => $start.'/'.($start + 1)], [
+            'starts_on' => "{$start}-07-01",
+            'ends_on' => ($start + 1).'-06-30',
+        ]);
 
-        $this->wave = AdmissionWave::query()
-            ->where('academic_year_id', $this->context->nextYear->id)
-            ->where('name', self::WAVE_NAME)
-            ->first()
-            ?? app(SaveAdmissionWave::class)->handle([
-                'academic_year_id' => $this->context->nextYear->id,
-                'name' => self::WAVE_NAME,
-                'opens_on' => $calendar->daysAgo(45)->toDateString(),
-                'closes_on' => $calendar->today->addDays(45)->toDateString(),
-                'quota' => 120,
-                'is_open' => true,
-            ]);
+        foreach ($calendar->admissionWaves() as $row) {
+            $wave = AdmissionWave::query()->where('academic_year_id', $year->id)->where('name', $row['name'])->first()
+                ?? app(SaveAdmissionWave::class)->handle([...$row, 'academic_year_id' => $year->id, 'is_open' => true]);
+
+            if ($wave->isAcceptingRegistrationsOn($calendar->today)) {
+                $this->wave = $wave;
+            }
+        }
     }
 
     private function seedRequirements(): void
     {
         $sort = 0;
 
-        foreach (self::REQUIREMENTS as $code => $required) {
+        foreach (DemoData::REQUIREMENTS as $code => [$name, $required]) {
             $type = DocumentType::query()->where('code', $code)->firstOrFail();
 
             $this->requirements[$code] = AdmissionRequirement::query()
@@ -85,11 +86,19 @@ final class DemoAdmissions
                 ?? app(SaveAdmissionRequirement::class)->handle([
                     'unit_id' => null,
                     'document_type_id' => $type->id,
-                    'name' => $type->name,
+                    'name' => $name,
                     'is_required' => $required,
                     'sort_order' => ++$sort,
                 ]);
         }
+    }
+
+    /**
+     * Tanggal bayar PSB: `$daysAgo` hari lalu, tidak sebelum gelombang dibuka.
+     */
+    private function paidOn(int $daysAgo): string
+    {
+        return $this->context->calendar->daysAgo($daysAgo)->max($this->wave->opens_on->toImmutable())->toDateString();
     }
 
     /**
@@ -99,7 +108,7 @@ final class DemoAdmissions
     {
         $calendar = $this->context->calendar;
         $unit = $this->context->unit($row['unit']);
-        $birthDate = $calendar->birthDate($calendar->year + 1 - DemoData::ENTRY_AGE[$row['unit']], $row['birth_md']);
+        $birthDate = $calendar->birthDate($calendar->admissionYear() - DemoData::ENTRY_AGE[$row['unit']], $row['birth_md']);
 
         $exists = Applicant::withoutUnitScope()->withTrashed()
             ->where('admission_wave_id', $this->wave->id)
@@ -116,7 +125,7 @@ final class DemoAdmissions
             'admission_track_id' => AdmissionTrack::query()->where('code', $row['track'])->value('id'),
             'admission_wave_id' => $this->wave->id,
             'name' => $row['name'],
-            'gender' => $row['gender'],
+            'gender' => 'L',
             'birth_place' => DemoData::PLACES[$row['place']],
             'birth_date' => $birthDate,
             'previous_school' => $row['school'],
@@ -151,7 +160,7 @@ final class DemoAdmissions
             return;
         }
 
-        $this->payGroup($applicant, 'PSB_DAFTAR', 100, $calendar->daysAgo(10)->toDateString());
+        $this->payGroup($applicant, 'PSB_DAFTAR', 100, $this->paidOn(10));
 
         if (in_array($flow, ['submitted_doc_pending', 'submitted_doc_rejected'], true)) {
             $document = $this->upload($applicant, 'KK');
@@ -163,7 +172,9 @@ final class DemoAdmissions
             return;
         }
 
-        foreach (['KK', 'AKTA'] as $code) {
+        $required = array_keys(array_filter(DemoData::REQUIREMENTS, fn (array $requirement): bool => $requirement[1]));
+
+        foreach ($required as $code) {
             app(VerifyApplicantDocument::class)->handle($this->upload($applicant, $code), $panel, ApplicantDocument::STATUS_VALID);
         }
 
@@ -186,7 +197,7 @@ final class DemoAdmissions
             throw new RuntimeException("Tagihan penerimaan pendaftar demo {$applicant->name} gagal dibuat.");
         }
 
-        $paidOn = $calendar->daysAgo(2)->toDateString();
+        $paidOn = $this->paidOn(2);
 
         match ($flow) {
             'accepted_partial' => $this->payGroup($applicant, 'PSB_TERIMA', 30, $paidOn),

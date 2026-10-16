@@ -12,7 +12,6 @@ use App\Actions\Keuangan\SaveScholarship;
 use App\Actions\Psb\SaveAdmissionTrack;
 use App\Models\AdmissionTrack;
 use App\Models\Cohort;
-use App\Models\Dormitory;
 use App\Models\FeeOverride;
 use App\Models\FeeRate;
 use App\Models\FeeType;
@@ -45,7 +44,7 @@ final class DemoFinance
         $this->seedRates();
         $this->seedScholarships();
         $this->seedStudentOverrides();
-        $this->seedTrackScholarships();
+        $this->seedTracks();
         $this->generateInvoices();
         $this->seedPayments();
     }
@@ -81,8 +80,8 @@ final class DemoFinance
     {
         $previousYearId = $this->context->previousYear->id;
 
-        foreach (DemoData::BASE_RATES as $code => $amounts) {
-            foreach ($amounts as $unitCode => $amount) {
+        foreach (DemoData::BASE_RATES as $code => $amount) {
+            foreach (array_keys(DemoData::FIRST_GRADE) as $unitCode) {
                 $this->saveRate([
                     'fee_type_id' => $this->feeTypes[$code]->id,
                     'effective_from_year_id' => $previousYearId,
@@ -93,26 +92,17 @@ final class DemoFinance
         }
 
         $cohortUnit = $this->context->unit(DemoData::COHORT_RATE['unit']);
-        $cohort = Cohort::query()->where('unit_id', $cohortUnit->id)->where('entry_year', $this->context->calendar->year)->firstOrFail();
+        $cohort = Cohort::query()
+            ->where('unit_id', $cohortUnit->id)
+            ->where('entry_year', $this->context->calendar->entryYear(DemoData::COHORT_RATE['entry_offset']))
+            ->firstOrFail();
         $this->saveRate([
             'fee_type_id' => $this->feeTypes[DemoData::COHORT_RATE['fee']]->id,
-            'effective_from_year_id' => $this->context->activeYear->id,
+            'effective_from_year_id' => $previousYearId,
             'unit_id' => $cohortUnit->id,
             'cohort_id' => $cohort->id,
             'amount' => DemoData::COHORT_RATE['amount'],
         ]);
-
-        $dormitory = Dormitory::query()->where('code', DemoData::DORMITORY_RATE['dormitory'])->firstOrFail();
-
-        foreach (DemoData::DORMITORY_RATE['units'] as $unitCode) {
-            $this->saveRate([
-                'fee_type_id' => $this->feeTypes[DemoData::DORMITORY_RATE['fee']]->id,
-                'effective_from_year_id' => $previousYearId,
-                'unit_id' => $this->context->unit($unitCode)->id,
-                'dormitory_id' => $dormitory->id,
-                'amount' => DemoData::DORMITORY_RATE['amount'],
-            ]);
-        }
     }
 
     private function seedScholarships(): void
@@ -129,7 +119,7 @@ final class DemoFinance
         $approver = $this->context->user('bendahara');
 
         foreach (DemoData::students() as $row) {
-            $flag = collect(['yatim', 'tahfidz', 'ustadz', 'saudara'])->first(fn (string $flag): bool => in_array($flag, $row['flags'], true));
+            $flag = collect(['yatim', 'tahfidz', 'wawancara'])->first(fn (string $flag): bool => in_array($flag, $row['flags'], true));
 
             if ($flag === null) {
                 continue;
@@ -147,31 +137,47 @@ final class DemoFinance
                 'student_id' => $student->id,
                 'fee_type_id' => $spp->id,
                 'scholarship_id' => $scholarship?->id,
-                'mode' => $scholarship?->mode ?? DemoData::SIBLING_DISCOUNT['mode'],
-                'value' => $scholarship?->default_value ?? DemoData::SIBLING_DISCOUNT['value'],
-                'reason' => $scholarship?->name ?? DemoData::SIBLING_DISCOUNT['reason'],
+                'mode' => $scholarship?->mode ?? DemoData::INTERVIEW_DISCOUNT['mode'],
+                'value' => $scholarship?->default_value ?? DemoData::INTERVIEW_DISCOUNT['value'],
+                'reason' => $scholarship?->name ?? DemoData::INTERVIEW_DISCOUNT['reason'],
                 'valid_from' => $this->context->previousYear->starts_on->toDateString(),
                 'valid_until' => null,
             ], $approver);
         }
     }
 
-    private function seedTrackScholarships(): void
+    /**
+     * Jalur SUBSIDI berbeasiswa uang masuk; jalur bawaan selain REGULER dinonaktifkan
+     * bila masih aktif dan belum punya pendaftar (semua field dikirim ulang).
+     */
+    private function seedTracks(): void
     {
-        foreach (DemoData::TRACK_SCHOLARSHIPS as $code => $row) {
-            $track = AdmissionTrack::query()->where('code', $code)->first();
+        $row = DemoData::SUBSIDY_TRACK;
 
-            if ($track === null || $track->scholarship_id !== null) {
-                continue;
-            }
+        if (! AdmissionTrack::query()->where('code', $row['code'])->exists()) {
+            app(SaveAdmissionTrack::class)->handle([
+                'code' => $row['code'],
+                'name' => $row['name'],
+                'scholarship_id' => $this->scholarships[$row['scholarship']]->id,
+                'terms' => $row['terms'],
+                'is_active' => true,
+                'fee_type_ids' => array_map(fn (string $fee): int => $this->feeTypes[$fee]->id, $row['fees']),
+            ]);
+        }
 
+        $others = AdmissionTrack::query()
+            ->whereNotIn('code', DemoData::ACTIVE_TRACKS)
+            ->where('is_active', true)
+            ->whereDoesntHave('applicants', fn ($query) => $query->withoutGlobalScopes())
+            ->get();
+
+        foreach ($others as $track) {
             app(SaveAdmissionTrack::class)->handle([
                 'code' => $track->code,
                 'name' => $track->name,
-                'scholarship_id' => $this->scholarships[$row['scholarship']]->id,
+                'scholarship_id' => $track->scholarship_id,
                 'terms' => $track->terms,
-                'is_active' => $track->is_active,
-                'fee_type_ids' => array_map(fn (string $fee): int => $this->feeTypes[$fee]->id, $row['fees']),
+                'is_active' => false,
             ], $track);
         }
     }

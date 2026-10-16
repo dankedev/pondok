@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class DemoAcademics
 {
-    /** Alasan pindah kamar satu santri putra. */
+    /** Alasan pindah kamar satu santri. */
     public const ROOM_MOVE_NOTE = 'Pindah kamar agar dekat dengan kelompok halaqah tahfidz';
 
     public function __construct(private readonly DemoContext $context) {}
@@ -105,7 +105,7 @@ final class DemoAcademics
      */
     private function classroomName(string $unitCode, int $grade, string $gender): string
     {
-        return $grade.($unitCode === 'SD' || $gender === 'L' ? 'A' : 'B');
+        return $grade.'A';
     }
 
     private function seedStudents(): void
@@ -213,46 +213,42 @@ final class DemoAcademics
 
     private function seedDormitories(): void
     {
-        $activeYear = $this->context->activeYear;
-        $startOn = $activeYear->starts_on->toImmutable();
-        $rooms = [];
+        $startOn = $this->context->activeYear->starts_on->toImmutable();
 
         foreach (DemoData::DORMITORIES as $row) {
             $dormitory = Dormitory::query()->firstOrCreate(['code' => $row['code']], [
                 'name' => $row['name'],
-                'gender' => $row['gender'],
+                'gender' => 'L',
                 'location' => $row['location'],
                 'is_active' => true,
             ]);
 
+            $rooms = [];
+
             foreach ($row['rooms'] as $name) {
-                $room = Room::query()->where('dormitory_id', $dormitory->id)->where('name', $name)->first()
-                    ?? app(SaveRoom::class)->handle($dormitory, ['name' => $name, 'floor' => $row['floor'], 'capacity' => DemoData::ROOM_CAPACITY]);
-                $rooms[$row['gender']][] = $room;
+                $rooms[$name] = Room::query()->where('dormitory_id', $dormitory->id)->where('name', $name)->first()
+                    ?? app(SaveRoom::class)->handle($dormitory, ['name' => $name, 'floor' => $row['floor'], 'capacity' => $row['capacity']]);
             }
 
-            $this->seedSupervisors($dormitory, $rooms[$row['gender']][0]);
-        }
+            $this->seedSupervisors($dormitory, $rooms);
 
-        $counters = ['L' => 0, 'P' => 0];
-        $firstMale = null;
+            $residents = array_values(array_filter(DemoData::students(), fn (array $student): bool => $student['a'] !== null && $student['a'][0] === $row['unit']));
+            $roomList = array_values($rooms);
+            $first = null;
 
-        foreach (DemoData::students() as $row) {
-            if ($row['a'] === null || $row['a'][0] === 'SD' || in_array('pulang', $row['flags'], true)) {
-                continue;
+            foreach ($residents as $position => $resident) {
+                $student = $this->context->student($resident['name']);
+                $first ??= $student;
+
+                if (! RoomAssignment::withoutUnitScope()->where('student_id', $student->id)->exists()) {
+                    app(AssignRoom::class)->handle($student, $roomList[$position % count($roomList)], $startOn);
+                }
             }
 
-            $gender = $row['gender'];
-            $room = $rooms[$gender][$counters[$gender]++ % count($rooms[$gender])];
-            $student = $this->context->student($row['name']);
-            $firstMale ??= $gender === 'L' ? ['student' => $student, 'room' => $room] : null;
-
-            if (! RoomAssignment::withoutUnitScope()->where('student_id', $student->id)->exists()) {
-                app(AssignRoom::class)->handle($student, $room, $startOn);
+            if ($row['unit'] === 'SLTA' && $first !== null) {
+                $this->moveRoom($first, $roomList[count($roomList) - 1]);
             }
         }
-
-        $this->moveRoom($firstMale['student'], $rooms['L'][count($rooms['L']) - 1]);
     }
 
     /**
@@ -279,25 +275,37 @@ final class DemoAcademics
         app(AssignRoom::class)->handle($student, $target, $startOn, self::ROOM_MOVE_NOTE);
     }
 
-    private function seedSupervisors(Dormitory $dormitory, Room $firstRoom): void
+    /**
+     * Kepala asrama (seluruh asrama) dan satu musyrif per kamar.
+     *
+     * @param  array<string, Room>  $rooms  nama kamar => kamar
+     */
+    private function seedSupervisors(Dormitory $dormitory, array $rooms): void
     {
-        [$first, $second] = $this->context->staffByPosition('musyrif', $dormitory->gender);
         $year = $this->context->activeYear;
         $startOn = $year->starts_on->toImmutable();
         $assign = app(AssignSupervisor::class);
 
-        $hasHead = DormitorySupervisor::query()
-            ->where('dormitory_id', $dormitory->id)
-            ->where('academic_year_id', $year->id)
-            ->where('role', DormitorySupervisor::ROLE_HEAD)
-            ->whereNull('end_on')
-            ->exists();
+        foreach (DemoData::STAFF as $row) {
+            $staff = $this->context->staff[$row['nip']];
 
-        if (! $hasHead) {
-            $assign->handle($dormitory, $first, DormitorySupervisor::ROLE_HEAD, $year, null, $startOn);
+            if (($row['head'] ?? null) === $dormitory->code) {
+                $hasHead = DormitorySupervisor::query()
+                    ->where('dormitory_id', $dormitory->id)
+                    ->where('academic_year_id', $year->id)
+                    ->where('role', DormitorySupervisor::ROLE_HEAD)
+                    ->whereNull('end_on')
+                    ->exists();
+
+                if (! $hasHead) {
+                    $assign->handle($dormitory, $staff, DormitorySupervisor::ROLE_HEAD, $year, null, $startOn);
+                }
+            }
+
+            if (isset($row['room']) && str_starts_with($row['room'], $dormitory->code.':')) {
+                $room = $rooms[substr($row['room'], strlen($dormitory->code) + 1)];
+                $assign->handle($dormitory, $staff, DormitorySupervisor::ROLE_SUPERVISOR, $year, $room, $startOn);
+            }
         }
-
-        $assign->handle($dormitory, $second, DormitorySupervisor::ROLE_SUPERVISOR, $year, null, $startOn);
-        $assign->handle($dormitory, $first, DormitorySupervisor::ROLE_SUPERVISOR, $year, $firstRoom, $startOn);
     }
 }

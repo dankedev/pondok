@@ -52,6 +52,7 @@ class DemoSeeder extends Seeder
 
         try {
             $this->seedAcademicYears($context);
+            $this->renameUnits();
             $context->units = Unit::query()->get()->keyBy('code')->all();
             $this->seedAccounts($context);
             $this->seedStaff($context);
@@ -60,8 +61,9 @@ class DemoSeeder extends Seeder
             (new DemoAcademics($context))->run();
             (new DemoFinance($context))->run();
             (new DemoAdmissions($context))->run();
-            (new DemoRecords($context))->run();
+            // Konten lebih dulu: berita prestasi memakai kategori "Prestasi Al-Khair".
             (new DemoContent($context))->run();
+            (new DemoRecords($context))->run();
         } finally {
             $context->files->cleanup();
         }
@@ -91,6 +93,18 @@ class DemoSeeder extends Seeder
         $context->previousYear = $years[-1];
         $context->activeYear = $years[0]->refresh();
         $context->nextYear = $years[1];
+    }
+
+    /**
+     * Nama jenjang demo (MTW/SMP, TSN/SMA), hanya bila nama masih bawaan instalasi.
+     */
+    private function renameUnits(): void
+    {
+        $defaults = array_column(UnitSeeder::UNITS, 'name', 'code');
+
+        foreach (DemoData::UNIT_NAMES as $code => $name) {
+            Unit::query()->where('code', $code)->where('name', $defaults[$code])->update(['name' => $name]);
+        }
     }
 
     private function seedAccounts(DemoContext $context): void

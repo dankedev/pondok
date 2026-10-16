@@ -41,7 +41,7 @@ class RolePermissionSeeder extends Seeder
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
         'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
         'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement', 'Applicant',
-        'DocumentType', 'Document',
+        'DocumentType', 'Document', 'IssuedLetter',
         'Category', 'Post', 'Album', 'Video', 'StaticPage',
     ];
 
@@ -58,6 +58,8 @@ class RolePermissionSeeder extends Seeder
         'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reopen'],
         // Dokumen tidak diubah atau dihapus dari panel: koreksi lewat versi baru atau status `ditolak`.
         'Document' => ['verify', 'viewConfidential'],
+        // Surat keluar tidak diubah atau dihapus: koreksi lewat pembatalan lalu terbit ulang.
+        'IssuedLetter' => ['cancel', 'configureNumbering'],
         // Berita soft delete: dipulihkan dari tempat sampah, tidak dihapus permanen.
         'Post' => ['restore', 'restoreAny'],
     ];
@@ -170,6 +172,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Document', ['viewAny', 'view', 'create', 'verify', 'viewConfidential']),
                 // PRD 2: pengaturan profil sekolah milik Admin Sekolah.
                 'view:school-profile',
+                // Surat keluar (F014): terbit, batal, dan atur penomoran; tidak diubah atau dihapus.
+                ...self::resourcePermissions('IssuedLetter', ['viewAny', 'view', 'create', 'cancel', 'configureNumbering']),
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.

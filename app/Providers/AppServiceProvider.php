@@ -7,9 +7,12 @@ use App\Models\Setting;
 use App\Models\User;
 use ArrayObject;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Tidak dipaksakan (`enforceMorphMap`): Spatie Permission dan Activitylog menyimpan nama kelas.
         Relation::morphMap(Document::DOCUMENTABLE_TYPES);
+
+        // Halaman verifikasi surat publik (F014): 30 permintaan per menit per IP, form dan hasil berbagi batas.
+        RateLimiter::for('letter-verification', fn (Request $request): Limit => Limit::perMinute(30)->by((string) $request->ip()));
 
         Event::listen(function (Login $event): void {
             if ($event->user instanceof User) {

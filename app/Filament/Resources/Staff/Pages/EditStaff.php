@@ -14,9 +14,11 @@ class EditStaff extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            // Pemilik dokumen tidak dihapus (relasi polymorphic tanpa FK); dicek tanpa cakupan jenjang.
+            // Pemilik dokumen tidak dihapus (relasi polymorphic tanpa FK) dan penandatangan surat keluar
+            // dirujuk FK restrict; keduanya dicek tanpa cakupan jenjang.
             DeleteAction::make()
-                ->hidden(fn (Staff $record): bool => $record->hasAnyDocuments()),
+                ->hidden(fn (Staff $record): bool => $record->hasAnyDocuments()
+                    || $record->signedLetters()->withoutGlobalScopes()->exists()),
         ];
     }
 }

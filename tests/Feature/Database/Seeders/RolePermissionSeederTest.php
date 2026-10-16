@@ -1,10 +1,12 @@
 <?php
 
 use App\Models\Applicant;
+use App\Models\IssuedLetter;
 use App\Models\Post;
 use App\Models\User;
 use App\Policies\ApplicantPolicy;
 use App\Policies\DocumentPolicy;
+use App\Policies\IssuedLetterPolicy;
 use App\Policies\PostPolicy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\File;
@@ -113,6 +115,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:document-type', 'view:document-type', 'create:document-type', 'update:document-type', 'delete:document-type', 'delete-any:document-type',
         'view-any:document', 'view:document', 'create:document', 'verify:document', 'view-confidential:document',
         'view:school-profile',
+        'view-any:issued-letter', 'view:issued-letter', 'create:issued-letter', 'cancel:issued-letter', 'configure-numbering:issued-letter',
     ]],
 ]);
 
@@ -350,4 +353,64 @@ it('AC-5: backs the post restore abilities with the post policy', function () {
 
     expect($policy->restore($admin, new Post))->toBeTrue()
         ->and($policy->restore($other, new Post))->toBeFalse();
+});
+
+it('AC-32: creates issued letter permissions', function () {
+    $expected = collect(['view-any', 'view', 'create', 'update', 'delete', 'delete-any', 'cancel', 'configure-numbering'])
+        ->map(fn (string $action): string => "{$action}:issued-letter")
+        ->sort()->values()->all();
+
+    expect(Permission::query()->where('name', 'like', '%:issued-letter')->pluck('name')->sort()->values()->all())->toBe($expected)
+        ->and($expected)->toHaveCount(8);
+});
+
+it('AC-32: grants issued letter permissions to admin-sekolah and super-admin only', function () {
+    $admin = User::factory()->create()->assignRole('admin-sekolah');
+    $super = User::factory()->create()->assignRole('super-admin');
+
+    foreach (['view-any', 'view', 'create', 'cancel', 'configure-numbering'] as $action) {
+        expect($admin->can("{$action}:issued-letter"))->toBeTrue($action);
+    }
+
+    foreach (['update', 'delete', 'delete-any'] as $action) {
+        expect($admin->can("{$action}:issued-letter"))->toBeFalse($action)
+            ->and($super->can("{$action}:issued-letter"))->toBeTrue($action);
+    }
+});
+
+it('AC-32: keeps letter update and delete from every role but super-admin', function (string $role) {
+    $names = Role::findByName($role)->permissions->pluck('name');
+
+    expect($names->intersect(['update:issued-letter', 'delete:issued-letter', 'delete-any:issued-letter'])->all())->toBe([]);
+})->with(['bendahara', 'admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-32: gives issued letter permissions to no other role', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':issued-letter'))->all())->toBe([]);
+})->with(['bendahara', 'admin-konten', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-32: backs the cancel and numbering abilities with the issued letter policy', function () {
+    $policy = new IssuedLetterPolicy;
+
+    foreach (['cancel', 'configureNumbering'] as $method) {
+        expect(method_exists($policy, $method))->toBeTrue("IssuedLetterPolicy::{$method}");
+    }
+
+    $admin = User::factory()->create()->assignRole('admin-sekolah');
+    $other = User::factory()->create()->assignRole('bendahara');
+    $issued = (new IssuedLetter)->forceFill(['status' => 'terbit']);
+    $cancelled = (new IssuedLetter)->forceFill(['status' => 'batal']);
+
+    expect($policy->cancel($admin, $issued))->toBeTrue()
+        ->and($policy->cancel($admin, $cancelled))->toBeFalse()
+        ->and($policy->cancel($other, $issued))->toBeFalse()
+        ->and($policy->configureNumbering($admin))->toBeTrue()
+        ->and($policy->configureNumbering($other))->toBeFalse();
+});
+
+it('AC-32: does not duplicate issued letter permissions when seeded again', function () {
+    $count = Permission::query()->where('name', 'like', '%:issued-letter')->count();
+
+    $this->seed(RolePermissionSeeder::class);
+
+    expect(Permission::query()->where('name', 'like', '%:issued-letter')->count())->toBe($count)->toBe(8);
 });

@@ -15,13 +15,15 @@ class EditUser extends EditRecord
         return [
             // Approver keringanan, pembuat tagihan, serta penerima dan pembatal pembayaran
             // dirujuk FK restrict; user itu dinonaktifkan, bukan dihapus. Data keuangan
-            // dicek tanpa cakupan jenjang.
+            // dicek tanpa cakupan jenjang, begitu juga penerbit dan pembatal surat keluar.
             DeleteAction::make()
                 ->hidden(fn (): bool => $this->getRecord()->is(auth()->user())
                     || $this->getRecord()->approvedFeeOverrides()->exists()
                     || $this->getRecord()->generatedInvoices()->withoutGlobalScopes()->exists()
                     || $this->getRecord()->receivedPayments()->withoutGlobalScopes()->exists()
-                    || $this->getRecord()->cancelledPayments()->withoutGlobalScopes()->exists()),
+                    || $this->getRecord()->cancelledPayments()->withoutGlobalScopes()->exists()
+                    || $this->getRecord()->issuedLetters()->withoutGlobalScopes()->exists()
+                    || $this->getRecord()->cancelledLetters()->withoutGlobalScopes()->exists()),
         ];
     }
 }

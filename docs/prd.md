@@ -23,7 +23,7 @@ Pondok (pondok.org) adalah aplikasi open source yang menggabungkan portal publik
 |---|---|
 | Super Admin | Semua modul dan pengaturan |
 | Bendahara | Keuangan: tarif, beasiswa, tagihan, pembayaran, laporan |
-| Admin Konten | Berita, kegiatan, prestasi publik, galeri, video, halaman |
+| Admin Konten | Berita, kegiatan, prestasi publik, galeri, video, halaman, profil lembaga |
 | Admin Sekolah | Data santri, kelas, staff, dokumen, pengaturan profil |
 | Admin PSB | Gelombang, jalur, verifikasi pendaftar dan berkas |
 | Kesantrian | Asrama, perizinan, kepulangan, kunjungan, prestasi |

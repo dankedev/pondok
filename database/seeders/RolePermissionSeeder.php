@@ -30,7 +30,7 @@ class RolePermissionSeeder extends Seeder
     /** Halaman Filament kustom, dengan format nama permission page Shield (`view:<slug>`). */
     public const PAGE_PERMISSIONS = [
         'view:finance-report',
-        // Profil sekolah (F016): membuka dan menyimpan halaman.
+        // Profil lembaga (F016/F036): membuka dan menyimpan keempat halaman cluster.
         'view:school-profile',
     ];
 
@@ -161,6 +161,9 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('StaticPage'),
                 // Membuat draf berita dari prestasi publik terverifikasi (F015).
                 ...self::resourcePermissions('Achievement', ['publish']),
+                // Profil lembaga (F036): isi beranda, kontak, dan footer portal juga dikelola
+                // Admin Konten (keputusan user 16 Okt 2026).
+                'view:school-profile',
             ],
             'admin-sekolah' => [
                 'view-dashboard',
@@ -175,7 +178,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Guardian'),
                 ...self::resourcePermissions('DocumentType'),
                 ...self::resourcePermissions('Document', ['viewAny', 'view', 'create', 'verify', 'viewConfidential']),
-                // PRD 2: pengaturan profil sekolah milik Admin Sekolah.
+                // PRD 2: profil lembaga dikelola Admin Sekolah dan Admin Konten (F036).
                 'view:school-profile',
                 // Surat keluar (F014): terbit, batal, dan atur penomoran; tidak diubah atau dihapus.
                 ...self::resourcePermissions('IssuedLetter', ['viewAny', 'view', 'create', 'cancel', 'configureNumbering']),

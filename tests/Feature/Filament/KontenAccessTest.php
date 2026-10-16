@@ -31,19 +31,19 @@ it('AC-6: forbids the content pages to other roles and hides the menu group', fu
         ->and(kontenNavigationText($user))->not->toContain(__('pondok.navigation.konten'));
 })->with(['bendahara', 'admin-sekolah', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos']);
 
-it('AC-6a: limits the school profile to admin-sekolah and super-admin', function (string $role, bool $allowed) {
+it('AC-6a: limits the school profile to admin-konten, admin-sekolah and super-admin', function (string $role, bool $allowed) {
     $user = kontenUser($role);
     $title = __('pondok.school_profile.title');
 
-    expect($title)->not->toBe('pondok.school_profile.title');
+    expect($title)->toBe('Profil lembaga');
 
-    $this->actingAs($user)->get('/admin/school-profile')->assertStatus($allowed ? 200 : 403);
+    $this->actingAs($user)->get('/admin/institution-profile/identity')->assertStatus($allowed ? 200 : 403);
 
     expect(str_contains(kontenNavigationText($user), $title))->toBe($allowed);
 })->with([
     'admin-sekolah' => ['admin-sekolah', true],
     'super-admin' => ['super-admin', true],
-    'admin-konten' => ['admin-konten', false],
+    'admin-konten' => ['admin-konten', true],
     'bendahara' => ['bendahara', false],
     'admin-psb' => ['admin-psb', false],
     'kesantrian' => ['kesantrian', false],
@@ -65,7 +65,7 @@ it('AC-7: hides konten when the module is disabled but keeps the school profile'
         $this->actingAs($user)->get($url)->assertForbidden();
     }
 
-    $this->actingAs($user)->get('/admin/school-profile')->assertOk();
+    $this->actingAs($user)->get('/admin/institution-profile/identity')->assertOk();
 
     expect(kontenNavigationText($user))->not->toContain(__('pondok.navigation.konten'))
         ->and(kontenNavigationText($user))->toContain(__('pondok.school_profile.title'));
@@ -92,7 +92,7 @@ it('AC-8: does not scope posts by unit', function () {
 it('AC-39: renders the content pages without raw translation keys', function () {
     $admin = kontenUser('super-admin');
 
-    foreach ([...KONTEN_URLS, '/admin/school-profile'] as $url) {
+    foreach ([...KONTEN_URLS, '/admin/institution-profile/identity'] as $url) {
         $text = kontenPageText($admin, $url);
 
         preg_match('/\bpondok\.[a-z_]+\.[a-z_.]+/', $text, $match);

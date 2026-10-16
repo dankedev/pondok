@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Pages\SchoolProfile;
+use App\Filament\Clusters\InstitutionProfile\Pages\Identity;
 use App\Models\Setting;
 use Livewire\Livewire;
 
@@ -12,12 +12,12 @@ beforeEach(function () {
 });
 
 it('AC-38: fills the form from the settings', function () {
-    Livewire::test(SchoolProfile::class)
+    Livewire::test(Identity::class)
         ->assertFormSet(['name' => 'Pondok Lama', 'address' => 'Alamat lama']);
 });
 
 it('AC-38: saves the school profile from the page', function () {
-    Livewire::test(SchoolProfile::class)
+    Livewire::test(Identity::class)
         ->fillForm(['name' => "Ma'had Al-Khair", 'phone' => '0812-3456-7890', 'email' => 'info@alkhair.sch.id'])
         ->call('save')
         ->assertHasNoFormErrors()
@@ -30,7 +30,7 @@ it('AC-38: saves the school profile from the page', function () {
 });
 
 it('AC-38: shows an invalid email on the email field and changes nothing', function () {
-    $component = Livewire::test(SchoolProfile::class)
+    $component = Livewire::test(Identity::class)
         ->fillForm(['name' => 'Nama Baru', 'email' => 'bukan-email'])
         ->call('save')
         ->assertHasFormErrors(['email']);
@@ -40,7 +40,7 @@ it('AC-38: shows an invalid email on the email field and changes nothing', funct
 });
 
 it('AC-38: requires the name', function () {
-    Livewire::test(SchoolProfile::class)
+    Livewire::test(Identity::class)
         ->fillForm(['name' => ''])
         ->call('save')
         ->assertHasFormErrors(['name']);
@@ -49,7 +49,7 @@ it('AC-38: requires the name', function () {
 });
 
 it('AC-38: uploads a logo and logs the change', function () {
-    Livewire::test(SchoolProfile::class)
+    Livewire::test(Identity::class)
         ->fillForm(['logo' => kontenImage('logo.png', 300)])
         ->call('save')
         ->assertHasNoFormErrors();
@@ -59,9 +59,9 @@ it('AC-38: uploads a logo and logs the change', function () {
 });
 
 it('AC-38: refuses a user without the school profile permission', function () {
-    $this->actingAs(kontenUser('admin-konten'));
+    $this->actingAs(kontenUser('bendahara'));
 
-    Livewire::test(SchoolProfile::class)->assertForbidden();
+    Livewire::test(Identity::class)->assertForbidden();
 
-    expect(SchoolProfile::canAccess())->toBeFalse();
+    expect(Identity::canAccess())->toBeFalse();
 });

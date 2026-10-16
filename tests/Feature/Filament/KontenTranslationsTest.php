@@ -33,7 +33,7 @@ it('F016: gives every konten message a way forward', function () {
 it('F016: names the menu groups and the school profile', function () {
     expect(__('pondok.navigation.konten'))->toBe('Konten')
         ->and(__('pondok.navigation.pengaturan'))->toBe('Pengaturan')
-        ->and(__('pondok.school_profile.title'))->toBe('Profil sekolah');
+        ->and(__('pondok.school_profile.title'))->toBe('Profil lembaga');
 });
 
 it('F016: names the static page defaults', function () {

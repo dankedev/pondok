@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Pages\SchoolProfile;
+use App\Filament\Clusters\InstitutionProfile\Pages\Identity;
 use App\Filament\Resources\Albums\Pages\CreateAlbum;
 use App\Filament\Resources\Albums\Pages\EditAlbum;
 use App\Filament\Resources\Albums\Pages\ListAlbums;
@@ -119,8 +119,8 @@ it('VERIFY: lets a user without update or delete permission neither save nor del
 it('VERIFY: keeps the school profile page closed to a user holding only content permissions', function () {
     $this->actingAs(dashboardUserWith(['view-any:post', 'update:static-page', 'view-dashboard']));
 
-    $this->get('/admin/school-profile')->assertForbidden();
-    Livewire::test(SchoolProfile::class)->assertForbidden();
+    $this->get('/admin/institution-profile/identity')->assertForbidden();
+    Livewire::test(Identity::class)->assertForbidden();
 });
 
 it('VERIFY: does not let a form request overwrite the author or the slug of a post', function () {

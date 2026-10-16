@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Pages\SchoolProfile;
+use App\Filament\Clusters\InstitutionProfile\Pages\Identity;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -16,7 +16,7 @@ it('AC-38: receipt reads the address saved on the school profile page', function
     $payment = bayarPaymentFor($f);
 
     $this->actingAs(keuanganUser('admin-sekolah'));
-    Livewire::test(SchoolProfile::class)
+    Livewire::test(Identity::class)
         ->fillForm(['name' => 'Pondok Al-Khair', 'address' => 'Jl. Baru No. 99', 'phone' => '0812-0000-1111'])
         ->call('save')
         ->assertHasNoFormErrors();

@@ -78,6 +78,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:video', 'view:video', 'create:video', 'update:video', 'delete:video', 'delete-any:video',
         'view-any:static-page', 'view:static-page', 'update:static-page',
         'publish:achievement',
+        'view:school-profile',
     ]],
     'admin-psb' => ['admin-psb', [
         'view-dashboard', 'view-psb-metrics',
@@ -328,9 +329,19 @@ it('AC-5: creates the content permissions with restore only for posts', function
         ->and($names->contains('restore:static-page'))->toBeFalse();
 });
 
-it('AC-5: grants the school profile only to admin-sekolah and super-admin', function (string $role) {
+it('AC-33: grants the school profile only to admin-konten, admin-sekolah and super-admin', function (string $role) {
     expect(Role::findByName($role)->permissions->pluck('name')->contains('view:school-profile'))->toBeFalse();
-})->with(['admin-konten', 'bendahara', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+})->with(['bendahara', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-33: grants the school profile to admin-konten, admin-sekolah and super-admin without duplicates', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    foreach (['admin-konten', 'admin-sekolah', 'super-admin'] as $role) {
+        expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => $name === 'view:school-profile')->count())->toBe(1);
+    }
+
+    expect(Permission::query()->where('name', 'view:school-profile')->count())->toBe(1);
+});
 
 it('AC-5: lets super-admin hold every content permission and does not duplicate them on re-seed', function () {
     $super = Role::findByName('super-admin')->permissions->pluck('name');
@@ -341,7 +352,7 @@ it('AC-5: lets super-admin hold every content permission and does not duplicate 
     $this->seed(RolePermissionSeeder::class);
 
     expect(Permission::query()->count())->toBe($count)
-        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(32);
+        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(33);
 });
 
 it('AC-5: backs the post restore abilities with the post policy', function () {

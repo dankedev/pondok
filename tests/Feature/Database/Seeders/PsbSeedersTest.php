@@ -87,7 +87,7 @@ it('AC-7: enables psb on a fresh install and leaves other modules as they were',
         ->and(Setting::moduleEnabled('akademik'))->toBeTrue()
         ->and(Setting::moduleEnabled('asrama'))->toBeTrue()
         ->and(Setting::moduleEnabled('keuangan'))->toBeTrue()
-        ->and(Setting::moduleEnabled('konten'))->toBeFalse();
+        ->and(Setting::moduleEnabled('konten'))->toBeTrue();
 });
 
 it('AC-7: does not overwrite a psb setting that was switched off', function () {

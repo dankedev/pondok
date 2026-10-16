@@ -13,7 +13,7 @@ it('AC-6: enables dokumen on a fresh install', function () {
         ->and(Setting::moduleEnabled('asrama'))->toBeTrue()
         ->and(Setting::moduleEnabled('psb'))->toBeTrue()
         ->and(Setting::moduleEnabled('keuangan'))->toBeTrue()
-        ->and(Setting::moduleEnabled('konten'))->toBeFalse()
+        ->and(Setting::moduleEnabled('konten'))->toBeTrue()
         ->and(Setting::moduleEnabled('prestasi'))->toBeFalse();
 });
 

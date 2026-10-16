@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\Applicant;
+use App\Models\Post;
 use App\Models\User;
 use App\Policies\ApplicantPolicy;
 use App\Policies\DocumentPolicy;
+use App\Policies\PostPolicy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Permission;
@@ -65,7 +67,15 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:payment', 'view:payment', 'create:payment', 'cancel:payment',
         'view:finance-report',
     ]],
-    'admin-konten' => ['admin-konten', ['view-dashboard', 'view-content-metrics']],
+    'admin-konten' => ['admin-konten', [
+        'view-dashboard', 'view-content-metrics',
+        'view-any:category', 'view:category', 'create:category', 'update:category', 'delete:category', 'delete-any:category',
+        'view-any:post', 'view:post', 'create:post', 'update:post', 'delete:post', 'delete-any:post',
+        'restore:post', 'restore-any:post',
+        'view-any:album', 'view:album', 'create:album', 'update:album', 'delete:album', 'delete-any:album',
+        'view-any:video', 'view:video', 'create:video', 'update:video', 'delete:video', 'delete-any:video',
+        'view-any:static-page', 'view:static-page', 'update:static-page',
+    ]],
     'admin-psb' => ['admin-psb', [
         'view-dashboard', 'view-psb-metrics',
         'view-any:admission-wave', 'view:admission-wave', 'create:admission-wave', 'update:admission-wave',
@@ -102,6 +112,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:guardian', 'view:guardian', 'create:guardian', 'update:guardian', 'delete:guardian', 'delete-any:guardian',
         'view-any:document-type', 'view:document-type', 'create:document-type', 'update:document-type', 'delete:document-type', 'delete-any:document-type',
         'view-any:document', 'view:document', 'create:document', 'verify:document', 'view-confidential:document',
+        'view:school-profile',
     ]],
 ]);
 
@@ -293,4 +304,50 @@ it('AC-23: backs the decide and reopen abilities with the applicant policy', fun
     $applicant = new Applicant;
 
     expect($policy->decide($admin, $applicant))->toBeTrue()->and($policy->reopen($admin, $applicant))->toBeFalse();
+});
+
+it('AC-5: grants content permissions only to admin-konten and super-admin', function (string $role) {
+    $names = Role::findByName($role)->permissions->pluck('name')->filter(
+        fn (string $name): bool => preg_match('/:(post|album|video|category|static-page)$/', $name) === 1,
+    );
+
+    expect($names->all())->toBe([]);
+})->with(['bendahara', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-5: creates the content permissions with restore only for posts', function () {
+    $names = Permission::query()->pluck('name');
+
+    expect($names->all())->toContain('restore:post', 'restore-any:post', 'view:school-profile', 'update:static-page', 'delete-any:video')
+        ->and($names->contains('restore:album'))->toBeFalse()
+        ->and($names->contains('restore:static-page'))->toBeFalse();
+});
+
+it('AC-5: grants the school profile only to admin-sekolah and super-admin', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->contains('view:school-profile'))->toBeFalse();
+})->with(['admin-konten', 'bendahara', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-5: lets super-admin hold every content permission and does not duplicate them on re-seed', function () {
+    $super = Role::findByName('super-admin')->permissions->pluck('name');
+    $count = Permission::query()->count();
+
+    expect($super->all())->toContain('view:school-profile', 'restore-any:post', 'view-any:static-page');
+
+    $this->seed(RolePermissionSeeder::class);
+
+    expect(Permission::query()->count())->toBe($count)
+        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(31);
+});
+
+it('AC-5: backs the post restore abilities with the post policy', function () {
+    $policy = new PostPolicy;
+
+    foreach (['restore', 'restoreAny'] as $method) {
+        expect(method_exists($policy, $method))->toBeTrue("PostPolicy::{$method}");
+    }
+
+    $admin = User::factory()->create()->assignRole('admin-konten');
+    $other = User::factory()->create()->assignRole('bendahara');
+
+    expect($policy->restore($admin, new Post))->toBeTrue()
+        ->and($policy->restore($other, new Post))->toBeFalse();
 });

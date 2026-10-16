@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             DocumentTypeSeeder::class,
             AdmissionTrackSeeder::class,
+            StaticPageSeeder::class,
+            ContentCategorySeeder::class,
         ]);
     }
 }

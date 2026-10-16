@@ -16,7 +16,7 @@ class SettingSeeder extends Seeder
     ];
 
     /** Modul yang sudah selesai dibangun dan aktif saat instalasi baru. */
-    public const ENABLED_BY_DEFAULT = ['akademik', 'asrama', 'psb', 'keuangan', 'dokumen'];
+    public const ENABLED_BY_DEFAULT = ['akademik', 'asrama', 'psb', 'keuangan', 'dokumen', 'konten'];
 
     public function run(): void
     {

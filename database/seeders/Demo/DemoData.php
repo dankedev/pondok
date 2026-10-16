@@ -21,6 +21,55 @@ final class DemoData
         'email' => 'info@alkhair-belitang.test',
     ];
 
+    /**
+     * Profil lembaga demo (F036): contoh isian admin, bukan teks bawaan aplikasi.
+     * Nomor dan tautan fiktif; nomor asli brosur tidak dipakai.
+     */
+    public const INSTITUTION = [
+        'short_name' => 'Al-Khair',
+        'arabic_name' => 'معهد الخير',
+        'contacts' => [
+            ['label' => 'Panitia PSB', 'name' => null, 'phone' => '081200000171', 'is_whatsapp' => true],
+            ['label' => 'Sekretariat', 'name' => null, 'phone' => '081200000170', 'is_whatsapp' => true],
+        ],
+        'social_links' => [
+            ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.contoh.test/alkhair.belitang'],
+            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.contoh.test/@alkhair.belitang'],
+            ['platform' => 'telegram', 'label' => null, 'url' => 'https://telegram.contoh.test/alkhair.belitang'],
+        ],
+        'home' => [
+            'hero_greeting' => 'Bismillahirrahmanirrahim',
+            'hero_title' => "Ahlan wa Sahlan di Ma'had Al-Khair Belitang",
+            'hero_subtitle' => "Tahfidzul Qur'an, Bahasa Arab, dan Studi Islam Intensif untuk putra jenjang MTW/SMP dan TSN/SMA.",
+            'highlights_heading' => "Mengapa memilih Ma'had Al-Khair",
+            'highlights' => [
+                ['title' => 'Kurikulum terintegrasi', 'description' => "Ilmu syar'i, tahfizh Al-Qur'an, bahasa Arab, pendidikan umum, dan pembentukan karakter dalam Jurnal Adab dan Akhlak."],
+                ['title' => 'Pengajar berkompeten', 'description' => 'Ustaz berlatar pendidikan Islam dari dalam dan luar negeri.'],
+                ['title' => "Al-Qur'an & matan bersanad", 'description' => 'Pembinaan tahsin dan tahfizh serta hafalan matan-matan ilmiah bersanad.'],
+                ['title' => 'Proyeksi studi lanjut', 'description' => 'Ke perguruan tinggi Islam dalam dan luar negeri.'],
+                ['title' => 'CCTV full area', 'description' => 'Keamanan asrama dan lingkungan belajar dipantau sepanjang hari.'],
+            ],
+        ],
+        'hero_album_slug' => 'fasilitas-mahad',
+        'psb_video_youtube' => 'DmAlKhr0001',
+        'footer' => [
+            'footer_quote_arabic' => 'وَلْتَكُن مِّنكُمْ أُمَّةٌ يَدْعُونَ إِلَى الْخَيْرِ وَيَأْمُرُونَ بِالْمَعْرُوفِ وَيَنْهَوْنَ عَنِ الْمُنكَرِ ۚ وَأُولَٰئِكَ هُمُ الْمُفْلِحُونَ',
+            'footer_quote_translation' => 'Dan hendaklah di antara kamu ada segolongan orang yang menyeru kepada kebajikan, menyuruh kepada yang makruf, dan mencegah dari yang mungkar. Mereka itulah orang-orang yang beruntung.',
+            'footer_quote_source' => "QS. Ali 'Imran: 104",
+            'footer_description' => "Ma'had Al-Khair Belitang: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.",
+            'footer_links' => [
+                ['label' => 'Berita', 'url' => '/berita'],
+                ['label' => 'Galeri', 'url' => '/galeri'],
+            ],
+        ],
+        /** Logo merek dari `docs/brand/` (dilewati bila berkas tidak ada). */
+        'logos' => [
+            'logo_desktop' => 'docs/brand/logo-mahad-lengkap.jpg',
+            'logo_mobile' => 'docs/brand/logo-mahad-simbol.png',
+            'favicon' => 'docs/brand/logo-mahad-simbol.png',
+        ],
+    ];
+
     /** Nama jenjang demo; diganti hanya bila nama unit masih bawaan `UnitSeeder`. */
     public const UNIT_NAMES = ['SLTP' => 'MTW/SMP', 'SLTA' => 'TSN/SMA'];
 

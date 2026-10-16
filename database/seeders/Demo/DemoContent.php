@@ -3,10 +3,14 @@
 namespace Database\Seeders\Demo;
 
 use App\Actions\Konten\AddAlbumPhotos;
+use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Konten\SaveAlbum;
 use App\Actions\Konten\SaveCategory;
 use App\Actions\Konten\SavePost;
 use App\Actions\Konten\SaveVideo;
+use App\Actions\Konten\UpdatePortalFooter;
+use App\Actions\Konten\UpdatePortalHome;
+use App\Actions\Konten\UpdateSchoolContacts;
 use App\Actions\Konten\UpdateSchoolProfile;
 use App\Actions\Konten\UpdateStaticPage;
 use App\Models\Album;
@@ -15,6 +19,7 @@ use App\Models\Post;
 use App\Models\Setting;
 use App\Models\StaticPage;
 use App\Models\Video;
+use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
 /**
@@ -47,6 +52,56 @@ final class DemoContent
         $this->seedPosts($this->seedCategories());
         $this->seedAlbums();
         $this->seedVideos();
+        $this->seedInstitutionProfile();
+    }
+
+    /**
+     * Profil lembaga demo (F036) lewat Action panel. Tiap bagian hanya diisi bila
+     * masih kosong, sehingga seed ulang tidak mengubah isian atau menambah berkas logo.
+     */
+    private function seedInstitutionProfile(): void
+    {
+        $actor = $this->context->user('super-admin');
+        $demo = DemoData::INSTITUTION;
+        $profile = app(GetSchoolProfile::class)->handle();
+
+        $identity = collect($profile)->only(['name', 'short_name', 'arabic_name', 'tagline', 'address', 'phone', 'email'])->all();
+        $identity['short_name'] ??= $demo['short_name'];
+        $identity['arabic_name'] ??= $demo['arabic_name'];
+
+        foreach ($demo['logos'] as $field => $source) {
+            $path = base_path($source);
+
+            if ($profile[$field.'_path'] === null && is_file($path)) {
+                $identity[$field] = new UploadedFile($path, basename($path), null, null, true);
+            }
+        }
+
+        app(UpdateSchoolProfile::class)->handle($identity, $actor);
+
+        if ($profile['contacts'] === [] && $profile['social_links'] === []) {
+            app(UpdateSchoolContacts::class)->handle([
+                'map_url' => $profile['map_url'],
+                'contacts' => $demo['contacts'],
+                'social_links' => $demo['social_links'],
+            ], $actor);
+        }
+
+        if ($profile['hero']['greeting'] === null && $profile['highlights'] === []) {
+            $this->ensureAllowedContent(json_encode($demo['home'], JSON_UNESCAPED_UNICODE));
+
+            app(UpdatePortalHome::class)->handle([
+                ...$demo['home'],
+                'hero_album_id' => Album::query()->where('slug', $demo['hero_album_slug'])->value('id'),
+                'psb_video_id' => Video::query()->where('youtube_id', $demo['psb_video_youtube'])->value('id'),
+            ], $actor);
+        }
+
+        if ($profile['footer']['quote_arabic'] === null && $profile['footer']['links'] === []) {
+            $this->ensureAllowedContent(json_encode($demo['footer'], JSON_UNESCAPED_UNICODE));
+
+            app(UpdatePortalFooter::class)->handle($demo['footer'], $actor);
+        }
     }
 
     /**

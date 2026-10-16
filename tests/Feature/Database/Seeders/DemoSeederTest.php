@@ -2,12 +2,14 @@
 
 use App\Models\AcademicYear;
 use App\Models\AdmissionWave;
+use App\Models\Album;
 use App\Models\Document;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Video;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Demo\DemoData;
@@ -602,6 +604,33 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     });
     expect($contentHits)->toBe([]);
 
+    // AC-59 (F036): profil lembaga fiktif dan logo merek, lewat seed pertama yang sama.
+    $profileKeys = ['school.contacts', 'school.social_links', 'portal.hero_greeting', 'portal.highlights', 'portal.hero_album_id', 'portal.psb_video_id', 'portal.footer_quote_source', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
+    $contacts = collect(Setting::get('school.contacts'));
+    expect($contacts->count())->toBeGreaterThanOrEqual(2)
+        ->and($contacts->pluck('label')->all())->toContain('Panitia PSB', 'Sekretariat')
+        ->and($contacts->every(fn (array $c): bool => preg_match('/^08120000[0-9]{4}$/', $c['phone']) === 1 && preg_match('/^[a-z0-9]{8}$/', $c['key']) === 1))->toBeTrue();
+    $socials = collect(Setting::get('school.social_links'));
+    expect($socials->count())->toBeGreaterThanOrEqual(2)
+        ->and($socials->every(fn (array $l): bool => str_starts_with($l['url'], 'https://')))->toBeTrue();
+    expect(Setting::get('portal.hero_greeting'))->not->toBeEmpty()
+        ->and(count(Setting::get('portal.highlights')))->toBeGreaterThanOrEqual(3)
+        ->and(Setting::get('portal.footer_quote_source'))->toContain("Ali 'Imran")->toContain('104')
+        ->and(Album::query()->whereKey(Setting::get('portal.hero_album_id'))->exists())->toBeTrue()
+        ->and(Video::query()->whereKey(Setting::get('portal.psb_video_id'))->exists())->toBeTrue();
+    $logoPaths = [Setting::get('school.logo_desktop_path'), Setting::get('school.logo_mobile_path'), Setting::get('school.favicon_path')];
+    expect(array_unique($logoPaths))->toHaveCount(3)
+        ->and(collect($logoPaths)->every(fn (?string $path): bool => is_string($path) && str_starts_with($path, 'school/') && Storage::disk('public')->exists($path)))->toBeTrue()
+        ->and(Storage::disk('public')->allFiles('school'))->toHaveCount(3)
+        ->and(Storage::disk('public')->get($logoPaths[0]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-lengkap.jpg')))
+        ->and(Storage::disk('public')->get($logoPaths[1]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')))
+        ->and(Storage::disk('public')->get($logoPaths[2]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')));
+    $profileJson = json_encode(Setting::query()->where(fn ($q) => $q->where('key', 'like', 'school.%')->orWhere('key', 'like', 'portal.%'))->pluck('value', 'key')->all());
+    foreach (['085832333725', '085669941929'] as $brochureNumber) {
+        expect($profileJson)->not->toContain($brochureNumber);
+    }
+    $profileSnapshot = collect($profileKeys)->mapWithKeys(fn (string $key): array => [$key => Setting::get($key)])->all();
+
     // AC-7c dan AC-22: ubah password, snapshot, seed kedua saat admin-sekolah login.
     DB::table('users')->where('email', 'musyrif@demo.test')->update(['password' => Hash::make('sudah-diganti-1')]);
     $before = demoTableCounts();
@@ -616,6 +645,10 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect([DB::table('invoices')->sum('total'), DB::table('payments')->sum('amount')])->toBe($sums);
     expect([count(Storage::disk('private')->allFiles()), count(Storage::disk('public')->allFiles())])->toBe($files);
     demoCheck(Hash::check('sudah-diganti-1', demoUser('musyrif')->password), 'AC-7c password tidak dikembalikan');
+    foreach ($profileSnapshot as $key => $value) {
+        expect(Setting::get($key))->toBe($value, "AC-59 {$key} stabil pada seed ulang");
+    }
+    expect(Storage::disk('public')->allFiles('school'))->toHaveCount(3);
 
     // AC-6 (cakupan jenjang) setelah seluruh seeding.
     $this->actingAs(demoUser('admin-sekolah'));

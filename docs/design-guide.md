@@ -124,6 +124,9 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Dokumen | valid | `success` |
 | Dokumen | ditolak | `danger` |
 | Dokumen | diganti (dihitung dari `replaced_by_id`) | `gray` |
+| Konten | draft | `gray` |
+| Konten | terbit | `success` |
+| Konten | terjadwal (dihitung, bukan status) | `info` |
 
 Pemetaan warna ditaruh di satu tempat (method `color()` pada enum atau konstanta model), tidak ditulis ulang di setiap tabel.
 

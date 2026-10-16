@@ -729,22 +729,22 @@ erDiagram
   categories {
     bigint id PK
     enum type "post | album"
-    string name "Fasilitas, Olahraga, Tahfidz"
-    string slug
+    string name "Fasilitas, Olahraga, Tahfidz; UK per type"
+    string slug "maks 120; UK per type"
   }
   posts {
     bigint id PK
     bigint category_id FK "nullable"
     bigint unit_id FK "nullable = umum"
-    bigint author_id FK "users"
+    bigint author_id FK "users, nullable, null saat user dihapus"
     enum type "kegiatan | prestasi | berita"
     string title
-    string slug UK
+    string slug UK "maks 200, termasuk baris terhapus"
     string excerpt "nullable"
     longtext body
     string cover_path "nullable"
     string youtube_url "nullable"
-    bigint achievement_id FK "nullable, untuk berita prestasi"
+    bigint achievement_id FK "nullable, untuk berita prestasi; FK ditambah F015"
     json meta "data tambahan, nullable"
     enum status "draft | terbit"
     timestamp published_at "nullable"
@@ -753,7 +753,7 @@ erDiagram
     bigint id PK
     bigint category_id FK
     string title
-    string slug UK
+    string slug UK "maks 200"
     text description "nullable"
   }
   photos {
@@ -778,7 +778,7 @@ erDiagram
     longtext body
   }
   settings {
-    string key PK "school.name, school.logo, psb.contact"
+    string key PK "school.name, school.logo_path, psb.contact"
     json value
   }
   categories ||--o{ posts : ""
@@ -788,7 +788,10 @@ erDiagram
 ```
 
 - Kegiatan, prestasi, dan berita disatukan di `posts` dengan kolom `type`. Berita prestasi merujuk ke `achievements` lewat `achievement_id`, jadi data tingkat, peringkat, dan santri yang terlibat tidak ditulis ulang.
-- `settings` menyimpan profil sekolah sebagai key-value, sehingga instalasi baru cukup mengisi lewat panel tanpa ubah kode.
+- `settings` menyimpan profil sekolah sebagai key-value, sehingga instalasi baru cukup mengisi lewat panel tanpa ubah kode. Key profil: `school.name`, `school.tagline`, `school.logo_path` (disk `public`), `school.address`, `school.phone`, `school.whatsapp`, `school.email`, `school.instagram_url`, `school.facebook_url`, `school.youtube_url`. Key kosong bernilai null.
+- `posts.author_id` nullable dengan `nullOnDelete`: menghapus user tidak menghapus atau menahan beritanya. `posts.achievement_id` sementara tanpa FK sampai tabel `achievements` dibuat (F015).
+- Nama dan slug kategori unik per `type`. `posts.body` dan `pages.body` adalah HTML tersanitasi; tabel model `pages` adalah `StaticPage` di kode.
+- Kolom `type`/`status` konten disimpan sebagai string dan divalidasi di Action (portabel SQLite/MySQL/Postgres).
 
 ## Pengguna & RBAC
 

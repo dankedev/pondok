@@ -376,6 +376,353 @@ Risiko:
 - **GD tidak tersedia** di sebagian hosting. Fallback PNG base64 menjaga seeder tetap jalan; jalur fallback tidak dites otomatis.
 - **Nama fiktif bisa kebetulan sama dengan orang nyata.** Dipilih nama umum dan kombinasi tanpa gelar/jabatan publik; plan-reviewer memeriksa daftar `DemoData` saat review kode.
 
+## Revisi 2 — sesuai brosur PSB
+
+Permintaan user (diteruskan orkestrator, 16 Okt 2026): "Ya, sesuaikan seeder demo dengan brosur: khusus putra, tanpa jenjang SD, dan tarif mengikuti brosur." Klarifikasi: "brosur ... hanya sebagai referensi bukan sebagai pengganti informasi yang sudah ada". Sumber: `docs/brand/brosur-psb-2027-2028.md`, `docs/brief-awal.txt`. Implementasi sebelumnya sudah ter-commit (`ac9b141`, `f5070f9`). Ini revisi F034 (bukan ID baru).
+
+**Urutan prioritas sumber:** instruksi user > `docs/brief-awal.txt` dan PRD/ERD > brosur > rencana di atas. Bila bagian di atas bertentangan dengan Revisi 2, **Revisi 2 yang berlaku**. Yang tidak disebut di sini tetap seperti di atas: penjaga production, Auth/UnitScope, kunci idempotensi, akun demo, pola pembayaran, dokumen, surat, dan `travelTo`.
+
+### Larangan dari brosur (tetap fiktif)
+
+- **Tidak dipakai:**
+  - nomor telepon brosur (`0858-3233-3725`, `0856-6994-1929`);
+  - nomor rekening (`7286406461`) dan nama bank pada rekening itu;
+  - nama orang di brosur (pembina, panitia);
+  - nama perguruan tinggi tujuan alumni;
+  - nama usaha di sekitar alamat (penanda lokasi di sebelah alamat);
+  - akun media sosial (`school.*_url` tetap null).
+- **Boleh dipakai dari brosur:**
+  - nama lembaga;
+  - alamat (`Jl. Raya Belitang–Martapura, Mojosari, Belitang, OKU Timur, Sumatera Selatan`);
+  - tagar sebagai `tagline` ("Generasi Beradab Bersama Al-Qur'an");
+  - program (tahfidz, bahasa Arab, studi Islam);
+  - fasilitas, ekstrakurikuler, nominal biaya, dan tanggal gelombang.
+- **Kontak tetap fiktif:** telepon dan WhatsApp memakai pola `0812-0000-0xxx` / `0735 000 0xxx`, email `@alkhair-belitang.test`. Pengurus dan staff memakai nama fiktif.
+- **Nama yayasan:** dari brief ("Yayasan Islam Al-Khair Belitang"). Boleh dipakai karena satu lembaga dengan pondok yang diminta user.
+
+### Jenjang
+
+- **Unit SD:** baris unit `SD` dari `UnitSeeder` dibiarkan apa adanya. Tidak ada rombel, angkatan, santri, tarif, syarat berkas, pendaftar, berita, atau cakupan user yang memakai SD.
+- **Ganti nama unit:** `DemoSeeder` mengganti `units.name`, **hanya bila nama masih sama dengan nilai bawaan `UnitSeeder::UNITS`**. Bila admin sudah mengubahnya, nama tidak disentuh. Penggantian dilakukan dengan update langsung (tidak ada Action unit), kode unit tetap:
+  - `SLTP` → "MTW/SMP"
+  - `SLTA` → "TSN/SMA"
+- **Rombel:** satu rombel per tingkat per tahun ajaran (`P` dan `A`), semuanya gender `L`: MTW `7A`, `8A`, `9A`; TSN `10A`, `11A`, `12A`. Jadi 6 rombel `A` + 6 rombel `P`.
+- **Teks konten:** pakai "MTW/SMP" dan "TSN/SMA", bukan "SLTP/SLTA".
+
+### Khusus putra
+
+- **Santri dan pendaftar:** semuanya ber-`gender` `L`. Nama perempuan di `DemoData` (santri dan pendaftar) diganti nama laki-laki fiktif.
+- **Wali kelas, ustadz, musyrif, dan Mudir:** semuanya laki-laki.
+- **TU:** boleh campur; staff TU perempuan yang ada tetap dipakai.
+- **Wali santri:** ayah, atau ibu/wali untuk santri yatim. Ibu tetap perempuan; ini data wali, bukan santri.
+- **Asrama:** dua asrama putra, masing-masing 4 kamar. Kunci `code`.
+
+| Kode | Nama | Untuk | Kamar | Kapasitas |
+|---|---|---|---|---|
+| `ABK` | Asrama Abu Bakar Ash-Shiddiq | MTW/SMP | `Kamar 101`–`Kamar 104` | 10 |
+| `UMR` | Asrama Umar bin Khattab | TSN/SMA | `Kamar 201`–`Kamar 204` | 8 |
+
+- **Musyrif per kamar** (brosur): 8 musyrif laki-laki, satu per kamar (`AssignSupervisor` peran `musyrif` dengan `room_id`). Ditambah 1 `kepala_asrama` per asrama dari ustadz laki-laki.
+- **Prestasi beregu putri** diganti versi putra, misalnya "Juara 1 Hafalan Hadits Arba'in Beregu" (5–6 putra). Futsal beregu tetap.
+
+### Komposisi santri (menggantikan tabel Santri di atas)
+
+| Kelompok | Jumlah | Riwayat |
+|---|---|---|
+| MTW kelas 7 (`A`) | 12 | santri baru angkatan `Y` |
+| MTW kelas 8 & 9 (`A`) | 24 | naik dari 7A/8A `P` (`PromoteStudents`) |
+| TSN kelas 10 (`A`) | 10 | 4 dari MTW 9A `P` lewat `ChangeStudentUnit` SLTP → SLTA; 6 santri baru angkatan `Y` |
+| TSN kelas 11 & 12 (`A`) | 20 | naik dari 10A/11A `P` |
+| Lulus | 7 | 5 dari TSN 12A `P`, 2 dari MTW 9A `P` yang tidak melanjutkan |
+| Keluar | 2 | 1 dari MTW 8A `P`, 1 dari TSN 11A `P` |
+| Pindah | 1 | 1 dari MTW 7A `P` |
+| Hasil daftar ulang PSB | 3 | angkatan tahun ajaran tujuan PSB, belum punya rombel |
+
+Total 79 santri: 69 aktif, termasuk 3 hasil daftar ulang.
+
+**Keluarga:** ≥ 5 wali punya ≥ 2 santri, dan ≥ 1 wali punya 3 santri. Semua kakak-adik putra.
+
+**Mukim:** semua santri aktif yang punya rombel `A` ditempatkan di asrama (MTW 36 di `ABK`, TSN 30 di `UMR`). Satu-satunya santri aktif nonmukim adalah 3 santri hasil daftar ulang. Alasannya, mereka belum serah terima (`entered_on` di masa depan); kamar diatur panitia setelah serah terima.
+
+**Pindah kamar:** tetap ada satu, di dalam asrama yang sama.
+
+### Keuangan (menggantikan jenis biaya, tarif, beasiswa, dan keringanan di atas)
+
+| code | Nama | Frekuensi | applies_to | billing_group | priority | Tarif (`effective_from_year = P`, jenjang SLTP dan SLTA) |
+|---|---|---|---|---|---|---|
+| `SPP` | SPP (termasuk makan 3× sehari, laundry, operasional) | bulanan | semua | `BULANAN` | 10 | 1.600.000 |
+| `FORMULIR` | Biaya pendaftaran | saat_daftar | semua | `PSB_DAFTAR` | 10 | 300.000 |
+| `UANG_MASUK` | Uang masuk | saat_diterima | semua | `PSB_TERIMA` | 10 | 10.000.000 |
+| `DAFTAR_ULANG` | Daftar ulang tahunan | tahunan | semua | `DAFTAR_ULANG` | 20 | 1.500.000 (**contoh**, brosur tidak menyebut nominal; ditandai "contoh" di `docs/demo.md`) |
+
+- **Jenis biaya terpisah dihapus:** `ASRAMA`, `MAKAN`, `LAUNDRY`, `UANG_PANGKAL`, `SERAGAM`, dan `KITAB` tidak dibuat. Brosur menyatakan SPP sudah mencakup makan, laundry, dan operasional. Uang masuk juga satu angka yang mencakup seragam, buku, perlengkapan, dan lainnya.
+- **Daftar ulang tahunan:** hanya jenis biaya dan tarifnya yang dibuat, tanpa tagihan. Belum ada Action generator tagihan `tahunan`; generator bulanan hanya memproses `bulanan`. Ini dicatat di `docs/demo.md`.
+- **Tarif angkatan** (tetap ada, untuk memperlihatkan aturan "tarif dikunci per angkatan" di ERD): SPP TSN angkatan `Y−2` (kelas 12 di `A`) = 1.500.000, "tarif lama terkunci sampai lulus".
+- **Tarif per asrama:** tidak ada lagi (biaya asrama sudah masuk SPP).
+- **Tidak ada tarif SD.**
+- **Beasiswa/subsidi** (`SaveScholarship`). Brosur: "hanya untuk 3 santri". Jadi pemegang keringanan ber-`scholarship_id` paling banyak 3 orang (santri + pendaftar, dihitung per pemilik).
+
+| Program | Mode | Nilai | Penerima |
+|---|---|---|---|
+| "Subsidi Yatim" | nominal | 800.000 (bayar SPP Rp800.000) | 1 santri, SPP |
+| "Beasiswa Tahfidz" | persen | 50 | 1 santri, SPP |
+| "Subsidi Uang Masuk" | potongan | 5.000.000 | jalur `SUBSIDI`, `UANG_MASUK`; 1 pendaftar yang diterima lalu daftar ulang |
+
+- **Keringanan non-beasiswa:** 1 santri, `potongan` 300.000 pada SPP, alasan "Kesepakatan wawancara biaya". Ini mencerminkan "sesi wawancara biaya" di brosur dan tidak dihitung sebagai beasiswa.
+- **Tagihan bulanan** berisi satu item SPP. Pola lunas/cicilan/tunggakan, tanggal bayar, dan koreksi `CancelPayment` tetap. Pembayaran cicilan = `floor(total / 2 / 1000) * 1000`.
+- **Uji alokasi prioritas:** tidak ada lagi tagihan multi-item di data demo, jadi uji alokasi prioritas di AC-15 dihapus. Alokasi cicilan tetap diuji oleh test F007.
+
+### PSB (menggantikan bagian PSB di atas)
+
+**Jalur:**
+- `REGULER` tetap aktif.
+- `SUBSIDI` "Subsidi/Beasiswa" dibuat lewat `SaveAdmissionTrack`: `scholarship_id` = Subsidi Uang Masuk, `fee_type_ids` = [UANG_MASUK]. Kunci `code`.
+- `PRESTASI`, `TAHFIDZ`, dan `YATIM` dinonaktifkan lewat `SaveAdmissionTrack` (`is_active` false), hanya bila masih aktif dan belum punya pendaftar. Tujuannya agar formulir publik demo hanya menampilkan dua jalur seperti brosur.
+
+**Syarat berkas** (`SaveAdmissionRequirement`, semua jenjang, memakai jenis dokumen yang ada):
+- Wajib: `KK` "Kartu Keluarga", `AKTA` "Akta kelahiran", `RAPOR` "Rapor semester terakhir", `FOTO` "Pas foto 3×4 latar biru".
+- Tidak wajib: `IJAZAH` "Ijazah terakhir (legalisir, diserahkan saat serah terima)".
+- KTP orang tua dan surat validasi NISN tidak punya jenis dokumen, jadi tidak dibuat. Membuat jenis dokumen baru di luar ruang lingkup.
+- Alur pendaftar yang terverifikasi mengunggah keempat berkas wajib.
+
+**Gelombang berkesinambungan.** Brief: "Pendaftaran dibuka sepanjang tahun, kecuali kuota telah penuh."
+- **Tahun ajaran tujuan PSB `S`:** `S` = `D->year + 1` bila `D` ≥ tanggal `{D->year}-10-05`, selain itu `D->year`. Tahun ajaran `"{S}/{S+1}"` dibuat bila belum ada, tidak aktif kecuali sama dengan `A`.
+  - Pada `T1` (2026-10-16): `S` = 2027, tujuan 2027/2028 (= `N`).
+  - Pada `T2` (2027-07-03): `S` = 2027, tujuan 2027/2028 (= `A`, yang sedang aktif).
+- **Tanggal gelombang:**
+  - **Gelombang I:** buka `2026-10-05` + (`S` − 2027) tahun. Tutup = sehari sebelum Gelombang II buka. Kuota 40.
+  - **Gelombang II:** buka `2027-02-08` + (`S` − 2027) tahun. Tutup = sehari sebelum Gelombang I tahun ajaran `S+1` buka, yaitu `2027-10-04` + (`S` − 2027) tahun. Kuota 20.
+  - Untuk `S` = 2027, tanggal brosur dipakai apa adanya (5 Okt 2026 dan 8 Feb 2027). Tahun lain digeser per tahun penuh dengan `addYears`, sehingga harinya bisa bukan Senin.
+- **Akibatnya:** selalu tepat satu gelombang yang menerima pendaftaran pada `D`, dan tidak ada celah tanggal antar-gelombang maupun antar-tahun ajaran. Gelombang tahun ajaran lain tidak dibuat.
+- **Kunci idempotensi gelombang:** (`academic_year_id`, `name`), dengan nama "Gelombang I" dan "Gelombang II".
+- **Pendaftar:** semua 14 pendaftar masuk ke gelombang yang sedang menerima pendaftaran. `SubmitApplication` hanya menerima gelombang yang buka hari ini.
+- **Tanggal bayar PSB:** `max(opens_on gelombang itu, D − k)`, tidak pernah melewati `D`.
+
+**Komposisi pendaftar:** jumlah dan sebaran status sama (14: draft 1, diajukan 4, diverifikasi 2, cadangan 1, ditolak 1, diterima 5 yang 3 di antaranya sudah daftar ulang), dengan perubahan:
+- Semua laki-laki, jenjang SLTP atau SLTA saja, dan nama perempuan diganti.
+- Jalur hanya `REGULER` atau `SUBSIDI`.
+- Tepat 1 pendaftar `SUBSIDI` yang diterima, yaitu yang daftar ulang. Pendaftar `SUBSIDI` lain hanya boleh berstatus belum diterima (tanpa keringanan).
+- Pendaftar diterima yang memakai jalur `TAHFIDZ`/`YATIM` diganti `REGULER`.
+- Tagihan penerimaan berisi satu item `UANG_MASUK` 10.000.000 (dikurangi 5.000.000 untuk `SUBSIDI`).
+- Pembayaran sebelum daftar ulang ≥ 50%, dengan contoh cicilan. Pendaftar diterima yang belum daftar ulang membayar 30%.
+
+### Konten (menggantikan bagian Konten dan Profil di atas)
+
+**Profil sekolah** (`UpdateSchoolProfile`, hanya bila `school.address` kosong):
+
+| Kolom | Isi |
+|---|---|
+| `name` | "Ma'had Al-Khair Belitang" |
+| `tagline` | "Generasi Beradab Bersama Al-Qur'an" |
+| `address` | alamat brosur, tanpa penanda usaha |
+| `phone`, `whatsapp`, `email` | fiktif |
+
+**Kategori berita** (`SaveCategory` tipe `post`), tepat mengikuti brief:
+- Kegiatan Al-Khair
+- Prestasi Al-Khair
+- Info Kajian
+- Akidah & Manhaj
+- Tafsir & Hadits
+- Fiqh
+- Umum
+
+Kategori lama hasil versi sebelumnya ("Kegiatan Santri", "Pengumuman", "Tahfidz") tidak dibuat di database baru.
+
+**Berita** (7 terbit + 1 draft + berita prestasi; minimal 6 dari 7 kategori terpakai):
+
+| Judul | Tipe | Kategori | Catatan |
+|---|---|---|---|
+| Penerimaan Santri Baru Tahun Ajaran {S} Dibuka | berita | Umum | memuat "pendaftaran dibuka sepanjang tahun selama kuota tersedia" |
+| Masa Ta'aruf Santri Baru | kegiatan | Kegiatan Al-Khair | |
+| Santri Ikut Kerja Bakti Bersama Warga Mojosari | kegiatan | Kegiatan Al-Khair | |
+| Jadwal Kajian Kitab Pekanan untuk Wali Santri | berita | Info Kajian | |
+| Ringkasan Kajian: Pentingnya Menuntut Ilmu Sebelum Beramal | berita | Akidah & Manhaj | |
+| Program Hafalan Matan dan Hadits Arba'in Santri | kegiatan | Tafsir & Hadits | |
+| Santri Belajar Praktik Penyembelihan Hewan Kurban saat Idul Adha | kegiatan | Fiqh | |
+| Rencana Pembangunan Ruang Kelas Tahap II | berita | Umum | draft |
+
+- Berita prestasi masuk kategori "Prestasi Al-Khair".
+- Isi kajian ditulis sebagai pengumuman atau ringkasan umum. **Tidak mengutip teks ayat atau hadits baru** selain QS. Ali 'Imran: 104 yang sudah ada di brief, untuk menghindari kutipan keliru.
+- Manhaj tetap: tidak ada konten perayaan selain Idul Fitri dan Idul Adha (tanpa maulid, isra mi'raj, haul, nisfu sya'ban, tahun baru).
+- Judul dan isi berita disaring dengan konstanta `DemoData::FORBIDDEN_CONTENT_TERMS`, yang dipakai juga oleh test.
+
+**Halaman statis.** `StaticPage::SLUGS` tetap `['profil', 'visi-misi', 'kontak']` dan route portal `/{page}` dibatasi ke slug itu. Kode aplikasi **tidak diubah**. Isi setara menu brief:
+
+| Slug | Isi |
+|---|---|
+| `profil` "Profil Ma'had" | bagian `<h2>` "Tentang Yayasan" (Yayasan Islam Al-Khair Belitang, fiktif wajar), "Selayang Pandang" (fokus tahfidz, bahasa Arab, studi Islam; jenjang MTW/SMP dan TSN/SMA khusus putra; fasilitas dari brosur), "Pengurus Al-Khair" (jabatan + nama fiktif) |
+| `visi-misi` | visi dan misi sesuai fokus brief, tanpa mutu lulusan berangka yang belum dikonfirmasi |
+| `kontak` | alamat brosur, kontak fiktif, jam layanan |
+
+Info PSB tetap lewat `/psb` yang sudah ada.
+
+**Usulan pekerjaan lanjutan di luar F034** (entri baru, ID ditentukan orkestrator/user, tidak diselipkan): menu portal mengikuti brief (Tentang Yayasan, Pengurus Al-Khair, Selayang Pandang, Info PSB, Kontak) sebagai halaman statis terpisah. Ini butuh perubahan `StaticPage::SLUGS`, route, dan navigasi portal.
+
+**Album** (kunci `slug`):
+- "Fasilitas Ma'had" (kategori Fasilitas), 6 foto dengan keterangan sesuai slide brief: bangunan luar masjid, bagian dalam masjid, asrama, kelas, ruang rapat, kantor yayasan.
+- "Masa Ta'aruf Santri Baru" (Kegiatan), 5 foto.
+- "Ekstrakurikuler Santri" (Kegiatan), 4 foto: futsal, karate, tenis meja, berenang.
+
+**Video:** 3 video dengan ID fiktif. Yang `is_featured` adalah "Video Info PSB Ma'had Al-Khair Belitang" (brief: Video PSB), sisanya video terbaru kegiatan.
+
+### Akun demo
+
+| Akun | Cakupan |
+|---|---|
+| admin-sekolah | SLTP (MTW/SMP) |
+| kesantrian | SLTA (TSN/SMA), diubah dari SLTP+SLTA agar tetap memperlihatkan pembatasan |
+| akun lain | tanpa cakupan |
+
+Tidak ada akun yang bercakupan SD.
+
+### Data demo versi lama
+
+Seeder idempotent berdasarkan kunci alami. Database yang sudah berisi data demo versi sebelumnya (SD, putri, biaya asrama/makan) **tidak dimigrasikan**. `docs/demo.md` menyatakan revisi ini butuh `php artisan migrate:fresh` sebelum `db:seed --class=DemoSeeder`.
+
+### Kriteria penerimaan Revisi 2
+
+AC yang tidak disebut di sini tetap berlaku seperti di atas, yaitu AC-1–AC-4, AC-7, AC-13 kecuali bagian yang diganti, AC-17, AC-18, AC-21, AC-22, dan AC-24. Penanda: **[ubah]** mengganti AC lama, **[baru]** tambahan.
+
+- **AC-5 [ubah] Profil & halaman.**
+  - `school.name` = "Ma'had Al-Khair Belitang", `school.tagline` = "Generasi Beradab Bersama Al-Qur'an".
+  - `school.address` memuat "Mojosari", "Belitang", dan "OKU Timur".
+  - `school.phone` dan `school.email` terisi dan fiktif.
+  - Body `profil` memuat "Tentang Yayasan", "Selayang Pandang", "Pengurus Al-Khair", dan "khusus putra".
+  - Body `kontak` memuat "Mojosari".
+  - Body `visi-misi` tidak kosong.
+  - Tidak ada "lorem".
+  - Bila `school.address` sudah terisi sebelumnya, nilainya tidak diubah.
+- **AC-6 [ubah] Akun demo.** Sama seperti sebelumnya, kecuali `scopedUnitIds()` kesantrian = [id SLTA]. Tidak ada user demo dengan cakupan SD.
+- **AC-8 [ubah] Staff & rombel.**
+  - Staff aktif ≥ 20.
+  - Semua staff ber-`position` "ustadz", "musyrif", atau "Mudir" berjenis kelamin L.
+  - Tepat 6 rombel `A` (`7A`–`12A`) dan 6 rombel `P`, semuanya gender `L`, jenjang SLTP (7–9) atau SLTA (10–12).
+  - Setiap rombel `A` punya wali kelas laki-laki.
+- **AC-9 [ubah] Santri & data kurasi.**
+  - Total santri 60–100.
+  - Pemetaan nama dan NIS dengan `DemoData` tetap (dihitung pada `T1`).
+  - Semua santri ber-`gender` `L`.
+  - Tidak ada santri, angkatan, rombel, atau tarif ber-`unit_id` SD.
+  - Per status: aktif ≥ 65, lulus ≥ 5, keluar ≥ 1, pindah ≥ 1.
+  - SLTP dan SLTA masing-masing punya santri aktif.
+  - Satu kontak tagihan per santri.
+  - ≥ 5 wali dengan ≥ 2 santri, dan ≥ 1 wali dengan 3 santri.
+  - `students.unit_id` = `cohorts.unit_id`.
+- **AC-10 [ubah] Riwayat kelas.**
+  - Klausul "SD → SLTP" dihapus.
+  - ≥ 20 santri naik tingkat `P` → `A`.
+  - ≥ 1 santri punya enrollment `P` di SLTP dan `A` di SLTA.
+  - Santri hasil daftar ulang dikecualikan dari kewajiban enrollment `A`.
+  - Lainnya tetap.
+- **AC-11 [ubah] Asrama.**
+  - 2 asrama aktif, keduanya gender `L`, total 8 kamar.
+  - Setiap santri aktif yang punya enrollment `A` punya penempatan aktif.
+  - Santri aktif tanpa penempatan aktif hanya santri ber-`applicant_id`.
+  - Tidak ada penempatan aktif untuk santri non-aktif.
+  - Jumlah penghuni per kamar ≤ kapasitas.
+  - ≥ 1 santri punya 2 baris `room_assignments`.
+  - Setiap kamar punya tepat 1 `musyrif` aktif ber-`room_id` kamar itu, dan staff musyrif berjenis kelamin L.
+  - Setiap asrama punya tepat 1 `kepala_asrama` aktif.
+- **AC-12 [ubah] Jenis biaya & tarif.**
+  - Tepat 4 jenis biaya sesuai tabel Revisi 2 (`SPP`, `FORMULIR`, `UANG_MASUK`, `DAFTAR_ULANG`) dengan frekuensi, applies_to, dan billing_group sesuai. Tidak ada `ASRAMA`, `MAKAN`, `LAUNDRY`, `UANG_PANGKAL`, `SERAGAM`, `KITAB`.
+  - Tarif dasar SLTP dan SLTA: SPP 1.600.000, FORMULIR 300.000, UANG_MASUK 10.000.000, DAFTAR_ULANG 1.500.000.
+  - Tepat 1 tarif ber-`cohort_id` (SPP SLTA, 1.500.000). Tidak ada tarif ber-`dormitory_id`. Tidak ada tarif SD.
+  - Semua nominal kelipatan 1.000 dan 50.000–10.000.000.
+  - `docs/demo.md` memuat kata "contoh" pada baris daftar ulang tahunan.
+- **AC-13 [ubah] Beasiswa & keringanan.**
+  - 3 program aktif (nominal, persen, potongan).
+  - Jumlah pemilik berbeda (santri atau pendaftar) dari `fee_overrides` ber-`scholarship_id` ≤ 3.
+  - Tepat 1 keringanan santri tanpa `scholarship_id`.
+  - Keringanan santri `approved_by` bendahara. Keringanan jalur PSB boleh `approved_by` admin-psb (catatan RED).
+- **AC-14 [ubah] Tagihan bulanan.**
+  - Untuk setiap periode, jumlah tagihan aktif `BULANAN` = jumlah santri aktif dengan `entered_on` ≤ akhir periode.
+  - Tanpa duplikat.
+  - Setiap tagihan bulanan berisi tepat 1 item `SPP`.
+  - `base_amount` 1.600.000, kecuali santri SLTA angkatan `Y−2` (1.500.000).
+  - Santri Subsidi Yatim: `amount` 800.000. Santri Beasiswa Tahfidz: `amount` = 50% `base_amount`. Santri keringanan wawancara: `discount_amount` 300.000.
+- **AC-15 [ubah] Pembayaran.**
+  - Tagihan bulanan `lunas` ≥ 100, `sebagian` ≥ 5, `belum` dengan `due_on` < `T1` ≥ 10.
+  - `paid_total` = jumlah pembayaran `diterima`.
+  - Tidak ada `paid_on` > `T1`.
+  - Tepat 1 pembayaran `batal`.
+  - Setiap tagihan `sebagian` punya `paid_total` kelipatan 1.000 dan < `total`.
+  - Klausul alokasi prioritas dan klausul MAKAN/SPP dihapus.
+- **AC-16 [ubah] PSB.**
+  - Tahun ajaran 2027/2028 punya tepat 2 gelombang:
+    - "Gelombang I" 2026-10-05 s.d. 2027-02-07, kuota 40;
+    - "Gelombang II" 2027-02-08 s.d. 2027-10-04, kuota 20.
+  - Tepat satu gelombang yang `isAcceptingRegistrationsOn(T1)`, yaitu Gelombang I.
+  - Jalur aktif tepat `REGULER` dan `SUBSIDI`. `SUBSIDI.scholarship_id` = Subsidi Uang Masuk.
+  - Syarat berkas: `KK`, `AKTA`, `RAPOR`, `FOTO` wajib; `IJAZAH` tidak wajib.
+  - 14 pendaftar, semua `L`, jenjang SLTP/SLTA, dengan sebaran status seperti AC-16 lama.
+  - Setiap pendaftar non-draft punya tagihan `PSB_DAFTAR` 300.000.
+  - Tagihan penerimaan berisi satu item `UANG_MASUK`.
+  - Pendaftar `SUBSIDI` yang daftar ulang punya item `UANG_MASUK` dengan `discount_amount` 5.000.000.
+  - 3 santri hasil daftar ulang; satu memakai wali yang sudah ada.
+  - ≥ 2 dokumen hasil salinan PSB.
+  - Berkas pendaftar `menunggu` dan `ditolak` ada.
+- **AC-19 [ubah] Prestasi.**
+  - Sama seperti sebelumnya: 6 prestasi, 4 terverifikasi, 1 jadi berita, peserta ber-`entered_on` ≤ `achieved_on`.
+  - Semua peserta berjenis kelamin L.
+  - Tidak ada judul yang memuat "Putri".
+  - Berita prestasi berkategori "Prestasi Al-Khair".
+- **AC-20 [ubah] Konten & portal.**
+  - Kategori `post` yang dibuat seeder tepat 7 nama brief, dan ≥ 6 di antaranya punya berita.
+  - Posts `terbit` ≥ 8 (termasuk prestasi) dengan `published_at` ≤ `T1`, `draft` ≥ 1.
+  - Album "Fasilitas Ma'had" punya 6 foto. Album lain ≥ 4 foto. Berkas foto ada di disk `public`.
+  - ≥ 4 posts bersampul.
+  - 3 video, tepat 1 `is_featured` yang judulnya memuat "PSB".
+  - Route portal yang sama mengembalikan 200, dan beranda memuat "Ma'had Al-Khair Belitang".
+- **AC-23 [ubah] Relatif terhadap hari ini** (database baru, `T2 = 2027-07-03 08:00 Asia/Jakarta`).
+  - `2027/2028` aktif (satu-satunya), dan `2026/2027` ada dan tidak aktif.
+  - Ada tagihan periode 2027-04-01 dan 2027-07-01.
+  - Tidak ada `paid_on` > 2027-07-03.
+  - Gelombang yang menerima pendaftaran pada `T2` adalah "Gelombang II" tahun ajaran **2027/2028** (bukan 2028/2029), dengan `closes_on` 2027-10-04.
+  - Tidak ada gelombang 2028/2029.
+  - Tidak ada `published_at` atau `achieved_on` setelah `T2`.
+- **AC-25 [baru] Nama jenjang.**
+  - Setelah seeding pada database baru: `units` SLTP bernama "MTW/SMP", SLTA bernama "TSN/SMA", kode tidak berubah, dan baris SD tetap ada.
+  - Bila nama SLTP sudah diubah admin sebelum seeding (mis. "SMP IT"), nama itu tidak ditimpa.
+- **AC-26 [baru] Larangan data brosur.**
+  - Tidak ada string berikut di database hasil seeding, yang diperiksa pada:
+    - `settings.value`, `pages.body`;
+    - `posts.title` dan `posts.body`;
+    - `staff.name`, `staff.phone`;
+    - `guardians.name`, `guardians.phone`;
+    - `applicants.guardian_phone`;
+    - `users.name`.
+  - Daftar string: `0858-3233-3725`, `085832333725`, `0856-6994-1929`, `085669941929`, `7286406461`, `Wujud`, `Said Yai`, `Rendi Sulistiawan`, `Arwitra`, `Waterboom`.
+  - Daftar string tersebut didefinisikan di test, bukan di kode aplikasi.
+- **AC-27 [baru] Manhaj konten.**
+  - Tidak ada `posts.title`/`posts.body`, `pages.body`, `albums.title`/`description`, `photos.caption`, atau `videos.title`/`description` yang memuat (case-insensitive) salah satu istilah di `DemoData::FORBIDDEN_CONTENT_TERMS`.
+  - Daftar itu minimal berisi "maulid", "isra mi", "isra' mi", "haul", "nisfu", dan "tahun baru".
+
+### Rencana test Revisi 2
+
+- **File dan jumlah seeding tetap.** Masih satu file `tests/Feature/Database/Seeders/DemoSeederTest.php`, dengan tiga kali seeding penuh, `travelTo`, dan group `seeder-demo`.
+- **Test utama:** assertion lama yang bertentangan diganti sesuai AC [ubah], dan AC-25 bagian 1, AC-26, serta AC-27 ditambahkan.
+- **AC-25 bagian 2:** digabung ke test `T2`. Sebelum seeding, `InstallSeeder` dijalankan lalu nama SLTP diubah, sehingga tidak ada seeding tambahan.
+- **Test `VERIFY`:** assertion yang mengandalkan santri nonmukim, SD, putri, atau biaya asrama/makan disesuaikan oleh red-tester, tanpa menambah seeding.
+- **Test dokumentasi AC-24:** ditambah pemeriksaan kata "contoh" untuk daftar ulang (AC-12) dan catatan `migrate:fresh`.
+
+### Urutan implementasi Revisi 2
+
+1. `DemoData`: nama putra, komposisi santri dan keluarga, staff laki-laki, asrama putra dan musyrif per kamar, jenis biaya/tarif/program brosur, pendaftar, kategori/berita/halaman/album/video brief, dan `FORBIDDEN_CONTENT_TERMS`.
+2. `DemoCalendar`: `admissionYear()` (`S`) dan tanggal kedua gelombang.
+3. Nama unit (AC-25), rombel, asrama, dan penempatan semua santri (AC-8–AC-11).
+4. Keuangan dan jalur `SUBSIDI` (AC-12–AC-15).
+5. PSB dengan dua gelombang (AC-16, AC-23).
+6. Konten (AC-5, AC-19, AC-20, AC-26, AC-27).
+7. `docs/demo.md`: tarif "contoh", `migrate:fresh`, dan jenjang MTW/SMP–TSN/SMA khusus putra. Lalu Pint, dan verifikasi MySQL dua kali seed seperti sebelumnya.
+
+### Risiko & pertanyaan Revisi 2
+
+- **Nominal daftar ulang tahunan** (1.500.000) adalah contoh. Konfirmasi ke pondok sudah tercatat di `docs/pertanyaan-mahad-al-khair.md` bila ada; bila belum, orkestrator menambahkannya.
+- **Unit SD tetap ada** dan masih bisa dipilih di formulir PSB publik, karena tidak ada saklar per unit. Menyembunyikan jenjang yang tidak dipakai adalah usulan pekerjaan lanjutan di luar F034.
+- **Menonaktifkan jalur bawaan** (`PRESTASI`, `TAHFIDZ`, `YATIM`) mengubah data instalasi di database demo. Ini disengaja dan dicatat di `docs/demo.md`.
+- **Tanpa tagihan multi-item,** data demo tidak lagi memperlihatkan alokasi cicilan per prioritas. Fungsi itu tetap teruji di test F007.
+- **Gelombang di luar 2027/2028** memakai tanggal geser per tahun penuh, sehingga harinya bisa bukan Senin.
+
 ## Riwayat revisi
 
 - DRAFT 1 (product-manager): rencana awal.
@@ -384,6 +731,7 @@ Risiko:
   - Major 1: ketentuan eksekusi baru "Bebas dari Auth dan `UnitScope`" (`Auth::forgetGuards()` di awal `run()`, daftar Action yang membaca `Auth::user()` dan perilakunya tanpa login, lookup wajib `withoutUnitScope()`/`withTrashed()`); urutan test utama ditetapkan (tanpa login sebelum seed pertama, seed kedua dijalankan saat admin-sekolah login, `actingAs` cakupan setelah seluruh seeding); AC-22 menambah syarat seed kedua saat login dan `Auth::check()` false sesudahnya.
   - Major 2: tabel baru "Kunci idempotensi per bagian" (termasuk asrama, kamar, pindah kamar, pembina, enrollment `P`/`A`, wali kelas, pivot wali-santri, kolom kunci tarif, sertifikat prestasi, berkas pendaftar, penggantian KK, surat santri + jenis + `purpose`); surat batal memakai santri kelima yang tidak punya surat lain; AC-18 diperketat.
   - Minor: NIS dihitung dari offset tahun masuk relatif `Y` (AC-9 pada `T1`); `travelTo` + group `seeder-demo`; password teks biasa (cast `hashed`) + `email_verified_at`; catatan enrollment `P` tidak selaras jenjang setelah `ChangeStudentUnit` (AC-10 hanya memeriksa `A`); peserta prestasi ber-`entered_on` ≤ tanggal prestasi (AC-19); `ReRegisterApplicant` tanpa `entered_on` (pakai `defaultEnteredOn`); peringatan konsol `default_password_warning` bila `DEMO_PASSWORD` kosong (AC-7b lewat `artisan db:seed`).
+- REVISED 2 (product-manager, 16 Okt 2026): bagian "Revisi 2 — sesuai brosur PSB": khusus putra, tanpa data SD, unit SLTP/SLTA dinamai MTW/SMP dan TSN/SMA, tarif brosur (SPP 1,6 jt all-in, pendaftaran 300 rb, uang masuk 10 jt, daftar ulang contoh), beasiswa ≤ 3 penerima, semua santri mukim kecuali hasil daftar ulang, jalur REGULER + SUBSIDI, dua gelombang berkesinambungan (tanggal brosur sebagai acuan, tahun ajaran tujuan `S`), kategori dan halaman mengikuti brief tanpa mengubah `StaticPage::SLUGS`; AC diubah: 5, 6, 8–16, 19, 20, 23; AC baru: 25–27.
 
 ## Review #1 — 2026-10-16
 
@@ -415,3 +763,24 @@ Verdict: APPROVED
 | 2 | minor | `Auth::forgetGuards()` | Melepas login pemanggil di proses itu (sudah dicatat di `docs/demo.md`). Test harus `actingAs` ulang sesudah seed kedua (sudah ada di urutan test). | Tidak ada tindakan. |
 
 Review #1: 2 major dan 7 minor tertangani (Auth/UnitScope, tabel kunci idempotensi, NIS relatif `Y`, `travelTo` + group, password `hashed`, `defaultEnteredOn`, peringatan password).
+
+## Review #3 — 2026-10-16
+
+Verdict: APPROVED
+
+Yang diperiksa terhadap kode nyata: `UnitSeeder::UNITS`, `SaveAdmissionWave` (validasi nama, `closes_before_opens`, tumpang tindih hanya dalam satu tahun ajaran), `SubmitApplication` (wajib `isAcceptingRegistrationsOn(now Asia/Jakarta)`, kuota), `ReRegisterApplicant` (`defaultEnteredOn`), `SaveAdmissionTrack`, `SaveFeeType` (`tahunan` valid, `billing_group` terpisah), `GenerateMonthlyInvoices` (hanya `bulanan`, satu item tetap membuat satu tagihan), `ContentCategorySeeder` (hanya kategori album), `StaticPage::SLUGS`.
+
+| # | Tingkat | Bagian | Temuan | Saran |
+|---|---|---|---|---|
+| 1 | minor | AC-26 | String "Wujud" (huruf besar W) bisa cocok palsu dengan awal kalimat Indonesia ("Wujudkan ..."). | Cocokkan nama lengkap dari brosur, atau pencocokan kata utuh (`\b`) peka huruf besar. |
+| 2 | minor | Asrama `UMR` | 30 santri TSN di 4 kamar berkapasitas 8 (32): muat, tetapi pindah kamar hanya mungkin ke kamar yang tidak penuh. | Distribusi 8/8/7/7, pindah kamar ke kamar berisi 7. |
+| 3 | minor | AC-13 | "Pemilik berbeda" pendaftar yang sudah jadi santri memiliki override ber-`applicant_id` dan `student_id` sekaligus. | Hitung pemilik sebagai `COALESCE(student_id, applicant_id)` atau satu orang per `students.applicant_id`. |
+| 4 | minor | Jalur PSB | `SaveAdmissionTrack` memperbarui seluruh field dari `$data` (mis. `scholarship_id` tanpa nilai menjadi null). Menonaktifkan jalur bawaan harus mengirim ulang `code`, `name`, `terms`, dan `scholarship_id` yang ada. | Catatan untuk green-coder. |
+| 5 | minor | Kontrak AC-23 | Pada `T2` santri hasil daftar ulang berangkatan `Y` (sama dengan santri baru) dan `entered_on` 2027-08-01; NIS otomatis harus tidak bentrok dengan NIS kurasi angkatan `Y`. | Uji `GenerateStudentNumber` melanjutkan urutan; tidak ada perubahan rencana. |
+
+Jawaban poin pemeriksaan:
+- Menonaktifkan jalur dan mengganti nama unit aman. Nama unit hanya diganti bila masih bawaan, kode tidak berubah, dan test lain memakai `RefreshDatabase` tanpa `DemoSeeder` (termasuk `ActiveStudentsWidgetTest` yang mengasersi nama bawaan).
+- Gelombang I (s.d. 2027-02-07) dan II (mulai 2027-02-08) tidak tumpang tindih dan sama-sama di tahun ajaran tujuan. Tidak ada validasi tahun ajaran aktif atau lampau. Tepat satu gelombang menerima pendaftaran pada `D` (juga `T2`: Gelombang II).
+- SPP satu item tetap memicu cicilan (`floor(total/2/1000)*1000`, kurang dari total, kelipatan 1.000).
+- Tanpa jenis biaya `mukim`, tidak ada aturan `applies_to` yang dilanggar. Jalur mukim tetap diuji test generator F007.
+- AC-23, AC-26, AC-27 bisa diuji. Seeding penuh tetap 3 kali.

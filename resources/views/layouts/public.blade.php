@@ -47,6 +47,7 @@
         <meta name="twitter:card" content="summary_large_image">
     @endif
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    @fonts
     @vite(['resources/css/app.css'])
 </head>
 <body class="flex min-h-screen flex-col bg-gray-50 font-sans text-gray-900 antialiased">

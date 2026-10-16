@@ -63,6 +63,7 @@ use Filament\Notifications\NotificationMailbox;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Vite;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -3452,6 +3453,9 @@ function daftarUlangBind(string $class, object $fake): object
 function portalBoot(): object
 {
     test()->withoutVite();
+    // Fake bawaan withoutVite() tidak menonaktifkan @fonts: tanpa ini test membaca public/build lokal
+    // (hasil berbeda bila aset sudah di-build) dan tag preload font hanya tercetak di request pertama.
+    (fn () => $this->buildDirectory = 'build-tidak-ada-saat-test')->call(app(Vite::class));
     test()->seed([UnitSeeder::class, SettingSeeder::class, StaticPageSeeder::class, ContentCategorySeeder::class]);
     Setting::set('modules.konten.enabled', true);
     Setting::set('school.name', "Ma'had Al-Khair");

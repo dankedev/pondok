@@ -99,3 +99,52 @@
     --color-gray-900: var(--color-zinc-900);
     --color-gray-950: var(--color-zinc-950);
 }
+
+/*
+ * Isi artikel portal (F017): body tersanitasi F016. `contain: paint` mengurung turunan
+ * `position: fixed`/`absolute` (atribut `style` diizinkan sanitizer) di dalam wadah.
+ */
+@layer components {
+    .portal-prose {
+        contain: paint;
+        isolation: isolate;
+        @apply space-y-4 text-base leading-relaxed text-gray-800;
+    }
+
+    .portal-prose h2 {
+        @apply pt-4 text-2xl font-semibold text-gray-900;
+    }
+
+    .portal-prose h3 {
+        @apply pt-2 text-lg font-semibold text-gray-900;
+    }
+
+    .portal-prose ul {
+        @apply list-disc space-y-1 pl-6;
+    }
+
+    .portal-prose ol {
+        @apply list-decimal space-y-1 pl-6;
+    }
+
+    .portal-prose blockquote {
+        @apply border-l-4 border-gray-300 pl-4 text-gray-700;
+    }
+
+    .portal-prose a {
+        @apply text-primary-700 underline underline-offset-4;
+    }
+
+    .portal-prose img {
+        @apply h-auto max-w-full rounded-lg;
+    }
+
+    .portal-prose table {
+        @apply block overflow-x-auto;
+    }
+
+    .portal-prose th,
+    .portal-prose td {
+        @apply border border-gray-200 px-3 py-2 text-left;
+    }
+}

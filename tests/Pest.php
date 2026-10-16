@@ -50,6 +50,7 @@ use App\Models\Video;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Seeders\AdmissionTrackSeeder;
+use Database\Seeders\ContentCategorySeeder;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -3430,4 +3431,115 @@ function daftarUlangBind(string $class, object $fake): object
     app()->instance($class, $fake);
 
     return $fake;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper portal publik (F017)
+|--------------------------------------------------------------------------
+|
+| Berawalan `portal`. Waktu uji: 2026-10-15 10:00 Asia/Jakarta. Data dibuat langsung (forceFill, tanpa Action)
+| lewat helper `konten*` agar HTML mentah bisa dimasukkan untuk test sanitasi ulang.
+|
+*/
+
+/**
+ * Seed jenjang, saklar (konten aktif), halaman statis, kategori album, profil sekolah, waktu dan disk palsu.
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit}
+ */
+function portalBoot(): object
+{
+    test()->withoutVite();
+    test()->seed([UnitSeeder::class, SettingSeeder::class, StaticPageSeeder::class, ContentCategorySeeder::class]);
+    Setting::set('modules.konten.enabled', true);
+    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.tagline', "Mencetak generasi Qur'ani");
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('public');
+
+    return (object) [
+        'sd' => Unit::query()->where('code', 'SD')->firstOrFail(),
+        'sltp' => Unit::query()->where('code', 'SLTP')->firstOrFail(),
+        'slta' => Unit::query()->where('code', 'SLTA')->firstOrFail(),
+    ];
+}
+
+/**
+ * Post terbit (bawaan berita, 2026-10-14 08:00 Asia/Jakarta).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function portalPost(array $attributes = []): Post
+{
+    return kontenPost([
+        'status' => 'terbit',
+        'published_at' => CarbonImmutable::parse('2026-10-14 08:00', 'Asia/Jakarta'),
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Album dengan sejumlah foto (urut 1..n).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function portalAlbumWithPhotos(int $count = 2, array $attributes = []): Album
+{
+    $album = kontenAlbum($attributes);
+
+    for ($i = 1; $i <= $count; $i++) {
+        kontenPhoto($album, ['sort_order' => $i]);
+    }
+
+    return $album;
+}
+
+/**
+ * Modul PSB aktif dan satu gelombang terbuka pada tanggal uji.
+ */
+function portalPsbOpen(array $waveAttributes = []): AdmissionWave
+{
+    Setting::set('modules.psb.enabled', true);
+    $year = AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']);
+
+    return psbWave($year, 'Gelombang 1', '2026-10-01', '2026-12-31', $waveAttributes);
+}
+
+/**
+ * Isi konten lengkap untuk test lintas halaman: post `wisuda-2026`, album `album-ramadan` (2 foto), video.
+ *
+ * @return object{post: Post, album: Album, video: Video}
+ */
+function portalSeedContent(): object
+{
+    return (object) [
+        'post' => portalPost(['title' => 'Wisuda 2026']),
+        'album' => portalAlbumWithPhotos(2, ['title' => 'Album Ramadan']),
+        'video' => kontenVideo(['title' => 'Profil Pondok', 'youtube_id' => 'dQw4w9WgXcQ']),
+    ];
+}
+
+/**
+ * Teks respons dengan entitas HTML didekode (untuk membandingkan URL dengan `&`).
+ */
+function portalDecoded(TestResponse $response): string
+{
+    return html_entity_decode($response->getContent(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+/**
+ * Nilai `aria-label` seluruh `<nav>` pada HTML.
+ *
+ * @return list<string>
+ */
+function portalNavLabels(string $html): array
+{
+    preg_match_all('/<nav\b[^>]*>/i', $html, $tags);
+
+    return array_map(function (string $tag): string {
+        preg_match('/aria-label="([^"]*)"/', $tag, $m);
+
+        return $m[1] ?? '';
+    }, $tags[0]);
 }

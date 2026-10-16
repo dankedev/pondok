@@ -497,3 +497,9 @@ Verifikasi Review #2: semua lima temuan tertangani. Paginator portal memakai `wi
 | 3 | minor | AC-24a | Kasus `APP_URL` tanpa skema mengharapkan canonical `http://alkhair.sch.id/`; ini bergantung skema permintaan test (`http`). | Tulis dengan `https://` pada request test agar jelas, bila red-tester menganggapnya ambigu. |
 
 Ringkasan: 0 blocker, 0 major, 3 minor (catatan saja). Rencana siap untuk red-tester setelah F016 dan F010 terimplementasi (langkah 0).
+
+## Adendum implementasi (keputusan user, 16 Okt 2026)
+
+- F017 menggantikan beranda sementara (`home.blade.php`, commit a20ea6f). Elemen pentingnya dipertahankan di portal: tautan "Masuk" ke login panel di header (`pondok.portal.nav.login`, AC-36), tautan cek status PSB di footer bila modul PSB aktif (`pondok.portal.footer.psb_status`), dan tautan verifikasi surat di footer bila modul dokumen aktif (`pondok.portal.footer.verify_letter`). Diuji di `tests/Feature/Http/HomePageTest.php`.
+- Varian "Buka panel" untuk user login tidak dibuat karena portal stateless; Filament mengarahkan user yang sudah login dari halaman login ke panel.
+- Tautan sosial dari `settings` hanya dirender bila skemanya http/https (temuan VERIFY).

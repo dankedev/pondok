@@ -96,6 +96,13 @@ Aturan:
 | Pulihkan | `ArrowPath` |
 | Cadangan | `Clock` |
 | Daftar ulang | `AcademicCap` |
+| Galeri | `Photo` |
+| Video | `Film` |
+| Alamat | `MapPin` |
+| Telepon | `Phone` |
+| Email | `Envelope` |
+| WhatsApp | `ChatBubbleLeftRight` |
+| Menu (portal seluler) | `Bars3` |
 
 ## 4. Status & badge
 

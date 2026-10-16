@@ -308,16 +308,16 @@
       "name": "Portal publik",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F016", "F010"],
       "description": "Halaman publik Blade + Livewire + Tailwind: beranda, berita, galeri, halaman statis, tautan PSB.",
       "acceptance": [
         "Lolos checklist §0 docs/design-guide.md"
       ],
-      "owner": "orchestrator-bc5d2383",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Dari F010: pakai ulang layouts/public.blade.php dan components/ui/*."
+      "evidence": "Commit 2007cf4, 26d6204, 5d4f00d, 7aa8f7f. 159 test portal lulus (termasuk PortalAdversarialTest); full suite 3882/3882 lulus di PHP 8.4 dan 8.3; migrate:fresh --seed MySQL OK; Pint lulus.",
+      "notes": "Menggantikan beranda sementara a20ea6f atas persetujuan user; tautan Masuk/status PSB/verifikasi surat dipertahankan. Cek visual 360px dan CSP di browser belum (perlu build aset)."
     },
     {
       "id": "F018",
@@ -344,13 +344,13 @@
       "name": "Paket rilis & instalasi shared hosting",
       "phase": 1,
       "module": "Inti",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F008", "F012", "F014", "F015", "F017", "F018"],
       "description": "Aset ter-build ikut paket, panduan instalasi cPanel (PHP 8.3, MySQL), satu cron schedule:run.",
       "acceptance": [
         "Aplikasi terpasang dan berjalan di cPanel dengan PHP 8.3 dan MySQL"
       ],
-      "owner": null,
+      "owner": "orchestrator-bc5d2383",
       "handoff": null,
       "evidence": "",
       "notes": "Dari F010/F014/F016/F017: paket rilis wajib memuat public/build; panduan instalasi cPanel harus mencakup storage:link, APP_URL yang benar (QR surat & gambar portal), TRUSTED_PROXIES opsional, dan cron schedule:run. Dari Review #2 F019: .htaccess deny di root aplikasi bisa diwarisi Apache (AllowOverride All) dan menutup public/ pada cara A — public/.htaccess wajib memuat izin eksplisit (Require all granted / Allow from all) yang mengalahkan deny induk; verifikasi di Apache (bukan php -S) atau catat sebagai uji manual user. Lewati blok handler PHP simpanan bila berkas sudah punya blok sejenis; app_exposure jangan memperingatkan /var/www/<app> standar."

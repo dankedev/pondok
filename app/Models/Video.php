@@ -31,7 +31,15 @@ class Video extends Model
 
     public function embedUrl(): string
     {
-        return "https://www.youtube-nocookie.com/embed/{$this->youtube_id}";
+        return self::embedUrlFor($this->youtube_id);
+    }
+
+    /**
+     * URL embed YouTube mode privasi (nocookie); dipakai juga untuk video pada post.
+     */
+    public static function embedUrlFor(string $youtubeId): string
+    {
+        return "https://www.youtube-nocookie.com/embed/{$youtubeId}";
     }
 
     public function watchUrl(): string

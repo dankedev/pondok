@@ -619,7 +619,7 @@
       "name": "Halaman statis bebas dan urutan menu portal",
       "phase": 1,
       "module": "Konten",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F036"],
       "description": "Halaman statis tidak lagi terbatas profil, visi-misi, kontak: admin konten bisa membuat, mengubah, dan menghapus halaman dengan slug bebas (selain slug sistem dan slug route yang dicadangkan). Menu portal (desktop dan mobile) disusun dari item bawaan dan halaman, urutannya diatur dari panel. Tiga halaman bawaan tetap ada dan tidak bisa dihapus.",
       "acceptance": [
@@ -630,7 +630,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 6b0e7c1 (feat konten), f92be8c (data demo), 3472cfc (docs). Test F037 hijau termasuk 75 test VERIFY (F037ActionVerifyGapsTest, F037VerifyGapsTest); suite penuh 4387 test lulus di PHP 8.3 (PHP 8.4 4386/4387 sebelum perbaikan test skema KontenConstraintsTest, file itu lalu lulus); migrate rollback/ulang dan DemoSeeder lulus di MySQL; Pint lulus.",
       "notes": "Dipecah dari F036 (permintaan user 16 Okt 2026). Bergantung F036 karena menu memakai header/footer dan identitas F036 yang sedang diubah (menghindari konflik berkas portal). Slug info-psb dicadangkan oleh F037 sebagai slug terlarang walau halamannya baru dibuat F038. Rencana ditulis saat fitur diambil."
     },
     {
@@ -652,7 +652,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Dipecah dari F036 (permintaan user 16 Okt 2026). Bergantung F036 karena kontak PSB merujuk key kontak F036 dan memakai prinsip tanpa teks konten bawaan; F009/F010/F004 untuk syarat, gelombang, dan tarif. Route publik memakai slug info-psb yang sudah dicadangkan F037. Rencana ditulis saat fitur diambil."
+      "notes": "Dipecah dari F036 (permintaan user 16 Okt 2026). Bergantung F036 karena kontak PSB merujuk key kontak F036 dan memakai prinsip tanpa teks konten bawaan; F009/F010/F004 untuk syarat, gelombang, dan tarif. Route publik memakai slug info-psb yang sudah dicadangkan F037. Kontrak F037: nama route psb.info, path /info-psb, didaftarkan di luar grup prefix psb dan sebelum route /{page}; item menu psb_info F037 hanya tampil bila route ini ada dan modul psb aktif. Rencana ditulis saat fitur diambil."
     },
     {
       "id": "F039",

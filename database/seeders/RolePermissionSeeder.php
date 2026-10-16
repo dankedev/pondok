@@ -56,7 +56,7 @@ class RolePermissionSeeder extends Seeder
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.
         'Payment' => ['cancel'],
         // Pendaftar dibuat lewat form publik; panitia memverifikasi berkas, mengatur ulang token, dan menagih formulir.
-        'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reopen'],
+        'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reopen', 'reRegister'],
         // Dokumen tidak diubah atau dihapus dari panel: koreksi lewat versi baru atau status `ditolak`.
         'Document' => ['verify', 'viewConfidential'],
         // Surat keluar tidak diubah atau dihapus: koreksi lewat pembatalan lalu terbit ulang.
@@ -190,7 +190,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('AdmissionWave', $withoutDelete),
                 ...self::resourcePermissions('AdmissionTrack', $withoutDelete),
                 ...self::resourcePermissions('AdmissionRequirement'),
-                ...self::resourcePermissions('Applicant', ['viewAny', 'view', 'delete', 'verifyDocument', 'resetToken', 'generateInvoices', 'decide']),
+                ...self::resourcePermissions('Applicant', ['viewAny', 'view', 'delete', 'verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reRegister']),
             ],
             // Santri dan wali lihat-saja; mengelola asrama, kamar, penghuni, dan musyrif.
             'kesantrian' => [

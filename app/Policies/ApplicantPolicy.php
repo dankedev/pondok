@@ -81,4 +81,12 @@ class ApplicantPolicy
     {
         return $authUser->can('reopen:applicant');
     }
+
+    /**
+     * Daftar ulang: mengubah pendaftar diterima menjadi santri (F012).
+     */
+    public function reRegister(AuthUser $authUser, Applicant $applicant): bool
+    {
+        return $authUser->can('re-register:applicant');
+    }
 }

@@ -146,6 +146,23 @@ class Applicant extends Model
     }
 
     /**
+     * Santri hasil daftar ulang pendaftar ini, tanpa cakupan jenjang dan
+     * termasuk santri terhapus (F012).
+     */
+    public function convertedStudent(): ?Student
+    {
+        return Student::withoutGlobalScopes()->withTrashed()->where('applicant_id', $this->id)->first();
+    }
+
+    /**
+     * Sudah daftar ulang (punya santri, termasuk yang terhapus).
+     */
+    public function isConverted(): bool
+    {
+        return Student::withoutGlobalScopes()->withTrashed()->where('applicant_id', $this->id)->exists();
+    }
+
+    /**
      * Tagihan aktif (bukan `batal`) yang memuat item biaya `saat_daftar`.
      */
     public function registrationInvoices(): HasMany

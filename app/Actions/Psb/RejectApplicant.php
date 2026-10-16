@@ -72,7 +72,7 @@ class RejectApplicant
 
     private function ensureAcceptanceCancellable(Applicant $locked): void
     {
-        if ($locked->student()->exists()) {
+        if ($locked->isConverted()) {
             $this->fail('applicant_converted');
         }
 

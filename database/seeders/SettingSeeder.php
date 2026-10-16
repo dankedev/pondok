@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Actions\Akademik\GenerateStudentNumber;
+use App\Actions\Psb\CheckReRegistrationPayment;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
 
@@ -26,5 +28,9 @@ class SettingSeeder extends Seeder
         foreach (self::MODULES as $module) {
             Setting::query()->firstOrCreate(['key' => "modules.{$module}.enabled"], ['value' => in_array($module, self::ENABLED_BY_DEFAULT, true)]);
         }
+
+        // Daftar ulang PSB (F012): syarat persen pembayaran tagihan penerimaan dan format NIS otomatis.
+        Setting::query()->firstOrCreate(['key' => CheckReRegistrationPayment::SETTING_KEY], ['value' => CheckReRegistrationPayment::DEFAULT_MIN_PERCENT]);
+        Setting::query()->firstOrCreate(['key' => GenerateStudentNumber::SETTING_KEY], ['value' => GenerateStudentNumber::DEFAULT_FORMAT]);
     }
 }

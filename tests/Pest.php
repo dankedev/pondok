@@ -10,6 +10,7 @@ use App\Actions\Keuangan\RecordPayment;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
+use App\Actions\Psb\ReRegisterApplicant;
 use App\Actions\Psb\SubmitApplication;
 use App\Filament\Resources\Applicants\Pages\ViewApplicant;
 use App\Models\AcademicYear;
@@ -62,6 +63,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -3189,4 +3191,243 @@ function prestasiRecapData(object $f): object
         'pu' => prestasiCreate($f, [$f->s3], ['category' => 'akademik', 'level' => 'nasional']),
         'p4' => prestasiCreate($f, [$f->s2], ['verified' => true, 'category' => 'seni', 'level' => 'nasional', 'academic_year_id' => $f->y1->id, 'achieved_on' => '2026-03-10']),
     ];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper daftar ulang PSB (F012)
+|--------------------------------------------------------------------------
+|
+| Berawalan `daftarUlang`. Dibangun di atas helper F010/F011 yang nyata (`pendaftaranFixture`, `seleksiExtend`,
+| `seleksiApplicant`, `seleksiRun`, `seleksiInvoices`), bukan nama `penerimaan*` yang disebut rencana.
+| Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta. Tarif di atas fixture F011 disesuaikan ke angka rencana:
+| UANG_PANGKAL 6.000.000 dan SERAGAM 2.000.000 (grup PSB_TERIMA, total penerimaan 8.000.000), SPP 500.000, KITAB tanpa tarif.
+|
+*/
+
+/**
+ * Sesuaikan fixture F011 (`seleksiExtend`) ke angka rencana F012. Tidak mengubah waktu.
+ *
+ * @return object{uangPangkal: FeeType, seragam: FeeType, spp: FeeType, rates: array<string, FeeRate>, user: User}
+ */
+function daftarUlangExtend(object $f): object
+{
+    $f = seleksiExtend($f);
+    $f->rates['UANG_PANGKAL']->update(['amount' => 6000000]);
+    $f->rates['SERAGAM']->update(['amount' => 2000000]);
+    $f->rates['SPP']->update(['amount' => 500000]);
+    $f->rates['KITAB']->delete();
+    unset($f->rates['KITAB']);
+
+    return $f;
+}
+
+/**
+ * Fixture F012: `pendaftaranFixture()` + `daftarUlangExtend()`, waktu 2026-10-15 10:00 Asia/Jakarta.
+ */
+function daftarUlangFixture(): object
+{
+    return daftarUlangExtend(pendaftaranFixture());
+}
+
+/**
+ * Berkas pendaftar dengan file nyata di disk `private` (isi unik), status `$status`.
+ */
+function daftarUlangDocument(Applicant $applicant, AdmissionRequirement $requirement, string $status = 'valid', bool $withFile = true): ApplicantDocument
+{
+    $verifier = User::query()->oldest('id')->value('id') ?? User::factory()->create()->id;
+    $code = $requirement->documentType->code;
+    $document = pendaftaranDocument($applicant, $requirement, [
+        'status' => $status,
+        'original_name' => Str::lower($code).'-asli.pdf',
+        'size_kb' => 7,
+        'verified_by' => $status === 'menunggu' ? null : $verifier,
+        'verified_at' => $status === 'menunggu' ? null : now(),
+    ], $withFile);
+
+    if ($withFile) {
+        Storage::disk('private')->put($document->file_path, "%PDF-1.4 isi {$code} pendaftar {$applicant->id}");
+    }
+
+    return $document;
+}
+
+/**
+ * Berkas pendaftar untuk syarat berjenis dokumen `$code` (syarat harus sudah ada untuk jenjang pendaftar).
+ */
+function daftarUlangValidDocument(Applicant $applicant, string $code, string $status = 'valid', bool $withFile = true): ApplicantDocument
+{
+    $requirement = AdmissionRequirement::query()->forUnit($applicant->unit_id)
+        ->whereHas('documentType', fn ($query) => $query->where('code', $code))->firstOrFail();
+
+    return daftarUlangDocument($applicant, $requirement, $status, $withFile);
+}
+
+/**
+ * Syarat berkas semua jenjang untuk jenis dokumen baru `$code` dengan pemilik `$owner` (`santri`/`wali`/`staff`).
+ */
+function daftarUlangRequirement(string $code, string $owner, bool $required = false): AdmissionRequirement
+{
+    $type = DocumentType::factory()->create(['code' => $code, 'name' => "Jenis {$code}", 'owner' => $owner]);
+
+    return AdmissionRequirement::factory()->create(['unit_id' => null, 'document_type_id' => $type->id, 'name' => "Syarat {$code}", 'is_required' => $required, 'sort_order' => 9]);
+}
+
+/**
+ * Pendaftar `diterima` (jalur REGULER) dengan tagihan formulir lunas, syarat wajib berkas `valid` ber-file, dan
+ * (bila `$invoices`) tagihan penerimaan PSB_TERIMA 8.000.000 yang dibayar `$paid`. Nama "Ahmad Fauzan", NISN
+ * `0123456789` (pendaftar berikutnya mendapat NISN acak), wali "Budi Santoso" `081234567890`. `$invoices` false:
+ * status `diterima` langsung di database tanpa tagihan penerimaan. Waktu berakhir di 2026-10-15 10:00.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function daftarUlangApplicant(object $f, array $attributes = [], int $paid = 4000000, string $unit = 'SLTP', bool $invoices = true): Applicant
+{
+    $applicant = seleksiApplicant(Applicant::STATUS_SUBMITTED, 'REGULER', $unit, false);
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+
+    pendaftaranPayRegistration($applicant);
+
+    $nisn = Applicant::withoutGlobalScopes()->where('nisn', '0123456789')->exists() ? fake()->unique()->numerify('99########') : '0123456789';
+    Applicant::withoutGlobalScopes()->whereKey($applicant->id)->update([
+        'name' => 'Ahmad Fauzan', 'nisn' => $nisn, 'gender' => 'L', 'birth_place' => 'Bandung', 'birth_date' => '2014-05-12',
+        'guardian_name' => 'Budi Santoso', 'guardian_phone' => '081234567890',
+        ...Arr::except($attributes, ['status']),
+    ]);
+
+    $applicant = Applicant::withoutGlobalScopes()->findOrFail($applicant->id);
+
+    foreach ($applicant->requirements()->where('is_required', true)->get() as $requirement) {
+        daftarUlangDocument($applicant, $requirement);
+    }
+
+    Applicant::withoutGlobalScopes()->whereKey($applicant->id)->update(['status' => Applicant::STATUS_VERIFIED]);
+
+    if ($invoices) {
+        seleksiRun('AcceptApplicant', Applicant::withoutGlobalScopes()->findOrFail($applicant->id), $f->user);
+        test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+
+        $acceptance = seleksiInvoices($applicant, group: 'PSB_TERIMA')->first();
+
+        if ($acceptance !== null && $paid > 0) {
+            bayarRecord($acceptance, $paid);
+        }
+    } else {
+        Applicant::withoutGlobalScopes()->whereKey($applicant->id)->update(['status' => Applicant::STATUS_ACCEPTED]);
+    }
+
+    return Applicant::withoutGlobalScopes()->findOrFail($applicant->id);
+}
+
+/**
+ * Jalankan `ReRegisterApplicant` sebagai `$by` (bawaan: admin-psb fixture, tanpa cakupan).
+ *
+ * @param  array<string, mixed>  $data
+ * @return array{student: Student, guardian: Guardian, guardian_reused: bool, invoices: int, fee_overrides: int, documents_copied: int, documents_skipped: list<array{applicant_document_id: int, reason: string}>}
+ */
+function daftarUlangRun(Applicant $applicant, array $data = [], ?User $by = null): array
+{
+    $by ??= User::query()->whereHas('roles', fn ($query) => $query->where('name', 'admin-psb'))->oldest('id')->first() ?? psbUser('admin-psb');
+    test()->actingAs($by);
+
+    return app(ReRegisterApplicant::class)->handle(Applicant::withoutGlobalScopes()->findOrFail($applicant->id), $by, $data);
+}
+
+/**
+ * Pola regex untuk pesan `pondok.<group>.errors.<reason>`; placeholder `:nama` bebas isi.
+ */
+function daftarUlangMessagePattern(string $reason, string $group = 'psb'): string
+{
+    $parts = preg_split('/:[A-Za-z_]+/', __("pondok.{$group}.errors.{$reason}"));
+
+    return '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.<group>.errors.<reason>` (pada `$field` bila diisi).
+ */
+function daftarUlangAssertRejected(Closure $callback, string $reason, ?string $field = null, string $group = 'psb'): void
+{
+    expect(__("pondok.{$group}.errors.{$reason}"))->not->toBe("pondok.{$group}.errors.{$reason}");
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        expect(collect($errors)->flatten()->contains(fn (string $message): bool => preg_match(daftarUlangMessagePattern($reason, $group), $message) === 1))
+            ->toBeTrue("Pesan error tidak sesuai pondok.{$group}.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Potret keadaan global untuk membuktikan "tanpa perubahan apa pun": jumlah santri (termasuk terhapus), wali, pivot,
+ * dokumen, angkatan, activity, daftar file disk `private`, dan pemilik tagihan/keringanan semua pendaftar.
+ *
+ * @return array<string, mixed>
+ */
+function daftarUlangSnapshot(): array
+{
+    return [
+        'students' => Student::withoutGlobalScopes()->count(),
+        'guardians' => Guardian::query()->count(),
+        'pivot' => DB::table('student_guardian')->count(),
+        'documents' => Document::withoutUnitScope()->count(),
+        'cohorts' => Cohort::query()->count(),
+        'activities' => Activity::query()->count(),
+        'files' => collect(Storage::disk('private')->allFiles())->sort()->values()->all(),
+        'invoices' => Invoice::withoutUnitScope()->orderBy('id')->get(['id', 'student_id', 'applicant_id', 'total', 'paid_total', 'status'])->toArray(),
+        'overrides' => FeeOverride::query()->orderBy('id')->get(['id', 'student_id', 'applicant_id', 'mode', 'value', 'valid_from', 'valid_until'])->toArray(),
+    ];
+}
+
+/**
+ * Isi tagihan pendaftar yang tidak boleh berubah saat dipindahkan: tagihan, item, pembayaran, alokasi (tanpa `student_id`/`updated_at`).
+ *
+ * @return array<string, mixed>
+ */
+function daftarUlangBilling(Applicant $applicant): array
+{
+    $invoices = Invoice::withoutUnitScope()->where('applicant_id', $applicant->id)->orderBy('id')->get();
+
+    return [
+        'invoices' => $invoices->map(fn (Invoice $invoice): array => $invoice->only(['id', 'invoice_no', 'applicant_id', 'academic_year_id', 'billing_group', 'total', 'paid_total', 'status']))->all(),
+        'items' => InvoiceItem::query()->whereIn('invoice_id', $invoices->modelKeys())->orderBy('id')->get(['id', 'invoice_id', 'fee_type_id', 'base_amount', 'discount_amount', 'amount', 'paid_amount', 'fee_override_id'])->toArray(),
+        'payments' => Payment::withoutGlobalScopes()->whereIn('invoice_id', $invoices->modelKeys())->orderBy('id')->get(['id', 'invoice_id', 'amount', 'status'])->toArray(),
+        'allocations' => DB::table('payment_allocations')->orderBy('id')->get()->map(fn (object $row): array => (array) $row)->all(),
+    ];
+}
+
+/**
+ * Activity log `$log` (bawaan `psb`) dengan event `$event`, urut id.
+ *
+ * @return Collection<int, Activity>
+ */
+function daftarUlangActivities(string $log, string $event): Collection
+{
+    return Activity::query()->where('log_name', $log)->where('event', $event)->orderBy('id')->get();
+}
+
+/**
+ * Ganti `$class` di container dengan `$fake` dan kembalikan. Dipakai bersama subkelas anonim yang meneruskan ke instance asli.
+ *
+ * @template T of object
+ *
+ * @param  class-string<T>  $class
+ * @param  T  $fake
+ * @return T
+ */
+function daftarUlangBind(string $class, object $fake): object
+{
+    app()->instance($class, $fake);
+
+    return $fake;
 }

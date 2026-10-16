@@ -29,7 +29,7 @@ class DeleteApplicant
             $this->fail('applicant_has_payments');
         }
 
-        if ($applicant->student()->exists()) {
+        if ($applicant->isConverted()) {
             $this->fail('applicant_converted');
         }
 

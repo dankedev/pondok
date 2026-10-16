@@ -86,6 +86,10 @@ class SaveFeeOverride
         ];
 
         return DB::transaction(function () use ($attributes, $studentId, $applicantId, $validFrom, $validUntil, $approver, $override): FeeOverride {
+            if ($override === null && $applicantId !== null) {
+                $this->ensureApplicantNotConverted($applicantId);
+            }
+
             $overlapping = FeeOverride::query()
                 ->when($override, fn ($query, FeeOverride $override) => $query->whereKeyNot($override->getKey()))
                 ->when(
@@ -144,6 +148,23 @@ class SaveFeeOverride
         }
 
         return [$studentId, $applicantId];
+    }
+
+    /**
+     * Mengunci baris pendaftar (kunci yang sama dengan daftar ulang F012) lalu
+     * menolak pendaftar yang sudah menjadi santri: keringanan selalu dibuat
+     * sebelum konversi (lalu ikut dipindahkan) atau ditolak sesudahnya.
+     */
+    private function ensureApplicantNotConverted(int $applicantId): void
+    {
+        $applicant = Applicant::withoutGlobalScopes()->withTrashed()->lockForUpdate()->find($applicantId);
+        $student = $applicant?->convertedStudent();
+
+        if ($student !== null) {
+            throw ValidationException::withMessages([
+                'applicant_id' => __('pondok.keuangan.errors.applicant_converted', ['nis' => $student->nis]),
+            ]);
+        }
     }
 
     /**

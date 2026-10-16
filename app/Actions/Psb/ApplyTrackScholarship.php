@@ -46,6 +46,7 @@ class ApplyTrackScholarship
             $locked = Applicant::withoutGlobalScopes()->withTrashed()->lockForUpdate()->find($applicant->id);
 
             static::ensureAccepted($locked);
+            static::ensureNotConverted($locked);
 
             $result = ['created' => [], 'skipped' => []];
             $track = AdmissionTrack::query()->with('scholarship')->find($locked->admission_track_id);
@@ -102,6 +103,32 @@ class ApplyTrackScholarship
 
             return $result;
         });
+    }
+
+    /**
+     * Tagihan atau keringanan baru dengan `applicant_id` saja tidak akan pernah
+     * pindah ke santri, jadi pendaftar yang sudah daftar ulang ditolak (F012).
+     *
+     * @throws ValidationException
+     */
+    public static function ensureNotConverted(Applicant $locked): void
+    {
+        if ($locked->isConverted()) {
+            throw ValidationException::withMessages([
+                'applicant' => __('pondok.psb.errors.applicant_converted'),
+            ]);
+        }
+    }
+
+    /**
+     * Diterima dan belum menjadi santri.
+     *
+     * @throws ValidationException
+     */
+    public static function ensureBillable(?Applicant $locked): void
+    {
+        static::ensureAccepted($locked);
+        static::ensureNotConverted($locked);
     }
 
     /**

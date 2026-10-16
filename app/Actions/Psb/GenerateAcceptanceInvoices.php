@@ -25,7 +25,7 @@ use RuntimeException;
  * Idempotent: kelompok yang sudah punya tagihan aktif tidak diubah. Setiap
  * percobaan kelompok membaca ulang status pada baris terkunci; pendaftar yang
  * tidak lagi diterima (atau terhapus) menghentikan penagihan kelompok itu dan
- * sisanya. `due_on` = awal tahun ajaran gelombang bila masih di depan, selain
+ * sisanya; pendaftar yang sudah daftar ulang ditolak `applicant_converted`. `due_on` = awal tahun ajaran gelombang bila masih di depan, selain
  * itu hari ini. `applies_to` diabaikan.
  */
 class GenerateAcceptanceInvoices
@@ -52,7 +52,7 @@ class GenerateAcceptanceInvoices
      */
     public function handle(Applicant $applicant, User $by): array
     {
-        DB::transaction(fn () => ApplyTrackScholarship::ensureAccepted(
+        DB::transaction(fn () => ApplyTrackScholarship::ensureBillable(
             Applicant::withoutGlobalScopes()->withTrashed()->lockForUpdate()->find($applicant->id),
         ));
 
@@ -83,7 +83,7 @@ class GenerateAcceptanceInvoices
                 'period' => $period,
                 'due_on' => $startsOn->gt($today) ? $startsOn : $today,
                 'generated_by' => $by->id,
-            ], ApplyTrackScholarship::ensureAccepted(...), 'Tagihan penerimaan gagal: nomor tagihan terus bentrok');
+            ], ApplyTrackScholarship::ensureBillable(...), 'Tagihan penerimaan gagal: nomor tagihan terus bentrok');
 
             $result[$created ? 'created_invoices' : 'existing_invoices']++;
         }

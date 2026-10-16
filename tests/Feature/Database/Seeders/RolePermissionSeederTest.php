@@ -87,7 +87,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'update:admission-requirement', 'delete:admission-requirement', 'delete-any:admission-requirement',
         'view-any:applicant', 'view:applicant', 'delete:applicant',
         'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant',
-        'decide:applicant',
+        'decide:applicant', 're-register:applicant',
     ]],
     'kesantrian' => ['kesantrian', [
         'view-dashboard', 'view-student-metrics',
@@ -255,9 +255,9 @@ it('AC-7: backs the document abilities with the document policy', function () {
     }
 });
 
-it('AC-30: creates the eleven applicant permissions', function () {
+it('AC-30: creates the twelve applicant permissions', function () {
     $expected = ['view-any:applicant', 'view:applicant', 'create:applicant', 'update:applicant', 'delete:applicant', 'delete-any:applicant',
-        'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant', 'decide:applicant', 'reopen:applicant'];
+        'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant', 'decide:applicant', 'reopen:applicant', 're-register:applicant'];
 
     expect(Permission::query()->where('name', 'like', '%:applicant')->pluck('name')->sort()->values()->all())
         ->toBe(collect($expected)->sort()->values()->all());
@@ -436,4 +436,30 @@ it('AC-7: gives super-admin every achievement permission', function () {
 
     expect(Role::findByName('super-admin')->permissions->pluck('name'))->toContain('delete-any:achievement', 'verify:achievement', 'publish:achievement')
         ->and($user->can('delete-any:achievement'))->toBeTrue();
+});
+
+it('AC-31: creates the re-register permission', function () {
+    expect(Permission::query()->pluck('name')->all())->toContain('re-register:applicant');
+});
+
+it('AC-31: gives re-register to admin-psb and super-admin only', function () {
+    $admin = User::factory()->create()->assignRole('admin-psb');
+    $super = User::factory()->create()->assignRole('super-admin');
+
+    expect($admin->can('re-register:applicant'))->toBeTrue()
+        ->and($super->can('re-register:applicant'))->toBeTrue()
+        ->and(Role::findByName('admin-psb')->permissions->pluck('name')->contains('re-register:applicant'))->toBeTrue();
+});
+
+it('AC-31: gives re-register to no other role', function (string $role) {
+    expect(Role::findByName($role)->permissions->pluck('name')->contains('re-register:applicant'))->toBeFalse();
+})->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-31: lets the applicant policy check the re-register permission', function () {
+    $applicant = Applicant::factory()->create();
+    $allowed = User::factory()->create()->givePermissionTo('re-register:applicant');
+    $denied = User::factory()->create()->givePermissionTo('decide:applicant');
+
+    expect((new ApplicantPolicy)->reRegister($allowed, $applicant))->toBeTrue()
+        ->and((new ApplicantPolicy)->reRegister($denied, $applicant))->toBeFalse();
 });

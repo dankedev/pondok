@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
- * Dokumen santri, wali, atau staff (polymorphic lewat alias morph).
+ * Dokumen santri, wali, staff, atau prestasi (polymorphic lewat alias morph).
  *
  * Tidak pernah diubah atau dihapus dari panel: versi baru menambah baris dan
  * menandai baris lama lewat `replaced_by_id`, koreksi verifikasi lewat status
@@ -24,7 +24,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  *
  * Cakupan jenjang: dokumen santri lewat jenjang santri (termasuk yang
  * diarsipkan), dokumen wali lewat santri yang terhubung, dokumen staff selalu
- * terlihat, tipe lain tidak terlihat oleh user bercakupan.
+ * terlihat, dokumen prestasi lewat santri peserta, tipe lain tidak terlihat
+ * oleh user bercakupan.
  */
 #[Fillable(['document_type_id', 'documentable_type', 'documentable_id', 'number', 'issued_on', 'expires_on', 'file_path', 'original_name', 'mime_type', 'size_kb', 'status', 'verified_by', 'verified_at', 'uploaded_by', 'replaced_by_id', 'source_applicant_document_id'])]
 class Document extends Model
@@ -72,11 +73,12 @@ class Document extends Model
 
     public const NUMBER_MAX_LENGTH = 50;
 
-    /** Alias morph pemilik dokumen. F015 menambah `achievement`. */
+    /** Alias morph pemilik dokumen. */
     public const DOCUMENTABLE_TYPES = [
         'student' => Student::class,
         'guardian' => Guardian::class,
         'staff' => Staff::class,
+        'achievement' => Achievement::class,
     ];
 
     /** `document_types.owner` ke alias morph. */
@@ -92,6 +94,7 @@ class Document extends Model
         'student' => null,
         'guardian' => 'update:guardian',
         'staff' => 'update:staff',
+        'achievement' => 'view-any:achievement',
     ];
 
     /** @var array<string, mixed> */
@@ -128,7 +131,13 @@ class Document extends Model
                         ->select('guardian_id')
                         ->from('student_guardian')
                         ->whereIn('student_id', $students)))
-                ->orWhere($this->qualifyColumn('documentable_type'), 'staff');
+                ->orWhere($this->qualifyColumn('documentable_type'), 'staff')
+                ->orWhere(fn (Builder $query) => $query
+                    ->where($this->qualifyColumn('documentable_type'), 'achievement')
+                    ->whereIn($this->qualifyColumn('documentable_id'), fn ($sub) => $sub
+                        ->select('achievement_id')
+                        ->from('achievement_student')
+                        ->whereIn('student_id', $students)));
         });
     }
 

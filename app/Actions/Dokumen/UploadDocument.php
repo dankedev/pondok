@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Mengunggah dokumen baru untuk santri, wali, atau staff.
+ * Mengunggah dokumen baru untuk santri, wali, staff, atau prestasi.
  *
  * Selalu membuat baris baru berstatus `menunggu` (beberapa dokumen dengan
  * jenis sama boleh berdampingan); mengganti dokumen lewat `ReplaceDocument`.

@@ -95,8 +95,9 @@ it('AC-29: limits owner types per role', function () {
 
     expect(dokumenCan($admin, 'verify', $guardianDocument))->toBeTrue()
         ->and(dokumenCan($kesantrian, 'verify', $guardianDocument))->toBeFalse()
-        ->and(Document::visibleOwnerTypesFor($kesantrian))->toEqualCanonicalizing(['student'])
-        ->and(Document::visibleOwnerTypesFor($admin))->toEqualCanonicalizing(['student', 'guardian', 'staff'])
+        ->and(Document::visibleOwnerTypesFor($kesantrian))->toEqualCanonicalizing(['student', 'achievement'])
+        ->and(Document::visibleOwnerTypesFor($kesantrian))->not->toContain('guardian', 'staff')
+        ->and(Document::visibleOwnerTypesFor($admin))->toEqualCanonicalizing(['student', 'guardian', 'staff', 'achievement'])
         ->and(Document::visibleOwnerTypesFor(keuanganUser('super-admin')))->toContain('student', 'guardian', 'staff');
 });
 
@@ -113,12 +114,13 @@ it('AC-29: shows guardian and staff documents to users who manage guardians and 
 });
 
 it('AC-29: keeps documents of unknown owner types for super-admin only', function () {
-    $document = (new Document)->forceFill(['documentable_type' => 'achievement', 'documentable_id' => 1, 'document_type_id' => $this->f->types['SERTIFIKAT']->id]);
+    // F015: `achievement` kini jenis pemilik yang dikenal; contoh jenis tak dikenal diganti alias lain.
+    $document = (new Document)->forceFill(['documentable_type' => 'unknown-owner', 'documentable_id' => 1, 'document_type_id' => $this->f->types['SERTIFIKAT']->id]);
     $admin = keuanganUser('admin-sekolah');
 
     expect(dokumenCan($admin, 'view', $document))->toBeFalse()
         ->and(dokumenCan(keuanganUser('super-admin'), 'view', $document))->toBeTrue()
-        ->and(Document::visibleOwnerTypesFor($admin))->not->toContain('achievement');
+        ->and(Document::visibleOwnerTypesFor($admin))->not->toContain('unknown-owner');
 });
 
 it('AC-29: lets upload types follow the confidential permission', function () {

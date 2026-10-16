@@ -2,6 +2,7 @@
 
 namespace App\Actions\Dokumen\Concerns;
 
+use App\Models\Achievement;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Guardian;
@@ -171,6 +172,10 @@ trait StoresDocuments
     {
         if ($owner instanceof Student) {
             return Student::query()->withTrashed()->whereKey($owner->getKey())->exists();
+        }
+
+        if ($owner instanceof Achievement) {
+            return Achievement::query()->whereKey($owner->getKey())->exists();
         }
 
         if ($owner instanceof Guardian) {

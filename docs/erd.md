@@ -414,20 +414,28 @@ erDiagram
   }
   issued_letters {
     bigint id PK
-    string letter_no UK "045/MAK/SKA/X/2026"
+    string letter_no UK "045/MAK/SKA/X/2026, maks. 50"
     enum type "keterangan_aktif | pindah | rekomendasi | syahadah | kartu_santri"
-    bigint student_id FK
-    bigint signed_by_staff_id FK
-    date issued_on
-    string purpose "keperluan, nullable"
-    string verification_code UK "untuk QR cek keaslian"
-    string file_path "PDF yang dicetak"
-    bigint issued_by FK "users"
+    smallint sequence_year "tahun kalender issued_on"
+    int sequence "UK (type, sequence_year, sequence)"
+    bigint student_id FK "restrict"
+    bigint signed_by_staff_id FK "staff, restrict"
+    date issued_on "hari ini Asia/Jakarta"
+    string purpose "keperluan, nullable; NULL untuk kartu_santri"
+    string verification_code UK "12 karakter, untuk QR cek keaslian"
+    json snapshot "isi surat dibekukan saat terbit (data pribadi)"
+    string file_path "nullable, dicadangkan untuk arsip PDF"
+    enum status "terbit | batal"
+    timestamp cancelled_at "nullable"
+    bigint cancelled_by FK "users, nullable, restrict"
+    string cancel_reason "nullable, tidak tampil di halaman publik"
+    bigint issued_by FK "users, restrict"
   }
   document_types ||--o{ documents : ""
   documents |o--o| documents : "digantikan"
   students ||--o{ issued_letters : ""
   staff ||--o{ issued_letters : "penandatangan"
+  users ||--o{ issued_letters : "penerbit, pembatal"
   
 ```
 
@@ -438,7 +446,10 @@ erDiagram
 - **Alias morph:** `documentable_type` menyimpan alias (`student`, `guardian`, `staff`; `achievement` menyusul di F015) lewat `Relation::morphMap` yang tidak dipaksakan. `number` bertipe `text` karena ciphertext `encrypted` lebih panjang dari 255 karakter. `replaced_by_id` unik: satu versi baru hanya menggantikan satu dokumen. FK `source_applicant_document_id` ke `applicant_documents` ditunda sampai penyalinan berkas PSB (F012).
 - **Jenis pemilik per peran:** selain cakupan jenjang (dokumen santri lewat jenjang santri, dokumen wali lewat santri terhubung, dokumen staff tidak berjenjang), dokumen wali hanya terlihat oleh pemegang `update:guardian` dan dokumen staff oleh pemegang `update:staff`; tipe lain hanya super-admin.
 - **Data pribadi:** nomor KK dan NIK disimpan dengan cast `encrypted` Laravel. File tersimpan di disk private dan dokumen `is_confidential` hanya bisa dibuka peran yang punya permission khusus. Ini sejalan dengan kewajiban perlindungan data di UU PDP.
-- **Surat keluar** (keterangan aktif, rekomendasi, pindah, syahadah) diberi nomor otomatis dan kode verifikasi. Pihak luar bisa memindai QR untuk mengecek keasliannya.
+- **Surat keluar** (keterangan aktif, rekomendasi, pindah, syahadah, kartu santri) diberi nomor otomatis dan kode verifikasi. Pihak luar bisa memindai QR untuk mengecek keasliannya di `/verifikasi-surat/{kode}` (data minimal, nama termasker).
+  - Nomor urut per (`type`, `sequence_year`), termasuk surat `batal`, sehingga nomor tidak dipakai ulang. Format lewat settings `letters.number_format` (bawaan `{seq}/{school_code}/{type_code}/{month_roman}/{year}`), `letters.school_code` (NULL = singkatan `school.name`), `letters.type_codes` (bawaan SKA/SKP/SRK/SYH/KTS), `letters.sequence_padding` (bawaan 3). Kode jenis terkunci bila jenis itu sudah punya surat di tahun berjalan.
+  - Surat tidak diubah atau dihapus: koreksi lewat pembatalan (`status` `batal`) lalu terbit ulang. Semua FK `restrictOnDelete`. Index (`student_id`, `type`) dan (`status`, `issued_on`).
+  - `snapshot` (santri, penandatangan, profil lembaga) membuat cetak ulang identik walau data sumber berubah; tidak masuk activity log.
 
 ## Prestasi Santri
 

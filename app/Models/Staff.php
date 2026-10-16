@@ -30,6 +30,14 @@ class Staff extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Surat keluar yang ditandatangani staff ini. Selama ada, staff tidak bisa dihapus.
+     */
+    public function signedLetters(): HasMany
+    {
+        return $this->hasMany(IssuedLetter::class, 'signed_by_staff_id');
+    }
+
     public function supervisions(): HasMany
     {
         return $this->hasMany(DormitorySupervisor::class);

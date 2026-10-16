@@ -90,6 +90,14 @@ class Student extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    /**
+     * Surat keluar untuk santri ini (F014).
+     */
+    public function issuedLetters(): HasMany
+    {
+        return $this->hasMany(IssuedLetter::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);

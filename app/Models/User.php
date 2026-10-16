@@ -86,6 +86,22 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Surat keluar yang diterbitkan user ini. Selama ada, user tidak bisa dihapus.
+     */
+    public function issuedLetters(): HasMany
+    {
+        return $this->hasMany(IssuedLetter::class, 'issued_by');
+    }
+
+    /**
+     * Surat keluar yang dibatalkan user ini. Selama ada, user tidak bisa dihapus.
+     */
+    public function cancelledLetters(): HasMany
+    {
+        return $this->hasMany(IssuedLetter::class, 'cancelled_by');
+    }
+
+    /**
      * ID jenjang yang boleh dilihat user. Array kosong berarti tanpa batasan.
      *
      * @return list<int>

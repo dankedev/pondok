@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Dokumen\IssueLetter;
+use App\Actions\Dokumen\LetterNumbering;
 use App\Actions\Keuangan\CancelPayment;
 use App\Actions\Keuangan\FinanceReportFilter;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
@@ -17,16 +19,19 @@ use App\Models\Album;
 use App\Models\Applicant;
 use App\Models\ApplicantDocument;
 use App\Models\Category;
+use App\Models\Classroom;
 use App\Models\Cohort;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Dormitory;
+use App\Models\Enrollment;
 use App\Models\FeeOverride;
 use App\Models\FeeRate;
 use App\Models\FeeType;
 use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\IssuedLetter;
 use App\Models\Payment;
 use App\Models\Photo;
 use App\Models\Post;
@@ -52,9 +57,11 @@ use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -2547,4 +2554,322 @@ function kontenPageText(User $user, string $url): string
 function kontenArabicBody(int $letters): string
 {
     return '<p>'.str_repeat('ب', $letters).'</p>';
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper surat keluar (F014)
+|--------------------------------------------------------------------------
+|
+| Berawalan `surat`. Waktu uji bawaan: 2026-10-15 10:00 Asia/Jakarta. Cakupan jenjang `IssueLetter`
+| mengikuti user LOGIN (bukan `$issuer`), sehingga `suratIssue` selalu `actingAs` penerbit lalu
+| memulihkan status login sebelumnya. Baris mentah (constraint DB) lewat `suratRow` + `DB::table`.
+| Fake `LetterNumbering`/`IssueLetter` berupa subkelas anonim (pola `pendaftaranFake*`) yang
+| menyalin properti instance asli dan didaftarkan lewat `app()->instance()`.
+|
+*/
+
+/**
+ * Fixture: seeder (jenjang, peran, settings), modul `dokumen` aktif, `school.name` "Ma'had Al-Khair", panel admin,
+ * waktu dibekukan, disk palsu, tahun ajaran aktif 2026/2027, santri `s1` (SD, aktif, rombel 4A, NIS 2026000123,
+ * "Muhammad Fauzan Akbar") dan `s2` (SLTP, aktif, rombel 7A), staff `t1` (aktif, Kepala Sekolah, NIP 1987) dan `t2`
+ * (nonaktif), user admin-sekolah tanpa cakupan `admin` dan bercakupan SLTP `scoped`.
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit, year: AcademicYear, classSd: Classroom, classSltp: Classroom, cohortSd: Cohort, cohortSltp: Cohort, s1: Student, s2: Student, t1: Staff, t2: Staff, admin: User, scoped: User}
+ */
+function suratFixture(): object
+{
+    test()->seed([UnitSeeder::class, RolePermissionSeeder::class, SettingSeeder::class]);
+    Setting::set('modules.dokumen.enabled', true);
+    Setting::set('school.name', "Ma'had Al-Khair");
+    Filament::setCurrentPanel('admin');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('public');
+    Storage::fake('private');
+
+    $sd = Unit::query()->where('code', 'SD')->firstOrFail();
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+    $year = AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-15', 'ends_on' => '2027-06-30']);
+    $classSd = Classroom::factory()->create(['academic_year_id' => $year->id, 'unit_id' => $sd->id, 'grade' => 4, 'name' => '4A']);
+    $classSltp = Classroom::factory()->create(['academic_year_id' => $year->id, 'unit_id' => $sltp->id, 'grade' => 7, 'name' => '7A']);
+    $cohortSd = Cohort::factory()->create(['unit_id' => $sd->id, 'entry_year' => 2026]);
+    $cohortSltp = Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2026]);
+    $s1 = Student::factory()->forCohort($cohortSd)->create([
+        'name' => 'Muhammad Fauzan Akbar', 'nis' => '2026000123', 'nisn' => '0098765432', 'gender' => 'L',
+        'birth_place' => 'Bandung', 'birth_date' => '2014-03-02',
+    ]);
+    $s2 = Student::factory()->forCohort($cohortSltp)->create([
+        'name' => 'Budi Santoso', 'nis' => '2026000456', 'nisn' => '0011223344', 'gender' => 'L',
+        'birth_place' => 'Garut', 'birth_date' => '2012-08-17',
+    ]);
+    Enrollment::factory()->create(['student_id' => $s1->id, 'classroom_id' => $classSd->id, 'academic_year_id' => $year->id]);
+    Enrollment::factory()->create(['student_id' => $s2->id, 'classroom_id' => $classSltp->id, 'academic_year_id' => $year->id]);
+
+    return (object) [
+        'sd' => $sd,
+        'sltp' => $sltp,
+        'slta' => Unit::query()->where('code', 'SLTA')->firstOrFail(),
+        'year' => $year,
+        'classSd' => $classSd,
+        'classSltp' => $classSltp,
+        'cohortSd' => $cohortSd,
+        'cohortSltp' => $cohortSltp,
+        's1' => $s1,
+        's2' => $s2,
+        't1' => Staff::factory()->create(['name' => 'Ust. Hasan', 'position' => 'Kepala Sekolah', 'nip' => '1987', 'is_active' => true]),
+        't2' => Staff::factory()->create(['name' => 'Ust. Nonaktif', 'position' => 'Guru', 'nip' => '2000', 'is_active' => false]),
+        'admin' => keuanganUser('admin-sekolah'),
+        'scoped' => keuanganUser('admin-sekolah', ['SLTP']),
+    ];
+}
+
+/**
+ * @param  list<string>  $unitCodes
+ */
+function suratUser(string $role, array $unitCodes = []): User
+{
+    return keuanganUser($role, $unitCodes);
+}
+
+/**
+ * Santri tambahan (aktif, rombel aktif bila `$enrolled`), jenjang SD atau SLTP.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function suratStudent(object $f, string $unit = 'SD', array $attributes = [], bool $enrolled = true): Student
+{
+    $cohort = $unit === 'SD' ? $f->cohortSd : $f->cohortSltp;
+    $student = Student::factory()->forCohort($cohort)->create($attributes);
+
+    if ($enrolled) {
+        Enrollment::factory()->create([
+            'student_id' => $student->id,
+            'classroom_id' => $unit === 'SD' ? $f->classSd->id : $f->classSltp->id,
+            'academic_year_id' => $f->year->id,
+        ]);
+    }
+
+    return $student;
+}
+
+/**
+ * Staff tambahan.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function suratSigner(array $attributes = []): Staff
+{
+    return Staff::factory()->create(['is_active' => true, ...$attributes]);
+}
+
+/**
+ * Terbitkan surat lewat Action sebagai `$by` (bawaan admin). Bawaan: `keterangan_aktif`, santri `s1`, penandatangan
+ * `t1`, keperluan "Persyaratan beasiswa". Status login sebelumnya dipulihkan.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function suratIssue(object $f, array $overrides = [], ?Student $student = null, ?User $by = null): IssuedLetter
+{
+    $previous = Auth::user();
+    $by ??= $f->admin;
+    test()->actingAs($by);
+
+    try {
+        return app(IssueLetter::class)->handle($student ?? $f->s1, [
+            'type' => 'keterangan_aktif',
+            'signed_by_staff_id' => $f->t1->id,
+            'purpose' => 'Persyaratan beasiswa',
+            ...$overrides,
+        ], $by);
+    } finally {
+        if ($previous === null) {
+            Auth::forgetGuards();
+        } else {
+            test()->actingAs($previous);
+        }
+    }
+}
+
+/**
+ * Kode verifikasi acak 12 karakter dari alfabet resmi.
+ */
+function suratCode(): string
+{
+    return substr(str_shuffle(str_repeat('23456789ABCDEFGHJKMNPQRSTUVWXYZ', 2)), 0, 12);
+}
+
+/**
+ * Baris mentah `issued_letters` (tanpa kolom `status`, agar bawaan DB teruji). Nomor dan urutan unik per pemanggilan.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function suratRow(object $f, array $overrides = []): array
+{
+    static $counter = 0;
+    $counter++;
+
+    return [
+        'letter_no' => sprintf('%03d/RAW/SKA/X/2026', 500 + $counter),
+        'type' => 'keterangan_aktif',
+        'sequence_year' => 2026,
+        'sequence' => 500 + $counter,
+        'student_id' => $f->s1->id,
+        'signed_by_staff_id' => $f->t1->id,
+        'issued_on' => '2026-10-15',
+        'purpose' => 'Uji',
+        'verification_code' => suratCode(),
+        'snapshot' => json_encode(['student' => ['name' => 'Uji'], 'signer' => ['name' => 'Uji'], 'school' => ['name' => 'Uji']]),
+        'issued_by' => $f->admin->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+        ...$overrides,
+    ];
+}
+
+/**
+ * Masukan UpdateLetterNumbering yang valid (bawaan); `type_codes` parsial digabung dengan kode bawaan.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function suratNumberingData(array $overrides = []): array
+{
+    $typeCodes = ['keterangan_aktif' => 'SKA', 'pindah' => 'SKP', 'rekomendasi' => 'SRK', 'syahadah' => 'SYH', 'kartu_santri' => 'KTS'];
+
+    return [
+        'number_format' => '{seq}/{school_code}/{type_code}/{month_roman}/{year}',
+        'school_code' => null,
+        'sequence_padding' => 3,
+        ...$overrides,
+        'type_codes' => [...$typeCodes, ...($overrides['type_codes'] ?? [])],
+    ];
+}
+
+/**
+ * Pastikan callback melempar ValidationException `pondok.dokumen.errors.<reason>` pada `$field`.
+ */
+function suratAssertRejected(Closure $callback, string $reason, string $field): void
+{
+    dokumenAssertRejected($callback, $reason, $field);
+}
+
+/**
+ * Pengecualian deadlock MySQL (1213 / SQLSTATE 40001) yang dibungkus QueryException.
+ */
+function suratDeadlock(): QueryException
+{
+    return new QueryException('sqlite', 'select max(sequence) from issued_letters', [], new PDOException('SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction'));
+}
+
+/**
+ * QueryException biasa (tabel tidak ada, SQLSTATE 42S02), bukan konflik konkurensi.
+ */
+function suratPlainQueryException(): QueryException
+{
+    return new QueryException('sqlite', 'select max(sequence) from issued_letters', [], new PDOException('SQLSTATE[42S02]: Base table or view not found: 1146 Table issued_letters doesn\'t exist'));
+}
+
+/**
+ * Ganti `LetterNumbering` di container: `nextSequence` memakai `$script` berurutan (int dikembalikan, Throwable dilempar),
+ * lalu `$always` (bila ada) atau implementasi asli. Properti `calls` mencatat jumlah panggilan.
+ *
+ * @param  list<int|Throwable>  $script
+ */
+function suratFakeNumbering(array $script = [], ?int $always = null): LetterNumbering
+{
+    $real = app(LetterNumbering::class);
+    $fake = new class($script, $always) extends LetterNumbering
+    {
+        public int $calls = 0;
+
+        /** @param list<int|Throwable> $script */
+        public function __construct(private array $script, private ?int $always) {}
+
+        public function nextSequence(string $type, int $year): int
+        {
+            $this->calls++;
+            $next = array_shift($this->script) ?? $this->always;
+
+            if ($next instanceof Throwable) {
+                throw $next;
+            }
+
+            return $next ?? parent::nextSequence($type, $year);
+        }
+    };
+
+    suratCopyProperties(LetterNumbering::class, $real, $fake);
+    app()->instance(LetterNumbering::class, $fake);
+
+    return $fake;
+}
+
+/**
+ * Ganti `IssueLetter` di container: `verificationCode()` mengembalikan `$codes` berurutan, lalu kode asli.
+ *
+ * @param  list<string>  $codes
+ */
+function suratFakeIssuer(array $codes): IssueLetter
+{
+    $real = app(IssueLetter::class);
+    $fake = new class($codes) extends IssueLetter
+    {
+        public int $calls = 0;
+
+        /** @param list<string> $codes */
+        public function __construct(private array $codes) {}
+
+        public function verificationCode(): string
+        {
+            $this->calls++;
+
+            return array_shift($this->codes) ?? parent::verificationCode();
+        }
+    };
+
+    suratCopyProperties(IssueLetter::class, $real, $fake);
+    app()->instance(IssueLetter::class, $fake);
+
+    return $fake;
+}
+
+/**
+ * Salin properti instance kelas induk dari objek asli ke subkelas anonim (konstruktor induk tidak dipanggil).
+ *
+ * @param  class-string  $class
+ */
+function suratCopyProperties(string $class, object $real, object $fake): void
+{
+    foreach ((new ReflectionClass($class))->getProperties() as $property) {
+        if (! $property->isStatic() && $property->isInitialized($real)) {
+            $property->setValue($fake, $property->getValue($real));
+        }
+    }
+}
+
+/**
+ * Teks polos HTML (tag, script, dan style dibuang).
+ */
+function suratText(string $html): string
+{
+    return bayarHtmlText($html);
+}
+
+/**
+ * Notifikasi Filament pada request Livewire terakhir, `status|judul isi` per baris.
+ */
+function suratNotifications(): string
+{
+    return asramaNotifications()->map(fn (array $n): string => ($n['status'] ?? '').'|'.($n['title'] ?? '').' '.($n['body'] ?? ''))->implode("\n");
+}
+
+/**
+ * Header privasi halaman verifikasi publik.
+ */
+function suratAssertPrivacyHeaders(TestResponse $response): void
+{
+    expect($response->headers->get('X-Robots-Tag'))->toContain('noindex')
+        ->and($response->headers->get('Referrer-Policy'))->toBe('no-referrer')
+        ->and($response->headers->get('Cache-Control'))->toContain('no-store');
 }

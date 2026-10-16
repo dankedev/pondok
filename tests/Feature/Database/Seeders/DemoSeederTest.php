@@ -216,7 +216,8 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         expect((string) Setting::get('school.address'))->toContain($part);
     }
     demoCheck(filled(Setting::get('school.phone')) && filled(Setting::get('school.email')), 'AC-5 telepon dan email');
-    $profil = (string) DB::table('pages')->where('slug', 'profil')->value('body');
+    // F037: konten profil dipecah ke halaman profil, pengurus, dan selayang-pandang.
+    $profil = DB::table('pages')->whereIn('slug', ['profil', 'pengurus', 'selayang-pandang'])->get(['title', 'body'])->map(fn (object $row): string => $row->title.' '.$row->body)->implode(' ');
     foreach (['Tentang Yayasan', 'Selayang Pandang', 'Pengurus Al-Khair', 'khusus putra'] as $part) {
         demoCheck(str_contains($profil, $part), "AC-5 profil memuat {$part}");
     }
@@ -641,6 +642,24 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     }
     $profileSnapshot = collect($profileKeys)->mapWithKeys(fn (string $key): array => [$key => Setting::get($key)])->all();
 
+    // AC-38 (F037): halaman dan menu contoh dari brief, lewat seed pertama yang sama.
+    $pages = DB::table('pages')->get()->keyBy('slug');
+    expect($pages->get('profil')->title)->toBe('Tentang Yayasan')
+        ->and($pages->get('pengurus')->title)->toBe('Pengurus Al-Khair')
+        ->and($pages->get('selayang-pandang')->title)->toBe('Selayang Pandang')
+        ->and($pages->keys()->all())->toContain('visi-misi', 'kontak')
+        ->and($pages->only(['profil', 'pengurus', 'selayang-pandang', 'visi-misi', 'kontak'])->pluck('status')->unique()->all())->toBe(['terbit']);
+    $demoNav = portalNavTexts($this->get('/')->assertOk()->getContent());
+    expect(array_slice($demoNav, 0, 5))->toBe(['Beranda', 'Tentang Yayasan', 'Pengurus Al-Khair', 'Selayang Pandang', 'Kontak'])
+        ->and(array_values(array_diff(array_slice($demoNav, 5), ['Masuk', 'Daftar'])))->toBe([])
+        ->and(in_array('Berita', $demoNav, true) || in_array('Galeri', $demoNav, true) || in_array('Video', $demoNav, true))->toBeFalse();
+    $visiId = (int) $pages->get('visi-misi')->id;
+    expect(collect(Setting::get('portal.footer_links'))->pluck('page_id')->all())->toContain($visiId);
+    $forbidden = ['maulid', "isra' mi'raj", "nuzulul qur'an", 'tahun baru hijriah', "nisfu sya'ban", 'haul', 'tahlilan', 'harlah', 'hadrah', 'shalawatan'];
+    $pagesText = mb_strtolower($pages->map(fn (object $row): string => $row->title.' '.$row->body)->implode(' '));
+    expect(array_values(array_filter($forbidden, fn (string $word): bool => str_contains($pagesText, $word))))->toBe([]);
+    $menuSnapshot = [Setting::get('portal.menu_items'), Setting::get('portal.footer_links'), DB::table('pages')->count()];
+
     // AC-7c dan AC-22: ubah password, snapshot, seed kedua saat admin-sekolah login.
     DB::table('users')->where('email', 'musyrif@demo.test')->update(['password' => Hash::make('sudah-diganti-1')]);
     $before = demoTableCounts();
@@ -660,6 +679,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     }
     expect(Storage::disk('public')->allFiles('school'))->toHaveCount(4);
     expect(Setting::get('school.logo_path'))->toBe($printLogo);
+    expect([Setting::get('portal.menu_items'), Setting::get('portal.footer_links'), DB::table('pages')->count()])->toBe($menuSnapshot, 'AC-38 menu dan halaman stabil pada seed ulang');
 
     // AC-6 (cakupan jenjang) setelah seluruh seeding.
     $this->actingAs(demoUser('admin-sekolah'));

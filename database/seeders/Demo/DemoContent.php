@@ -3,12 +3,14 @@
 namespace Database\Seeders\Demo;
 
 use App\Actions\Konten\AddAlbumPhotos;
+use App\Actions\Konten\CreateStaticPage;
 use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Konten\SaveAlbum;
 use App\Actions\Konten\SaveCategory;
 use App\Actions\Konten\SavePost;
 use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalHome;
+use App\Actions\Konten\UpdatePortalMenu;
 use App\Actions\Konten\UpdateSchoolContacts;
 use App\Actions\Konten\UpdateSchoolProfile;
 use App\Actions\Konten\UpdateStaticPage;
@@ -36,10 +38,15 @@ final class DemoContent
             app(UpdateSchoolProfile::class)->handle(DemoData::SCHOOL, $this->context->user('super-admin'));
         }
 
+        // Halaman sistem diisi bila masih kosong; halaman demo lain dibuat bila belum ada (F037).
         foreach (DemoData::pages() as $slug => $page) {
             $model = StaticPage::query()->where('slug', $slug)->first();
 
-            if ($model !== null && blank($model->body)) {
+            if ($model === null && ! in_array($slug, StaticPage::SYSTEM_SLUGS, true)) {
+                $this->ensureAllowedContent($page['title'].' '.$page['body']);
+                app(CreateStaticPage::class)->handle([...$page, 'slug' => $slug]);
+            } elseif ($model !== null && blank($model->body)) {
+                $this->ensureAllowedContent($page['title'].' '.$page['body']);
                 app(UpdateStaticPage::class)->handle($model, $page);
             }
         }
@@ -96,8 +103,39 @@ final class DemoContent
         if ($profile['footer']['quote_arabic'] === null && $profile['footer']['links'] === []) {
             $this->ensureAllowedContent(json_encode($demo['footer'], JSON_UNESCAPED_UNICODE));
 
-            app(UpdatePortalFooter::class)->handle($demo['footer'], $actor);
+            // Tautan Visi & misi kini diatur admin (F037): contoh tautan halaman di footer.
+            $vision = StaticPage::findBySlug('visi-misi');
+            $footer = $demo['footer'];
+
+            if ($vision !== null) {
+                $footer['footer_links'][] = ['label' => null, 'page_id' => $vision->id];
+            }
+
+            app(UpdatePortalFooter::class)->handle($footer, $actor);
         }
+
+        if (Setting::get('portal.menu_items') === null) {
+            $this->seedMenu();
+        }
+    }
+
+    /**
+     * Menu header demo dari brief (F037) lewat Action panel.
+     */
+    private function seedMenu(): void
+    {
+        $pageIds = StaticPage::query()->pluck('id', 'slug');
+        $items = [];
+
+        foreach (DemoData::MENU as [$entry, $visible]) {
+            if (! str_starts_with($entry, 'page:')) {
+                $items[] = ['type' => 'builtin', 'key' => $entry, 'visible' => $visible];
+            } elseif ($pageIds->has(substr($entry, 5))) {
+                $items[] = ['type' => 'page', 'page_id' => $pageIds->get(substr($entry, 5)), 'label' => null, 'visible' => $visible];
+            }
+        }
+
+        app(UpdatePortalMenu::class)->handle(['items' => $items, 'show_register' => true], $this->context->user('super-admin'));
     }
 
     /**

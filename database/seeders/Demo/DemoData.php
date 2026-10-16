@@ -2,6 +2,8 @@
 
 namespace Database\Seeders\Demo;
 
+use App\Models\StaticPage;
+
 /**
  * Data kurasi demo Ma'had Al-Khair Belitang (F034, revisi brosur PSB):
  * khusus putra, jenjang MTW/SMP (kode SLTP) dan TSN/SMA (kode SLTA).
@@ -532,9 +534,10 @@ final class DemoData
     ];
 
     /**
-     * Halaman statis. Kunci = slug bawaan `StaticPage::SLUGS`.
+     * Halaman statis demo (F037): kunci = slug. Halaman sistem (`profil`, `visi-misi`,
+     * `kontak`) diisi bila masih kosong; halaman lain dibuat bila belum ada. Semua terbit.
      *
-     * @return array<string, array{title: string, body: string}>
+     * @return array<string, array{title: string, body: string, status: string}>
      */
     public static function pages(): array
     {
@@ -544,10 +547,26 @@ final class DemoData
             self::BOARD,
         ));
 
-        return [
-            'profil' => ['title' => "Profil Ma'had", 'body' => '<h2>Tentang Yayasan</h2><p>'.self::FOUNDATION." menaungi Ma'had Al-Khair Belitang di Mojosari, Kecamatan Belitang, Kabupaten OKU Timur. Yayasan berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan berasrama.</p><h2>Selayang Pandang</h2><p>Ma'had Al-Khair Belitang berfokus pada tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum dan pembinaan adab. Jenjang yang dibuka adalah MTW/SMP dan TSN/SMA, khusus putra.</p><ul><li>Masjid, asrama, dan ruang belajar ber-AC</li><li>Makan 3 kali sehari dan laundry setiap hari</li><li>Pendampingan musyrif di setiap kamar</li><li>Perpustakaan dan fasilitas olahraga</li></ul><h2>Pengurus Al-Khair</h2><ul>{$board}</ul>"],
+        $pages = [
+            'profil' => ['title' => 'Tentang Yayasan', 'body' => '<p>'.self::FOUNDATION." menaungi Ma'had Al-Khair Belitang di Mojosari, Kecamatan Belitang, Kabupaten OKU Timur. Yayasan berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan berasrama.</p><p>Kenali lebih jauh lewat halaman Selayang Pandang dan Pengurus Al-Khair.</p>"],
+            'pengurus' => ['title' => 'Pengurus Al-Khair', 'body' => '<p>Pengurus '.self::FOUNDATION." dan pimpinan ma'had:</p><ul>{$board}</ul>"],
+            'selayang-pandang' => ['title' => 'Selayang Pandang', 'body' => "<p>Ma'had Al-Khair Belitang berfokus pada tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum dan pembinaan adab. Jenjang yang dibuka adalah MTW/SMP dan TSN/SMA, khusus putra.</p><ul><li>Masjid, asrama, dan ruang belajar ber-AC</li><li>Makan 3 kali sehari dan laundry setiap hari</li><li>Pendampingan musyrif di setiap kamar</li><li>Perpustakaan dan fasilitas olahraga</li></ul>"],
             'visi-misi' => ['title' => 'Visi dan Misi', 'body' => "<h2>Visi</h2><p>Menjadi ma'had yang melahirkan generasi beradab bersama Al-Qur'an, berilmu syar'i, dan siap melanjutkan studi.</p><h2>Misi</h2><ul><li>Menyelenggarakan pembinaan tahsin dan tahfidz Al-Qur'an yang tertib dan bertahap.</li><li>Membiasakan bahasa Arab aktif dalam kegiatan harian.</li><li>Mengajarkan ilmu syar'i berdasarkan Al-Qur'an dan Sunnah dengan pemahaman yang lurus.</li><li>Membina adab dan akhlak santri melalui kehidupan berasrama.</li><li>Memadukan pendidikan agama dan pendidikan umum secara seimbang.</li></ul>"],
             'kontak' => ['title' => 'Kontak', 'body' => '<p>'.self::SCHOOL['address'].'</p><ul><li>Telepon: '.self::SCHOOL['phone'].'</li><li>WhatsApp: '.self::SCHOOL['whatsapp'].'</li><li>Email: '.self::SCHOOL['email'].'</li></ul><h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>'],
         ];
+
+        return array_map(fn (array $page): array => [...$page, 'status' => StaticPage::STATUS_PUBLISHED], $pages);
     }
+
+    /**
+     * Menu header demo (brief): Beranda, Tentang Yayasan, Pengurus Al-Khair, Selayang
+     * Pandang, Info PSB (tampil setelah F038), Kontak. Berita, Galeri, dan Video tetap
+     * terjangkau dari beranda dan footer. Kunci `page:` = slug halaman.
+     *
+     * @var list<array{0: string, 1: bool}>
+     */
+    public const MENU = [
+        ['home', true], ['page:profil', true], ['page:pengurus', true], ['page:selayang-pandang', true],
+        ['psb_info', true], ['page:kontak', true], ['news', false], ['gallery', false], ['videos', false],
+    ];
 }

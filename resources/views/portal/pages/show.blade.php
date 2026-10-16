@@ -1,12 +1,6 @@
 @php
-    $isContact = $page->slug === 'kontak';
-    $phoneFormatter = app(\App\Actions\Konten\FormatPhoneForDisplay::class);
-    $hasContact = $isContact && (collect(['address', 'phone', 'email', 'map_url'])->contains(fn (string $key): bool => $school[$key] !== null) || $school['contacts'] !== []);
-    $related = match ($page->slug) {
-        'profil' => ['url' => route('portal.pages.show', 'visi-misi'), 'label' => __('pondok.portal.nav.vision')],
-        'visi-misi' => ['url' => route('portal.pages.show', 'profil'), 'label' => __('pondok.portal.nav.profile')],
-        default => null,
-    };
+    // Halaman kontak hanya sampai di sini bila profil punya data kontak (aturan Kontak F037).
+    $phoneFormatter = $isContact ? app(\App\Actions\Konten\FormatPhoneForDisplay::class) : null;
     $description = $bodyHtml ? app(\App\Actions\Konten\SummarizeHtml::class)->handle($bodyHtml->toHtml(), 160) : null;
 @endphp
 
@@ -18,13 +12,13 @@
             <div class="portal-prose isolate overflow-hidden break-words mt-6">{!! $bodyHtml !!}</div>
         @endif
 
-        @if ($hasContact)
+        @if ($isContact)
             <x-ui.card :title="__('pondok.portal.contact.title')" class="mt-8">
                 @include('portal.partials.contact-list', ['school' => $school, 'phoneFormatter' => $phoneFormatter])
             </x-ui.card>
         @endif
 
-        @if (! $bodyHtml && ! $hasContact)
+        @if (! $bodyHtml && ! $isContact)
             <x-ui.empty-state icon="heroicon-o-document-text" class="mt-8">{{ __('pondok.portal.pages.empty') }}</x-ui.empty-state>
         @endif
 

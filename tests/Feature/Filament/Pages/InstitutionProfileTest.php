@@ -227,3 +227,24 @@ it('AC-37: explains the logo fields with the helper texts of the plan', function
         ->toContain('Boleh berisi beberapa logo dalam satu gambar')
         ->toContain('PNG persegi, maks. 256 KB');
 });
+
+it('AC-36 (F037): footer repeater links a page and restores the choice on reopen', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
+
+    Livewire::test(Footer::class)
+        ->fillForm(['footer_links' => [
+            ['type' => 'page', 'page_id' => $page->id, 'label' => ''],
+            ['type' => 'url', 'label' => 'Berita', 'url' => '/berita'],
+        ]])
+        ->call('save')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    expect(Setting::get('portal.footer_links'))->toBe([['label' => null, 'page_id' => $page->id], ['label' => 'Berita', 'url' => '/berita']]);
+
+    $rows = array_values(Livewire::test(Footer::class)->get('data.footer_links'));
+
+    expect($rows[0])->toMatchArray(['type' => 'page', 'page_id' => $page->id])
+        ->and($rows[1])->toMatchArray(['type' => 'url', 'label' => 'Berita', 'url' => '/berita']);
+});

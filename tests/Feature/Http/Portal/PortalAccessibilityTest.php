@@ -11,6 +11,7 @@ beforeEach(function () {
     portalPost(['title' => 'Berita Video', 'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ']);
     kontenVideo(['title' => 'Video Unggulan', 'youtube_id' => 'AAAAAAAAAAA', 'is_featured' => true]);
     StaticPage::findBySlug('profil')->update(['body' => '<p>Profil kami.</p>']);
+    portalContactData(); // F037: /kontak hanya tersedia bila profil punya data kontak
 });
 
 dataset('portalPages', [

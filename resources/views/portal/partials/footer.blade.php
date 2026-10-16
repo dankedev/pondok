@@ -1,12 +1,12 @@
 {{-- Footer portal: kutipan, identitas, kontak, media sosial, dan tautan dari profil lembaga; bagian kosong tidak dirender. --}}
 @php
     $phoneFormatter = app(\App\Actions\Konten\FormatPhoneForDisplay::class);
-    $contentEnabled = \App\Models\Setting::moduleEnabled('konten');
     $psbStatusUrl = \App\Models\Setting::moduleEnabled('psb') && \Illuminate\Support\Facades\Route::has('psb.status') ? route('psb.status') : null;
     $verifyLetterUrl = \App\Models\Setting::moduleEnabled('dokumen') && \Illuminate\Support\Facades\Route::has('dokumen.letters.verify-form') ? route('dokumen.letters.verify-form') : null;
     $footer = $school['footer'];
     $hasQuote = $footer['quote_arabic'] || $footer['quote_translation'];
-    $quickLinks = $footer['links'];
+    // Tautan cepat sudah di-resolve `GetPortalNavigation` (tautan halaman mengikuti slug dan status).
+    $quickLinks = $footerLinks;
     $linkClass = 'inline-flex min-h-11 items-center rounded-lg text-base text-gray-700 underline-offset-4 hover:text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
 @endphp
 
@@ -50,16 +50,13 @@
             @endif
         </div>
 
-        @if ($quickLinks !== [] || $contentEnabled || $psbStatusUrl || $verifyLetterUrl)
+        @if ($quickLinks !== [] || $psbStatusUrl || $verifyLetterUrl)
             <div>
                 <p class="text-sm font-semibold text-gray-900">{{ __('pondok.portal.footer.links') }}</p>
                 <ul class="mt-2">
                     @foreach ($quickLinks as $link)
                         <li><a href="{{ $link['url'] }}" class="{{ $linkClass }}">{{ $link['label'] }}</a></li>
                     @endforeach
-                    @if ($contentEnabled)
-                        <li><a href="{{ route('portal.pages.show', 'visi-misi') }}" class="{{ $linkClass }}">{{ __('pondok.portal.nav.vision') }}</a></li>
-                    @endif
                     @if ($psbStatusUrl)
                         <li><a href="{{ $psbStatusUrl }}" class="{{ $linkClass }}">{{ __('pondok.portal.footer.psb_status') }}</a></li>
                     @endif

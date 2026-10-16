@@ -82,3 +82,37 @@ it('AC-31: rejects unsafe footer links and changes nothing', function (string $u
     'space' => ['/a b'],
     'ftp' => ['ftp://x.test'],
 ]);
+
+/*
+| F037 AC-28: tautan footer boleh memilih halaman ({label?, page_id}).
+*/
+
+it('AC-28: accepts page links with and without a label', function () {
+    $page = staticPage(['slug' => 'pengurus']);
+
+    profilSaveFooter(['footer_links' => [['page_id' => $page->id, 'label' => ''], ['label' => 'Visi', 'page_id' => $page->id], ['label' => 'Berita', 'url' => '/berita']]]);
+
+    expect(Setting::get('portal.footer_links'))->toBe([
+        ['label' => null, 'page_id' => $page->id],
+        ['label' => 'Visi', 'page_id' => $page->id],
+        ['label' => 'Berita', 'url' => '/berita'],
+    ]);
+});
+
+it('AC-28: rejects ambiguous link targets and unknown pages', function (array $link, string $reason) {
+    $page = staticPage(['slug' => 'pengurus']);
+    $before = profilSettingsSnapshot();
+    $link = array_map(fn (mixed $value): mixed => $value === '{id}' ? $page->id : $value, $link);
+
+    kontenAssertRejected(fn () => profilSaveFooter(['footer_links' => [$link]]), $reason, $reason === 'page_not_found' ? 'footer_links.0.page_id' : null);
+
+    expect(profilSettingsSnapshot())->toBe($before);
+})->with([
+    'url and page' => [['label' => 'X', 'url' => '/berita', 'page_id' => '{id}'], 'link_target_invalid'],
+    'neither' => [['label' => 'X'], 'link_target_invalid'],
+    'unknown page' => [['label' => 'X', 'page_id' => 999999], 'page_not_found'],
+]);
+
+it('AC-28: still requires a label for url links', function () {
+    kontenAssertRejected(fn () => profilSaveFooter(['footer_links' => [['label' => '', 'url' => '/berita']]]), 'label_required', 'footer_links.0.label');
+});

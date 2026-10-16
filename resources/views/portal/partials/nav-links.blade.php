@@ -1,20 +1,7 @@
-{{-- Tautan navigasi utama portal; dirender dua kali (desktop dan menu seluler). Tanpa query. --}}
+{{-- Tautan navigasi utama portal; dirender dua kali (desktop dan menu seluler) dari `GetPortalNavigation`. Tanpa query. --}}
 @php
-    $contentEnabled = \App\Models\Setting::moduleEnabled('konten');
-    $currentPage = request()->route('page');
-    $items = [
-        ['label' => __('pondok.portal.nav.home'), 'url' => route('portal.home'), 'active' => request()->routeIs('portal.home')],
-    ];
-
-    if ($contentEnabled) {
-        $items[] = ['label' => __('pondok.portal.nav.profile'), 'url' => route('portal.pages.show', 'profil'), 'active' => request()->routeIs('portal.pages.show') && in_array($currentPage, ['profil', 'visi-misi'], true)];
-        $items[] = ['label' => __('pondok.portal.nav.news'), 'url' => route('portal.posts.index'), 'active' => request()->routeIs('portal.posts.*')];
-        $items[] = ['label' => __('pondok.portal.nav.gallery'), 'url' => route('portal.albums.index'), 'active' => request()->routeIs('portal.albums.*')];
-        $items[] = ['label' => __('pondok.portal.nav.videos'), 'url' => route('portal.videos.index'), 'active' => request()->routeIs('portal.videos.*')];
-        $items[] = ['label' => __('pondok.portal.nav.contact'), 'url' => route('portal.pages.show', 'kontak'), 'active' => request()->routeIs('portal.pages.show') && $currentPage === 'kontak'];
-    }
-
-    $registerUrl = \App\Models\Setting::moduleEnabled('psb') && \Illuminate\Support\Facades\Route::has('psb.register') ? route('psb.register') : null;
+    $items = $navigation['items'];
+    $registerUrl = $navigation['registerUrl'];
     $loginUrl = \Illuminate\Support\Facades\Route::has('filament.admin.auth.login') ? route('filament.admin.auth.login') : null;
     $linkClass = $layout === 'mobile'
         ? 'flex min-h-11 items-center rounded-lg px-3 text-base font-semibold'

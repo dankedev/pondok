@@ -2,26 +2,31 @@
 
 namespace App\Filament\Resources\StaticPages;
 
+use App\Actions\Konten\DeleteStaticPage;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Posts\Schemas\PostForm;
+use App\Filament\Resources\StaticPages\Pages\CreateStaticPage;
 use App\Filament\Resources\StaticPages\Pages\EditStaticPage;
 use App\Filament\Resources\StaticPages\Pages\ListStaticPages;
 use App\Models\StaticPage;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 
 /**
- * Halaman statis tetap (profil, visi-misi, kontak). Hanya diubah lewat
- * `UpdateStaticPage`; tidak ada route buat dan tidak ada aksi hapus.
+ * Halaman statis portal (F016, F037). Buat, ubah, dan hapus lewat Action
+ * (`CreateStaticPage`, `UpdateStaticPage`, `DeleteStaticPage`). Halaman sistem
+ * tidak punya aksi hapus (disembunyikan eksplisit karena super-admin melewati
+ * policy) dan slug-nya terkunci. Tanpa aksi massal.
  */
 class StaticPageResource extends Resource
 {
@@ -57,21 +62,6 @@ class StaticPageResource extends Resource
         return __('pondok.navigation.konten');
     }
 
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return false;
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return false;
-    }
-
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -83,12 +73,22 @@ class StaticPageResource extends Resource
                         TextInput::make('title')
                             ->label(__('pondok.static_page.title'))
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(StaticPage::TITLE_MAX_LENGTH),
                         TextInput::make('slug')
                             ->label(__('pondok.static_page.slug'))
-                            ->helperText(__('pondok.static_page.slug_helper'))
-                            ->disabled()
-                            ->dehydrated(false),
+                            ->helperText(fn (?StaticPage $record): string => $record?->isSystem()
+                                ? __('pondok.static_page.slug_helper_locked')
+                                : __('pondok.static_page.slug_helper_create'))
+                            ->maxLength(StaticPage::SLUG_MAX_LENGTH)
+                            ->disabled(fn (?StaticPage $record): bool => (bool) $record?->isSystem())
+                            ->dehydrated(fn (?StaticPage $record): bool => ! $record?->isSystem()),
+                        ToggleButtons::make('status')
+                            ->label(__('pondok.static_page.status'))
+                            ->options(self::statusOptions())
+                            ->colors(StaticPage::STATUS_COLORS)
+                            ->default(StaticPage::STATUS_DRAFT)
+                            ->inline()
+                            ->required(),
                         RichEditor::make('body')
                             ->label(__('pondok.static_page.body'))
                             ->toolbarButtons(PostForm::TOOLBAR)
@@ -104,10 +104,21 @@ class StaticPageResource extends Resource
             ->paginated(false)
             ->columns([
                 TextColumn::make('title')
-                    ->label(__('pondok.static_page.title')),
+                    ->label(__('pondok.static_page.title'))
+                    ->searchable(),
                 TextColumn::make('slug')
                     ->label(__('pondok.static_page.slug'))
                     ->fontFamily('mono'),
+                TextColumn::make('status')
+                    ->label(__('pondok.static_page.status'))
+                    ->badge()
+                    ->color(fn (string $state): string => StaticPage::STATUS_COLORS[$state] ?? 'gray')
+                    ->formatStateUsing(fn (string $state): string => self::statusOptions()[$state] ?? $state),
+                TextColumn::make('kind')
+                    ->label(__('pondok.static_page.kind'))
+                    ->state(fn (StaticPage $record): ?string => $record->isSystem() ? __('pondok.static_page.system_badge') : null)
+                    ->badge()
+                    ->color('gray'),
                 TextColumn::make('updated_at')
                     ->label(__('pondok.common.updated_at'))
                     ->dateTime('j M Y, H.i'),
@@ -115,13 +126,36 @@ class StaticPageResource extends Resource
             ->emptyStateHeading(__('pondok.static_page.empty'))
             ->recordActions([
                 EditAction::make(),
+                self::deleteAction(),
             ]);
+    }
+
+    public static function deleteAction(): DeleteAction
+    {
+        return DeleteAction::make()
+            ->hidden(fn (StaticPage $record): bool => $record->isSystem())
+            ->modalHeading(fn (StaticPage $record): string => __('pondok.static_page.delete_heading', ['title' => $record->title]))
+            ->modalDescription(__('pondok.static_page.delete_description'))
+            ->successNotificationTitle(fn (StaticPage $record): string => __('pondok.static_page.deleted', ['title' => $record->title]))
+            ->using(fn (StaticPage $record, DeleteStaticPage $deletePage): bool => tap(true, fn () => $deletePage->handle($record)));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function statusOptions(): array
+    {
+        return [
+            StaticPage::STATUS_DRAFT => __('pondok.static_page.statuses.draft'),
+            StaticPage::STATUS_PUBLISHED => __('pondok.static_page.statuses.terbit'),
+        ];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ListStaticPages::route('/'),
+            'create' => CreateStaticPage::route('/create'),
             'edit' => EditStaticPage::route('/{record}/edit'),
         ];
     }

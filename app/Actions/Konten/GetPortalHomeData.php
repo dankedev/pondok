@@ -59,7 +59,8 @@ class GetPortalHomeData
             return $data;
         }
 
-        $profilePage = StaticPage::findBySlug('profil');
+        // Seksi profil beranda hanya dari halaman `profil` yang terbit (F037).
+        $profilePage = StaticPage::query()->published()->where('slug', 'profil')->first();
         $summary = $this->summarize->handle($profilePage?->body, 300);
 
         return [

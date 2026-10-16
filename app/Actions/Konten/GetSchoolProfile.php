@@ -45,7 +45,13 @@ class GetSchoolProfile
         'portal.footer_quote_source',
         'portal.footer_description',
         'portal.footer_links',
+        // Dibaca bersama agar `GetPortalNavigation` memakai cache tanpa query tambahan (F037).
+        'portal.menu_items',
+        'portal.menu_show_register',
     ];
+
+    /** Field profil yang dihitung sebagai data kontak (aturan Kontak F037). */
+    private const CONTACT_FIELDS = ['address', 'phone', 'email', 'map_url'];
 
     /**
      * @return array<string, mixed>
@@ -98,6 +104,22 @@ class GetSchoolProfile
                 'links' => $this->footerLinks($values['portal.footer_links']),
             ],
         ];
+    }
+
+    /**
+     * Profil punya minimal satu data kontak: halaman `kontak` hanya tersedia bila benar.
+     *
+     * @param  array<string, mixed>  $profile  keluaran `handle()`
+     */
+    public static function hasContactData(array $profile): bool
+    {
+        foreach (self::CONTACT_FIELDS as $field) {
+            if (($profile[$field] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return ($profile['contacts'] ?? []) !== [];
     }
 
     private function text(mixed $value): ?string
@@ -195,7 +217,9 @@ class GetSchoolProfile
     }
 
     /**
-     * @return list<array{label: string, url: string}>
+     * Tautan URL `{label, url}` atau tautan halaman `{label: ?string, page_id: int}`, urut tersimpan.
+     *
+     * @return list<array{label: string, url: string}|array{label: ?string, page_id: int}>
      */
     private function footerLinks(mixed $value): array
     {
@@ -203,6 +227,17 @@ class GetSchoolProfile
 
         foreach ($this->items($value) as $item) {
             $label = $this->text($item['label'] ?? null);
+
+            if (array_key_exists('page_id', $item)) {
+                $pageId = $this->id($item['page_id']);
+
+                if ($pageId !== null) {
+                    $links[] = ['label' => $label, 'page_id' => $pageId];
+                }
+
+                continue;
+            }
+
             $url = $item['url'] ?? null;
 
             if ($label !== null && ($this->isSafeAbsoluteUrl($url) || $this->isSafeInternalPath($url))) {

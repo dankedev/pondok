@@ -16,6 +16,8 @@
 
 @php
     $school = app(\App\Actions\Konten\GetSchoolProfile::class)->handle();
+    // Menu header dan tautan footer dihitung sekali (satu query `pages`) untuk kedua nav dan footer.
+    $navigation = app(\App\Actions\Konten\GetPortalNavigation::class)->handle($school);
     $pageTitle = filled($title)
         ? __('pondok.portal.meta.title', ['title' => $title, 'name' => $school['name']])
         : ($school['tagline'] !== null ? __('pondok.portal.meta.home_title', ['name' => $school['name'], 'tagline' => $school['tagline']]) : $school['name']);
@@ -91,17 +93,18 @@
                 @endif
             </a>
 
-            <nav class="hidden md:flex md:items-center md:gap-1" aria-label="{{ __('pondok.portal.nav.label') }}">
-                @include('portal.partials.nav-links', ['layout' => 'desktop'])
+            {{-- Menu bisa sampai 8 item + Masuk/Daftar: nav penuh mulai lg, menu lipat di bawahnya. --}}
+            <nav class="hidden lg:flex lg:items-center lg:gap-1" aria-label="{{ __('pondok.portal.nav.label') }}">
+                @include('portal.partials.nav-links', ['layout' => 'desktop', 'navigation' => $navigation])
             </nav>
 
-            <details class="group relative md:hidden">
+            <details class="group relative lg:hidden">
                 <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-base font-semibold text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                     <x-heroicon-o-bars-3 class="size-6" aria-hidden="true" />
                     {{ __('pondok.portal.nav.menu') }}
                 </summary>
                 <nav class="absolute right-0 z-10 mt-2 flex w-64 flex-col gap-1 rounded-lg border border-gray-200 bg-white p-2 shadow-sm" aria-label="{{ __('pondok.portal.nav.mobile_label') }}">
-                    @include('portal.partials.nav-links', ['layout' => 'mobile'])
+                    @include('portal.partials.nav-links', ['layout' => 'mobile', 'navigation' => $navigation])
                 </nav>
             </details>
         </div>
@@ -117,6 +120,6 @@
         @endif
     </main>
 
-    @include('portal.partials.footer', ['school' => $school])
+    @include('portal.partials.footer', ['school' => $school, 'footerLinks' => $navigation['footerLinks']])
 </body>
 </html>

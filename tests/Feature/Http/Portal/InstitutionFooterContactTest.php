@@ -39,10 +39,9 @@ it('AC-48: renders the footer quote, contacts, socials and quick links', functio
         ->toContain('href="https://instagram.com/alkhair"')->toContain('href="https://blog.contoh.test"')
         ->toContain('href="/berita"')->toContain('href="https://contoh.test/psb"');
 
-    $quick = strpos($footer, 'Berita Pilihan');
-    $system = strpos($footer, route('portal.pages.show', 'visi-misi'));
-
-    expect($quick)->not->toBeFalse()->and($system)->not->toBeFalse()->and($quick)->toBeLessThan($system);
+    // F037: tautan visi-misi bawaan dihapus dari footer; hanya tautan pilihan admin yang tampil.
+    expect($footer)->not->toContain(route('portal.pages.show', 'visi-misi'))
+        ->and(strpos($footer, 'Berita Pilihan'))->not->toBeFalse();
 });
 
 it('AC-48: does not render the old whatsapp and social keys', function () {
@@ -76,11 +75,11 @@ it('AC-49: renders no map link when the map url is empty or unsafe', function (?
     StaticPage::findBySlug('kontak')->update(['body' => '']);
     profilRawSet('school.map_url', $stored);
 
-    foreach (['/', '/kontak'] as $url) {
-        $html = $this->get($url)->assertOk()->getContent();
+    // F037: tanpa data kontak lain, /kontak 404 (aturan Kontak).
+    $this->get('/kontak')->assertNotFound();
+    $html = $this->get('/')->assertOk()->getContent();
 
-        expect($html)->not->toContain('Lihat di peta')->not->toContain('javascript:')->not->toContain('<iframe');
-    }
+    expect($html)->not->toContain('Lihat di peta')->not->toContain('javascript:')->not->toContain('<iframe');
 })->with(['empty' => [null], 'unsafe' => ['javascript:alert(1)']]);
 
 it('AC-50: shows the contact card on an empty contact page with only contacts', function () {
@@ -104,17 +103,52 @@ it('AC-50: shows the contact card on an empty contact page with only a map link'
     expect($text)->toContain('Lihat di peta')->toContain(__('pondok.portal.contact.title'))->not->toContain(__('pondok.portal.pages.empty'));
 });
 
-it('AC-50: shows the empty state on an empty contact page without any contact data', function () {
+it('AC-50: returns 404 for an empty contact page without any contact data', function () {
     StaticPage::findBySlug('kontak')->update(['body' => '']);
 
-    $text = profilVisibleText($this->get('/kontak')->assertOk()->getContent());
-
-    expect($text)->toContain(__('pondok.portal.pages.empty'))->not->toContain(__('pondok.portal.contact.title'));
+    $this->get('/kontak')->assertNotFound();
 });
 
 it('AC-50: still renders the contact page when only legacy keys remain in settings', function () {
     StaticPage::findBySlug('kontak')->update(['body' => '']);
     profilRawSet('school.whatsapp', '081200000000');
 
-    $this->get('/kontak')->assertOk();
+    // F037: kunci lama bukan data kontak, jadi halaman tidak tersedia.
+    $this->get('/kontak')->assertNotFound();
+});
+
+it('AC-29 (F037): renders page links that follow slug and status', function () {
+    $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
+    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $page->id], ['label' => 'Tentang', 'page_id' => $page->id]]);
+
+    $footer = profilFooter($this->get('/')->assertOk()->getContent());
+
+    expect($footer)->toMatch('#<a\b[^>]*href="[^"]*/pengurus"[^>]*>\s*Pengurus Yayasan\s*</a>#s')
+        ->toMatch('#<a\b[^>]*href="[^"]*/pengurus"[^>]*>\s*Tentang\s*</a>#s');
+
+    $page->update(['slug' => 'pengurus-yayasan']);
+
+    expect(profilFooter($this->get('/')->getContent()))->toContain('/pengurus-yayasan')->not->toMatch('#/pengurus"#');
+});
+
+it('AC-29 (F037): drops page links of draft pages, deleted pages and a disabled content module', function () {
+    $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
+    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $page->id]]);
+
+    $page->update(['status' => 'draft']);
+    expect(profilFooter($this->get('/')->getContent()))->not->toContain('/pengurus');
+
+    $page->update(['status' => 'terbit']);
+    Setting::set('modules.konten.enabled', false);
+    expect(profilFooter($this->get('/')->getContent()))->not->toContain('/pengurus');
+
+    Setting::set('modules.konten.enabled', true);
+    $page->delete();
+    expect(profilFooter($this->get('/')->assertOk()->getContent()))->not->toContain('/pengurus');
+});
+
+it('AC-29 (F037): has no vision link in the footer when the footer links are empty', function () {
+    expect(StaticPage::findBySlug('visi-misi')->status)->toBe('terbit');
+
+    expect(profilFooter($this->get('/')->assertOk()->getContent()))->not->toContain('/visi-misi');
 });

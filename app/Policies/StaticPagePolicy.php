@@ -9,7 +9,9 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 
 /**
- * Halaman statis (profil, visi-misi, kontak) hanya bisa dilihat dan diubah.
+ * Halaman statis (F037): halaman bebas bisa dibuat dan dihapus; halaman sistem tidak
+ * bisa dihapus. Super-admin melewati policy (Shield `intercept_gate = before`), jadi
+ * UI menyembunyikan aksi hapus secara eksplisit dan `DeleteStaticPage` menjadi guard akhir.
  */
 class StaticPagePolicy
 {
@@ -27,8 +29,7 @@ class StaticPagePolicy
 
     public function create(AuthUser $authUser): bool
     {
-        // Halaman statis tetap tiga (dibuat seeder): tidak dibuat atau dihapus dari panel.
-        return false;
+        return $authUser->can('create:static-page');
     }
 
     public function update(AuthUser $authUser, StaticPage $staticPage): bool
@@ -38,13 +39,12 @@ class StaticPagePolicy
 
     public function delete(AuthUser $authUser, StaticPage $staticPage): bool
     {
-        // Halaman statis tetap tiga (dibuat seeder): tidak dibuat atau dihapus dari panel.
-        return false;
+        return $authUser->can('delete:static-page') && ! $staticPage->isSystem();
     }
 
     public function deleteAny(AuthUser $authUser): bool
     {
-        // Halaman statis tetap tiga (dibuat seeder): tidak dibuat atau dihapus dari panel.
+        // Tanpa hapus massal: halaman dihapus satu per satu lewat `DeleteStaticPage`.
         return false;
     }
 }

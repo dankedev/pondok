@@ -69,8 +69,9 @@ class RolePermissionSeeder extends Seeder
 
     /** Model yang aksinya lebih sempit dari aksi standar. */
     public const LIMITED_RESOURCE_ACTIONS = [
-        // Halaman statis tetap tiga (dibuat seeder): hanya dilihat dan diubah.
-        'StaticPage' => ['viewAny', 'view', 'update'],
+        // Halaman statis (F037): dibuat dan dihapus satu per satu (halaman sistem dijaga
+        // policy dan `DeleteStaticPage`); tanpa hapus massal, sehingga tanpa `deleteAny`.
+        'StaticPage' => ['viewAny', 'view', 'create', 'update', 'delete'],
     ];
 
     public function run(): void

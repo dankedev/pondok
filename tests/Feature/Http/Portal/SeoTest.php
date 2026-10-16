@@ -141,3 +141,26 @@ it('AC-26: serves robots.txt', function () {
         ->toContain('Sitemap: '.rtrim(config('app.url'), '/').'/sitemap.xml');
     expect(public_path('robots.txt'))->not->toBeFile();
 });
+
+it('AC-31 (F037): lists published free pages in the sitemap', function () {
+    staticPage(['slug' => 'pengurus', 'title' => 'Pengurus', 'body' => '<p>Isi</p>']);
+    staticPage(['slug' => 'draf-peta', 'status' => 'draft']);
+    staticPage(['slug' => 'kosong-peta', 'body' => '']);
+    $gone = staticPage(['slug' => 'hilang-peta']);
+    $gone->delete();
+    StaticPage::findBySlug('profil')->update(['body' => '<p>Isi</p>']);
+
+    $xml = simplexml_load_string($this->get('/sitemap.xml')->assertOk()->getContent());
+    $locs = [];
+    foreach ($xml->url as $url) {
+        $locs[(string) $url->loc] = (string) $url->lastmod;
+    }
+
+    expect($locs)->toHaveKeys([route('portal.pages.show', 'pengurus'), route('portal.pages.show', 'profil')])
+        ->not->toHaveKeys([url('/draf-peta'), url('/kosong-peta'), url('/hilang-peta')])
+        ->and($locs[route('portal.pages.show', 'pengurus')])->toMatch('/^\d{4}-\d{2}-\d{2}T/');
+
+    Setting::set('modules.konten.enabled', false);
+
+    expect($this->get('/sitemap.xml')->getContent())->not->toContain('/pengurus')->not->toContain('/profil');
+});

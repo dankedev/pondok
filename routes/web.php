@@ -62,6 +62,7 @@ Route::name('portal.')
             Route::get('galeri', ListAlbums::class)->name('albums.index');
             Route::get('galeri/{slug}', ShowAlbum::class)->where('slug', $slug)->name('albums.show');
             Route::get('video', ListVideos::class)->name('videos.index');
-            Route::get('{page}', ShowStaticPage::class)->whereIn('page', StaticPage::SLUGS)->name('pages.show');
+            // Halaman statis bebas (F037): slug divalidasi `ResolveStaticPageSlug` agar tidak bentrok dengan route lain.
+            Route::get('{page}', ShowStaticPage::class)->where('page', StaticPage::SLUG_PATTERN)->name('pages.show');
         });
     });

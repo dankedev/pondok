@@ -19,7 +19,11 @@ it('AC-54: renders no built in content text on a fresh install', function () {
     Setting::set('modules.konten.enabled', true);
     Setting::set('modules.psb.enabled', true);
 
-    foreach (['/', '/profil', '/kontak'] as $url) {
+    // F037: profil draf dan kontak tanpa data kontak menjadi 404 di instalasi baru.
+    $this->get('/profil')->assertNotFound();
+    $this->get('/kontak')->assertNotFound();
+
+    foreach (['/'] as $url) {
         $html = $this->get($url)->assertOk()->getContent();
         $decoded = mb_strtolower(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         $visible = mb_strtolower(profilVisibleText($html));
@@ -117,7 +121,10 @@ it('AC-57: has no profile title or summary and no section for an empty profile p
     $data = app(GetPortalHomeData::class)->handle();
 
     expect($data['profileTitle'])->toBeNull()->and($data['profileSummary'])->toBeNull()
-        ->and($this->get('/')->assertOk()->getContent())->not->toContain('seksi-profil')->not->toContain('Tentang Yayasan');
+        // F037: halaman terbit tampil di menu dengan judulnya; yang tidak boleh ada hanya seksi profil beranda.
+        ->and($this->get('/')->assertOk()->getContent())
+        ->not->toContain('seksi-profil')
+        ->not->toMatch('/<h2\b[^>]*>\s*Tentang Yayasan\s*<\/h2>/');
 });
 
 it('AC-57: returns null media and profile title when the content module is off', function () {
@@ -172,4 +179,17 @@ it('AC-58: takes the meta description from the tagline, then the footer descript
     Setting::set('portal.footer_description', null);
 
     expect($this->get('/')->getContent())->not->toContain('<meta name="description"');
+});
+
+it('AC-39: a fresh install has only the three system pages and interface labels', function () {
+    profilFreshInstall();
+
+    expect(StaticPage::query()->count())->toBe(3)
+        ->and(StaticPage::query()->pluck('slug')->sort()->values()->all())->toBe(['kontak', 'profil', 'visi-misi'])
+        ->and(Setting::get('portal.menu_items'))->toBeNull();
+
+    $labels = portalNavTexts($this->get('/')->assertOk()->getContent());
+    $interface = [__('pondok.portal.nav.home'), __('pondok.portal.nav.news'), __('pondok.portal.nav.gallery'), __('pondok.portal.nav.videos'), __('pondok.portal.nav.psb_info'), __('pondok.portal.nav.login'), __('pondok.portal.nav.register')];
+
+    expect(array_values(array_diff($labels, $interface)))->toBe([]);
 });

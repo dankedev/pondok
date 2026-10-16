@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\StaticPage;
 use Illuminate\Support\Facades\Lang;
 
 /**
@@ -40,4 +41,32 @@ it('F016: names the static page defaults', function () {
     expect(__('pondok.static_page.defaults.profil'))->toBe('Profil')
         ->and(__('pondok.static_page.defaults.visi-misi'))->toBe('Visi & Misi')
         ->and(__('pondok.static_page.defaults.kontak'))->toBe('Kontak');
+});
+
+it('AC-37 (F037): page and menu screens have no raw keys or content examples', function (string $url) {
+    kontenBoot(withPages: true);
+    $page = StaticPage::findBySlug('profil');
+    $path = str_replace('{id}', (string) $page->id, $url);
+    $html = $this->actingAs(kontenUser('super-admin'))->get($path)->assertOk()->getContent();
+
+    preg_match_all('/placeholder="([^"]*)"/i', $html, $placeholders);
+    $visible = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8').' '.implode(' ', $placeholders[1]);
+
+    expect($html)->not->toMatch('/\bpondok\.[a-z_]+\.[a-z_]+/')
+        ->and(implode(' ', $placeholders[1]))->not->toMatch('/\p{Arabic}|\bQS\b|bismillah|assalamu|ahlan/iu')
+        ->and(__('pondok.static_page.slug_helper_create'))->not->toStartWith('pondok.')
+        ->and(__('pondok.static_page.slug_helper_locked'))->toBe('Alamat halaman sistem tidak bisa diubah.')
+        ->and($visible)->not->toBeEmpty();
+})->with(['/admin/static-pages', '/admin/static-pages/create', '/admin/static-pages/{id}/edit', '/admin/institution-profile/menu']);
+
+it('AC-37 (F037): defines the new interface texts in lang/id', function () {
+    foreach ([
+        'pondok.portal.nav.psb_info', 'pondok.static_page.statuses.draft', 'pondok.static_page.statuses.terbit', 'pondok.static_page.system_badge',
+        'pondok.konten.errors.slug_format', 'pondok.konten.errors.slug_reserved', 'pondok.konten.errors.slug_locked', 'pondok.konten.errors.status_invalid',
+        'pondok.konten.errors.page_system_locked', 'pondok.konten.errors.page_not_found', 'pondok.konten.errors.menu_item_invalid',
+        'pondok.konten.errors.menu_item_duplicate', 'pondok.konten.errors.menu_too_many', 'pondok.konten.errors.link_target_invalid',
+        'pondok.konten.errors.page_limit_reached', 'pondok.school_profile.pages.menu',
+    ] as $key) {
+        expect(__($key))->not->toBe($key, "{$key} belum ada di lang/id");
+    }
 });

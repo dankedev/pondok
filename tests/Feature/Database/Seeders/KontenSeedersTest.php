@@ -65,3 +65,30 @@ it('AC-4: does not overwrite a konten switch that was turned off', function () {
 
     expect(Setting::moduleEnabled('konten'))->toBeFalse();
 });
+
+it('AC-3 (F037): seeds system pages with draft profile and published contact', function () {
+    $this->seed(StaticPageSeeder::class);
+
+    $pages = StaticPage::query()->get()->keyBy('slug');
+
+    expect($pages->keys()->sort()->values()->all())->toBe(['kontak', 'profil', 'visi-misi'])
+        ->and($pages['profil']->status)->toBe('draft')
+        ->and($pages['visi-misi']->status)->toBe('draft')
+        ->and($pages['kontak']->status)->toBe('terbit')
+        ->and($pages->pluck('title', 'slug')->all())->toBe([
+            'profil' => __('pondok.static_page.defaults.profil'),
+            'visi-misi' => __('pondok.static_page.defaults.visi-misi'),
+            'kontak' => __('pondok.static_page.defaults.kontak'),
+        ])
+        ->and($pages->pluck('body')->unique()->all())->toBe([''])
+        ->and(Setting::query()->whereIn('key', ['portal.menu_items', 'portal.menu_show_register'])->count())->toBe(0);
+
+    StaticPage::query()->where('slug', 'profil')->update(['status' => 'terbit', 'body' => '<p>Diisi</p>']);
+    StaticPage::query()->where('slug', 'kontak')->update(['status' => 'draft']);
+
+    $this->seed(StaticPageSeeder::class);
+
+    expect(StaticPage::query()->where('slug', 'profil')->first())->status->toBe('terbit')->body->toBe('<p>Diisi</p>')
+        ->and(StaticPage::query()->where('slug', 'kontak')->value('status'))->toBe('draft')
+        ->and(Setting::query()->whereIn('key', ['portal.menu_items', 'portal.menu_show_register'])->count())->toBe(0);
+});

@@ -76,7 +76,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'restore:post', 'restore-any:post',
         'view-any:album', 'view:album', 'create:album', 'update:album', 'delete:album', 'delete-any:album',
         'view-any:video', 'view:video', 'create:video', 'update:video', 'delete:video', 'delete-any:video',
-        'view-any:static-page', 'view:static-page', 'update:static-page',
+        'view-any:static-page', 'view:static-page', 'create:static-page', 'update:static-page', 'delete:static-page',
         'publish:achievement',
         'view:school-profile',
     ]],
@@ -352,7 +352,8 @@ it('AC-5: lets super-admin hold every content permission and does not duplicate 
     $this->seed(RolePermissionSeeder::class);
 
     expect(Permission::query()->count())->toBe($count)
-        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(33);
+        // F037 menambah dua permission (create:static-page, delete:static-page): 33 + 2.
+        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(35);
 });
 
 it('AC-5: backs the post restore abilities with the post policy', function () {

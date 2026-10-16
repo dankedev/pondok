@@ -17,7 +17,7 @@ it('AC-1: creates the content tables with the planned columns', function () {
         'albums' => ['id', 'category_id', 'title', 'slug', 'description', 'created_at', 'updated_at'],
         'photos' => ['id', 'album_id', 'path', 'caption', 'sort_order', 'created_at', 'updated_at'],
         'videos' => ['id', 'title', 'youtube_id', 'description', 'is_featured', 'sort_order', 'created_at', 'updated_at'],
-        'pages' => ['id', 'slug', 'title', 'body', 'created_at', 'updated_at'],
+        'pages' => ['id', 'slug', 'title', 'body', 'status', 'created_at', 'updated_at'],
     ];
 
     foreach ($columns as $table => $expected) {

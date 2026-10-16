@@ -21,6 +21,9 @@ class SanitizeContentHtml
 
     private const ALLOWED_MEDIA_SCHEMES = ['http', 'https'];
 
+    /** Host sematan video yang diterima (tanpa awalan `www.`/`m.`). */
+    private const EMBED_HOSTS = ['youtube.com', 'youtube-nocookie.com', 'youtu.be'];
+
     public function handle(?string $html): string
     {
         return Str::sanitizeHtml($html ?? '');
@@ -44,6 +47,27 @@ class SanitizeContentHtml
                 if (! $this->isAllowedMediaUrl($url)) {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Masukan mentah memuat `<iframe>` ke host selain YouTube (F037). Sanitizer tetap
+     * membuang semua iframe; pemeriksaan ini agar sematan asing ditolak dengan pesan,
+     * bukan hilang diam-diam.
+     */
+    public function hasForeignEmbed(string $raw): bool
+    {
+        preg_match_all('/<iframe\b[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', $raw, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $url = trim(html_entity_decode($match[1] ?: ($match[2] ?? '') ?: ($match[3] ?? ''), ENT_QUOTES | ENT_HTML5));
+            $host = strtolower((string) parse_url(str_starts_with($url, '//') ? 'https:'.$url : $url, PHP_URL_HOST));
+
+            if (! in_array(preg_replace('/^(www|m)\./', '', $host), self::EMBED_HOSTS, true)) {
+                return true;
             }
         }
 

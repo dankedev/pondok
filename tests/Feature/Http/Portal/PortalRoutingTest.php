@@ -27,6 +27,7 @@ it('AC-2: hides content routes with 404 when konten is disabled', function (stri
 
 it('AC-2: serves content routes when konten is enabled', function (string $url) {
     portalSeedContent();
+    portalContactData(); // F037: /kontak hanya tersedia bila profil punya data kontak
 
     $this->get($url)->assertOk();
 })->with(['/berita', '/berita/wisuda-2026', '/galeri', '/galeri/album-ramadan', '/video', '/profil', '/visi-misi', '/kontak']);
@@ -125,6 +126,7 @@ it('AC-35: renders the global 404 page outside portal routes', function (string 
 
 it('AC-36: shows a plain login link to the panel in the header of every portal page', function (string $url) {
     portalSeedContent();
+    portalContactData(); // F037: /kontak hanya tersedia bila profil punya data kontak
     $login = route('filament.admin.auth.login');
 
     $response = $this->get($url)->assertOk();

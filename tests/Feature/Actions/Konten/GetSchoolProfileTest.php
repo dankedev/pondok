@@ -118,3 +118,10 @@ it('AC-4: keeps a safe map url', function () {
 
     expect(app(GetSchoolProfile::class)->handle()['map_url'])->toBe('https://maps.app.goo.gl/abc');
 });
+
+it('AC-30 (F037): reads page links tolerantly', function () {
+    Setting::set('portal.footer_links', [['label' => 'A', 'url' => '/berita'], ['page_id' => 5], ['page_id' => 'x'], ['page_id' => -1], ['label' => 'Z', 'page_id' => 0]]);
+
+    expect(app(GetSchoolProfile::class)->handle()['footer']['links'])->toBe([['label' => 'A', 'url' => '/berita'], ['label' => null, 'page_id' => 5]])
+        ->and(GetSchoolProfile::KEYS)->toContain('portal.menu_items', 'portal.menu_show_register');
+});

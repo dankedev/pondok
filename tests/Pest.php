@@ -43,6 +43,7 @@ use App\Models\RoomAssignment;
 use App\Models\Scholarship;
 use App\Models\Setting;
 use App\Models\Staff;
+use App\Models\StaticPage;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
@@ -3451,13 +3452,18 @@ function daftarUlangBind(string $class, object $fake): object
  *
  * @return object{sd: Unit, sltp: Unit, slta: Unit}
  */
-function portalBoot(): object
+function portalBoot(bool $freshPages = false): object
 {
     test()->withoutVite();
     // Fake bawaan withoutVite() tidak menonaktifkan @fonts: tanpa ini test membaca public/build lokal
     // (hasil berbeda bila aset sudah di-build) dan tag preload font hanya tercetak di request pertama.
     (fn () => $this->buildDirectory = 'build-tidak-ada-saat-test')->call(app(Vite::class));
     test()->seed([UnitSeeder::class, SettingSeeder::class, StaticPageSeeder::class, ContentCategorySeeder::class]);
+    // F037: seeder baru memulai profil dan visi-misi sebagai draf. Test portal lama mengandaikan ketiganya terbit;
+    // `$freshPages = true` mempertahankan keadaan instalasi baru. Pengecekan kolom menjaga test lama tetap berjalan sebelum migrasi F037 ada.
+    if (! $freshPages && Schema::hasColumn('pages', 'status')) {
+        StaticPage::query()->update(['status' => 'terbit']);
+    }
     Setting::set('modules.konten.enabled', true);
     Setting::set('school.name', "Ma'had Al-Khair");
     Setting::set('school.tagline', "Mencetak generasi Qur'ani");
@@ -3548,6 +3554,144 @@ function portalNavLabels(string $html): array
 
         return $m[1] ?? '';
     }, $tags[0]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| F037 konten-halaman-menu
+|--------------------------------------------------------------------------
+|
+| Data dibuat lewat forceFill (tanpa factory) agar test tidak bergantung pada `StaticPageFactory`.
+|
+*/
+
+/**
+ * Halaman statis (bawaan terbit, berisi).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function staticPage(array $attributes = []): StaticPage
+{
+    $token = strtolower(Str::random(8));
+    $page = new StaticPage;
+    $page->forceFill([
+        'slug' => "halaman-{$token}", 'title' => "Halaman {$token}", 'body' => '<p>Isi halaman.</p>', 'status' => 'terbit',
+        ...$attributes,
+    ])->save();
+
+    return $page;
+}
+
+/**
+ * Item menu bawaan untuk `portal.menu_items`.
+ *
+ * @return array{type: string, key: string, visible: bool}
+ */
+function menuBuiltin(string $key, bool $visible = true): array
+{
+    return ['type' => 'builtin', 'key' => $key, 'visible' => $visible];
+}
+
+/**
+ * Item menu halaman untuk `portal.menu_items`.
+ *
+ * @return array{type: string, page_id: int, label: ?string, visible: bool}
+ */
+function menuPage(StaticPage|int $page, ?string $label = null, bool $visible = true): array
+{
+    return ['type' => 'page', 'page_id' => $page instanceof StaticPage ? $page->id : $page, 'label' => $label, 'visible' => $visible];
+}
+
+/**
+ * Simpan menu langsung ke settings (tanpa Action).
+ *
+ * @param  list<array<string, mixed>>|null  $items
+ */
+function menuSet(?array $items, ?bool $showRegister = null): void
+{
+    Setting::set('portal.menu_items', $items);
+    Setting::set('portal.menu_show_register', $showRegister);
+}
+
+/**
+ * Data kontak minimal agar halaman `kontak` tersedia (aturan Kontak F037).
+ */
+function portalContactData(): void
+{
+    Setting::set('school.email', 'info@contoh.test');
+}
+
+/**
+ * Tautan di dalam kedua `<nav>` header, dikelompokkan per nav (`desktop`, `mobile`).
+ *
+ * @return array{desktop: list<array{text: string, href: string, current: bool}>, mobile: list<array{text: string, href: string, current: bool}>}
+ */
+function portalNavLinks(string $html): array
+{
+    $result = ['desktop' => [], 'mobile' => []];
+    $labels = ['desktop' => __('pondok.portal.nav.label'), 'mobile' => __('pondok.portal.nav.mobile_label')];
+
+    foreach ($labels as $layout => $label) {
+        $pattern = '#<nav\b[^>]*aria-label="'.preg_quote(e($label), '#').'"[^>]*>(.*?)</nav>#is';
+
+        if (preg_match($pattern, $html, $nav) !== 1) {
+            continue;
+        }
+
+        preg_match_all('#<a\b([^>]*)>(.*?)</a>#is', $nav[1], $anchors, PREG_SET_ORDER);
+
+        foreach ($anchors as $anchor) {
+            preg_match('/href="([^"]*)"/', $anchor[1], $href);
+            $result[$layout][] = [
+                'text' => trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($anchor[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8'))),
+                'href' => html_entity_decode($href[1] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'current' => str_contains($anchor[1], 'aria-current="page"'),
+            ];
+        }
+    }
+
+    return $result;
+}
+
+/**
+ * Teks tautan nav (kedua nav harus sama) dalam urutan tampil.
+ *
+ * @return list<string>
+ */
+function portalNavTexts(string $html): array
+{
+    $links = portalNavLinks($html);
+    $desktop = array_column($links['desktop'], 'text');
+
+    expect($desktop)->not->toBe([])->and(array_column($links['mobile'], 'text'))->toBe($desktop);
+
+    return $desktop;
+}
+
+/**
+ * Query SQL (dengan binding) yang berjalan selama `$callback`.
+ *
+ * @return list<array{sql: string, bindings: array<int, mixed>}>
+ */
+function recordedQueries(Closure $callback): array
+{
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = ['sql' => $query->sql, 'bindings' => $query->bindings];
+    });
+    $callback();
+
+    return $queries;
+}
+
+/**
+ * Jumlah query yang menyentuh tabel `$table` (nama dikutip atau tidak).
+ *
+ * @param  list<array{sql: string, bindings: array<int, mixed>}>  $queries
+ */
+function queriesOnTable(array $queries, string $table): int
+{
+    return count(array_filter($queries, fn (array $q): bool => preg_match('/\b(from|into|update|join)\s+[`"\[]?'.preg_quote($table, '/').'[`"\]]?(\s|$)/i', $q['sql']) === 1));
 }
 
 /*

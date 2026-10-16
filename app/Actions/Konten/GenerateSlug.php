@@ -3,6 +3,7 @@
 namespace App\Actions\Konten;
 
 use App\Actions\Konten\Concerns\ValidatesContentInput;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,7 +16,9 @@ use Illuminate\Support\Str;
  * atau sudah dipakai (tanpa akhiran otomatis). Tanpa slug eksplisit, slug dibuat dari
  * sumber (judul/nama; aksara Arab ditransliterasi) dengan akhiran `-2`, `-3`, … bila
  * sudah dipakai; sumber tanpa huruf/angka memakai nama model (`post`, `album`, `category`).
- * Model soft delete ikut memeriksa baris terhapus. Unique index DB tetap pengaman terakhir.
+ * Model soft delete ikut memeriksa baris terhapus. `$isReserved` (opsional) menandai slug
+ * cadangan yang diperlakukan seperti sudah dipakai saat slug dibuat otomatis.
+ * Unique index DB tetap pengaman terakhir.
  */
 class GenerateSlug
 {
@@ -27,8 +30,9 @@ class GenerateSlug
     /**
      * @param  class-string<Model>  $modelClass
      * @param  array<string, mixed>  $scope  batas keunikan, mis. `['type' => 'album']`
+     * @param  (Closure(string): bool)|null  $isReserved
      */
-    public function handle(string $modelClass, string $source, ?string $explicit, int $maxLength, ?Model $ignore = null, array $scope = []): string
+    public function handle(string $modelClass, string $source, ?string $explicit, int $maxLength, ?Model $ignore = null, array $scope = [], ?Closure $isReserved = null): string
     {
         if (filled($explicit)) {
             $slug = Str::slug((string) $explicit);
@@ -56,7 +60,7 @@ class GenerateSlug
 
         $slug = $base;
 
-        for ($suffix = 2; $this->taken($modelClass, $slug, $ignore, $scope); $suffix++) {
+        for ($suffix = 2; ($isReserved !== null && $isReserved($slug)) || $this->taken($modelClass, $slug, $ignore, $scope); $suffix++) {
             $slug = "{$base}-{$suffix}";
         }
 

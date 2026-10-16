@@ -47,9 +47,11 @@ return [
             'report' => false,
         ],
 
+        // PUBLIC_STORAGE_ROOT: isi dengan `<document root>/storage` bila hosting
+        // mematikan symlink, sehingga berkas publik disimpan langsung di folder web.
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => env('PUBLIC_STORAGE_ROOT', storage_path('app/public')),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
@@ -83,7 +85,8 @@ return [
     */
 
     'links' => [
-        public_path('storage') => storage_path('app/public'),
+        // Config dimuat sebelum provider, jadi PONDOK_PUBLIC_PATH dibaca langsung dari env.
+        rtrim(env('PONDOK_PUBLIC_PATH') ?: public_path(), '/').'/storage' => env('PUBLIC_STORAGE_ROOT', storage_path('app/public')),
     ],
 
 ];

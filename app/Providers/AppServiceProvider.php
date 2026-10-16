@@ -25,6 +25,22 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(Setting::CACHE_BINDING, fn (): ArrayObject => new ArrayObject);
+
+        $this->configurePublicPath();
+    }
+
+    /**
+     * `pondok.public_path` (env `PONDOK_PUBLIC_PATH`): document root terpisah
+     * (`public_html`), berlaku untuk web dan CLI agar `@vite` dan storage link
+     * memakai folder itu.
+     */
+    private function configurePublicPath(): void
+    {
+        $path = rtrim((string) config('pondok.public_path'), '/');
+
+        if ($path !== '') {
+            $this->app->usePublicPath($path);
+        }
     }
 
     /**

@@ -1,6 +1,15 @@
 <?php
 
+use App\Actions\Core\RecordSchedulerHeartbeat;
 use Illuminate\Support\Facades\Schedule;
+
+/*
+| Tanda bahwa cron `schedule:run` berjalan, dibaca `pondok:doctor`. Harus
+| event pertama agar tetap tercatat walau event lain gagal.
+*/
+Schedule::call(fn () => app(RecordSchedulerHeartbeat::class)->handle())
+    ->everyMinute()
+    ->name('pondok:scheduler-heartbeat');
 
 /*
 | Shared hosting tidak bisa menjalankan worker terus-menerus. Satu cron

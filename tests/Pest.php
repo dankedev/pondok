@@ -66,6 +66,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -3542,4 +3543,198 @@ function portalNavLabels(string $html): array
 
         return $m[1] ?? '';
     }, $tags[0]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| F019 rilis-cpanel
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Menghapus direktori beserta isinya (termasuk symlink tanpa mengikutinya).
+ */
+function f019RemoveDirectory(string $path): void
+{
+    if (is_link($path) || is_file($path)) {
+        @unlink($path);
+
+        return;
+    }
+
+    if (! is_dir($path)) {
+        return;
+    }
+
+    foreach (scandir($path) as $entry) {
+        if ($entry !== '.' && $entry !== '..') {
+            f019RemoveDirectory($path.'/'.$entry);
+        }
+    }
+
+    @rmdir($path);
+}
+
+/**
+ * Direktori sementara unik, dihapus lewat $iso->finish() atau f019RemoveDirectory().
+ */
+function f019TempDirectory(string $prefix = 'pondok-f019-'): string
+{
+    $path = sys_get_temp_dir().'/'.$prefix.bin2hex(random_bytes(6));
+    mkdir($path, 0777, true);
+
+    return realpath($path);
+}
+
+/**
+ * Hook isolasi instalasi (rencana F019, Konvensi test). Memindahkan .env, public,
+ * storage, dan bootstrap ke direktori sementara, lalu merekam kondisi repo.
+ * Panggil `$this->iso->finish()` di afterEach.
+ */
+function isolateInstallation(): object
+{
+    $tmp = f019TempDirectory();
+
+    file_put_contents($tmp.'/.env', 'APP_KEY=base64:'.base64_encode(random_bytes(32))."\n");
+
+    foreach (['web/build', 'web/js/filament', 'storage/app/private', 'storage/app/public', 'storage/framework/cache', 'storage/framework/sessions', 'storage/framework/views', 'storage/logs', 'bootstrap/cache'] as $dir) {
+        mkdir($tmp.'/'.$dir, 0777, true);
+    }
+
+    file_put_contents($tmp.'/web/build/manifest.json', '{}');
+    file_put_contents($tmp.'/web/js/filament/app.js', '// filament');
+
+    $repo = [
+        'env' => file_exists(base_path('.env')) ? md5_file(base_path('.env')) : null,
+        'storage_link' => is_link(base_path('public/storage')) || file_exists(base_path('public/storage')),
+        'htaccess' => md5_file(base_path('public/.htaccess')),
+        'down' => file_exists(base_path('storage/framework/down')),
+        'maintenance' => file_exists(base_path('storage/framework/maintenance.php')),
+        'bootstrap_cache' => collect(glob(base_path('bootstrap/cache/*.php')) ?: [])->mapWithKeys(fn ($f) => [$f => filemtime($f)])->all(),
+        'filament_dist' => count(glob(base_path('vendor/filament/*/dist'), GLOB_ONLYDIR) ?: []),
+        'livewire_dist' => is_dir(base_path('vendor/livewire/livewire/dist')),
+        'build_manifest' => is_file(base_path('public/build/manifest.json')),
+    ];
+
+    $defaultConnection = config('database.default');
+
+    $app = app();
+    $app->useEnvironmentPath($tmp);
+    $app->usePublicPath($tmp.'/web');
+    $app->useStoragePath($tmp.'/storage');
+    $app->useBootstrapPath($tmp.'/bootstrap');
+
+    config([
+        'filesystems.disks.local.root' => $tmp.'/storage/app/private',
+        'filesystems.disks.private.root' => $tmp.'/storage/app/private',
+        'filesystems.disks.public.root' => $tmp.'/storage/app/public',
+        'filesystems.links' => [$tmp.'/web/storage' => $tmp.'/storage/app/public'],
+        'view.compiled' => $tmp.'/storage/framework/views',
+        'pondok.public_path' => null,
+    ]);
+
+    return new class($tmp, $repo, $defaultConnection)
+    {
+        public function __construct(public string $tmp, private array $repo, private string $defaultConnection) {}
+
+        public function finish(): void
+        {
+            config(['database.default' => $this->defaultConnection]);
+
+            try {
+                Artisan::call('up');
+            } catch (Throwable) {
+            }
+
+            $current = [
+                'env' => file_exists(base_path('.env')) ? md5_file(base_path('.env')) : null,
+                'storage_link' => is_link(base_path('public/storage')) || file_exists(base_path('public/storage')),
+                'htaccess' => md5_file(base_path('public/.htaccess')),
+                'down' => file_exists(base_path('storage/framework/down')),
+                'maintenance' => file_exists(base_path('storage/framework/maintenance.php')),
+                'bootstrap_cache' => collect(glob(base_path('bootstrap/cache/*.php')) ?: [])->mapWithKeys(fn ($f) => [$f => filemtime($f)])->all(),
+                'filament_dist' => count(glob(base_path('vendor/filament/*/dist'), GLOB_ONLYDIR) ?: []),
+                'livewire_dist' => is_dir(base_path('vendor/livewire/livewire/dist')),
+                'build_manifest' => is_file(base_path('public/build/manifest.json')),
+            ];
+
+            f019RemoveDirectory($this->tmp);
+
+            expect($current)->toBe($this->repo);
+        }
+    };
+}
+
+/**
+ * Menulis berkas fixture (isi = path) di bawah $root. Path berakhiran `/` dibuat sebagai direktori.
+ *
+ * @param  list<string>  $paths
+ */
+function releaseFixture(string $root, array $paths): void
+{
+    foreach ($paths as $path) {
+        $full = $root.'/'.$path;
+        @mkdir(dirname($full), 0777, true);
+        file_put_contents($full, 'isi:'.$path);
+    }
+}
+
+/**
+ * Berkas yang wajib ada di paket rilis (AC-2).
+ *
+ * @return list<string>
+ */
+function releaseRuntimePaths(): array
+{
+    return [
+        '.htaccess', '.env.example', '.env.production.example', 'artisan', 'composer.json', 'composer.lock', 'VERSION',
+        'app/Models/User.php', 'lang/id/pondok.php', 'public/index.php', 'public/.htaccess', 'public/build/manifest.json',
+        'public/build/assets/app-abc.css', 'public/js/filament/app.js', 'vendor/autoload.php',
+        'storage/framework/views/.gitignore', 'storage/framework/sessions/.gitignore', 'storage/framework/cache/.gitignore',
+        'storage/logs/.gitignore', 'storage/app/private/.gitignore', 'storage/app/public/.gitignore', 'bootstrap/cache/.gitignore',
+        'docs/instalasi.md', 'docs/prd.md',
+    ];
+}
+
+/**
+ * Berkas yang tidak boleh masuk paket rilis (AC-1).
+ *
+ * @return list<string>
+ */
+function releaseExcludedPaths(): array
+{
+    return [
+        'node_modules/a/index.js', 'tests/Feature/XTest.php', '.git/HEAD', '.github/workflows/ci.yml', '.claude/agents/x.md',
+        '.ai/rules/x.md', '.env', '.env.production', '.env.backup', '.env.staging', '.env.local', 'config/.env.testing',
+        'public/hot', 'public/storage/img.jpg', 'storage/logs/laravel.log', 'storage/framework/views/abc.php',
+        'storage/framework/sessions/s1', 'storage/framework/cache/data/x', 'storage/app/private/doc.pdf',
+        'storage/app/public/img.jpg', 'storage/app/releases/old.zip', 'bootstrap/cache/config.php', 'bootstrap/cache/packages.php',
+        'database/database.sqlite', 'docs/plans/F001-plan.md', 'docs/handoffs/x.md', 'CLAUDE.md', 'AGENTS.md', 'boost.json',
+        'feature_list.json', 'phpunit.xml', '.phpunit.result.cache', 'auth.json', 'app/.DS_Store', 'error.log',
+    ];
+}
+
+/**
+ * Daftar entri berkas (bukan direktori) di dalam zip.
+ *
+ * @return list<string>
+ */
+function zipEntries(string $zipPath): array
+{
+    $zip = new ZipArchive;
+    expect($zip->open($zipPath))->toBeTrue();
+
+    $names = [];
+
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+
+        if (! str_ends_with($name, '/')) {
+            $names[] = $name;
+        }
+    }
+
+    $zip->close();
+
+    return $names;
 }

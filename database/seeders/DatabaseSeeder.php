@@ -9,15 +9,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UnitSeeder::class,
-            AcademicYearSeeder::class,
-            SettingSeeder::class,
-            RolePermissionSeeder::class,
+            InstallSeeder::class,
             SuperAdminSeeder::class,
-            DocumentTypeSeeder::class,
-            AdmissionTrackSeeder::class,
-            StaticPageSeeder::class,
-            ContentCategorySeeder::class,
         ]);
     }
 }

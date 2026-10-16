@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Actions\Core\CreateSuperAdmin;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -18,16 +18,6 @@ class SuperAdminSeeder extends Seeder
             );
         }
 
-        $user = User::query()->firstOrCreate(
-            ['email' => $config['email']],
-            [
-                'name' => $config['name'],
-                'password' => $config['password'],
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ],
-        );
-
-        $user->assignRole(RolePermissionSeeder::SUPER_ADMIN);
+        app(CreateSuperAdmin::class)->handle((string) ($config['name'] ?: 'Super Admin'), $config['email'], $config['password']);
     }
 }

@@ -1,0 +1,15 @@
+# Pondok: tolak semua akses ke folder aplikasi.
+#
+# Document root domain harus folder `public/` (atau `public_html` yang diisi
+# lewat `php artisan pondok:publish-public`), bukan folder ini. Bila aplikasi
+# terlanjur diekstrak ke dalam folder web, berkas ini membuat semua halaman
+# menjawab 403 alih-alih membocorkan `.env`, `storage`, dan `vendor`.
+# `public/.htaccess` mengizinkan akses kembali untuk folder public.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

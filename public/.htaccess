@@ -1,3 +1,13 @@
+# Izinkan akses ke folder public. Perlu karena `.htaccess` di folder aplikasi
+# menolak semua akses, dan aturan itu diwarisi folder di bawahnya.
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

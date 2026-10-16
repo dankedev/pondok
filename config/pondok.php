@@ -19,6 +19,14 @@ return [
     'trusted_proxies' => env('TRUSTED_PROXIES'),
 
     /*
+    | Document root terpisah dari folder aplikasi (cPanel yang document root
+    | domainnya tidak bisa diubah), mis. `/home/<user>/public_html`. Bila diisi,
+    | `public_path()` menunjuk ke sini dan `pondok:publish-public` menyalin isi
+    | `public/` ke sana.
+    */
+    'public_path' => env('PONDOK_PUBLIC_PATH'),
+
+    /*
     | Portal publik (F017). `cache_max_age` dalam detik untuk Cache-Control
     | publik respons 200 (0 = tanpa cache publik). `csp_enabled` mengirim
     | Content-Security-Policy portal (otomatis tidak dikirim saat Vite hot).

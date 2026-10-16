@@ -51,7 +51,6 @@ final class DemoData
             ],
         ],
         'hero_album_slug' => 'fasilitas-mahad',
-        'psb_video_youtube' => 'DmAlKhr0001',
         'footer' => [
             'footer_quote_arabic' => 'وَلْتَكُن مِّنكُمْ أُمَّةٌ يَدْعُونَ إِلَى الْخَيْرِ وَيَأْمُرُونَ بِالْمَعْرُوفِ وَيَنْهَوْنَ عَنِ الْمُنكَرِ ۚ وَأُولَٰئِكَ هُمُ الْمُفْلِحُونَ',
             'footer_quote_translation' => 'Dan hendaklah di antara kamu ada segolongan orang yang menyeru kepada kebajikan, menyuruh kepada yang makruf, dan mencegah dari yang mungkar. Mereka itulah orang-orang yang beruntung.',
@@ -64,6 +63,7 @@ final class DemoData
         ],
         /** Logo merek dari `docs/brand/` (dilewati bila berkas tidak ada). */
         'logos' => [
+            'logo' => 'docs/brand/logo-mahad-simbol.png',
             'logo_desktop' => 'docs/brand/logo-mahad-lengkap.jpg',
             'logo_mobile' => 'docs/brand/logo-mahad-simbol.png',
             'favicon' => 'docs/brand/logo-mahad-simbol.png',
@@ -529,13 +529,6 @@ final class DemoData
             'captions' => ['Pembukaan masa ta\'aruf', 'Pengenalan tata tertib asrama', 'Halaqah tahfidz perdana', 'Pengisian Jurnal Adab', 'Foto bersama musyrif']],
         ['slug' => 'ekstrakurikuler-santri', 'title' => 'Ekstrakurikuler Santri', 'category' => 'Kegiatan', 'description' => 'Kegiatan ekstrakurikuler santri di luar jam belajar.',
             'captions' => ['Futsal', 'Karate', 'Tenis meja', 'Berenang']],
-    ];
-
-    /** ID YouTube rekaan (embed kosong); ganti dengan video lembaga sendiri. */
-    public const VIDEOS = [
-        ['youtube' => 'DmAlKhr0001', 'title' => "Video Info PSB Ma'had Al-Khair Belitang", 'featured' => true, 'description' => 'Informasi pendaftaran santri baru MTW/SMP dan TSN/SMA khusus putra.'],
-        ['youtube' => 'DmAlKhr0002', 'title' => "Masa Ta'aruf Santri Baru", 'featured' => false, 'description' => "Rangkaian kegiatan masa ta'aruf santri baru."],
-        ['youtube' => 'DmAlKhr0003', 'title' => 'Kegiatan Pagi di Asrama', 'featured' => false, 'description' => 'Rutinitas santri dari subuh hingga berangkat ke kelas.'],
     ];
 
     /**

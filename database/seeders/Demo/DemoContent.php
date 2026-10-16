@@ -7,7 +7,6 @@ use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Konten\SaveAlbum;
 use App\Actions\Konten\SaveCategory;
 use App\Actions\Konten\SavePost;
-use App\Actions\Konten\SaveVideo;
 use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalHome;
 use App\Actions\Konten\UpdateSchoolContacts;
@@ -18,12 +17,11 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\StaticPage;
-use App\Models\Video;
 use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
 /**
- * Profil sekolah, halaman statis, kategori, berita, album, dan video demo.
+ * Profil sekolah, halaman statis, kategori, berita, dan album demo. Video sengaja tidak dibuat: ID YouTube milik orang lain tidak dipakai.
  */
 final class DemoContent
 {
@@ -51,7 +49,6 @@ final class DemoContent
     {
         $this->seedPosts($this->seedCategories());
         $this->seedAlbums();
-        $this->seedVideos();
         $this->seedInstitutionProfile();
     }
 
@@ -93,7 +90,6 @@ final class DemoContent
             app(UpdatePortalHome::class)->handle([
                 ...$demo['home'],
                 'hero_album_id' => Album::query()->where('slug', $demo['hero_album_slug'])->value('id'),
-                'psb_video_id' => Video::query()->where('youtube_id', $demo['psb_video_youtube'])->value('id'),
             ], $actor);
         }
 
@@ -148,7 +144,7 @@ final class DemoContent
                 'body' => $body,
                 'status' => $published ? Post::STATUS_PUBLISHED : Post::STATUS_DRAFT,
                 'published_at' => $published ? $this->context->calendar->daysAgo($row['offset'])->setTime(8, 0)->format('Y-m-d H:i:s') : null,
-                'cover' => $row['cover'] ? $this->context->files->png('sampul-'.$row['slug'], $title, $index) : null,
+                'cover' => $row['cover'] ? $this->context->files->png('sampul-'.$row['slug'], $index) : null,
             ], $actor);
         }
     }
@@ -169,25 +165,8 @@ final class DemoContent
             }
 
             foreach ($row['captions'] as $position => $caption) {
-                app(AddAlbumPhotos::class)->handle($album, [$this->context->files->png($row['slug'].'-'.$position, $caption, $index + $position)], $caption);
+                app(AddAlbumPhotos::class)->handle($album, [$this->context->files->png($row['slug'].'-'.$position, $index + $position)], $caption);
             }
-        }
-    }
-
-    private function seedVideos(): void
-    {
-        foreach (DemoData::VIDEOS as $position => $row) {
-            if (Video::query()->where('youtube_id', $row['youtube'])->exists()) {
-                continue;
-            }
-
-            app(SaveVideo::class)->handle([
-                'title' => $row['title'],
-                'youtube' => $row['youtube'],
-                'description' => $row['description'],
-                'is_featured' => $row['featured'],
-                'sort_order' => $position + 1,
-            ]);
         }
     }
 

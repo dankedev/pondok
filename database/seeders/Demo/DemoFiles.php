@@ -11,8 +11,14 @@ use Illuminate\Http\UploadedFile;
  */
 final class DemoFiles
 {
-    /** Palet design guide: hijau tua, hijau, krem. */
-    private const COLORS = [[22, 101, 52], [21, 128, 61], [245, 240, 225], [180, 140, 70]];
+    /** Pasangan warna gradasi (atas, bawah) dari palet tenang hijau dan krem design guide. */
+    private const GRADIENTS = [
+        [[22, 101, 52], [74, 140, 98]],
+        [[245, 240, 225], [214, 200, 160]],
+        [[33, 87, 72], [140, 170, 140]],
+        [[200, 180, 130], [245, 236, 214]],
+        [[52, 120, 90], [196, 214, 186]],
+    ];
 
     /** PNG 1x1, dipakai bila GD tidak tersedia. */
     private const FALLBACK_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -35,9 +41,9 @@ final class DemoFiles
         return $this->make($name.'.pdf', $content, 'application/pdf');
     }
 
-    public function png(string $name, string $label, int $variant = 0): UploadedFile
+    public function png(string $name, int $variant = 0): UploadedFile
     {
-        return $this->make($name.'.png', $this->pngContent($label, $variant), 'image/png');
+        return $this->make($name.'.png', $this->pngContent($variant), 'image/png');
     }
 
     public function cleanup(): void
@@ -60,27 +66,45 @@ final class DemoFiles
         return new UploadedFile($path, $name, $mime, null, true);
     }
 
-    private function pngContent(string $label, int $variant): string
+    /**
+     * Pola netral tanpa teks: gradasi vertikal lembut dua warna palet dan tiga
+     * lingkaran transparan. Warna dan posisi ditentukan `$variant` (deterministik).
+     */
+    private function pngContent(int $variant): string
     {
         if (! function_exists('imagecreatetruecolor')) {
             return (string) base64_decode(self::FALLBACK_PNG);
         }
 
-        $image = imagecreatetruecolor(800, 600);
-        [$r, $g, $b] = self::COLORS[$variant % 2];
-        imagefill($image, 0, 0, (int) imagecolorallocate($image, $r, $g, $b));
+        $width = 800;
+        $height = 600;
+        [$top, $bottom] = self::GRADIENTS[$variant % count(self::GRADIENTS)];
+        $image = imagecreatetruecolor($width, $height);
 
-        [$r, $g, $b] = self::COLORS[2];
-        $cream = (int) imagecolorallocate($image, $r, $g, $b);
-        [$r, $g, $b] = self::COLORS[3];
-        imagefilledrectangle($image, 0, 520, 800, 600, (int) imagecolorallocate($image, $r, $g, $b));
+        for ($y = 0; $y < $height; $y++) {
+            $t = $y / ($height - 1);
+            $color = (int) imagecolorallocate(
+                $image,
+                (int) round($top[0] + ($bottom[0] - $top[0]) * $t),
+                (int) round($top[1] + ($bottom[1] - $top[1]) * $t),
+                (int) round($top[2] + ($bottom[2] - $top[2]) * $t),
+            );
+            imageline($image, 0, $y, $width - 1, $y, $color);
+        }
 
-        $label = mb_substr(preg_replace('/[^\x20-\x7E]/', '', $label) ?? '', 0, 70);
-        imagestring($image, 5, 40, 260, $label, $cream);
-        imagestring($image, 3, 40, 550, "Gambar contoh - Ma'had Al-Khair Belitang", $cream);
+        imagealphablending($image, true);
+        $circle = (int) imagecolorallocatealpha($image, 255, 255, 255, 105);
+
+        for ($i = 0; $i < 3; $i++) {
+            $seed = ($variant * 7 + $i * 13) % 17;
+            $x = 120 + ($seed * 37 + $i * 211) % 560;
+            $y = 110 + ($seed * 53 + $i * 149) % 380;
+            $diameter = 160 + ($seed * 23) % 220;
+            imagefilledellipse($image, $x, $y, $diameter, $diameter, $circle);
+        }
 
         ob_start();
-        imagepng($image);
+        imagepng($image, null, 9);
 
         return (string) ob_get_clean();
     }

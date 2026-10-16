@@ -69,10 +69,9 @@ demo-alkhair-belitang
 - 2 asrama putra (Abu Bakar Ash-Shiddiq untuk MTW/SMP, Umar bin Khattab untuk TSN/SMA), 8 kamar, satu musyrif per kamar. Semua santri berombel tinggal di asrama; santri baru dari PSB belum ditempatkan sampai serah terima.
 - Tagihan SPP empat bulan terakhir dengan pola lunas, cicilan, dan tunggakan, serta satu pembayaran yang dibatalkan.
 - PSB: Gelombang I dan Gelombang II yang bersambung (pendaftaran dibuka sepanjang tahun selama kuota tersedia) dan 14 pendaftar di semua status.
-- Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori sesuai brief, album foto (gambar placeholder), dan video. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
+- Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori sesuai brief, dan album foto (gambar placeholder berpola netral tanpa teks). Logo cetak (kop surat dan kuitansi) memakai logo simbol dari `docs/brand/`. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
 
 ## Keterbatasan
 
-- **Video YouTube** memakai ID rekaan (`DmAlKhr0001` dan seterusnya), jadi embed dan thumbnail kosong. Ganti dengan video lembaga sendiri lewat panel Konten > Video.
-- Logo sekolah dan tautan media sosial sengaja dikosongkan.
+- **Video sengaja kosong.** Seeder tidak membuat video dan tidak mengisi video profil maupun video PSB di beranda, karena kita tidak memakai ID YouTube milik orang lain. Admin dapat menambah video sungguhan lewat panel Konten > Video, lalu memilihnya di pengaturan beranda.
 - Berkas dokumen dan foto hanya placeholder.

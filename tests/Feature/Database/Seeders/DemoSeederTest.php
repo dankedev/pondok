@@ -551,14 +551,20 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     }
     demoCheck($albums->contains('title', "Fasilitas Ma'had") && DB::table('photos')->where('album_id', $albums->firstWhere('title', "Fasilitas Ma'had")->id)->count() === 6, 'AC-20 album Fasilitas 6 foto');
     demoCheck($posts->whereNotNull('cover_path')->filter(fn ($p) => Storage::disk('public')->exists($p->cover_path))->count() >= 4, 'AC-20 sampul berita');
-    expect(DB::table('videos')->count())->toBe(3);
-    $featured = DB::table('videos')->where('is_featured', true)->get();
-    expect($featured)->toHaveCount(1);
-    demoCheck(str_contains($featured->first()->title, 'PSB'), 'AC-20 video unggulan PSB');
+    // Revisi 3: video demo dikosongkan (ID rekaan tidak bisa diputar, ID nyata milik orang lain tidak boleh dipakai).
+    expect(DB::table('videos')->count())->toBe(0);
+    expect(Setting::get('portal.profile_video_id'))->toBeEmpty()->and(Setting::get('portal.psb_video_id'))->toBeEmpty();
+    // Placeholder gambar: PNG valid dan berukuran wajar (< 200 KB).
+    foreach (DB::table('photos')->pluck('path')->merge($posts->whereNotNull('cover_path')->pluck('cover_path')) as $imagePath) {
+        $bytes = Storage::disk('public')->get($imagePath);
+        $info = getimagesizefromstring($bytes);
+        demoCheck($info !== false && $info['mime'] === 'image/png' && strlen($bytes) < 200 * 1024, "AC-20 placeholder PNG valid {$imagePath}");
+    }
     $this->get(route('portal.home'))->assertOk()->assertSee("Ma'had Al-Khair Belitang");
     $this->get(route('portal.posts.index'))->assertOk();
     $this->get(route('portal.albums.index'))->assertOk();
-    $this->get(route('portal.videos.index'))->assertOk();
+    $this->get(route('portal.videos.index'))->assertOk()->assertSee(__('pondok.portal.videos.empty'));
+    $this->get(route('portal.home'))->assertOk()->assertDontSee(__('pondok.portal.home.featured_videos'));
     $this->get(route('portal.pages.show', 'profil'))->assertOk();
 
     // AC-26
@@ -605,7 +611,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect($contentHits)->toBe([]);
 
     // AC-59 (F036): profil lembaga fiktif dan logo merek, lewat seed pertama yang sama.
-    $profileKeys = ['school.contacts', 'school.social_links', 'portal.hero_greeting', 'portal.highlights', 'portal.hero_album_id', 'portal.psb_video_id', 'portal.footer_quote_source', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
+    $profileKeys = ['school.contacts', 'school.social_links', 'portal.hero_greeting', 'portal.highlights', 'portal.hero_album_id', 'portal.footer_quote_source', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
     $contacts = collect(Setting::get('school.contacts'));
     expect($contacts->count())->toBeGreaterThanOrEqual(2)
         ->and($contacts->pluck('label')->all())->toContain('Panitia PSB', 'Sekretariat')
@@ -616,12 +622,16 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect(Setting::get('portal.hero_greeting'))->not->toBeEmpty()
         ->and(count(Setting::get('portal.highlights')))->toBeGreaterThanOrEqual(3)
         ->and(Setting::get('portal.footer_quote_source'))->toContain("Ali 'Imran")->toContain('104')
-        ->and(Album::query()->whereKey(Setting::get('portal.hero_album_id'))->exists())->toBeTrue()
-        ->and(Video::query()->whereKey(Setting::get('portal.psb_video_id'))->exists())->toBeTrue();
+        ->and(Album::query()->whereKey(Setting::get('portal.hero_album_id'))->exists())->toBeTrue();
+    // Revisi 3: logo cetak (kop surat dan kuitansi) memakai logo simbol.
+    $printLogo = Setting::get('school.logo_path');
+    expect($printLogo)->toBeString()->not->toBeEmpty()
+        ->and(Storage::disk('public')->exists($printLogo))->toBeTrue()
+        ->and(Storage::disk('public')->get($printLogo))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')));
     $logoPaths = [Setting::get('school.logo_desktop_path'), Setting::get('school.logo_mobile_path'), Setting::get('school.favicon_path')];
     expect(array_unique($logoPaths))->toHaveCount(3)
         ->and(collect($logoPaths)->every(fn (?string $path): bool => is_string($path) && str_starts_with($path, 'school/') && Storage::disk('public')->exists($path)))->toBeTrue()
-        ->and(Storage::disk('public')->allFiles('school'))->toHaveCount(3)
+        ->and(Storage::disk('public')->allFiles('school'))->toHaveCount(4)
         ->and(Storage::disk('public')->get($logoPaths[0]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-lengkap.jpg')))
         ->and(Storage::disk('public')->get($logoPaths[1]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')))
         ->and(Storage::disk('public')->get($logoPaths[2]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')));
@@ -648,7 +658,8 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     foreach ($profileSnapshot as $key => $value) {
         expect(Setting::get($key))->toBe($value, "AC-59 {$key} stabil pada seed ulang");
     }
-    expect(Storage::disk('public')->allFiles('school'))->toHaveCount(3);
+    expect(Storage::disk('public')->allFiles('school'))->toHaveCount(4);
+    expect(Setting::get('school.logo_path'))->toBe($printLogo);
 
     // AC-6 (cakupan jenjang) setelah seluruh seeding.
     $this->actingAs(demoUser('admin-sekolah'));

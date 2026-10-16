@@ -582,12 +582,13 @@
         "Idempotent: jalan dua kali tidak menggandakan data",
         "Data minimal per modul terisi dan aturan bisnis berlaku (lewat Action)",
         "Tanggal relatif terhadap hari ini tetapi deterministik; pembayaran tidak di masa depan",
-        "Satu akun demo per peran, password dari DEMO_PASSWORD, didokumentasikan di docs/demo.md"
+        "Satu akun demo per peran, password dari DEMO_PASSWORD, didokumentasikan di docs/demo.md",
+        "Revisi 2: data mengikuti brosur PSB sebagai referensi (khusus putra, tanpa data SD, tarif brosur, PSB berkesinambungan sepanjang tahun) tanpa kontak/rekening/nama asli brosur"
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "Commit ac9b141, f5070f9. DemoSeederTest 6/6 lulus (±12 detik); full suite 4001/4002 di PHP 8.4 dan 8.3, satu-satunya kegagalan AC-48 (DEMO_PASSWORD belum ada di .env.production.example) sudah diperbaiki dan lulus; MySQL: migrate:fresh --seed lalu DemoSeeder dua kali, jumlah baris dan total uang identik; Pint lulus.",
-      "notes": "Konten demo mengikuti manhaj ahlus sunnah: tanpa perayaan selain Idul Fitri dan Idul Adha. ID YouTube rekaan; password bawaan publik, isi DEMO_PASSWORD di instance yang bisa diakses orang lain."
+      "evidence": "Commit ac9b141, f5070f9; revisi sesuai brosur 384b2ba, c3a71d7. DemoSeederTest 6/6 lulus (±12 detik); test Seeders+Portal 323 lulus; full suite awal 4001/4002 (AC-48 sudah diperbaiki); MySQL: migrate:fresh --seed lalu DemoSeeder dua kali, jumlah baris dan total uang identik; Pint lulus.",
+      "notes": "Konten demo mengikuti manhaj ahlus sunnah: tanpa perayaan selain Idul Fitri dan Idul Adha. ID YouTube rekaan; password bawaan publik, isi DEMO_PASSWORD di instance yang bisa diakses orang lain. Revisi 2 (16 Okt 2026, permintaan user): sesuaikan dengan docs/brand/brosur-psb-2027-2028.md sebagai referensi (brief/PRD/ERD tetap didahulukan): khusus putra, tanpa data SD (unit SLTP/SLTA dinamai MTW/SMP dan TSN/SMA), SPP 1,6 jt termasuk makan/laundry, pendaftaran 300 rb, uang masuk 10 jt, beasiswa maks. 3 penerima, dua gelombang berkesinambungan, kategori/halaman mengikuti brief. Rencana: bagian Revisi 2 di docs/plans/F034-plan.md. Usulan lanjutan di luar F034: menu halaman statis sesuai brief, menyembunyikan jenjang yang tidak dipakai."
     }
   ]
 }

@@ -54,7 +54,7 @@ it('AC-4: enables the konten module on a fresh install and keeps other defaults'
         ->and(Setting::moduleEnabled('psb'))->toBeTrue()
         ->and(Setting::moduleEnabled('keuangan'))->toBeTrue()
         ->and(Setting::moduleEnabled('dokumen'))->toBeTrue()
-        ->and(Setting::moduleEnabled('prestasi'))->toBeFalse();
+        ->and(Setting::moduleEnabled('prestasi'))->toBeTrue();
 });
 
 it('AC-4: does not overwrite a konten switch that was turned off', function () {

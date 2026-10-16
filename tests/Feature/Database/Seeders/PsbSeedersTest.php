@@ -9,16 +9,17 @@ use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\SettingSeeder;
 
-it('AC-5: seeds the seven document types', function () {
+it('AC-5: seeds the eight document types', function () {
     $this->seed(DocumentTypeSeeder::class);
 
     $types = DocumentType::query()->get()->keyBy('code');
 
-    expect($types->keys()->sort()->values()->all())->toBe(['AKTA', 'BPJS', 'FOTO', 'IJAZAH', 'KK', 'RAPOR', 'SERTIFIKAT'])
+    expect($types->keys()->sort()->values()->all())->toBe(['AKTA', 'BPJS', 'FOTO', 'FOTO_PRESTASI', 'IJAZAH', 'KK', 'RAPOR', 'SERTIFIKAT'])
         ->and($types['KK'])->name->toBe('Kartu Keluarga')->owner->toBe('santri')->is_required->toBeTrue()->is_confidential->toBeTrue()->has_expiry->toBeFalse()
         ->and($types['AKTA'])->name->toBe('Akta kelahiran')->owner->toBe('santri')->is_required->toBeTrue()->is_confidential->toBeTrue()->has_expiry->toBeFalse()
         ->and($types['FOTO'])->name->toBe('Pas foto')
         ->and($types['BPJS'])->owner->toBe('santri')->has_expiry->toBeTrue()->is_required->toBeFalse()->is_confidential->toBeFalse()
+        ->and($types['FOTO_PRESTASI'])->name->toBe('Foto prestasi')->owner->toBe('prestasi')->is_required->toBeFalse()->is_confidential->toBeFalse()
         ->and($types['SERTIFIKAT'])->owner->toBe('prestasi')->is_required->toBeFalse()->is_confidential->toBeFalse()->has_expiry->toBeFalse();
 });
 
@@ -42,7 +43,7 @@ it('AC-5: does not duplicate or overwrite edited document types', function () {
 
     $this->seed(DocumentTypeSeeder::class);
 
-    expect(DocumentType::query()->count())->toBe(7)
+    expect(DocumentType::query()->count())->toBe(8)
         ->and(DocumentType::query()->where('code', 'KK')->first())->name->toBe('KK (salinan)')->is_active->toBeFalse();
 });
 
@@ -74,7 +75,7 @@ it('AC-6: seeds psb master data from DatabaseSeeder', function () {
 
     $this->seed(DatabaseSeeder::class);
 
-    expect(DocumentType::query()->count())->toBe(7)
+    expect(DocumentType::query()->count())->toBe(8)
         ->and(AdmissionTrack::query()->count())->toBe(4);
 });
 

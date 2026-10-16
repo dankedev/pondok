@@ -16,6 +16,7 @@ class DocumentTypeSeeder extends Seeder
         ['code' => 'FOTO', 'name' => 'Pas foto', 'owner' => DocumentType::OWNER_STUDENT],
         ['code' => 'BPJS', 'name' => 'Kartu BPJS', 'owner' => DocumentType::OWNER_STUDENT, 'has_expiry' => true],
         ['code' => 'SERTIFIKAT', 'name' => 'Sertifikat prestasi', 'owner' => DocumentType::OWNER_ACHIEVEMENT],
+        ['code' => 'FOTO_PRESTASI', 'name' => 'Foto prestasi', 'owner' => DocumentType::OWNER_ACHIEVEMENT],
     ];
 
     public function run(): void

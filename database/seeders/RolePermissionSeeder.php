@@ -43,6 +43,7 @@ class RolePermissionSeeder extends Seeder
         'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement', 'Applicant',
         'DocumentType', 'Document', 'IssuedLetter',
         'Category', 'Post', 'Album', 'Video', 'StaticPage',
+        'Achievement',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -62,6 +63,8 @@ class RolePermissionSeeder extends Seeder
         'IssuedLetter' => ['cancel', 'configureNumbering'],
         // Berita soft delete: dipulihkan dari tempat sampah, tidak dihapus permanen.
         'Post' => ['restore', 'restoreAny'],
+        // Prestasi diverifikasi admin sekolah dan dijadikan draf berita oleh admin konten.
+        'Achievement' => ['verify', 'publish'],
     ];
 
     /** Model yang aksinya lebih sempit dari aksi standar. */
@@ -156,6 +159,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Album'),
                 ...self::resourcePermissions('Video'),
                 ...self::resourcePermissions('StaticPage'),
+                // Membuat draf berita dari prestasi publik terverifikasi (F015).
+                ...self::resourcePermissions('Achievement', ['publish']),
             ],
             'admin-sekolah' => [
                 'view-dashboard',
@@ -174,6 +179,8 @@ class RolePermissionSeeder extends Seeder
                 'view:school-profile',
                 // Surat keluar (F014): terbit, batal, dan atur penomoran; tidak diubah atau dihapus.
                 ...self::resourcePermissions('IssuedLetter', ['viewAny', 'view', 'create', 'cancel', 'configureNumbering']),
+                // Prestasi (F015): memverifikasi catatan kesantrian, tidak mencatat atau menghapus.
+                ...self::resourcePermissions('Achievement', ['viewAny', 'view', 'verify']),
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.
@@ -197,6 +204,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('DormitorySupervisor', $withoutDelete),
                 // Dokumen santri non-rahasia (mis. kartu BPJS) untuk keperluan asrama.
                 ...self::resourcePermissions('Document', $readOnly),
+                // Mencatat prestasi santri (F015); verifikasi oleh admin sekolah.
+                ...self::resourcePermissions('Achievement', ['viewAny', 'view', 'create', 'update', 'delete']),
             ],
             // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi.
             'musyrif' => [

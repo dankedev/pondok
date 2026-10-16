@@ -6,6 +6,8 @@ use App\Models\Document;
 use App\Models\Setting;
 use App\Models\User;
 use ArrayObject;
+use Carbon\Carbon;
+use Carbon\Translator as CarbonTranslator;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -35,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
         // Tidak dipaksakan (`enforceMorphMap`): Spatie Permission dan Activitylog menyimpan nama kelas.
         Relation::morphMap(Document::DOCUMENTABLE_TYPES);
 
+        $this->configureIndonesianMonthAbbreviations();
+
         // Halaman verifikasi surat publik (F014): 30 permintaan per menit per IP, form dan hasil berbagi batas.
         RateLimiter::for('letter-verification', fn (Request $request): Limit => Limit::perMinute(30)->by((string) $request->ip()));
 
@@ -43,6 +47,21 @@ class AppServiceProvider extends ServiceProvider
                 $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
             }
         });
+    }
+
+    /**
+     * Singkatan bulan Indonesia untuk format `j M Y` (design guide §5): Carbon memakai
+     * "Agt" untuk Agustus, panduan memakai tiga huruf awal ("17 Agu 2026").
+     */
+    private function configureIndonesianMonthAbbreviations(): void
+    {
+        $messages = ['months_short' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']];
+
+        foreach ([CarbonTranslator::get('id'), Carbon::getTranslator()] as $translator) {
+            if ($translator instanceof CarbonTranslator) {
+                $translator->setMessages('id', $messages);
+            }
+        }
     }
 
     /**

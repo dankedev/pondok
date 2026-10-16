@@ -77,6 +77,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:album', 'view:album', 'create:album', 'update:album', 'delete:album', 'delete-any:album',
         'view-any:video', 'view:video', 'create:video', 'update:video', 'delete:video', 'delete-any:video',
         'view-any:static-page', 'view:static-page', 'update:static-page',
+        'publish:achievement',
     ]],
     'admin-psb' => ['admin-psb', [
         'view-dashboard', 'view-psb-metrics',
@@ -97,6 +98,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:room-assignment', 'view:room-assignment', 'create:room-assignment', 'update:room-assignment',
         'view-any:dormitory-supervisor', 'view:dormitory-supervisor', 'create:dormitory-supervisor', 'update:dormitory-supervisor',
         'view-any:document', 'view:document',
+        'view-any:achievement', 'view:achievement', 'create:achievement', 'update:achievement', 'delete:achievement',
     ]],
     'musyrif' => ['musyrif', ['view-dashboard', 'view-any:room-assignment', 'view:room-assignment']],
     'ustadz-tahfidz' => ['ustadz-tahfidz', ['view-dashboard']],
@@ -116,6 +118,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:document', 'view:document', 'create:document', 'verify:document', 'view-confidential:document',
         'view:school-profile',
         'view-any:issued-letter', 'view:issued-letter', 'create:issued-letter', 'cancel:issued-letter', 'configure-numbering:issued-letter',
+        'view-any:achievement', 'view:achievement', 'verify:achievement',
     ]],
 ]);
 
@@ -338,7 +341,7 @@ it('AC-5: lets super-admin hold every content permission and does not duplicate 
     $this->seed(RolePermissionSeeder::class);
 
     expect(Permission::query()->count())->toBe($count)
-        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(31);
+        ->and(Role::findByName('admin-konten')->permissions()->count())->toBe(32);
 });
 
 it('AC-5: backs the post restore abilities with the post policy', function () {
@@ -413,4 +416,24 @@ it('AC-32: does not duplicate issued letter permissions when seeded again', func
     $this->seed(RolePermissionSeeder::class);
 
     expect(Permission::query()->where('name', 'like', '%:issued-letter')->count())->toBe($count)->toBe(8);
+});
+
+it('AC-7: creates achievement permissions', function () {
+    expect(Permission::query()->pluck('name')->all())->toContain(
+        'view-any:achievement', 'view:achievement', 'create:achievement', 'update:achievement', 'delete:achievement',
+        'delete-any:achievement', 'verify:achievement', 'publish:achievement',
+    );
+});
+
+it('AC-7: keeps delete-any achievement for super-admin only', function (string $role) {
+    $permissions = Role::findByName($role)->permissions->pluck('name');
+
+    expect($permissions)->not->toContain('delete-any:achievement');
+})->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
+
+it('AC-7: gives super-admin every achievement permission', function () {
+    $user = User::factory()->create()->assignRole('super-admin');
+
+    expect(Role::findByName('super-admin')->permissions->pluck('name'))->toContain('delete-any:achievement', 'verify:achievement', 'publish:achievement')
+        ->and($user->can('delete-any:achievement'))->toBeTrue();
 });

@@ -14,7 +14,7 @@ it('AC-6: enables dokumen on a fresh install', function () {
         ->and(Setting::moduleEnabled('psb'))->toBeTrue()
         ->and(Setting::moduleEnabled('keuangan'))->toBeTrue()
         ->and(Setting::moduleEnabled('konten'))->toBeTrue()
-        ->and(Setting::moduleEnabled('prestasi'))->toBeFalse();
+        ->and(Setting::moduleEnabled('prestasi'))->toBeTrue();
 });
 
 it('AC-6: does not overwrite a dokumen switch that was turned off', function () {

@@ -596,7 +596,7 @@
       "name": "Profil lembaga generik untuk portal",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F016", "F017", "F034"],
       "description": "Profil lembaga yang berlaku untuk lembaga mana pun, menggantikan field school.* yang terbatas: identitas (nama, nama singkat, nama Arab, tagline, logo cetak, logo desktop, logo mobile, favicon), alamat dan tautan peta, daftar kontak berlabel, daftar media sosial, sambutan beranda, keunggulan, media beranda (slider album, video profil, video PSB), dan footer (kutipan ayat, deskripsi, tautan cepat). Disimpan di settings (key school.*, daftar sebagai JSON). Halaman admin Profil lembaga (cluster Filament) dan portal F017 membaca field baru. Field lama dimigrasikan.",
       "acceptance": [
@@ -608,9 +608,9 @@
         "Tanpa teks konten bawaan: instalasi baru tanpa DemoSeeder tidak menampilkan basmalah, salam, ayat, sambutan, atau judul seksi konten di beranda dan footer; semua isian berawal kosong dan bagian kosong tidak dirender",
         "DemoSeeder mengisi field baru dengan contoh fiktif Al-Khair tanpa kontak asli brosur"
       ],
-      "owner": "orchestrator-bc5d2383",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 78d069c, a080669, 7c7d1b3, 939703b, 7fb0b85, b2147ea. Full suite 4191/4191 lulus di PHP 8.4 dan 8.3; run F036 2084/2084 (termasuk InstitutionVerifyGapsTest dari VERIFY); migrasi move_school_profile_settings jalan di MySQL, migrate:fresh --seed lalu DemoSeeder dua kali tanpa error; Pint lulus; cek visual browser desktop & 360px oleh sesi induk: OK.",
       "notes": "Permintaan user 16 Okt 2026. Rencana: docs/plans/F036-plan.md. F035 (portal-identitas-visual) dicadangkan di worktree sesi lain dan bergantung pada F036; entri F035 tidak dibuat di file ini. Dipecah: halaman statis bebas + urutan menu menjadi F037, halaman Info PSB menjadi F038. Tema (warna, font, template) di luar cakupan, ditunda tanpa entri. Bergantung pada F034 karena mengubah berkas DemoSeeder yang sedang direvisi; RED/GREEN dimulai setelah rencana disetujui user dan F034 done. Keputusan user: peta hanya tautan, admin-konten ikut mendapat view:school-profile, menu \"Profil lembaga\", logo demo dari docs/brand/. Urutan merge: F036 dulu, F035 rebase."
     },
     {

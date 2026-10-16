@@ -222,16 +222,16 @@
       "name": "Daftar ulang & konversi menjadi santri",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F011", "F007", "F013"],
       "description": "Daftar ulang setelah pembayaran minimal psb.min_paid_percent membuat students; student_id diisi di tagihan dan override pendaftar, berkas valid disalin ke documents.",
       "acceptance": [
         "Konversi memindahkan tagihan, override, dan dokumen (teruji)"
       ],
-      "owner": "orchestrator-bc5d2383",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Dari F013: isi documents.uploaded_by dengan user yang menjalankan daftar ulang; saat menambah FK documents.source_applicant_document_id, SQLite membangun ulang tabel documents — wajib test index dan FK tetap ada. Dari F010: applicant_documents sudah punya original_name, mime_type, size_kb."
+      "evidence": "Commit c3845a0, d8099b3, a3af7be, f5c038a, 3bff808. 625 test F012 lulus (termasuk ReRegisterVerifyTest); full suite 3724/3724 lulus di PHP 8.4 dan 8.3; migrate:fresh --seed MySQL OK (migration FK & unique jalan); Pint lulus.",
+      "notes": "psb.min_paid_percent bawaan 50 dan format NIS students.nis_format menunggu konfirmasi user. Konversi bersamaan hanya diuji di SQLite. a3af7be ikut memuat kunci lang 'home' milik sesi lain (beranda sementara)."
     },
     {
       "id": "F013",
@@ -308,13 +308,13 @@
       "name": "Portal publik",
       "phase": 1,
       "module": "Konten",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F016", "F010"],
       "description": "Halaman publik Blade + Livewire + Tailwind: beranda, berita, galeri, halaman statis, tautan PSB.",
       "acceptance": [
         "Lolos checklist §0 docs/design-guide.md"
       ],
-      "owner": null,
+      "owner": "orchestrator-bc5d2383",
       "handoff": null,
       "evidence": "",
       "notes": "Dari F010: pakai ulang layouts/public.blade.php dan components/ui/*."

@@ -1,0 +1,3 @@
+# Menjadikan folder ini root workspace pnpm sendiri, supaya pnpm tidak memakai
+# pnpm-workspace.yaml di direktori induk (mis. folder home pengembang).
+packages: []

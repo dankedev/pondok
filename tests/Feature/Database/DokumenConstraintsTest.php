@@ -34,7 +34,7 @@ it('AC-1: indexes the owner, expiry and replacement columns', function () {
         ->and($indexes->firstWhere('columns', ['documentable_type', 'documentable_id', 'document_type_id'])['unique'])->toBeFalse();
 });
 
-it('AC-1: restricts the foreign keys and leaves polymorphic and PSB source columns free', function () {
+it('AC-1: restricts the foreign keys, links the PSB source (F012) and leaves the polymorphic column free', function () {
     $keys = collect(Schema::getForeignKeys('documents'));
 
     foreach (['document_type_id' => 'document_types', 'verified_by' => 'users', 'uploaded_by' => 'users', 'replaced_by_id' => 'documents'] as $column => $table) {
@@ -45,7 +45,13 @@ it('AC-1: restricts the foreign keys and leaves polymorphic and PSB source colum
             ->and(strtolower($key['on_delete']))->toBe('restrict');
     }
 
-    expect($keys->contains(fn (array $key): bool => in_array('source_applicant_document_id', $key['columns'], true)))->toBeFalse()
+    // F012: berkas PSB asal kini ber-FK (restrict) ke `applicant_documents`.
+    $source = $keys->first(fn (array $key): bool => $key['columns'] === ['source_applicant_document_id']);
+
+    expect($source)->not->toBeNull()
+        ->and($source['foreign_table'])->toBe('applicant_documents')
+        ->and($source['foreign_columns'])->toBe(['id'])
+        ->and(strtolower($source['on_delete']))->toBeIn(['restrict', 'no action'])
         ->and($keys->contains(fn (array $key): bool => in_array('documentable_id', $key['columns'], true)))->toBeFalse();
 });
 

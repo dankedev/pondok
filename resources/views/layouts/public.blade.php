@@ -13,8 +13,13 @@
 </head>
 <body class="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
     <header class="border-b border-gray-200 bg-white">
-        <div class="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4 sm:px-6">
+        <div class="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
             <span class="text-base font-semibold text-gray-900">{{ $schoolName }}</span>
+            @isset($nav)
+                <nav aria-label="{{ __('pondok.home.nav_label') }}" class="flex items-center gap-2">
+                    {{ $nav }}
+                </nav>
+            @endisset
         </div>
     </header>
 

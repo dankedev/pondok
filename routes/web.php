@@ -8,9 +8,8 @@ use App\Livewire\Psb\ApplicationStatus;
 use App\Livewire\Psb\RegistrationForm;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Beranda sementara sampai portal publik (F017) selesai.
+Route::view('/', 'home')->name('home');
 
 // PSB publik tanpa akun (F010).
 Route::prefix('psb')->name('psb.')->middleware(EnsureModuleIsEnabled::class.':psb')->group(function (): void {

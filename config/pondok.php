@@ -36,4 +36,13 @@ return [
         'csp_enabled' => (bool) env('PORTAL_CSP', true),
     ],
 
+    /*
+    | Data demo (F034, `php artisan db:seed --class=DemoSeeder`). Password semua
+    | akun demo; kosong = password bawaan `DemoSeeder::DEFAULT_PASSWORD` yang
+    | tertulis di docs/demo.md (seeder menampilkan peringatan).
+    */
+    'demo' => [
+        'password' => env('DEMO_PASSWORD'),
+    ],
+
 ];

@@ -20,9 +20,11 @@ it('VERIFY: never lists or opens a terbit post whose published_at is NULL', func
 });
 
 it('VERIFY: does not render dangerous urls from settings as links', function () {
-    Setting::set('school.instagram_url', 'javascript:alert(1)');
-    Setting::set('school.facebook_url', 'data:text/html,<script>alert(1)</script>');
-    Setting::set('school.youtube_url', '"><script>alert(1)</script>');
+    Setting::set('school.social_links', [
+        ['platform' => 'instagram', 'label' => null, 'url' => 'javascript:alert(1)'],
+        ['platform' => 'facebook', 'label' => null, 'url' => 'data:text/html,<script>alert(1)</script>'],
+        ['platform' => 'youtube', 'label' => null, 'url' => '"><script>alert(1)</script>'],
+    ]);
 
     $html = $this->get('/')->assertOk()->getContent();
 

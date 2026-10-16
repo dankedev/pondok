@@ -285,3 +285,19 @@ it('VERIFY: escapes user supplied text on the printed letter', function () {
 
     expect($html)->not->toContain('<script>alert(1)')->not->toContain('<img src=x');
 });
+
+it('AC-53: prints the print logo and never the desktop or mobile logo on a letter', function () {
+    foreach (['cetak', 'desktop', 'mobile'] as $name) {
+        Storage::disk('public')->put("school/{$name}.png", $name);
+        Setting::set($name === 'cetak' ? 'school.logo_path' : "school.logo_{$name}_path", "school/{$name}.png");
+    }
+    Setting::set('school.address', 'Jl. Pesantren No. 1');
+    Setting::set('school.phone', '0812-0000-1111');
+    $letter = suratIssue($this->f);
+
+    $html = suratPrintHtml($this->f, $letter->id);
+
+    expect($html)->toContain(Storage::disk('public')->url('school/cetak.png'))
+        ->not->toContain('school/desktop.png')->not->toContain('school/mobile.png')
+        ->and(suratText($html))->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+});

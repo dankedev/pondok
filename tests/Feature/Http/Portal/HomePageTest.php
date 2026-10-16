@@ -82,7 +82,7 @@ it('AC-17: shows profile summary and hides empty sections', function () {
     StaticPage::findBySlug('profil')->update(['body' => '']);
     $html = $this->get('/')->assertOk()->getContent();
 
-    expect($html)->not->toContain(__('pondok.portal.home.profile_title'))
+    expect($html)->not->toContain('seksi-profil')
         ->not->toContain(__('pondok.portal.home.latest_news'))
         ->not->toContain(__('pondok.portal.home.featured_videos'))
         ->not->toContain(__('pondok.portal.home.latest_albums'));

@@ -99,7 +99,7 @@ it('AC-22: renders static pages and contact info', function () {
 
     StaticPage::findBySlug('kontak')->update(['body' => '']);
     Setting::set('school.phone', '081234567890');
-    Setting::set('school.whatsapp', '+6281234567890');
+    Setting::set('school.contacts', [['key' => 'abcd1234', 'label' => 'WhatsApp', 'name' => null, 'phone' => '+6281234567890', 'is_whatsapp' => true]]);
     Setting::set('school.email', 'info@alkhair.test');
 
     $kontak = $this->get('/kontak')->assertOk();

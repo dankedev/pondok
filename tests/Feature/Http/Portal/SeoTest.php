@@ -27,7 +27,7 @@ it('AC-23: sets home meta tags', function () {
     expect($this->get('/')->getContent())->toContain('property="og:image" content="'.$logo.'"');
 
     Setting::set('school.tagline', '');
-    expect($this->get('/')->getContent())->toContain(e(__('pondok.portal.meta.default_description', ['name' => "Ma'had Al-Khair"])));
+    expect($this->get('/')->getContent())->not->toContain('<meta name="description"');
 });
 
 it('AC-24: sets article meta tags', function () {

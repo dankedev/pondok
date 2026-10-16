@@ -19,11 +19,13 @@
     $pageTitle = filled($title)
         ? __('pondok.portal.meta.title', ['title' => $title, 'name' => $school['name']])
         : ($school['tagline'] !== null ? __('pondok.portal.meta.home_title', ['name' => $school['name'], 'tagline' => $school['tagline']]) : $school['name']);
-    $metaDescription = filled($description)
-        ? $description
-        : ($school['tagline'] ?? __('pondok.portal.meta.default_description', ['name' => $school['name']]));
+    // Tanpa teks bawaan aplikasi: deskripsi halaman, lalu slogan, lalu deskripsi footer, selain itu tanpa tag.
+    $metaDescription = filled($description) ? $description : ($school['tagline'] ?? $school['footer']['description']);
     $canonicalUrl = $canonical ?? route('portal.home');
+    // Logo cetak (bukan logo desktop) sebagai gambar bagikan bawaan.
     $imageUrl = $ogImage ?? $school['logo_url'];
+    $desktopLogo = $school['logo_desktop_url'];
+    $mobileLogo = $school['logo_mobile_url'];
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -31,7 +33,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $pageTitle }}</title>
-    <meta name="description" content="{{ $metaDescription }}">
+    @if (filled($metaDescription))
+        <meta name="description" content="{{ $metaDescription }}">
+    @endif
     @if ($noindex)
         <meta name="robots" content="noindex">
     @endif
@@ -39,14 +43,20 @@
     <meta property="og:site_name" content="{{ $school['name'] }}">
     <meta property="og:locale" content="id_ID">
     <meta property="og:title" content="{{ $title ?? $school['name'] }}">
-    <meta property="og:description" content="{{ $metaDescription }}">
+    @if (filled($metaDescription))
+        <meta property="og:description" content="{{ $metaDescription }}">
+    @endif
     <meta property="og:type" content="{{ $ogType }}">
     <meta property="og:url" content="{{ $canonicalUrl }}">
     @if ($imageUrl)
         <meta property="og:image" content="{{ $imageUrl }}">
         <meta name="twitter:card" content="summary_large_image">
     @endif
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    @if ($school['favicon_url'])
+        <link rel="icon" type="image/png" href="{{ $school['favicon_url'] }}">
+    @else
+        <link rel="icon" href="{{ asset('favicon.ico') }}">
+    @endif
     @fonts
     @vite(['resources/css/app.css'])
 </head>
@@ -60,10 +70,25 @@
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <a href="{{ route('portal.home') }}"
                class="flex min-h-11 min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                @if ($school['logo_url'])
-                    <img src="{{ $school['logo_url'] }}" alt="{{ $school['name'] }}" class="size-10 shrink-0 rounded-lg object-contain">
+                {{-- Logo desktop untuk >= md, logo mobile untuk < md; logo cetak tidak dipakai di header. --}}
+                @if ($desktopLogo && $mobileLogo)
+                    <picture class="min-w-0">
+                        <source media="(min-width: 768px)" srcset="{{ $desktopLogo }}">
+                        <img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain">
+                    </picture>
+                    <span class="sr-only">{{ $school['name'] }}</span>
+                @elseif ($desktopLogo)
+                    <img src="{{ $desktopLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto min-w-0 max-w-full object-contain">
+                    <span class="sr-only">{{ $school['name'] }}</span>
+                @elseif ($mobileLogo)
+                    <span class="shrink-0 md:hidden"><img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain"></span>
+                    <span class="hidden truncate text-base font-semibold text-gray-900 md:inline">{{ $school['name'] }}</span>
+                @elseif ($school['short_name'])
+                    <span class="hidden truncate text-base font-semibold text-gray-900 md:inline">{{ $school['name'] }}</span>
+                    <span class="truncate text-base font-semibold text-gray-900 md:hidden">{{ $school['short_name'] }}</span>
+                @else
+                    <span class="truncate text-base font-semibold text-gray-900">{{ $school['name'] }}</span>
                 @endif
-                <span class="truncate text-base font-semibold text-gray-900">{{ $school['name'] }}</span>
             </a>
 
             <nav class="hidden md:flex md:items-center md:gap-1" aria-label="{{ __('pondok.portal.nav.label') }}">

@@ -1,7 +1,7 @@
 @php
     $isContact = $page->slug === 'kontak';
     $phoneFormatter = app(\App\Actions\Konten\FormatPhoneForDisplay::class);
-    $hasContact = $isContact && collect(['address', 'phone', 'whatsapp', 'email'])->contains(fn (string $key): bool => $school[$key] !== null);
+    $hasContact = $isContact && (collect(['address', 'phone', 'email', 'map_url'])->contains(fn (string $key): bool => $school[$key] !== null) || $school['contacts'] !== []);
     $related = match ($page->slug) {
         'profil' => ['url' => route('portal.pages.show', 'visi-misi'), 'label' => __('pondok.portal.nav.vision')],
         'visi-misi' => ['url' => route('portal.pages.show', 'profil'), 'label' => __('pondok.portal.nav.profile')],

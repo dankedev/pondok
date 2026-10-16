@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed([RolePermissionSeeder::class, SettingSeeder::class]);
@@ -214,4 +215,21 @@ it('AC-39: prints the applicant details and the guardian on the receipt', functi
 
     expect($text)->toContain('PSB-2027-0001')->toContain('Ahmad Fauzan')
         ->toContain(__('pondok.receipt.received_from').' Budi Santoso');
+});
+
+it('AC-53: prints the print logo and never the desktop or mobile logo', function () {
+    Storage::fake('public');
+    foreach (['cetak', 'desktop', 'mobile'] as $name) {
+        Storage::disk('public')->put("school/{$name}.png", $name);
+        Setting::set($name === 'cetak' ? 'school.logo_path' : "school.logo_{$name}_path", "school/{$name}.png");
+    }
+    Setting::set('school.address', 'Jl. Pesantren No. 1');
+    Setting::set('school.phone', '0812-0000-1111');
+    $payment = receiptPayment($this);
+
+    $html = $this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent();
+
+    expect($html)->toContain(Storage::disk('public')->url('school/cetak.png'))
+        ->not->toContain('school/desktop.png')->not->toContain('school/mobile.png')
+        ->and(bayarHtmlText($html))->toContain('Pondok Al-Khair')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
 });

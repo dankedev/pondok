@@ -30,6 +30,8 @@ class RolePermissionSeeder extends Seeder
     /** Halaman Filament kustom, dengan format nama permission page Shield (`view:<slug>`). */
     public const PAGE_PERMISSIONS = [
         'view:finance-report',
+        // Profil sekolah (F016): membuka dan menyimpan halaman.
+        'view:school-profile',
     ];
 
     /** Model yang punya resource Filament, beserta aksi policy-nya. */
@@ -40,6 +42,7 @@ class RolePermissionSeeder extends Seeder
         'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
         'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement', 'Applicant',
         'DocumentType', 'Document',
+        'Category', 'Post', 'Album', 'Video', 'StaticPage',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -55,6 +58,14 @@ class RolePermissionSeeder extends Seeder
         'Applicant' => ['verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reopen'],
         // Dokumen tidak diubah atau dihapus dari panel: koreksi lewat versi baru atau status `ditolak`.
         'Document' => ['verify', 'viewConfidential'],
+        // Berita soft delete: dipulihkan dari tempat sampah, tidak dihapus permanen.
+        'Post' => ['restore', 'restoreAny'],
+    ];
+
+    /** Model yang aksinya lebih sempit dari aksi standar. */
+    public const LIMITED_RESOURCE_ACTIONS = [
+        // Halaman statis tetap tiga (dibuat seeder): hanya dilihat dan diubah.
+        'StaticPage' => ['viewAny', 'view', 'update'],
     ];
 
     public function run(): void
@@ -88,7 +99,7 @@ class RolePermissionSeeder extends Seeder
     {
         return array_map(
             fn (string $action): string => self::resourcePermission($action, $model),
-            $actions ?? [...self::RESOURCE_ACTIONS, ...(self::EXTRA_RESOURCE_ACTIONS[$model] ?? [])],
+            $actions ?? self::LIMITED_RESOURCE_ACTIONS[$model] ?? [...self::RESOURCE_ACTIONS, ...(self::EXTRA_RESOURCE_ACTIONS[$model] ?? [])],
         );
     }
 
@@ -133,7 +144,17 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Payment', ['viewAny', 'view', 'create', 'cancel']),
                 'view:finance-report',
             ],
-            'admin-konten' => ['view-dashboard', 'view-content-metrics'],
+            // Kelola konten situs. Foto album mengikuti `update:album`. Halaman statis tetap tiga:
+            // hanya diubah, tidak dibuat atau dihapus.
+            'admin-konten' => [
+                'view-dashboard',
+                'view-content-metrics',
+                ...self::resourcePermissions('Category'),
+                ...self::resourcePermissions('Post'),
+                ...self::resourcePermissions('Album'),
+                ...self::resourcePermissions('Video'),
+                ...self::resourcePermissions('StaticPage'),
+            ],
             'admin-sekolah' => [
                 'view-dashboard',
                 'view-student-metrics',
@@ -147,6 +168,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Guardian'),
                 ...self::resourcePermissions('DocumentType'),
                 ...self::resourcePermissions('Document', ['viewAny', 'view', 'create', 'verify', 'viewConfidential']),
+                // PRD 2: pengaturan profil sekolah milik Admin Sekolah.
+                'view:school-profile',
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.

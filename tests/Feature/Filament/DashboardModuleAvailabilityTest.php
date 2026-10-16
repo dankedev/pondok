@@ -78,6 +78,11 @@ it('AC-6: shows module unavailable for modules that are not built yet (:state)',
             continue;
         }
 
+        // F016: widget konten punya sumber metrik; "Modul belum tersedia" hanya berlaku saat saklar konten mati.
+        if ($key === 'content' && $enabled) {
+            continue;
+        }
+
         $class = dashboardWidgets()[$key];
 
         expect(class_exists($class))->toBeTrue("Kelas widget {$class} belum ada")
@@ -91,5 +96,5 @@ it('AC-6: shows module unavailable for modules that are not built yet (:state)',
 
     $text = dashboardText(keuanganUser('super-admin'));
 
-    expect(substr_count($text, 'Modul belum tersedia.'))->toBeGreaterThanOrEqual($enabled ? 3 : 4);
+    expect(substr_count($text, 'Modul belum tersedia.'))->toBeGreaterThanOrEqual($enabled ? 2 : 4);
 })->with([true, false]);

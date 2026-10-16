@@ -222,13 +222,13 @@
       "name": "Daftar ulang & konversi menjadi santri",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F011", "F007", "F013"],
       "description": "Daftar ulang setelah pembayaran minimal psb.min_paid_percent membuat students; student_id diisi di tagihan dan override pendaftar, berkas valid disalin ke documents.",
       "acceptance": [
         "Konversi memindahkan tagihan, override, dan dokumen (teruji)"
       ],
-      "owner": null,
+      "owner": "orchestrator-bc5d2383",
       "handoff": null,
       "evidence": "",
       "notes": "Dari F013: isi documents.uploaded_by dengan user yang menjalankan daftar ulang; saat menambah FK documents.source_applicant_document_id, SQLite membangun ulang tabel documents — wajib test index dan FK tetap ada. Dari F010: applicant_documents sudah punya original_name, mime_type, size_kb."
@@ -274,16 +274,16 @@
       "name": "Prestasi santri",
       "phase": 1,
       "module": "Prestasi",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002", "F013", "F016", "F018"],
       "description": "Prestasi individu/beregu dengan kategori, tingkat, peringkat, sertifikat, foto. Rekap per santri dan per tahun.",
       "acceptance": [
         "Prestasi bisa diterbitkan menjadi berita (terhubung F016)"
       ],
-      "owner": "orchestrator-bc5d2383",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Dari F013: tambahkan alias achievement ke Document::DOCUMENTABLE_TYPES / morph map dan cabang achievement di Document::applyUnitScope; sertifikat dan foto prestasi disimpan di documents. Dari F018: isi widget prestasi terbaru."
+      "evidence": "Commit 15e75a9, 3f0331a, 3a2fa5e, 8724358, 73b23db. 465 test F015 lulus (termasuk AchievementAdversarialTest dari VERIFY); full suite 3506/3506 lulus di PHP 8.4 dan 8.3; migrate:fresh --seed MySQL OK; Pint lulus.",
+      "notes": "Rekap/widget hanya prestasi terverifikasi. Singkatan Agustus 'Agu' (override Carbon id). Cek visual halaman rekap 360px belum."
     },
     {
       "id": "F016",

@@ -4,6 +4,7 @@ use App\Actions\Konten\AddAlbumPhotos;
 use App\Actions\Konten\DeletePost;
 use App\Actions\Konten\RestorePost;
 use App\Actions\Konten\SavePost;
+use App\Actions\Konten\UpdateSchoolContacts;
 use App\Actions\Konten\UpdateSchoolProfile;
 use App\Models\Post;
 use App\Models\Setting;
@@ -198,7 +199,7 @@ it('VERIFY: validates phone numbers strictly', function (string $phone, bool $va
 ]);
 
 it('VERIFY: rejects social links with spaces, quotes or non-http schemes', function (string $url) {
-    kontenAssertRejected(fn () => app(UpdateSchoolProfile::class)->handle(['name' => 'X', 'facebook_url' => $url], $this->admin), 'url_invalid', 'facebook_url');
+    kontenAssertRejected(fn () => app(UpdateSchoolContacts::class)->handle(['social_links' => [['platform' => 'facebook', 'url' => $url]]], $this->admin), 'url_invalid', 'social_links.0.url');
 })->with([
     'space' => ['https://x.test/a b'],
     'javascript' => ['javascript://x.test/%0aalert(1)'],
@@ -207,7 +208,7 @@ it('VERIFY: rejects social links with spaces, quotes or non-http schemes', funct
 ]);
 
 it('VERIFY: rejects a social link longer than 255 characters', function () {
-    kontenAssertRejected(fn () => app(UpdateSchoolProfile::class)->handle(['name' => 'X', 'youtube_url' => 'https://x.test/'.str_repeat('a', 250)], $this->admin), 'too_long', 'youtube_url');
+    kontenAssertRejected(fn () => app(UpdateSchoolContacts::class)->handle(['social_links' => [['platform' => 'youtube', 'url' => 'https://x.test/'.str_repeat('a', 250)]]], $this->admin), 'too_long', 'social_links.0.url');
 });
 
 it('VERIFY: rejects an email longer than 255 characters', function () {

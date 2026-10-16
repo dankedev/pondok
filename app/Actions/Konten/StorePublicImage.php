@@ -26,6 +26,9 @@ class StorePublicImage
 
     public const LOGO_MAX_KILOBYTES = 1024;
 
+    /** Favicon portal: PNG saja. */
+    public const FAVICON_MAX_KILOBYTES = 256;
+
     private const EXTENSIONS = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',

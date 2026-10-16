@@ -47,6 +47,35 @@ class Setting extends Model
         return $cache[$key] ?? $default;
     }
 
+    /**
+     * Baca banyak key sekaligus: key yang belum ada di cache diambil dengan satu
+     * query `whereIn`; key yang tidak ada di tabel disimpan `null` di cache.
+     *
+     * @param  list<string>  $keys
+     * @return array<string, mixed>
+     */
+    public static function getMany(array $keys): array
+    {
+        $cache = app(self::CACHE_BINDING);
+        $missing = array_values(array_filter($keys, fn (string $key): bool => ! $cache->offsetExists($key)));
+
+        if ($missing !== []) {
+            $found = static::query()->whereIn('key', $missing)->get()->pluck('value', 'key');
+
+            foreach ($missing as $key) {
+                $cache[$key] = $found->get($key);
+            }
+        }
+
+        $values = [];
+
+        foreach ($keys as $key) {
+            $values[$key] = $cache[$key];
+        }
+
+        return $values;
+    }
+
     public static function forget(string $key): void
     {
         app(self::CACHE_BINDING)->offsetUnset($key);

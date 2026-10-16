@@ -52,6 +52,7 @@ use Carbon\CarbonInterface;
 use Database\Seeders\AdmissionTrackSeeder;
 use Database\Seeders\ContentCategorySeeder;
 use Database\Seeders\DocumentTypeSeeder;
+use Database\Seeders\InstallSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Database\Seeders\StaticPageSeeder;
@@ -3741,4 +3742,173 @@ function zipEntries(string $zipPath): array
     $zip->close();
 
     return $names;
+}
+
+/*
+|--------------------------------------------------------------------------
+| F036 konten-profil-lembaga
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Tulis baris settings mentah (tanpa model), nilai di-encode JSON seperti migrasi data.
+ */
+function profilRawSet(string $key, mixed $value): void
+{
+    DB::table('settings')->updateOrInsert(['key' => $key], [
+        'value' => is_string($value) && str_starts_with($value, 'RAW:') ? substr($value, 4) : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
+
+/**
+ * Baca baris settings mentah; `null` bila baris tidak ada atau tidak bisa di-decode.
+ */
+function profilRawGet(string $key): mixed
+{
+    $row = DB::table('settings')->where('key', $key)->first();
+
+    return $row === null ? null : json_decode((string) $row->value, true);
+}
+
+function profilRawHas(string $key): bool
+{
+    return DB::table('settings')->where('key', $key)->exists();
+}
+
+/**
+ * Migrasi data F036 (berkas dimuat ulang tiap panggilan).
+ */
+function profilMigration(): object
+{
+    return require database_path('migrations/2026_10_17_000000_move_school_profile_settings.php');
+}
+
+/**
+ * Pastikan Action menolak input dengan ValidationException pada field (atau awalan field) tertentu.
+ */
+function profilAssertInvalid(Closure $callback, string $fieldPrefix): void
+{
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $keys = array_keys($exception->errors());
+
+        expect(collect($keys)->contains(fn (string $key): bool => $key === $fieldPrefix || str_starts_with($key, $fieldPrefix.'.')))
+            ->toBeTrue("Galat tidak ada pada {$fieldPrefix}: ".json_encode($keys));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Semua baris settings `school.*` dan `portal.*` (key => nilai), untuk membandingkan "tanpa perubahan".
+ *
+ * @return array<string, mixed>
+ */
+function profilSettingsSnapshot(): array
+{
+    return DB::table('settings')
+        ->where(fn ($query) => $query->where('key', 'like', 'school.%')->orWhere('key', 'like', 'portal.%'))
+        ->orderBy('key')
+        ->pluck('value', 'key')
+        ->all();
+}
+
+/**
+ * Isi banyak key settings lewat model.
+ *
+ * @param  array<string, mixed>  $values
+ */
+function profilSet(array $values): void
+{
+    foreach ($values as $key => $value) {
+        Setting::set($key, $value);
+    }
+}
+
+/**
+ * Item kontak tersimpan.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function profilContact(array $overrides = []): array
+{
+    return ['key' => 'abcd1234', 'label' => 'Sekretariat', 'name' => null, 'phone' => '081200000001', 'is_whatsapp' => true, ...$overrides];
+}
+
+/**
+ * Tag HTML pertama bernama `$tag` yang memuat semua `$needles`; `null` bila tidak ada.
+ *
+ * @param  list<string>  $needles
+ */
+function profilTag(string $html, string $tag, array $needles): ?string
+{
+    preg_match_all('/<'.$tag.'\b[^>]*>/i', $html, $matches);
+
+    foreach ($matches[0] as $candidate) {
+        if (collect($needles)->every(fn (string $needle): bool => str_contains($candidate, $needle))) {
+            return $candidate;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Pola atribut `class="..."` yang memuat semua token kelas (urutan bebas).
+ *
+ * @param  list<string>  $classes
+ */
+function profilClassPattern(array $classes): string
+{
+    $lookaheads = array_map(fn (string $class): string => '(?=(?:[^"]*\s)?'.preg_quote($class, '/').'[\s"])', $classes);
+
+    return 'class="'.implode('', $lookaheads).'[^"]*"';
+}
+
+/**
+ * Teks tampak halaman: skrip, gaya, dan atribut dibuang, entitas didekode.
+ */
+function profilVisibleText(string $html): string
+{
+    $html = preg_replace('#<(script|style)\b.*?</\1>#is', ' ', $html);
+
+    return html_entity_decode(strip_tags((string) $html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+/**
+ * Bagian footer portal.
+ */
+function profilFooter(string $html): string
+{
+    preg_match('#<footer\b.*?</footer>#is', $html, $match);
+
+    return $match[0] ?? '';
+}
+
+/**
+ * Bagian header portal.
+ */
+function profilHeader(string $html): string
+{
+    preg_match('#<header\b.*?</header>#is', $html, $match);
+
+    return $match[0] ?? '';
+}
+
+/**
+ * Siapkan instalasi baru untuk portal: seeder instalasi saja, tanpa profil dan tanpa data demo.
+ */
+function profilFreshInstall(): void
+{
+    test()->withoutVite();
+    (fn () => $this->buildDirectory = 'build-tidak-ada-saat-test')->call(app(Vite::class));
+    test()->seed(InstallSeeder::class);
+    Storage::fake('public');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
 }

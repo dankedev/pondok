@@ -2,29 +2,36 @@
 
 namespace App\Actions\Konten;
 
-use App\Actions\Konten\Concerns\ReplacesStoredFiles;
-use App\Actions\Konten\Concerns\ValidatesContentInput;
+use App\Actions\Konten\Concerns\SavesProfileSettings;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 
 /**
- * Simpan profil sekolah ke `settings` (`school.*`).
+ * Simpan identitas lembaga (halaman Identitas): nama, nama singkat, nama Arab,
+ * slogan, alamat, telepon kantor, email, serta logo cetak, logo desktop, logo
+ * mobile, dan favicon.
  *
- * Semua field divalidasi sebelum menulis apa pun. Nomor telepon dinormalisasi
- * (tanpa spasi, `-`, `.`, kurung). Key kosong disimpan null. Logo baru
- * menggantikan yang lama (berkas lama dihapus setelah commit). Perubahan dicatat
- * di activity log `konten`, hanya key yang berubah.
+ * Semua field divalidasi sebelum menulis apa pun. Field teks yang tidak dikirim
+ * disimpan null. Key lama `whatsapp` dan URL sosial diabaikan (dipindah ke
+ * `UpdateSchoolContacts`). Gambar baru menggantikan yang lama (berkas lama dihapus
+ * setelah commit). Log `school_profile_updated` hanya memuat key yang berubah.
  */
 class UpdateSchoolProfile
 {
-    use ReplacesStoredFiles, ValidatesContentInput;
+    use SavesProfileSettings;
 
     public const LOGO_DIRECTORY = 'school';
 
-    private const LIMITS = ['name' => 100, 'tagline' => 150, 'address' => 500, 'email' => 255, 'url' => 255];
+    /** Field unggahan → key settings. */
+    public const IMAGES = [
+        'logo' => 'school.logo_path',
+        'logo_desktop' => 'school.logo_desktop_path',
+        'logo_mobile' => 'school.logo_mobile_path',
+        'favicon' => 'school.favicon_path',
+    ];
 
-    private const SOCIAL_FIELDS = ['instagram_url', 'facebook_url', 'youtube_url'];
+    private const LIMITS = ['name' => 100, 'short_name' => 30, 'arabic_name' => 150, 'tagline' => 150, 'address' => 500, 'email' => 255];
 
     public function __construct(private readonly StorePublicImage $images) {}
 
@@ -35,73 +42,65 @@ class UpdateSchoolProfile
     {
         $values = [
             'school.name' => $this->requiredText($data['name'] ?? null, 'name', self::LIMITS['name'], 'name_required'),
+            'school.short_name' => $this->optionalText($data['short_name'] ?? null, 'short_name', self::LIMITS['short_name']),
+            'school.arabic_name' => $this->optionalText($data['arabic_name'] ?? null, 'arabic_name', self::LIMITS['arabic_name']),
             'school.tagline' => $this->optionalText($data['tagline'] ?? null, 'tagline', self::LIMITS['tagline']),
             'school.address' => $this->optionalText($data['address'] ?? null, 'address', self::LIMITS['address']),
             'school.phone' => $this->phone($data['phone'] ?? null, 'phone'),
-            'school.whatsapp' => $this->phone($data['whatsapp'] ?? null, 'whatsapp'),
             'school.email' => $this->email($data['email'] ?? null),
         ];
 
-        foreach (self::SOCIAL_FIELDS as $field) {
-            $values["school.{$field}"] = $this->url($data[$field] ?? null, $field);
-        }
+        $uploads = [];
 
-        $logo = $data['logo'] ?? null;
-        $logoExtension = $logo === null ? null : $this->images->validate($logo, 'logo', StorePublicImage::LOGO_MAX_KILOBYTES);
+        foreach (array_keys(self::IMAGES) as $field) {
+            $file = $data[$field] ?? null;
 
-        $oldLogo = Setting::get('school.logo_path');
-        $oldLogo = is_string($oldLogo) && $oldLogo !== '' ? $oldLogo : null;
-        $values['school.logo_path'] = $oldLogo;
-
-        if ($logo instanceof UploadedFile && $logoExtension !== null) {
-            $values['school.logo_path'] = $this->images->store($logo, self::LOGO_DIRECTORY, $logoExtension);
-        } elseif ((bool) ($data['remove_logo'] ?? false)) {
-            $values['school.logo_path'] = null;
-        }
-
-        $newLogo = $values['school.logo_path'];
-        $changed = [];
-
-        foreach ($values as $key => $value) {
-            $old = Setting::get($key);
-
-            if ($old !== $value) {
-                $changed[$key] = ['old' => $old, 'new' => $value];
+            if ($file !== null) {
+                $uploads[$field] = [$file, $field === 'favicon' ? $this->validateFavicon($file) : $this->images->validate($file, $field, StorePublicImage::LOGO_MAX_KILOBYTES)];
             }
         }
 
-        $this->saveWithFiles(
-            $newLogo !== $oldLogo && $newLogo !== null ? [$newLogo] : [],
-            $newLogo !== $oldLogo ? [$oldLogo] : [],
-            function () use ($values, $changed, $actor): void {
-                foreach ($values as $key => $value) {
-                    Setting::set($key, $value);
+        $newPaths = [];
+        $oldPaths = [];
+
+        try {
+            foreach (self::IMAGES as $field => $key) {
+                $old = Setting::get($key);
+                $old = is_string($old) && $old !== '' ? $old : null;
+                $new = $old;
+
+                if (isset($uploads[$field])) {
+                    [$file, $extension] = $uploads[$field];
+                    $new = $this->images->store($file, self::LOGO_DIRECTORY, $extension);
+                    $newPaths[] = $new;
+                } elseif ((bool) ($data["remove_{$field}"] ?? false)) {
+                    $new = null;
                 }
 
-                if ($changed !== []) {
-                    activity('konten')
-                        ->causedBy($actor)
-                        ->event('updated')
-                        ->withProperties(['changed' => $changed])
-                        ->log('school_profile_updated');
+                if ($new !== $old) {
+                    $oldPaths[] = $old;
                 }
-            },
-        );
+
+                $values[$key] = $new;
+            }
+        } catch (\Throwable $exception) {
+            $this->images->delete(...$newPaths);
+
+            throw $exception;
+        }
+
+        $this->saveProfileSettings($values, 'school_profile_updated', $actor, $newPaths, $oldPaths);
     }
 
-    private function phone(mixed $value, string $field): ?string
+    private function validateFavicon(mixed $file): string
     {
-        $phone = is_scalar($value) ? str_replace([' ', '-', '.', '(', ')'], '', trim((string) $value)) : '';
-
-        if ($phone === '') {
-            return null;
+        if (! $file instanceof UploadedFile
+            || $file->getMimeType() !== 'image/png'
+            || (int) $file->getSize() > StorePublicImage::FAVICON_MAX_KILOBYTES * 1024) {
+            $this->fail('favicon', 'favicon_invalid', ['max' => StorePublicImage::FAVICON_MAX_KILOBYTES]);
         }
 
-        if (preg_match('/^\+?[0-9]{8,15}$/', $phone) !== 1) {
-            $this->fail($field, 'phone_invalid');
-        }
-
-        return $phone;
+        return 'png';
     }
 
     private function email(mixed $value): ?string
@@ -113,22 +112,5 @@ class UpdateSchoolProfile
         }
 
         return $email;
-    }
-
-    private function url(mixed $value, string $field): ?string
-    {
-        $url = $this->optionalText($value, $field, self::LIMITS['url']);
-
-        if ($url === null) {
-            return null;
-        }
-
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-
-        if (filter_var($url, FILTER_VALIDATE_URL) === false || ! in_array($scheme, ['http', 'https'], true)) {
-            $this->fail($field, 'url_invalid');
-        }
-
-        return $url;
     }
 }

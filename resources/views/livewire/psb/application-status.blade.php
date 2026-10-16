@@ -38,7 +38,7 @@
                     </div>
                     <x-ui.badge :color="$applicant->statusColor()">{{ $applicant->statusLabel() }}</x-ui.badge>
                 </div>
-                <p class="text-base text-gray-700">{{ __('pondok.psb_public.status_help.'.$applicant->status) }}</p>
+                <p class="text-base text-gray-700">{{ $this->convertedStudent !== null ? __('pondok.psb_public.status_help.converted', ['nis' => $this->convertedStudent->nis]) : __('pondok.psb_public.status_help.'.$applicant->status) }}</p>
                 <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
                     <dt class="text-gray-600">{{ __('pondok.applicant.unit') }}</dt>
                     <dd class="text-gray-900">{{ $applicant->unit?->name }}</dd>

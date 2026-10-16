@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Applicants;
 
+use App\Actions\Akademik\GenerateStudentNumber;
 use App\Actions\Psb\AcceptApplicant;
+use App\Actions\Psb\CheckReRegistrationPayment;
 use App\Actions\Psb\DeleteApplicant;
 use App\Actions\Psb\GenerateAcceptanceInvoices;
 use App\Actions\Psb\GenerateRegistrationInvoices;
@@ -10,6 +12,7 @@ use App\Actions\Psb\MarkApplicantVerified;
 use App\Actions\Psb\RecordApplicantDecision;
 use App\Actions\Psb\RejectApplicant;
 use App\Actions\Psb\ReopenRejectedApplicant;
+use App\Actions\Psb\ReRegisterApplicant;
 use App\Actions\Psb\ReserveApplicant;
 use App\Actions\Psb\ResetApplicantToken;
 use App\Actions\Psb\ReturnApplicantToSubmitted;
@@ -19,12 +22,16 @@ use App\Filament\Resources\Applicants\Pages\ListApplicants;
 use App\Filament\Resources\Applicants\Pages\ViewApplicant;
 use App\Filament\Resources\Applicants\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Students\StudentResource;
 use App\Models\AdmissionTrack;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
+use App\Models\ApplicantDocument;
 use App\Models\FeeOverride;
 use App\Models\FeeType;
+use App\Models\Guardian;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\Unit;
 use BackedEnum;
@@ -32,23 +39,29 @@ use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * Daftar dan detail pendaftar PSB. Pendaftar dibuat lewat halaman publik
@@ -140,6 +153,7 @@ class ApplicantResource extends Resource
                             ->label(__('pondok.applicant.review_note'))
                             ->placeholder('-'),
                     ]),
+                static::reRegistrationSection(),
                 Section::make(__('pondok.applicant.section_student'))
                     ->columns(3)
                     ->schema([
@@ -304,6 +318,17 @@ class ApplicantResource extends Resource
                     ->options(collect(Applicant::STATUSES)
                         ->mapWithKeys(fn (string $status): array => [$status => __("pondok.applicant.statuses.{$status}")])
                         ->all()),
+                TernaryFilter::make('re_registered')
+                    ->label(__('pondok.applicant.filter_re_registered'))
+                    ->trueLabel(__('pondok.applicant.converted'))
+                    ->falseLabel(__('pondok.applicant.not_converted'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereExists(static::convertedStudentQuery()),
+                        false: fn (Builder $query): Builder => $query
+                            ->where('status', Applicant::STATUS_ACCEPTED)
+                            ->whereNotExists(static::convertedStudentQuery()),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
                 SelectFilter::make('track')
                     ->label(__('pondok.applicant.track'))
                     ->options(fn (): array => AdmissionTrack::query()->orderBy('name')->pluck('name', 'id')->all())
@@ -569,6 +594,7 @@ class ApplicantResource extends Resource
             ->authorize(fn (Applicant $record): bool => static::can('generateInvoices', $record))
             ->visible(fn (Applicant $record): bool => Setting::moduleEnabled('keuangan')
                 && $record->status === Applicant::STATUS_ACCEPTED
+                && ! $record->isConverted()
                 && GenerateAcceptanceInvoices::hasUnbilledGroups($record))
             ->action(function (Applicant $record, GenerateAcceptanceInvoices $generate, Action $action): void {
                 try {
@@ -600,6 +626,215 @@ class ApplicantResource extends Resource
 
                 static::notifyMissingRates($result['skipped']);
             });
+    }
+
+    /**
+     * Santri (termasuk terhapus, tanpa cakupan) yang berasal dari pendaftar baris luar.
+     */
+    protected static function convertedStudentQuery(): Closure
+    {
+        return fn ($query) => $query->selectRaw('1')
+            ->from('students')
+            ->whereColumn('students.applicant_id', 'applicants.id');
+    }
+
+    /**
+     * Seksi "Daftar ulang" untuk pendaftar diterima: syarat pembayaran sebelum
+     * konversi, santri hasil konversi sesudahnya (F012).
+     */
+    protected static function reRegistrationSection(): Section
+    {
+        $payment = fn (Applicant $record): array => app(CheckReRegistrationPayment::class)->handle($record);
+        $converted = fn (Applicant $record): bool => $record->isConverted();
+
+        return Section::make(__('pondok.applicant.section_re_registration'))
+            ->columns(3)
+            ->visible(fn (Applicant $record): bool => $record->status === Applicant::STATUS_ACCEPTED)
+            ->schema([
+                TextEntry::make('re_registration_status')
+                    ->label(__('pondok.applicant.status'))
+                    ->badge()
+                    ->state(fn (Applicant $record): string => match (true) {
+                        $converted($record) => __('pondok.applicant.converted'),
+                        $payment($record)['meets'] => __('pondok.applicant.re_registration_ready'),
+                        default => __('pondok.applicant.re_registration_not_ready'),
+                    })
+                    ->color(fn (Applicant $record): string => $converted($record) || $payment($record)['meets'] ? 'success' : 'warning')
+                    ->belowContent(fn (Applicant $record): ?string => ! $converted($record)
+                        && $payment($record)['reason'] === CheckReRegistrationPayment::REASON_INVOICES_MISSING
+                        ? __('pondok.applicant.acceptance_invoices_not_created')
+                        : null),
+                TextEntry::make('acceptance_payment')
+                    ->label(__('pondok.applicant.acceptance_payment'))
+                    ->visible(fn (Applicant $record): bool => ! $converted($record))
+                    ->state(function (Applicant $record) use ($payment): string {
+                        $result = $payment($record);
+
+                        return match (true) {
+                            ! $result['applies'] => __('pondok.applicant.finance_disabled'),
+                            ! $record->acceptanceInvoices()->exists() => __('pondok.applicant.no_acceptance_invoices'),
+                            default => __('pondok.applicant.acceptance_payment_value', [
+                                'paid' => Payment::formatRupiah($result['paid']),
+                                'total' => Payment::formatRupiah($result['total']),
+                                'percent' => $result['paid_percent'],
+                            ]),
+                        };
+                    })
+                    ->extraAttributes(['class' => 'tabular-nums']),
+                TextEntry::make('min_paid_percent')
+                    ->label(__('pondok.applicant.min_paid_percent'))
+                    ->visible(fn (Applicant $record): bool => ! $converted($record) && $payment($record)['applies'])
+                    ->state(fn (Applicant $record): string => $payment($record)['required_percent'].'%')
+                    ->extraAttributes(['class' => 'tabular-nums']),
+                TextEntry::make('converted_student')
+                    ->label(__('pondok.applicant.converted_student'))
+                    ->visible($converted)
+                    ->state(fn (Applicant $record): ?string => ($student = $record->convertedStudent()) === null ? null : "{$student->nis} — {$student->name}")
+                    ->url(function (Applicant $record): ?string {
+                        $student = $record->convertedStudent();
+
+                        return $student !== null && ! $student->trashed() && StudentResource::canEdit($student)
+                            ? StudentResource::getUrl('edit', ['record' => $student])
+                            : null;
+                    }),
+                TextEntry::make('converted_entered_on')
+                    ->label(__('pondok.applicant.entered_on'))
+                    ->visible($converted)
+                    ->state(fn (Applicant $record): ?string => $record->convertedStudent()?->entered_on?->translatedFormat('j M Y'))
+                    ->placeholder('-'),
+                TextEntry::make('converted_at')
+                    ->label(__('pondok.applicant.converted_at'))
+                    ->visible($converted)
+                    ->state(fn (Applicant $record): ?string => Activity::query()
+                        ->where('log_name', 'psb')
+                        ->where('event', 'converted')
+                        ->where('subject_type', $record->getMorphClass())
+                        ->where('subject_id', $record->id)
+                        ->latest('id')
+                        ->first()?->created_at?->timezone(config('app.timezone'))->translatedFormat('j M Y, H.i'))
+                    ->placeholder('-'),
+            ]);
+    }
+
+    /**
+     * Daftar ulang: pendaftar diterima menjadi santri (F012). Tidak
+     * disembunyikan saat pembayaran kurang; Action menjelaskan sisa syarat.
+     */
+    public static function reRegisterAction(): Action
+    {
+        $formFields = ['entered_on', 'nis', 'relation', 'address'];
+
+        return Action::make('reRegister')
+            ->label(__('pondok.applicant.re_register'))
+            ->icon(Heroicon::OutlinedAcademicCap)
+            ->color('success')
+            ->modalIcon(Heroicon::OutlinedAcademicCap)
+            ->modalHeading(fn (Applicant $record): string => __('pondok.applicant.re_register_heading', ['name' => $record->name]))
+            ->modalDescription(__('pondok.applicant.re_register_description'))
+            ->modalSubmitActionLabel(__('pondok.applicant.re_register'))
+            ->authorize(fn (Applicant $record): bool => static::can('reRegister', $record))
+            ->visible(fn (Applicant $record): bool => $record->status === Applicant::STATUS_ACCEPTED && ! $record->isConverted())
+            ->schema([
+                Grid::make(2)->schema([
+                    DatePicker::make('entered_on')
+                        ->label(__('pondok.applicant.entered_on'))
+                        ->helperText(__('pondok.applicant.entered_on_helper'))
+                        ->required()
+                        ->default(fn (Applicant $record): string => ReRegisterApplicant::defaultEnteredOn($record)->toDateString())
+                        ->minDate(fn (): string => ReRegisterApplicant::earliestEnteredOn()->toDateString()),
+                    TextInput::make('nis')
+                        ->label(__('pondok.applicant.nis'))
+                        ->helperText(fn (Applicant $record): ?string => ($example = static::studentNumberExample($record)) === null
+                            ? null
+                            : __('pondok.applicant.nis_helper', ['example' => $example]))
+                        ->maxLength(30),
+                    Select::make('relation')
+                        ->label(fn (Applicant $record): string => __('pondok.applicant.guardian_relation', ['name' => $record->guardian_name]))
+                        ->options(collect(Guardian::RELATIONS)->mapWithKeys(fn (string $relation): array => [$relation => __("pondok.guardian.relations.{$relation}")])->all())
+                        ->default(ReRegisterApplicant::DEFAULT_RELATION)
+                        ->required()
+                        ->selectablePlaceholder(false),
+                    Textarea::make('address')
+                        ->label(__('pondok.applicant.address'))
+                        ->maxLength(ReRegisterApplicant::ADDRESS_MAX_LENGTH)
+                        ->rows(3)
+                        ->columnSpanFull(),
+                ]),
+            ])
+            ->action(function (Applicant $record, array $data, ReRegisterApplicant $reRegister, Action $action) use ($formFields): void {
+                try {
+                    $result = static::runShowingFormErrors($action, function () use ($record, $data, $reRegister, $formFields): ?array {
+                        try {
+                            return $reRegister->handle($record, auth()->user(), $data);
+                        } catch (ValidationException $exception) {
+                            if (array_intersect(array_keys($exception->errors()), $formFields) !== []) {
+                                throw $exception;
+                            }
+
+                            Notification::make()->title(collect($exception->errors())->flatten()->first())->danger()->send();
+                        } catch (RuntimeException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
+
+                        return null;
+                    });
+                } finally {
+                    static::refreshRecord($record);
+                }
+
+                if ($result === null) {
+                    $action->halt();
+
+                    return;
+                }
+
+                Notification::make()
+                    ->title(__('pondok.applicant.re_registered', ['name' => $result['student']->name, 'nis' => $result['student']->nis]))
+                    ->body(__('pondok.applicant.re_registered_next_step'))
+                    ->success()
+                    ->persistent()
+                    ->send();
+
+                static::notifySkippedDocuments($result['documents_skipped']);
+            });
+    }
+
+    /**
+     * Contoh NIS otomatis untuk helper form (tanpa menyimpan); null bila urutan habis.
+     */
+    protected static function studentNumberExample(Applicant $record): ?string
+    {
+        try {
+            return app(GenerateStudentNumber::class)->handle($record->unit, ReRegisterApplicant::entryYear($record));
+        } catch (ValidationException) {
+            return null;
+        }
+    }
+
+    /**
+     * @param  list<array{applicant_document_id: int, reason: string}>  $skipped
+     */
+    protected static function notifySkippedDocuments(array $skipped): void
+    {
+        if ($skipped === []) {
+            return;
+        }
+
+        $names = ApplicantDocument::withoutGlobalScopes()
+            ->with('requirement')
+            ->whereKey(array_column($skipped, 'applicant_document_id'))
+            ->get()
+            ->mapWithKeys(fn (ApplicantDocument $document): array => [$document->id => $document->requirement?->name]);
+
+        $items = collect($skipped)
+            ->map(fn (array $item): string => $names[$item['applicant_document_id']].' ('.__("pondok.applicant.copy_skip_reasons.{$item['reason']}").')')
+            ->implode(', ');
+
+        Notification::make()
+            ->title(__('pondok.applicant.copy_skipped', ['items' => $items]))
+            ->warning()
+            ->persistent()
+            ->send();
     }
 
     /**

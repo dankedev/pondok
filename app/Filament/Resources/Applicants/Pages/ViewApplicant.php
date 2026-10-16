@@ -21,6 +21,7 @@ class ViewApplicant extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            ApplicantResource::reRegisterAction(),
             ...ApplicantResource::decisionActions(),
             ApplicantResource::generateInvoicesAction(),
             ApplicantResource::generateAcceptanceInvoicesAction(),

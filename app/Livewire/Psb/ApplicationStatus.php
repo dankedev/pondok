@@ -9,6 +9,7 @@ use App\Models\Applicant;
 use App\Models\ApplicantDocument;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -78,6 +79,15 @@ class ApplicationStatus extends Component
     public function applicant(): ?Applicant
     {
         return static::sessionApplicant()?->load(['unit', 'admissionTrack', 'admissionWave.academicYear']);
+    }
+
+    /**
+     * Santri hasil daftar ulang (F012), untuk kalimat status setelah konversi.
+     */
+    #[Computed]
+    public function convertedStudent(): ?Student
+    {
+        return $this->applicant?->status === Applicant::STATUS_ACCEPTED ? $this->applicant->convertedStudent() : null;
     }
 
     /**

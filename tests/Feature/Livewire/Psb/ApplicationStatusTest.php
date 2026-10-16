@@ -287,3 +287,33 @@ it('AC-28 (VERIFY): hides the review note and cancelled invoices from a rejected
         expect($text)->not->toContain($invoice->invoice_no);
     }
 });
+
+it('AC-36 (F012): shows the student number after re-registration', function () {
+    daftarUlangExtend($this->f);
+    $applicant = daftarUlangApplicant($this->f);
+
+    $before = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    expect($before)->toContain(__('pondok.psb_public.status_help.diterima'))->not->toContain('Daftar ulang selesai');
+
+    $student = daftarUlangRun($applicant)['student'];
+    $text = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    expect(__('pondok.psb_public.status_help.converted', ['nis' => $student->nis]))->toBe("Daftar ulang selesai. Ananda sudah terdaftar sebagai santri dengan nomor induk {$student->nis}.")
+        ->and($text)->toContain("Daftar ulang selesai. Ananda sudah terdaftar sebagai santri dengan nomor induk {$student->nis}.")
+        ->not->toContain(__('pondok.psb_public.status_help.diterima'))
+        ->toContain('Rp 8.000.000');
+});
+
+it('AC-36 (F012): keeps the upload closed and the invoices visible after re-registration', function () {
+    daftarUlangExtend($this->f);
+    $applicant = daftarUlangApplicant($this->f);
+    daftarUlangRun($applicant);
+    $invoices = seleksiInvoices($applicant);
+
+    $text = tagihanPlainText(pendaftaranLogin($applicant->registration_no));
+
+    foreach ($invoices as $invoice) {
+        expect($text)->toContain($invoice->invoice_no);
+    }
+});

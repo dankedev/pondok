@@ -83,6 +83,11 @@ it('AC-6: shows module unavailable for modules that are not built yet (:state)',
             continue;
         }
 
+        // F015: widget prestasi punya sumber metrik; "Modul belum tersedia" hanya berlaku saat saklar prestasi mati.
+        if ($key === 'achievements' && $enabled) {
+            continue;
+        }
+
         $class = dashboardWidgets()[$key];
 
         expect(class_exists($class))->toBeTrue("Kelas widget {$class} belum ada")
@@ -96,5 +101,5 @@ it('AC-6: shows module unavailable for modules that are not built yet (:state)',
 
     $text = dashboardText(keuanganUser('super-admin'));
 
-    expect(substr_count($text, 'Modul belum tersedia.'))->toBeGreaterThanOrEqual($enabled ? 2 : 4);
+    expect(substr_count($text, 'Modul belum tersedia.'))->toBeGreaterThanOrEqual($enabled ? 1 : 4);
 })->with([true, false]);

@@ -79,6 +79,7 @@ Aturan:
 | Pembayaran / kuitansi | `ReceiptPercent` |
 | Dokumen | `DocumentText` |
 | Prestasi | `Trophy` |
+| Rekap / laporan | `ChartBar` |
 | Tahfidz | `BookOpen` |
 | Perizinan | `ArrowRightStartOnRectangle` |
 | Konten / berita | `Newspaper` |
@@ -126,6 +127,8 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Dokumen | diganti (dihitung dari `replaced_by_id`) | `gray` |
 | Surat keluar | terbit | `success` |
 | Surat keluar | batal | `danger` |
+| Prestasi | terverifikasi | `success` |
+| Prestasi | belum diverifikasi | `warning` |
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |
@@ -139,7 +142,7 @@ Pemetaan warna ditaruh di satu tempat (method `color()` pada enum atau konstanta
 | Uang | `Rp 1.250.000` | Filament: `->money('IDR', locale: 'id', decimalPlaces: 0)`. Input: `TextInput` numeric dengan `->prefix('Rp')`, simpan integer. Blade: helper format rupiah bersama, bukan `number_format` di view. |
 | Uang nol | `Rp 0` atau label `Gratis` untuk beasiswa penuh | — |
 | Persen | `25%` | tanpa desimal kecuali perlu |
-| Tanggal | `15 Okt 2026` | `->date('j M Y')` dengan locale `id` |
+| Tanggal | `15 Okt 2026` | `->date('j M Y')` dengan locale `id`; singkatan Agustus "Agu" (`17 Agu 2026`, diatur di `AppServiceProvider`) |
 | Tanggal + jam | `15 Okt 2026, 14.30` | `->dateTime('j M Y, H.i')` |
 | Periode tagihan | `Oktober 2026` | `translatedFormat('F Y')` |
 | Tahun ajaran | `2026/2027` | dari `academic_years.name` |

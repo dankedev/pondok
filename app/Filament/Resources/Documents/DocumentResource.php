@@ -8,6 +8,7 @@ use App\Actions\Dokumen\VerifyDocument;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Concerns\ShowsActionErrorsOnForm;
 use App\Filament\Resources\Documents\Pages\ListDocuments;
+use App\Models\Achievement;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Guardian;
@@ -110,8 +111,9 @@ class DocumentResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(static::eagerLoads()))
             ->columns([
                 static::documentTypeColumn(),
-                TextColumn::make('documentable.name')
+                TextColumn::make('owner_name')
                     ->label(__('pondok.document.owner'))
+                    ->state(fn (Document $record): ?string => static::ownerName($record->documentable))
                     ->description(fn (Document $record): ?string => $record->documentable instanceof Student ? $record->documentable->nis : null)
                     ->searchable(query: fn (Builder $query, string $search): Builder => static::searchOwner($query, $search)),
                 TextColumn::make('documentable_type')
@@ -307,7 +309,7 @@ class DocumentResource extends Resource
         $confidential = __('pondok.document.confidential');
 
         return [
-            'owner' => $record->documentable?->getAttribute('name'),
+            'owner' => static::ownerName($record->documentable),
             'number' => $canDownload ? $record->number : ($record->isConfidential() ? $confidential : $record->maskedNumber()),
             'issued_on' => $record->issued_on?->translatedFormat('j M Y'),
             'expires_on' => $record->expires_on?->translatedFormat('j M Y'),
@@ -375,7 +377,7 @@ class DocumentResource extends Resource
             ->action(function (Document $record, array $data, ReplaceDocument $replaceDocument, Action $action): void {
                 $document = static::runDocumentAction($action, function () use ($record, $data, $replaceDocument): Document {
                     // Pemeriksaan ulang di server: jenis rahasia butuh `view-confidential:document`.
-                    static::ensureUploadTypeAllowed($record->documentType);
+                    static::ensureUploadTypeAllowed($record->documentType, owner: $record->documentable);
 
                     return $replaceDocument->handle($record, static::fileData($data), static::user());
                 });
@@ -418,14 +420,14 @@ class DocumentResource extends Resource
                     $type = DocumentType::query()->find($data['document_type_id'] ?? 0);
 
                     if ($type !== null) {
-                        static::ensureUploadTypeAllowed($type, 'document_type_id');
+                        static::ensureUploadTypeAllowed($type, 'document_type_id', $documentable);
                     }
 
                     return $uploadDocument->handle($documentable, [...static::fileData($data), 'document_type_id' => $data['document_type_id'] ?? null], static::user());
                 });
 
                 Notification::make()
-                    ->title(__('pondok.document.uploaded', ['type' => $document->documentType?->name, 'owner' => $documentable->getAttribute('name')]))
+                    ->title(__('pondok.document.uploaded', ['type' => $document->documentType?->name, 'owner' => static::ownerName($documentable)]))
                     ->success()
                     ->send();
             });
@@ -446,7 +448,7 @@ class DocumentResource extends Resource
             ->whereIn('owner', $owners)
             ->orderBy('name')
             ->get()
-            ->filter(fn (DocumentType $type): bool => Gate::allows('uploadType', [Document::class, $type]))
+            ->filter(fn (DocumentType $type): bool => Gate::allows('uploadType', [Document::class, $type, $owner]))
             ->pluck('name', 'id')
             ->all();
     }
@@ -463,7 +465,7 @@ class DocumentResource extends Resource
 
         return $user !== null
             && $alias !== null
-            && Gate::allows('create', Document::class)
+            && Gate::allows('createFor', [Document::class, $owner])
             && Document::userSeesOwnerType($user, $alias)
             && ! ($owner instanceof Student && $owner->trashed());
     }
@@ -476,7 +478,19 @@ class DocumentResource extends Resource
             && $owner instanceof Model
             && $document->documentType !== null
             && static::canUploadFor($owner)
-            && Gate::allows('uploadType', [Document::class, $document->documentType]);
+            && Gate::allows('uploadType', [Document::class, $document->documentType, $owner]);
+    }
+
+    /**
+     * Nama pemilik untuk tampilan: nama santri/wali/staff, judul prestasi.
+     */
+    public static function ownerName(?Model $owner): ?string
+    {
+        if ($owner instanceof Achievement) {
+            return $owner->title;
+        }
+
+        return $owner?->getAttribute('name');
     }
 
     public static function ownerTypeLabel(string $alias): string
@@ -487,15 +501,15 @@ class DocumentResource extends Resource
     }
 
     /**
-     * Cari nama pemilik (santri, wali, staff) atau NIS santri.
+     * Cari nama pemilik (santri, wali, staff), NIS santri, atau judul prestasi.
      */
     protected static function searchOwner(Builder $query, string $search): Builder
     {
         $like = '%'.$search.'%';
 
-        return $query->whereHasMorph('documentable', [Student::class, Guardian::class, Staff::class], function (Builder $query, string $type) use ($like): void {
+        return $query->whereHasMorph('documentable', [Student::class, Guardian::class, Staff::class, Achievement::class], function (Builder $query, string $type) use ($like): void {
             $query->where(function (Builder $query) use ($type, $like): void {
-                $query->where('name', 'like', $like);
+                $query->where($type === Achievement::class ? 'title' : 'name', 'like', $like);
 
                 if ($type === Student::class) {
                     $query->orWhere('nis', 'like', $like);
@@ -552,9 +566,9 @@ class DocumentResource extends Resource
         ];
     }
 
-    protected static function ensureUploadTypeAllowed(?DocumentType $type, string $field = 'document_type_id'): void
+    protected static function ensureUploadTypeAllowed(?DocumentType $type, string $field = 'document_type_id', ?Model $owner = null): void
     {
-        if ($type !== null && ! Gate::allows('uploadType', [Document::class, $type])) {
+        if ($type !== null && ! Gate::allows('uploadType', [Document::class, $type, $owner])) {
             throw ValidationException::withMessages([$field => __('pondok.dokumen.errors.confidential_not_allowed')]);
         }
     }

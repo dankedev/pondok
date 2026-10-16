@@ -62,7 +62,15 @@ it('AC-2: hides :key from users without its metric permission and from guests', 
     $this->actingAs(dashboardUserWith(['view-dashboard', ...$others]));
     expect($class::canView())->toBeFalse();
 
-    $this->actingAs(dashboardUserWith(['view-dashboard', $permission]));
+    // Widget prestasi butuh izin metrik DAN view-any:achievement (rencana F015); izin metrik saja tidak cukup.
+    $extra = $key === 'achievements' ? ['view-any:achievement'] : [];
+
+    if ($extra !== []) {
+        $this->actingAs(dashboardUserWith(['view-dashboard', $permission]));
+        expect($class::canView())->toBeFalse();
+    }
+
+    $this->actingAs(dashboardUserWith(['view-dashboard', $permission, ...$extra]));
     expect($class::canView())->toBeTrue();
 
     Auth::logout();

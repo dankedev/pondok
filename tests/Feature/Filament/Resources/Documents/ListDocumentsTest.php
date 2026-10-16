@@ -207,7 +207,7 @@ it('AC-34: hides confidential data from kesantrian', function () {
         ->assertActionHidden(TestAction::make('verify')->table($ijazah))
         ->assertActionHidden(TestAction::make('replace')->table($ijazah))
         ->assertActionVisible(TestAction::make('view')->table($rows->kk))
-        ->assertTableFilterExists('documentable_type', fn ($filter): bool => array_keys($filter->getOptions()) === ['student']);
+        ->assertTableFilterExists('documentable_type', fn ($filter): bool => array_keys($filter->getOptions()) === ['student', 'achievement']);
 
     $text = tagihanPlainText($component);
 

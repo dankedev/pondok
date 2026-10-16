@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Documents\RelationManagers;
 
 use App\Actions\Dokumen\CheckDocumentCompleteness;
 use App\Filament\Resources\Documents\DocumentResource;
+use App\Models\Achievement;
 use App\Models\Document;
 use App\Models\Guardian;
 use App\Models\Student;
@@ -18,8 +19,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Dokumen satu pemilik (santri, wali, staff). Dipasang di `StudentResource`,
- * `GuardianResource`, dan `StaffResource`. Unggah, versi baru, dan verifikasi
+ * Dokumen satu pemilik (santri, wali, staff, prestasi). Dipasang di `StudentResource`,
+ * `GuardianResource`, `StaffResource`, dan `AchievementResource`. Unggah, versi baru, dan verifikasi
  * memakai aksi bersama dari `DocumentResource`.
  */
 class DocumentsRelationManager extends RelationManager
@@ -46,6 +47,10 @@ class DocumentsRelationManager extends RelationManager
 
         if (! Gate::allows('viewAny', Document::class) || ! Document::userSeesOwnerType($user, $alias)) {
             return false;
+        }
+
+        if ($ownerRecord instanceof Achievement) {
+            return Gate::allows('view', $ownerRecord);
         }
 
         if ($ownerRecord instanceof Guardian && $user->scopedUnitIds() !== []) {

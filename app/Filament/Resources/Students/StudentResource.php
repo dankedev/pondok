@@ -8,6 +8,7 @@ use App\Filament\Resources\Documents\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Filament\Resources\Students\Pages\EditStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
+use App\Filament\Resources\Students\RelationManagers\AchievementsRelationManager;
 use App\Filament\Resources\Students\RelationManagers\EnrollmentsRelationManager;
 use App\Filament\Resources\Students\RelationManagers\GuardiansRelationManager;
 use App\Filament\Resources\Students\Schemas\StudentForm;
@@ -78,6 +79,7 @@ class StudentResource extends Resource
             DocumentsRelationManager::class,
             EnrollmentsRelationManager::class,
             GuardiansRelationManager::class,
+            AchievementsRelationManager::class,
         ];
     }
 

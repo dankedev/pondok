@@ -796,9 +796,10 @@ erDiagram
   }
   pages {
     bigint id PK
-    string slug UK "profil | visi-misi | kontak"
+    string slug UK "maks 50; sistem: profil | visi-misi | kontak"
     string title
     longtext body
+    string status "draft | terbit, default DB terbit"
   }
   settings {
     string key PK "school.name, school.logo_path, psb.contact"
@@ -816,10 +817,11 @@ erDiagram
   - Gambar (disk `public`, folder `school/`): `school.logo_path` = **logo cetak** (kop surat F014, kuitansi F007, fallback `og:image`); `school.logo_desktop_path` dan `school.logo_mobile_path` khusus header portal; `school.favicon_path` (PNG). Logo cetak tidak dipakai di header portal. Migrasi F036 menyalin **berkas** logo cetak menjadi logo desktop (nama baru), sehingga mengganti atau menghapus salah satunya tidak menyentuh berkas lain.
   - Kontak: `school.map_url` (tautan peta, tanpa embed), `school.contacts` (JSON daftar `{key, label, name, phone, is_whatsapp}`, maks 10; `key` 8 karakter `[a-z0-9]` stabil sebagai rujukan F038), `school.social_links` (JSON `{platform, label, url}`, maks 10).
   - Beranda: `portal.hero_greeting`, `portal.hero_title`, `portal.hero_subtitle`, `portal.highlights_heading`, `portal.highlights` (JSON `{title, description}`, maks 8), `portal.hero_album_id`, `portal.profile_video_id`, `portal.psb_video_id` (ID tanpa FK; rujukan hilang dibaca null).
-  - Footer: `portal.footer_quote_arabic`, `portal.footer_quote_translation`, `portal.footer_quote_source`, `portal.footer_description`, `portal.footer_links` (JSON `{label, url}`, maks 8).
+  - Footer: `portal.footer_quote_arabic`, `portal.footer_quote_translation`, `portal.footer_quote_source`, `portal.footer_description`, `portal.footer_links` (JSON maks 8; tiap item berbentuk `{label, url}` atau `{label: ?string, page_id}`; item halaman dengan label kosong memakai judul halaman tujuan dan hanya tampil bila halaman terbit).
+  - Menu portal (F037): `portal.menu_items` (JSON list `{type: builtin, key, visible}` atau `{type: page, page_id, label?, visible}`, maks 8 item tampil; null = menu bawaan), `portal.menu_show_register` (bool, tombol Daftar). Menghapus halaman membuang rujukan `page_id`-nya dari `portal.menu_items` dan `portal.footer_links`.
   - Key lama `school.whatsapp`, `school.instagram_url`, `school.facebook_url`, `school.youtube_url` dipindah ke daftar baru lalu dihapus oleh migrasi `2026_10_17_000000_move_school_profile_settings`.
 - `posts.author_id` nullable dengan `nullOnDelete`: menghapus user tidak menghapus atau menahan beritanya. `posts.achievement_id` unique (satu berita per prestasi, termasuk berita terhapus) dengan FK `restrictOnDelete` ke `achievements` (F015; id yatim dibersihkan saat migrasi).
-- Nama dan slug kategori unik per `type`. `posts.body` dan `pages.body` adalah HTML tersanitasi; tabel model `pages` adalah `StaticPage` di kode.
+- Nama dan slug kategori unik per `type`. `posts.body` dan `pages.body` adalah HTML tersanitasi; tabel model `pages` adalah `StaticPage` di kode. Halaman bisa dibuat dan dihapus admin (F037), maks 50; tiga halaman sistem (`profil`, `visi-misi`, `kontak`) tidak bisa dihapus dan slug-nya terkunci. Slug halaman bebas tidak boleh bentrok dengan slug cadangan, route, atau berkas di `public/`. Portal hanya menampilkan halaman `terbit`; migrasi `2026_10_18_000000_add_status_to_pages_table` menjadikan baris lama `terbit` dan menambahkan tautan Visi & misi ke `portal.footer_links`.
 - Kolom `type`/`status` konten disimpan sebagai string dan divalidasi di Action (portabel SQLite/MySQL/Postgres).
 
 ## Pengguna & RBAC

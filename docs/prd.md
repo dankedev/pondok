@@ -40,7 +40,7 @@ Akses diatur dua lapis:
 
 ### 3.1 Portal Publik & Konten
 - Berita, kegiatan, dan prestasi. Berita prestasi mengambil data dari modul Prestasi.
-- Galeri foto berkategori (fasilitas, kegiatan), video YouTube, dan halaman statis (profil, visi-misi, kontak).
+- Galeri foto berkategori (fasilitas, kegiatan), video YouTube, dan halaman statis yang bisa dibuat dan dihapus admin dengan status draf/terbit (tiga halaman sistem: profil, visi-misi, kontak), serta menu portal yang bisa diatur urutan dan isinya.
 - Profil sekolah diatur dari panel (`settings`) tanpa ubah kode.
 
 ### 3.2 Akademik & Santri

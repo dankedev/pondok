@@ -14,7 +14,7 @@
             <li @if ($number === $current) aria-current="step" @endif class="flex flex-col gap-1">
                 <span @class([
                     'h-1.5 rounded-full',
-                    'bg-primary-600' => $number <= $current,
+                    'bg-primary-900' => $number <= $current,
                     'bg-gray-200' => $number > $current,
                 ])></span>
                 <span @class([

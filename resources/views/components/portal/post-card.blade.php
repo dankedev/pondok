@@ -7,7 +7,7 @@
     $heading = $headingLevel === 2 ? 'h2' : 'h3';
 @endphp
 
-<article {{ $attributes->class('flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm') }}>
+<article {{ $attributes->class('flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-card') }}>
     @if ($cover)
         <img src="{{ $cover }}" alt="" loading="lazy" class="aspect-video w-full object-cover">
     @else
@@ -15,7 +15,7 @@
             <x-heroicon-o-newspaper class="size-10 text-gray-400" aria-hidden="true" />
         </div>
     @endif
-    <div class="flex flex-1 flex-col gap-2 p-4">
+    <div class="flex flex-1 flex-col gap-2 p-5">
         <div class="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <x-ui.badge color="gray">{{ __('pondok.post.types.'.$post->type) }}</x-ui.badge>
             @if ($post->published_at)

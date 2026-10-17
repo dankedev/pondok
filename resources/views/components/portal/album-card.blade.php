@@ -4,7 +4,7 @@
     $heading = $headingLevel === 2 ? 'h2' : 'h3';
 @endphp
 
-<article {{ $attributes->class('flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm') }}>
+<article {{ $attributes->class('flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-card') }}>
     @if ($album->coverPhoto)
         <img src="{{ $album->coverPhoto->url() }}" alt="" loading="lazy" class="aspect-video w-full object-cover">
     @else
@@ -12,7 +12,7 @@
             <x-heroicon-o-photo class="size-10 text-gray-400" aria-hidden="true" />
         </div>
     @endif
-    <div class="flex flex-1 flex-col gap-1 p-4">
+    <div class="flex flex-1 flex-col gap-1 p-5">
         <{{ $heading }} class="text-lg font-semibold text-gray-900">
             <a href="{{ route('portal.albums.show', $album->slug) }}" class="rounded-lg underline-offset-4 hover:text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">{{ $album->title }}</a>
         </{{ $heading }}>

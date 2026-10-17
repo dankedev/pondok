@@ -9,6 +9,6 @@
     };
 @endphp
 
-<div role="{{ $color === 'danger' ? 'alert' : 'status' }}" {{ $attributes->class('rounded-lg border p-4 text-sm '.$classes) }}>
+<div role="{{ $color === 'danger' ? 'alert' : 'status' }}" {{ $attributes->class('rounded-xl border p-4 text-sm '.$classes) }}>
     {{ $slot }}
 </div>

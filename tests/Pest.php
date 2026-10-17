@@ -74,6 +74,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -4201,4 +4202,24 @@ function situsNavigationLabels(User $user): array
     }
 
     return [];
+}
+
+/**
+ * Memastikan setiap kunci lang punya teks bahasa Indonesia yang tidak kosong. Dipakai sebagai satu test per daftar,
+ * bukan dataset per kunci: setiap kasus dataset Feature menjalankan ulang migrasi, padahal pengecekan ini tanpa DB.
+ * Bila gagal, pesan menyebut semua kunci yang hilang sekaligus.
+ *
+ * @param  iterable<mixed>|Closure(): iterable<mixed>  $keys  kunci lengkap, atau baris dataset `[kunci]`
+ */
+function expectTranslatedKeys(iterable|Closure $keys): void
+{
+    $keys = collect($keys instanceof Closure ? $keys() : $keys)->flatten();
+
+    $missing = $keys
+        ->reject(fn (string $key): bool => Lang::has($key, 'id') && is_string(__($key)) && __($key) !== $key && trim(__($key)) !== '')
+        ->values()
+        ->all();
+
+    expect($keys)->not->toBeEmpty()
+        ->and($missing)->toBe([], 'Kunci lang tanpa teks: '.implode(', ', $missing));
 }

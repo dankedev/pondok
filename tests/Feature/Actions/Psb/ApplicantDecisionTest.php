@@ -77,15 +77,14 @@ function seleksiReady(string $status): Applicant
     return seleksiApplicant($status);
 }
 
-it('AC-5: knows every transition through canTransitionTo', function (string $from, string $to) {
-    $applicant = new Applicant(['status' => $from]);
-    $valid = collect(seleksiValidTransitions())->contains(fn (array $moves): bool => ($moves[$from] ?? null) === $to);
-
-    expect($applicant->canTransitionTo($to))->toBe($valid);
-})->with(function () {
+it('AC-5: knows every transition through canTransitionTo', function () {
+    // Satu test untuk seluruh pasangan status: pengecekan ini di memori, tanpa perlu fixture per pasangan.
     foreach (Applicant::STATUSES as $from) {
         foreach (Applicant::STATUSES as $to) {
-            yield "{$from} ke {$to}" => [$from, $to];
+            $applicant = new Applicant(['status' => $from]);
+            $valid = collect(seleksiValidTransitions())->contains(fn (array $moves): bool => ($moves[$from] ?? null) === $to);
+
+            expect($applicant->canTransitionTo($to))->toBe($valid, "{$from} ke {$to}");
         }
     }
 });

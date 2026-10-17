@@ -4,7 +4,6 @@ use App\Actions\Dokumen\ReplaceDocument;
 use App\Actions\Dokumen\SaveDocumentType;
 use App\Actions\Dokumen\UploadDocument;
 use App\Actions\Dokumen\VerifyDocument;
-use Illuminate\Support\Facades\Lang;
 
 /**
  * Semua alasan penolakan Action dokumen (rencana F013, bagian teks).
@@ -19,12 +18,9 @@ const DOKUMEN_ERROR_REASONS = [
     'status_unchanged', 'document_expired', 'confidential_not_allowed',
 ];
 
-it('AC-41: translates every dokumen message', function (string $reason) {
-    $key = "pondok.dokumen.errors.{$reason}";
-
-    expect(__($key))->not->toBe($key)->not->toBe('')
-        ->and(Lang::has($key, 'id'))->toBeTrue();
-})->with(DOKUMEN_ERROR_REASONS);
+it('AC-41: translates every dokumen message', function () {
+    expectTranslatedKeys(collect(DOKUMEN_ERROR_REASONS)->map(fn (string $reason): string => "pondok.dokumen.errors.{$reason}"));
+});
 
 it('AC-41: gives every message a way forward', function () {
     $messages = collect(DOKUMEN_ERROR_REASONS)->mapWithKeys(fn (string $reason): array => [$reason => __("pondok.dokumen.errors.{$reason}")]);
@@ -42,10 +38,7 @@ it('AC-41: names the statuses and the menu group', function () {
         ->and(__('pondok.navigation.dokumen'))->toBe('Dokumen');
 });
 
-it('AC-41: defines every UI text the plan lists', function (string $key) {
-    expect(Lang::has("pondok.{$key}", 'id'))->toBeTrue("Kunci pondok.{$key} belum ada")
-        ->and(__("pondok.{$key}"))->not->toBe("pondok.{$key}");
-})->with(function (): array {
+it('AC-41: defines every UI text the plan lists', function () {
     $typeKeys = ['label', 'plural', 'code', 'code_helper', 'name', 'owner', 'is_required', 'is_required_helper', 'has_expiry', 'is_confidential',
         'is_confidential_helper', 'is_active', 'documents_count', 'empty', 'delete_description',
         'owners.santri', 'owners.wali', 'owners.staff', 'owners.prestasi', 'required_labels.1', 'required_labels.0'];
@@ -58,10 +51,8 @@ it('AC-41: defines every UI text the plan lists', function (string $key) {
         'completeness_labels.1', 'completeness_labels.0', 'completeness_reasons.missing', 'completeness_reasons.pending',
         'completeness_reasons.expired', 'completeness_reasons.rejected'];
 
-    return collect($typeKeys)->map(fn (string $key): string => "document_type.{$key}")
-        ->merge(collect($documentKeys)->map(fn (string $key): string => "document.{$key}"))
-        ->mapWithKeys(fn (string $key): array => [$key => [$key]])
-        ->all();
+    expectTranslatedKeys(collect($typeKeys)->map(fn (string $key): string => "pondok.document_type.{$key}")
+        ->merge(collect($documentKeys)->map(fn (string $key): string => "pondok.document.{$key}")));
 });
 
 it('AC-41: knows every action class the messages belong to', function () {

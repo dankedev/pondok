@@ -52,11 +52,14 @@ it('AC-30: renders accessible markup', function (string $url, ?string $activeRou
     }
 })->with('portalPages');
 
-it('AC-31: has no raw translation keys', function (string $url) {
-    $html = $this->get($url)->getContent();
+it('AC-31: has no raw translation keys', function () {
+    // Satu test untuk semua halaman: fixture portal di beforeEach cukup dibangun sekali.
+    foreach (['/', '/berita', '/berita?page=2', '/berita/wisuda-2026', '/galeri', '/galeri/album-ramadan', '/video', '/profil', '/visi-misi', '/kontak', '/tidak-ada-halaman'] as $url) {
+        $html = $this->get($url)->getContent();
 
-    expect($html)->not->toMatch('/pondok\.[a-z_]+\.[a-z_]/')->not->toContain('Previous')->not->toContain('Next')->not->toContain('Showing');
-})->with(array_map(fn (array $row): string => $row[0], array_values(['home' => ['/'], 'p' => ['/berita'], 'p2' => ['/berita?page=2'], 'post' => ['/berita/wisuda-2026'], 'a' => ['/galeri'], 'al' => ['/galeri/album-ramadan'], 'v' => ['/video'], 'pr' => ['/profil'], 'vm' => ['/visi-misi'], 'k' => ['/kontak'], '404' => ['/tidak-ada-halaman']])));
+        expect($html)->not->toMatch('/pondok\.[a-z_]+\.[a-z_]/', $url)->not->toContain('Previous', $url)->not->toContain('Next', $url)->not->toContain('Showing', $url);
+    }
+});
 
 it('AC-32: uses design tokens only in portal views', function () {
     $files = [

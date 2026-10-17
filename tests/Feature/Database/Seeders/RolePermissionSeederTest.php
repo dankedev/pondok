@@ -55,6 +55,8 @@ it('does not duplicate roles or permissions when run again', function () {
         ->and(Permission::query()->count())->toBe($permissions);
 });
 
+// Daftar persis per peran ini juga menjaga larangan lintas peran (mis. izin pembayaran hanya bendahara):
+// izin yang bocor ke peran lain langsung membuat test ini gagal, jadi tidak perlu test "tidak untuk peran lain".
 it('grants each role exactly its permissions', function (string $role, array $expected) {
     expect(Role::findByName($role)->permissions->pluck('name')->sort()->values()->all())
         ->toBe(collect($expected)->sort()->values()->all());
@@ -174,10 +176,6 @@ it('AC-30: creates payment permissions and keeps bendahara from deleting payment
         ->and($user->can('delete-any:payment'))->toBeFalse();
 });
 
-it('AC-30: gives payment permissions to no other role except super-admin', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':payment'))->all())->toBe([]);
-})->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-23: creates the finance report permission for bendahara only', function () {
     expect(Permission::query()->pluck('name')->all())->toContain('view:finance-report');
 
@@ -187,10 +185,6 @@ it('AC-23: creates the finance report permission for bendahara only', function (
     expect($bendahara->can('view:finance-report'))->toBeTrue()
         ->and($admin->can('view:finance-report'))->toBeFalse();
 });
-
-it('AC-23: gives the finance report permission to no other role', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->contains('view:finance-report'))->toBeFalse();
-})->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
 
 it('AC-22: creates the psb master permissions', function () {
     $expected = collect(['admission-wave', 'admission-track', 'admission-requirement'])
@@ -213,10 +207,6 @@ it('AC-22: does not let admin-psb delete waves or tracks', function () {
         ->and($user->can('delete:admission-requirement'))->toBeTrue();
 });
 
-it('AC-22: gives psb master permissions to no other role', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_contains($name, ':admission-'))->all())->toBe([]);
-})->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-22: leaves document types to the dokumen module (F013 AC-7 supersedes the F009 no-permission rule)', function () {
     expect(Permission::query()->where('name', 'like', '%:document-type')->count())->toBe(6);
 });
@@ -229,18 +219,6 @@ it('AC-7: creates document permissions', function () {
     expect(Permission::query()->where('name', 'like', '%:document-type')->pluck('name')->sort()->values()->all())->toBe(collect($types)->sort()->values()->all())
         ->and(Permission::query()->where('name', 'like', '%:document')->pluck('name')->sort()->values()->all())->toBe(collect($documents)->sort()->values()->all());
 });
-
-it('AC-7: keeps document update and delete from every role but super-admin', function (string $role) {
-    $names = Role::findByName($role)->permissions->pluck('name');
-
-    expect($names->intersect(['update:document', 'delete:document', 'delete-any:document'])->all())->toBe([]);
-})->with(['bendahara', 'admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
-it('AC-7: gives document permissions to no other role', function (string $role) {
-    $names = Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':document') || str_ends_with($name, ':document-type'));
-
-    expect($names->all())->toBe([]);
-})->with(['bendahara', 'admin-konten', 'admin-psb', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
 
 it('AC-7: lets super-admin update and delete documents', function () {
     $user = User::factory()->create()->assignRole('super-admin');
@@ -277,10 +255,6 @@ it('AC-30: lets admin-psb verify, reset tokens and delete but not create or upda
         ->and($user->can('delete-any:applicant'))->toBeFalse();
 });
 
-it('AC-30: gives applicant permissions to no other role', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':applicant'))->all())->toBe([]);
-})->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-23: creates the decide and reopen permissions', function () {
     expect(Permission::query()->pluck('name')->all())->toContain('decide:applicant', 'reopen:applicant');
 });
@@ -296,12 +270,6 @@ it('AC-23: gives decide to admin-psb and reopen to nobody but super-admin', func
         ->and(Role::findByName('admin-psb')->permissions->pluck('name')->contains('reopen:applicant'))->toBeFalse();
 });
 
-it('AC-23: gives decide and reopen to no other role', function (string $role) {
-    $names = Role::findByName($role)->permissions->pluck('name');
-
-    expect($names->contains('decide:applicant'))->toBeFalse()->and($names->contains('reopen:applicant'))->toBeFalse();
-})->with(['bendahara', 'admin-konten', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-23: backs the decide and reopen abilities with the applicant policy', function () {
     $policy = new ApplicantPolicy;
 
@@ -313,14 +281,6 @@ it('AC-23: backs the decide and reopen abilities with the applicant policy', fun
     expect($policy->decide($admin, $applicant))->toBeTrue()->and($policy->reopen($admin, $applicant))->toBeFalse();
 });
 
-it('AC-5: grants content permissions only to admin-konten and super-admin', function (string $role) {
-    $names = Role::findByName($role)->permissions->pluck('name')->filter(
-        fn (string $name): bool => preg_match('/:(post|album|video|category|static-page)$/', $name) === 1,
-    );
-
-    expect($names->all())->toBe([]);
-})->with(['bendahara', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-5: creates the content permissions with restore only for posts', function () {
     $names = Permission::query()->pluck('name');
 
@@ -328,10 +288,6 @@ it('AC-5: creates the content permissions with restore only for posts', function
         ->and($names->contains('restore:album'))->toBeFalse()
         ->and($names->contains('restore:static-page'))->toBeFalse();
 });
-
-it('AC-33: grants the school profile only to admin-konten, admin-sekolah and super-admin', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->contains('view:school-profile'))->toBeFalse();
-})->with(['bendahara', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
 
 it('AC-33: grants the school profile to admin-konten, admin-sekolah and super-admin without duplicates', function () {
     $this->seed(RolePermissionSeeder::class);
@@ -393,16 +349,6 @@ it('AC-32: grants issued letter permissions to admin-sekolah and super-admin onl
     }
 });
 
-it('AC-32: keeps letter update and delete from every role but super-admin', function (string $role) {
-    $names = Role::findByName($role)->permissions->pluck('name');
-
-    expect($names->intersect(['update:issued-letter', 'delete:issued-letter', 'delete-any:issued-letter'])->all())->toBe([]);
-})->with(['bendahara', 'admin-konten', 'admin-psb', 'admin-sekolah', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
-it('AC-32: gives issued letter permissions to no other role', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->filter(fn (string $name): bool => str_ends_with($name, ':issued-letter'))->all())->toBe([]);
-})->with(['bendahara', 'admin-konten', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-32: backs the cancel and numbering abilities with the issued letter policy', function () {
     $policy = new IssuedLetterPolicy;
 
@@ -437,12 +383,6 @@ it('AC-7: creates achievement permissions', function () {
     );
 });
 
-it('AC-7: keeps delete-any achievement for super-admin only', function (string $role) {
-    $permissions = Role::findByName($role)->permissions->pluck('name');
-
-    expect($permissions)->not->toContain('delete-any:achievement');
-})->with(['admin-konten', 'admin-psb', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
-
 it('AC-7: gives super-admin every achievement permission', function () {
     $user = User::factory()->create()->assignRole('super-admin');
 
@@ -462,10 +402,6 @@ it('AC-31: gives re-register to admin-psb and super-admin only', function () {
         ->and($super->can('re-register:applicant'))->toBeTrue()
         ->and(Role::findByName('admin-psb')->permissions->pluck('name')->contains('re-register:applicant'))->toBeTrue();
 });
-
-it('AC-31: gives re-register to no other role', function (string $role) {
-    expect(Role::findByName($role)->permissions->pluck('name')->contains('re-register:applicant'))->toBeFalse();
-})->with(['admin-konten', 'admin-sekolah', 'bendahara', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali']);
 
 it('AC-31: lets the applicant policy check the re-register permission', function () {
     $applicant = Applicant::factory()->create();

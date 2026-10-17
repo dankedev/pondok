@@ -144,23 +144,23 @@ it('AC-25: lets an unscoped admin-psb see every requirement', function () {
         ->assertActionVisible(TestAction::make('delete')->table($all));
 });
 
-it('AC-31: translates every psb text key', function (string $key) {
-    expect(__($key))->not->toBe($key)->and(trim(__($key)))->not->toBe('');
-})->with([
-    ...collect([
-        'academic_year_not_found', 'name_required', 'wave_name_taken', 'date_invalid', 'closes_before_opens', 'quota_invalid',
-        'wave_dates_overlap', 'code_format', 'track_code_taken', 'scholarship_not_found', 'scholarship_inactive', 'unit_not_found',
-        'all_units_requires_unscoped', 'document_type_not_found', 'document_type_not_for_student', 'document_type_inactive',
-        'sort_order_invalid', 'requirement_exists',
-    ])->mapWithKeys(fn (string $reason): array => [$reason => ["pondok.psb.errors.{$reason}"]])->all(),
-    'keuangan wave_not_found' => ['pondok.keuangan.errors.wave_not_found'],
-    'keuangan wave_rate_for_non_psb_fee' => ['pondok.keuangan.errors.wave_rate_for_non_psb_fee'],
-    'navigation' => ['pondok.navigation.psb'],
-    'wave empty' => ['pondok.admission_wave.empty'],
-    'track empty' => ['pondok.admission_track.empty'],
-    'requirement empty' => ['pondok.admission_requirement.empty'],
-    'all waves' => ['pondok.fee_rate.all_waves'],
-]);
+it('AC-31: translates every psb text key', function () {
+    expectTranslatedKeys([
+        ...collect([
+            'academic_year_not_found', 'name_required', 'wave_name_taken', 'date_invalid', 'closes_before_opens', 'quota_invalid',
+            'wave_dates_overlap', 'code_format', 'track_code_taken', 'scholarship_not_found', 'scholarship_inactive', 'unit_not_found',
+            'all_units_requires_unscoped', 'document_type_not_found', 'document_type_not_for_student', 'document_type_inactive',
+            'sort_order_invalid', 'requirement_exists',
+        ])->mapWithKeys(fn (string $reason): array => [$reason => ["pondok.psb.errors.{$reason}"]])->all(),
+        'keuangan wave_not_found' => ['pondok.keuangan.errors.wave_not_found'],
+        'keuangan wave_rate_for_non_psb_fee' => ['pondok.keuangan.errors.wave_rate_for_non_psb_fee'],
+        'navigation' => ['pondok.navigation.psb'],
+        'wave empty' => ['pondok.admission_wave.empty'],
+        'track empty' => ['pondok.admission_track.empty'],
+        'requirement empty' => ['pondok.admission_requirement.empty'],
+        'all waves' => ['pondok.fee_rate.all_waves'],
+    ]);
+});
 
 it('AC-31: words name_required so it fits both a missing and a too long name', function () {
     $message = Str::lower(__('pondok.psb.errors.name_required'));
@@ -168,184 +168,184 @@ it('AC-31: words name_required so it fits both a missing and a too long name', f
     expect($message)->toContain('wajib')->and($message)->toMatch('/maksimal|panjang|karakter/');
 });
 
-it('AC-40: translates every applicant text key', function (string $key) {
-    expect(__($key))->toBeString()->not->toBe($key)->not->toBeEmpty();
-})->with([
-    'pondok.applicant.label',
-    'pondok.applicant.plural',
-    'pondok.applicant.registration_no',
-    'pondok.applicant.consented_at',
-    'pondok.applicant.name',
-    'pondok.applicant.nisn',
-    'pondok.applicant.gender',
-    'pondok.applicant.birth_place',
-    'pondok.applicant.birth_date',
-    'pondok.applicant.previous_school',
-    'pondok.applicant.guardian_name',
-    'pondok.applicant.guardian_phone',
-    'pondok.applicant.email',
-    'pondok.applicant.unit',
-    'pondok.applicant.wave',
-    'pondok.applicant.track',
-    'pondok.applicant.status',
-    'pondok.applicant.registered_at',
-    'pondok.applicant.section_registration',
-    'pondok.applicant.section_student',
-    'pondok.applicant.section_guardian',
-    'pondok.applicant.section_invoices',
-    'pondok.applicant.section_completeness',
-    'pondok.applicant.no_invoices',
-    'pondok.applicant.completeness_ok',
-    'pondok.applicant.empty',
-    'pondok.applicant.invoice_item_description',
-    'pondok.applicant.cancel_reason_deleted',
-    'pondok.applicant.generate_invoices',
-    'pondok.applicant.generate_invoices_description',
-    'pondok.applicant.invoices_generated',
-    'pondok.applicant.invoices_none_generated',
-    'pondok.applicant.reset_token',
-    'pondok.applicant.reset_token_description',
-    'pondok.applicant.token_reset_notice',
-    'pondok.applicant.delete',
-    'pondok.applicant.delete_description',
-    'pondok.applicant.deleted',
-    'pondok.applicant.statuses.draft',
-    'pondok.applicant.statuses.diajukan',
-    'pondok.applicant.statuses.diverifikasi',
-    'pondok.applicant.statuses.diterima',
-    'pondok.applicant.statuses.cadangan',
-    'pondok.applicant.statuses.ditolak',
-    'pondok.applicant_document.label',
-    'pondok.applicant_document.plural',
-    'pondok.applicant_document.requirement',
-    'pondok.applicant_document.original_name',
-    'pondok.applicant_document.size_kb',
-    'pondok.applicant_document.uploaded_at',
-    'pondok.applicant_document.status',
-    'pondok.applicant_document.note',
-    'pondok.applicant_document.download',
-    'pondok.applicant_document.mark_valid',
-    'pondok.applicant_document.reject',
-    'pondok.applicant_document.reject_note',
-    'pondok.applicant_document.empty',
-    'pondok.applicant_document.not_uploaded',
-    'pondok.applicant_document.statuses.menunggu',
-    'pondok.applicant_document.statuses.valid',
-    'pondok.applicant_document.statuses.ditolak',
-    'pondok.psb_public.title',
-    'pondok.psb_public.opens_badge',
-    'pondok.psb_public.closed_title',
-    'pondok.psb_public.closed_body',
-    'pondok.psb_public.next',
-    'pondok.psb_public.back',
-    'pondok.psb_public.submit',
-    'pondok.psb_public.saving',
-    'pondok.psb_public.consent',
-    'pondok.psb_public.prepare_documents',
-    'pondok.psb_public.required',
-    'pondok.psb_public.optional',
-    'pondok.psb_public.success_title',
-    'pondok.psb_public.token_warning',
-    'pondok.psb_public.copy_token',
-    'pondok.psb_public.copied',
-    'pondok.psb_public.fee_total',
-    'pondok.psb_public.no_fee',
-    'pondok.psb_public.payment_hint',
-    'pondok.psb_public.check_status',
-    'pondok.psb_public.status_title',
-    'pondok.psb_public.login_submit',
-    'pondok.psb_public.logout',
-    'pondok.psb_public.invoices_title',
-    'pondok.psb_public.documents_title',
-    'pondok.psb_public.uploads_locked_unpaid',
-    'pondok.psb_public.uploads_closed',
-    'pondok.psb_public.upload',
-    'pondok.psb_public.upload_hint',
-    'pondok.psb_public.uploaded',
-    'pondok.psb_public.steps.choice',
-    'pondok.psb_public.steps.student',
-    'pondok.psb_public.steps.guardian',
-    'pondok.psb_public.steps.review',
-    'pondok.psb_public.status_help.draft',
-    'pondok.psb_public.status_help.diajukan',
-    'pondok.psb_public.status_help.diverifikasi',
-    'pondok.psb_public.status_help.diterima',
-    'pondok.psb_public.status_help.cadangan',
-    'pondok.psb_public.status_help.ditolak',
-    'pondok.psb.errors.track_not_found',
-    'pondok.psb.errors.track_inactive',
-    'pondok.psb.errors.wave_not_found',
-    'pondok.psb.errors.wave_not_accepting',
-    'pondok.psb.errors.wave_full',
-    'pondok.psb.errors.applicant_name_invalid',
-    'pondok.psb.errors.gender_invalid',
-    'pondok.psb.errors.birth_place_invalid',
-    'pondok.psb.errors.birth_date_invalid',
-    'pondok.psb.errors.nisn_invalid',
-    'pondok.psb.errors.previous_school_invalid',
-    'pondok.psb.errors.guardian_name_invalid',
-    'pondok.psb.errors.phone_invalid',
-    'pondok.psb.errors.email_invalid',
-    'pondok.psb.errors.consent_required',
-    'pondok.psb.errors.duplicate_application',
-    'pondok.psb.errors.spam_rejected',
-    'pondok.psb.errors.too_many_registrations',
-    'pondok.psb.errors.too_many_attempts',
-    'pondok.psb.errors.credentials_invalid',
-    'pondok.psb.errors.applicant_closed',
-    'pondok.psb.errors.uploads_closed',
-    'pondok.psb.errors.registration_fee_unpaid',
-    'pondok.psb.errors.requirement_not_applicable',
-    'pondok.psb.errors.document_already_valid',
-    'pondok.psb.errors.file_type_invalid',
-    'pondok.psb.errors.file_too_large',
-    'pondok.psb.errors.document_status_invalid',
-    'pondok.psb.errors.note_required',
-    'pondok.psb.errors.applicant_has_payments',
-    'pondok.psb.errors.applicant_converted',
-    'pondok.psb.errors.requirement_in_use',
-    'pondok.psb.errors.number_conflict',
-    'pondok.psb.errors.unit_not_found',
-    'pondok.keuangan.errors.billing_group_frequency_conflict',
-    'pondok.keuangan.errors.applicant_not_found',
-    'pondok.invoice.applicant_owner',
-    'pondok.payment.applicant_owner',
-    'pondok.receipt.registration_no',
-]);
+it('AC-40: translates every applicant text key', function () {
+    expectTranslatedKeys([
+        'pondok.applicant.label',
+        'pondok.applicant.plural',
+        'pondok.applicant.registration_no',
+        'pondok.applicant.consented_at',
+        'pondok.applicant.name',
+        'pondok.applicant.nisn',
+        'pondok.applicant.gender',
+        'pondok.applicant.birth_place',
+        'pondok.applicant.birth_date',
+        'pondok.applicant.previous_school',
+        'pondok.applicant.guardian_name',
+        'pondok.applicant.guardian_phone',
+        'pondok.applicant.email',
+        'pondok.applicant.unit',
+        'pondok.applicant.wave',
+        'pondok.applicant.track',
+        'pondok.applicant.status',
+        'pondok.applicant.registered_at',
+        'pondok.applicant.section_registration',
+        'pondok.applicant.section_student',
+        'pondok.applicant.section_guardian',
+        'pondok.applicant.section_invoices',
+        'pondok.applicant.section_completeness',
+        'pondok.applicant.no_invoices',
+        'pondok.applicant.completeness_ok',
+        'pondok.applicant.empty',
+        'pondok.applicant.invoice_item_description',
+        'pondok.applicant.cancel_reason_deleted',
+        'pondok.applicant.generate_invoices',
+        'pondok.applicant.generate_invoices_description',
+        'pondok.applicant.invoices_generated',
+        'pondok.applicant.invoices_none_generated',
+        'pondok.applicant.reset_token',
+        'pondok.applicant.reset_token_description',
+        'pondok.applicant.token_reset_notice',
+        'pondok.applicant.delete',
+        'pondok.applicant.delete_description',
+        'pondok.applicant.deleted',
+        'pondok.applicant.statuses.draft',
+        'pondok.applicant.statuses.diajukan',
+        'pondok.applicant.statuses.diverifikasi',
+        'pondok.applicant.statuses.diterima',
+        'pondok.applicant.statuses.cadangan',
+        'pondok.applicant.statuses.ditolak',
+        'pondok.applicant_document.label',
+        'pondok.applicant_document.plural',
+        'pondok.applicant_document.requirement',
+        'pondok.applicant_document.original_name',
+        'pondok.applicant_document.size_kb',
+        'pondok.applicant_document.uploaded_at',
+        'pondok.applicant_document.status',
+        'pondok.applicant_document.note',
+        'pondok.applicant_document.download',
+        'pondok.applicant_document.mark_valid',
+        'pondok.applicant_document.reject',
+        'pondok.applicant_document.reject_note',
+        'pondok.applicant_document.empty',
+        'pondok.applicant_document.not_uploaded',
+        'pondok.applicant_document.statuses.menunggu',
+        'pondok.applicant_document.statuses.valid',
+        'pondok.applicant_document.statuses.ditolak',
+        'pondok.psb_public.title',
+        'pondok.psb_public.opens_badge',
+        'pondok.psb_public.closed_title',
+        'pondok.psb_public.closed_body',
+        'pondok.psb_public.next',
+        'pondok.psb_public.back',
+        'pondok.psb_public.submit',
+        'pondok.psb_public.saving',
+        'pondok.psb_public.consent',
+        'pondok.psb_public.prepare_documents',
+        'pondok.psb_public.required',
+        'pondok.psb_public.optional',
+        'pondok.psb_public.success_title',
+        'pondok.psb_public.token_warning',
+        'pondok.psb_public.copy_token',
+        'pondok.psb_public.copied',
+        'pondok.psb_public.fee_total',
+        'pondok.psb_public.no_fee',
+        'pondok.psb_public.payment_hint',
+        'pondok.psb_public.check_status',
+        'pondok.psb_public.status_title',
+        'pondok.psb_public.login_submit',
+        'pondok.psb_public.logout',
+        'pondok.psb_public.invoices_title',
+        'pondok.psb_public.documents_title',
+        'pondok.psb_public.uploads_locked_unpaid',
+        'pondok.psb_public.uploads_closed',
+        'pondok.psb_public.upload',
+        'pondok.psb_public.upload_hint',
+        'pondok.psb_public.uploaded',
+        'pondok.psb_public.steps.choice',
+        'pondok.psb_public.steps.student',
+        'pondok.psb_public.steps.guardian',
+        'pondok.psb_public.steps.review',
+        'pondok.psb_public.status_help.draft',
+        'pondok.psb_public.status_help.diajukan',
+        'pondok.psb_public.status_help.diverifikasi',
+        'pondok.psb_public.status_help.diterima',
+        'pondok.psb_public.status_help.cadangan',
+        'pondok.psb_public.status_help.ditolak',
+        'pondok.psb.errors.track_not_found',
+        'pondok.psb.errors.track_inactive',
+        'pondok.psb.errors.wave_not_found',
+        'pondok.psb.errors.wave_not_accepting',
+        'pondok.psb.errors.wave_full',
+        'pondok.psb.errors.applicant_name_invalid',
+        'pondok.psb.errors.gender_invalid',
+        'pondok.psb.errors.birth_place_invalid',
+        'pondok.psb.errors.birth_date_invalid',
+        'pondok.psb.errors.nisn_invalid',
+        'pondok.psb.errors.previous_school_invalid',
+        'pondok.psb.errors.guardian_name_invalid',
+        'pondok.psb.errors.phone_invalid',
+        'pondok.psb.errors.email_invalid',
+        'pondok.psb.errors.consent_required',
+        'pondok.psb.errors.duplicate_application',
+        'pondok.psb.errors.spam_rejected',
+        'pondok.psb.errors.too_many_registrations',
+        'pondok.psb.errors.too_many_attempts',
+        'pondok.psb.errors.credentials_invalid',
+        'pondok.psb.errors.applicant_closed',
+        'pondok.psb.errors.uploads_closed',
+        'pondok.psb.errors.registration_fee_unpaid',
+        'pondok.psb.errors.requirement_not_applicable',
+        'pondok.psb.errors.document_already_valid',
+        'pondok.psb.errors.file_type_invalid',
+        'pondok.psb.errors.file_too_large',
+        'pondok.psb.errors.document_status_invalid',
+        'pondok.psb.errors.note_required',
+        'pondok.psb.errors.applicant_has_payments',
+        'pondok.psb.errors.applicant_converted',
+        'pondok.psb.errors.requirement_in_use',
+        'pondok.psb.errors.number_conflict',
+        'pondok.psb.errors.unit_not_found',
+        'pondok.keuangan.errors.billing_group_frequency_conflict',
+        'pondok.keuangan.errors.applicant_not_found',
+        'pondok.invoice.applicant_owner',
+        'pondok.payment.applicant_owner',
+        'pondok.receipt.registration_no',
+    ]);
+});
 
-it('AC-31 (F011): translates every acceptance text key', function (string $key) {
-    expect(__($key))->toBeString()->not->toBe($key)->not->toBeEmpty();
-})->with(function () {
-    $applicant = [
-        'section_decision', 'reviewer', 'reviewed_at', 'review_note', 'no_review', 'section_overrides', 'override_custom',
-        'activity_decided', 'track_scholarship_reason', 'cancel_reason_rejected', 'verify', 'verify_description', 'accept',
-        'accept_description', 'accept_scholarship_description', 'reserve', 'return', 'return_description', 'reject',
-        'reject_description', 'cancel_acceptance', 'cancel_acceptance_description', 'reopen', 'reopen_description', 'reopened',
-        'decided', 'accepted', 'accepted_with_invoices', 'scholarship_applied', 'missing_rates', 'billing_failed',
-        'generate_acceptance_invoices', 'generate_acceptance_invoices_description', 'acceptance_invoices_generated',
-        'acceptance_invoices_none_generated', 'section_invoices',
-    ];
-    $errors = [
-        'invalid_transition', 'review_note_required', 'review_note_invalid', 'documents_incomplete', 'applicant_not_found',
-        'applicant_not_accepted', 'applicant_converted', 'acceptance_has_payments', 'track_fee_type_not_found',
-        'track_fee_type_invalid', 'registration_fee_unpaid',
-    ];
+it('AC-31 (F011): translates every acceptance text key', function () {
+    expectTranslatedKeys(function () {
+        $applicant = [
+            'section_decision', 'reviewer', 'reviewed_at', 'review_note', 'no_review', 'section_overrides', 'override_custom',
+            'activity_decided', 'track_scholarship_reason', 'cancel_reason_rejected', 'verify', 'verify_description', 'accept',
+            'accept_description', 'accept_scholarship_description', 'reserve', 'return', 'return_description', 'reject',
+            'reject_description', 'cancel_acceptance', 'cancel_acceptance_description', 'reopen', 'reopen_description', 'reopened',
+            'decided', 'accepted', 'accepted_with_invoices', 'scholarship_applied', 'missing_rates', 'billing_failed',
+            'generate_acceptance_invoices', 'generate_acceptance_invoices_description', 'acceptance_invoices_generated',
+            'acceptance_invoices_none_generated', 'section_invoices',
+        ];
+        $errors = [
+            'invalid_transition', 'review_note_required', 'review_note_invalid', 'documents_incomplete', 'applicant_not_found',
+            'applicant_not_accepted', 'applicant_converted', 'acceptance_has_payments', 'track_fee_type_not_found',
+            'track_fee_type_invalid', 'registration_fee_unpaid',
+        ];
 
-    foreach ($applicant as $name) {
-        yield "applicant.{$name}" => ["pondok.applicant.{$name}"];
-    }
+        foreach ($applicant as $name) {
+            yield "applicant.{$name}" => ["pondok.applicant.{$name}"];
+        }
 
-    foreach (['fee_types', 'fee_types_helper', 'all_acceptance_fees'] as $name) {
-        yield "admission_track.{$name}" => ["pondok.admission_track.{$name}"];
-    }
+        foreach (['fee_types', 'fee_types_helper', 'all_acceptance_fees'] as $name) {
+            yield "admission_track.{$name}" => ["pondok.admission_track.{$name}"];
+        }
 
-    foreach ($errors as $name) {
-        yield "psb.errors.{$name}" => ["pondok.psb.errors.{$name}"];
-    }
+        foreach ($errors as $name) {
+            yield "psb.errors.{$name}" => ["pondok.psb.errors.{$name}"];
+        }
 
-    foreach (['heading_year', 'total', 'total_description', 'no_waves', 'list_link'] as $name) {
-        yield "dashboard.psb.{$name}" => ["pondok.dashboard.psb.{$name}"];
-    }
+        foreach (['heading_year', 'total', 'total_description', 'no_waves', 'list_link'] as $name) {
+            yield "dashboard.psb.{$name}" => ["pondok.dashboard.psb.{$name}"];
+        }
+    });
 });
 
 it('AC-31 (F011): words the key texts the plan fixes', function () {
@@ -374,39 +374,39 @@ it('AC-31 (F011): fills the placeholders of the decision notifications', functio
         ->and(__('pondok.psb.errors.documents_incomplete', ['count' => 4]))->toContain('4');
 });
 
-it('AC-37 (F012): translates every re-registration text key', function (string $key) {
-    expect(__($key))->toBeString()->not->toBe($key)->not->toBeEmpty();
-})->with(function () {
-    $applicant = [
-        're_register', 're_register_heading', 're_register_description', 'entered_on', 'entered_on_helper', 'nis', 'nis_helper',
-        'guardian_relation', 'address', 're_registered', 're_registered_next_step', 'copy_skipped', 'section_re_registration',
-        'acceptance_payment', 'acceptance_payment_value', 'no_acceptance_invoices', 'finance_disabled', 'min_paid_percent',
-        're_registration_ready', 're_registration_not_ready', 'acceptance_invoices_not_created', 'converted', 'converted_student',
-        'converted_at', 'filter_re_registered', 'activity_converted',
-    ];
-    $skipReasons = ['already_copied', 'owner_not_supported', 'owner_has_current', 'file_missing'];
-    $errors = [
-        'applicant_not_accepted', 'applicant_not_found', 'already_converted', 'min_payment_not_met', 'acceptance_invoices_missing',
-        'nisn_taken', 'nis_taken', 'nis_invalid', 'relation_invalid', 'address_too_long', 'date_invalid', 'entered_on_too_early',
-        'student_number_conflict', 'file_copy_failed', 'billing_transfer_mismatch', 'applicant_converted',
-    ];
+it('AC-37 (F012): translates every re-registration text key', function () {
+    expectTranslatedKeys(function () {
+        $applicant = [
+            're_register', 're_register_heading', 're_register_description', 'entered_on', 'entered_on_helper', 'nis', 'nis_helper',
+            'guardian_relation', 'address', 're_registered', 're_registered_next_step', 'copy_skipped', 'section_re_registration',
+            'acceptance_payment', 'acceptance_payment_value', 'no_acceptance_invoices', 'finance_disabled', 'min_paid_percent',
+            're_registration_ready', 're_registration_not_ready', 'acceptance_invoices_not_created', 'converted', 'converted_student',
+            'converted_at', 'filter_re_registered', 'activity_converted',
+        ];
+        $skipReasons = ['already_copied', 'owner_not_supported', 'owner_has_current', 'file_missing'];
+        $errors = [
+            'applicant_not_accepted', 'applicant_not_found', 'already_converted', 'min_payment_not_met', 'acceptance_invoices_missing',
+            'nisn_taken', 'nis_taken', 'nis_invalid', 'relation_invalid', 'address_too_long', 'date_invalid', 'entered_on_too_early',
+            'student_number_conflict', 'file_copy_failed', 'billing_transfer_mismatch', 'applicant_converted',
+        ];
 
-    foreach ($applicant as $name) {
-        yield "applicant.{$name}" => ["pondok.applicant.{$name}"];
-    }
+        foreach ($applicant as $name) {
+            yield "applicant.{$name}" => ["pondok.applicant.{$name}"];
+        }
 
-    foreach ($skipReasons as $name) {
-        yield "applicant.copy_skip_reasons.{$name}" => ["pondok.applicant.copy_skip_reasons.{$name}"];
-    }
+        foreach ($skipReasons as $name) {
+            yield "applicant.copy_skip_reasons.{$name}" => ["pondok.applicant.copy_skip_reasons.{$name}"];
+        }
 
-    foreach ($errors as $name) {
-        yield "psb.errors.{$name}" => ["pondok.psb.errors.{$name}"];
-    }
+        foreach ($errors as $name) {
+            yield "psb.errors.{$name}" => ["pondok.psb.errors.{$name}"];
+        }
 
-    yield 'cohort.default_name' => ['pondok.cohort.default_name'];
-    yield 'akademik.errors.nis_sequence_exhausted' => ['pondok.akademik.errors.nis_sequence_exhausted'];
-    yield 'keuangan.errors.applicant_converted' => ['pondok.keuangan.errors.applicant_converted'];
-    yield 'psb_public.status_help.converted' => ['pondok.psb_public.status_help.converted'];
+        yield 'cohort.default_name' => ['pondok.cohort.default_name'];
+        yield 'akademik.errors.nis_sequence_exhausted' => ['pondok.akademik.errors.nis_sequence_exhausted'];
+        yield 'keuangan.errors.applicant_converted' => ['pondok.keuangan.errors.applicant_converted'];
+        yield 'psb_public.status_help.converted' => ['pondok.psb_public.status_help.converted'];
+    });
 });
 
 it('AC-37 (F012): words the key texts the plan fixes', function () {

@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Lang;
-
 /**
  * Alasan penolakan Action surat keluar (rencana F014, bagian teks).
  *
@@ -43,12 +41,9 @@ const SURAT_UI_KEYS = [
 
 const SURAT_LETTER_TYPES = ['keterangan_aktif', 'pindah', 'rekomendasi', 'syahadah', 'kartu_santri'];
 
-it('AC-39: translates every letter message', function (string $reason) {
-    $key = "pondok.dokumen.errors.{$reason}";
-
-    expect(__($key))->not->toBe($key)->not->toBe('')
-        ->and(Lang::has($key, 'id'))->toBeTrue();
-})->with(SURAT_ERROR_REASONS);
+it('AC-39: translates every letter message', function () {
+    expectTranslatedKeys(collect(SURAT_ERROR_REASONS)->map(fn (string $reason): string => "pondok.dokumen.errors.{$reason}"));
+});
 
 it('AC-39: gives every letter message a way forward', function () {
     $messages = collect(SURAT_ERROR_REASONS)->mapWithKeys(fn (string $reason): array => [$reason => __("pondok.dokumen.errors.{$reason}")]);
@@ -58,12 +53,9 @@ it('AC-39: gives every letter message a way forward', function () {
         ->and($messages['number_conflict'])->toBe('Nomor surat bentrok dengan surat lain. Periksa pengaturan kode jenis surat lalu coba lagi.');
 });
 
-it('AC-39: defines every letter label', function (string $key) {
-    $full = "pondok.{$key}";
-
-    expect(__($full))->not->toBe($full)->not->toBe('')
-        ->and(Lang::has($full, 'id'))->toBeTrue();
-})->with(SURAT_UI_KEYS);
+it('AC-39: defines every letter label', function () {
+    expectTranslatedKeys(collect(SURAT_UI_KEYS)->map(fn (string $key): string => "pondok.{$key}"));
+});
 
 it('AC-39: names every letter type and print title', function (string $type) {
     expect(__("pondok.issued_letter.types.{$type}"))->not->toBe("pondok.issued_letter.types.{$type}")->not->toBe('');

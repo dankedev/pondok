@@ -85,6 +85,12 @@ Wajib ada test Pest untuk:
 - Konversi pendaftar menjadi santri (tagihan, override, dan dokumen ikut pindah).
 - Dashboard tetap render ketika modul atau tabel belum ada.
 
+Cara menjalankan test (mesin pengembang hanya 8GB RAM):
+- Selama bekerja, jalankan file test yang terdampak saja (`php artisan test --compact <path>`).
+- Suite penuh dijalankan **sekali** di akhir fitur, di PHP 8.4, oleh sesi utama dan bukan oleh subagent. Cek `memory_pressure` dulu, dan jangan jalankan dua suite bersamaan, termasuk dari sesi lain (`Storage::fake` bisa bentrok).
+- PHP 8.3 (target cPanel) dan 8.4 dijalankan GitHub Actions (`.github/workflows/tests.yml`) setiap push ke `main` dan setiap PR. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
+- Test baru ditulis untuk perilaku yang berubah dan risiko nyata. Jangan menambah test hanya untuk menaikkan jumlah. Verifikasi adversarial (mode VERIFY) menambah paling banyak ±15 test, dan hanya untuk celah yang benar-benar dicurigai.
+
 ## Alur kerja agent
 
 ### 1. Commit
@@ -111,17 +117,26 @@ Jika fitur dialihkan ke agent/sesi lain (konteks hampir habis, ganti sesi, atau 
 2. Di `feature_list.json`: status `handoff`, isi `handoff` dengan path file tersebut.
 3. Agent penerima membaca handoff, memverifikasi kondisi repo, lalu mengubah status ke `in-progress` dan `owner` ke namanya. File handoff lama tidak dihapus.
 
-### 4. Tim subagent (`.claude/agents/`)
+### 4. Jalur kerja
 
-Satu siklus fitur dijalankan sesi utama (orkestrator) secara berurutan:
+Setiap fitur ditetapkan ke satu jalur saat diklaim, dan jalurnya ditulis di `notes` entri `feature_list.json`. Bila ragu, pakai jalur penuh.
 
-1. `product-manager` — pilih fitur, klaim di `feature_list.json`, tulis `docs/plans/<ID>-plan.md`.
-2. `plan-reviewer` — verdict `APPROVED` / `CHANGES_REQUESTED`. Bila ditolak, kembali ke langkah 1 (maks. 3 putaran, lalu tanya user).
-3. `red-tester` mode RED — test Pest dari kriteria penerimaan, semuanya gagal karena alasan yang benar.
-4. `green-coder` — implementasi sampai hijau, refactor, Pint. Tidak boleh mengubah test.
-5. `red-tester` mode VERIFY — cari celah. `FAIL` → kembali ke langkah 4.
+**Jalur cepat**: perubahan tampilan (Blade, CSS, komponen), teks `lang/id`, susunan navigasi admin, data demo, dan dokumen. Syaratnya: tanpa migration, tanpa perubahan uang/tagihan/PSB/hak akses, dan tanpa Action baru yang mengubah data.
 
-Setelah VERIFY `PASS`, orkestrator melaporkan ke user. Commit dan status `done` hanya atas permintaan user (lihat bagian 1 dan 2).
+1. Sesi pelaksana menulis rencana singkat langsung di `docs/plans/<ID>-plan.md` (maks. ±60 baris: tujuan, file yang diubah, 3–8 kriteria penerimaan). Tidak ada review rencana.
+2. Implementasi langsung oleh sesi itu atau satu `green-coder`. Test ditambah hanya untuk perilaku yang berubah (lihat bagian Testing).
+3. Jalankan test yang terdampak, Pint, lalu cek tampilan di 360px, 1024px, dan desktop.
+4. Laporkan ke user.
+
+**Jalur penuh**: semua yang menyentuh migration atau skema, uang, tagihan, PSB, dokumen pribadi, permission atau cakupan jenjang, serta Action yang mengubah data. Siklusnya dijalankan orkestrator secara berurutan dengan tim subagent (`.claude/agents/`):
+
+1. `product-manager`: pilih fitur, klaim di `feature_list.json`, tulis `docs/plans/<ID>-plan.md` (maks. ±150 baris, 8–15 AC).
+2. `plan-reviewer`: verdict `APPROVED` / `CHANGES_REQUESTED`, cukup satu putaran. Temuan blocker atau major direvisi satu kali oleh product-manager. Bila masih ada blocker setelah itu, orkestrator memutuskan atau bertanya ke user; tidak ada putaran ketiga. Temuan minor dicatat dan diselesaikan saat implementasi.
+3. `red-tester` mode RED: test Pest dari kriteria penerimaan, semuanya gagal karena alasan yang benar.
+4. `green-coder`: implementasi sampai hijau, refactor, Pint. Tidak boleh mengubah test. Fitur besar dipecah menjadi beberapa pemanggilan per kelompok test (mis. migration + Action, lalu Filament, lalu portal), masing-masing dengan laporan.
+5. `red-tester` mode VERIFY: cari celah yang berisiko nyata. `FAIL` → kembali ke langkah 4.
+
+Untuk kedua jalur: setelah selesai, orkestrator melaporkan ke user. Commit dan status `done` hanya atas permintaan user (lihat bagian 1 dan 2). Satu sesi pelaksana melapor langsung ke orkestrator; jangan menyisipkan sesi perantara.
 
 ## Urutan pengembangan
 

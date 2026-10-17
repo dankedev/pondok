@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F043",
+  "next_id": "F045",
   "features": [
     {
       "id": "F001",
@@ -652,7 +652,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "",
-      "notes": "Dipecah dari F036 (permintaan user 16 Okt 2026). Bergantung F036 karena kontak PSB merujuk key kontak F036 dan memakai prinsip tanpa teks konten bawaan; F009/F010/F004 untuk syarat, gelombang, dan tarif. Route publik memakai slug info-psb yang sudah dicadangkan F037. Kontrak F037: nama route psb.info, path /info-psb, didaftarkan di luar grup prefix psb dan sebelum route /{page}; item menu psb_info F037 hanya tampil bila route ini ada dan modul psb aktif. Rencana ditulis saat fitur diambil."
+      "notes": "Dipecah dari F036 (permintaan user 16 Okt 2026). Bergantung F036 karena kontak PSB merujuk key kontak F036 dan memakai prinsip tanpa teks konten bawaan; F009/F010/F004 untuk syarat, gelombang, dan tarif. Route publik memakai slug info-psb yang sudah dicadangkan F037. Kontrak F037: nama route psb.info, path /info-psb, didaftarkan di luar grup prefix psb dan sebelum route /{page}; item menu psb_info F037 hanya tampil bila route ini ada dan modul psb aktif. Rencana ditulis saat fitur diambil. DITAHAN (17 Okt 2026, permintaan user via audit docs/audits/ui-ux-portal-konten.md §6): ruang lingkup akan direvisi menjadi halaman Info PSB bertemplate (blok otomatis + blok generik) setelah paket audit (F043, F044, lalu beranda blok). Tujuan navigasi psb.info disiapkan F043 dan tampil otomatis begitu route psb.info ada. Status tidak diubah sampai revisi disetujui user."
     },
     {
       "id": "F039",
@@ -753,6 +753,50 @@
       "handoff": null,
       "evidence": "Commit 469ba7f, bf2ebef, 9b0d68f, 67250dd, b8c9567, 10eb301, 2c4fcaf. Test lulus: tests/Feature/Http/Portal 293 (termasuk PortalVisualIdentityTest dan AC-32 PortalAccessibilityTest), Livewire/Psb 46, Http/Psb 50, DemoSeederTest 6; Pint lulus; npm run build OK; VERIFY red-tester PASS; dicek visual 360px, 1024px, 1440px.",
       "notes": "ID dicadangkan sejak arah C (Tegel Masjid) yang dibatalkan user 16 Okt 2026; arah baru diminta user 17 Okt 2026."
+    },
+    {
+      "id": "F043",
+      "key": "konten-navigasi-footer",
+      "name": "Navigasi portal sebagai daftar tautan dan footer generik",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F035", "F036", "F037"],
+      "description": "Paket 1 audit UI/UX (S1 + S3). Menu utama dan navigasi footer memakai satu model daftar tautan: label + tujuan dari pemilih (beranda, halaman, daftar berita, kategori berita, galeri, video, Info PSB, formulir PSB, cek status PSB, verifikasi surat, URL), dengan urutan dan submenu satu tingkat khusus menu utama. Tombol header menjadi satu field opsional (label + tujuan) menggantikan saklar tombol Daftar. Halaman statis mendapat aksi Tambahkan ke menu utama. Footer generik: logo dan deskripsi, kontak dan media sosial otomatis (bisa disembunyikan), navigasi footer, maksimal satu teks pendek, dan baris hak cipta; field kutipan dihapus dan isinya diarsipkan untuk paket beranda blok. Varian footer ringkas di alur PSB dan halaman 404.",
+      "acceptance": [
+        "Migrasi portal.menu_items, portal.menu_show_register, dan portal.footer_links ke model baru tanpa mengubah tautan yang tampil (label, URL, urutan); tautan sistem footer menjadi item biasa; idempotent dan punya rollback",
+        "Tujuan yang tidak tersedia (modul mati, halaman draf/terhapus, kategori hilang, daftar kosong, route psb.info belum ada) tidak dirender; grup submenu tanpa anak yang tersedia tidak dirender",
+        "Batas item divalidasi saat menyimpan dengan pesan galat; tidak ada pemotongan diam-diam",
+        "Aksi Tambahkan ke menu utama di form halaman menambah satu item tanpa duplikat",
+        "Footer tanpa field kutipan; isi kutipan lama disimpan di key arsip dan tidak tampil; varian ringkas di alur PSB dan 404",
+        "Tanpa teks konten bawaan; bagian footer kosong tidak dirender; DemoSeeder mengisi contoh fiktif",
+        "Lolos checklist §0 design guide, dicek di 360px, 1024px, dan desktop"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 2e8addf (feat konten), 10fc154 (data demo), 6dbcd4e (docs). Test F043 hijau termasuk F043VerifyGapsTest (17 kasus VERIFY); suite penuh PHP 8.4 4536 test lulus; migrasi naik/turun/naik dan DemoSeeder lulus di MySQL; Pint lulus; portal dicek di 360px, 1024px, dan 1280px (halaman admin Navigasi/Footer belum dicek visual).",
+      "notes": "jalur: penuh. Paket 1 audit UI/UX (docs/audits/ui-ux-portal-konten.md §5.2, §5.5, S1, S3), permintaan user 17 Okt 2026. Dipecah dari paket 1 bersama F044 agar tiap rencana tetap ±150 baris. Kutipan dan ajakan tidak dipindah ke footer (keputusan user §9); hanya diarsipkan untuk paket beranda blok. Rencana: docs/plans/F043-plan.md."
+    },
+    {
+      "id": "F044",
+      "key": "konten-kontak-susunan-admin",
+      "name": "Kontak lembaga satu sumber dan susunan menu admin Situs",
+      "phase": 1,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F043"],
+      "description": "Paket 1 audit UI/UX (S5 + C7). Alamat, email, dan telepon diisi hanya di halaman Kontak & sosial; telepon kantor menjadi kontak berlabel yang bisa ditandai untuk kop surat dan kuitansi (maks. satu). Data demo halaman Kontak dirapikan tanpa duplikasi nomor. Panel admin: Beranda, Navigasi, Footer, Halaman, Berita, Kategori, Galeri, dan Video di grup Situs; Identitas dan Kontak & sosial di grup Pengaturan; cluster Profil lembaga dibubarkan. Permission per peran tidak berubah.",
+      "acceptance": [
+        "Migrasi school.phone menjadi kontak bertanda cetak (kontak bernomor sama dipakai ulang, tanpa duplikat); idempotent dan punya rollback",
+        "Kuitansi dan surat yang diterbitkan setelah migrasi menampilkan nama, alamat, dan telepon yang sama seperti sebelumnya; snapshot surat lama tidak berubah",
+        "Alamat dan email hanya diisi di Kontak & sosial; Identitas tidak lagi mengubah atau mengosongkannya",
+        "Halaman Kontak demo tanpa alamat/telepon/email ketikan ulang; tiap nomor demo tampil sekali",
+        "Grup navigasi admin Situs dan Pengaturan sesuai susunan; akses per peran tidak berubah"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Paket 1 audit UI/UX (docs/audits/ui-ux-portal-konten.md §5.1, §5.6, S5, C7), permintaan user 17 Okt 2026. Bergantung F043 karena memindahkan halaman Navigasi dan Footer hasil F043 dan mengubah GetSchoolProfile yang sama. Logo cetak tetap di Identitas (pemindahan ke pengaturan kop surat di luar cakupan). Rencana: docs/plans/F044-plan.md."
     }
   ]
 }

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F048",
+  "next_id": "F049",
   "features": [
     {
       "id": "F001",
@@ -864,6 +864,31 @@
       "handoff": null,
       "evidence": "Test PostFilterVisibilityTest (4 test) hijau; suite penuh PHP 8.4 4048 test lulus; Pint lulus; /berita dicek di 360px dan 1024px.",
       "notes": "jalur: cepat; audit C4. Rencana: docs/plans/F047-plan.md."
+    },
+    {
+      "id": "F048",
+      "key": "konten-pengaturan-halaman",
+      "name": "Template halaman dan hapus konsep halaman sistem",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": [
+        "F037",
+        "F044"
+      ],
+      "description": "Audit UI/UX S4 (§5.4). Semua halaman statis setara: halaman sistem dan slug terkunci dihapus (slug lama tetap). Kolom template (default, contact) menggantikan pengecekan slug kontak; tautan tetap Visi dan Misi di kode dihapus. Dibutuhkan agar Info PSB (F038) dan Kontak menjadi halaman bertemplate.",
+      "acceptance": [
+        "Halaman profil, visi-misi, dan kontak bisa dihapus dan slug-nya bisa diubah; tidak ada lagi badge atau kunci halaman sistem",
+        "Kolom pages.template (default atau contact); migrasi mengisi kontak dengan contact, slug lama tidak berubah, ada rollback sederhana",
+        "Halaman bertemplate contact menampilkan kartu kontak dari Kontak & sosial dan 404 bila data kontak kosong; di menu, sitemap, dan halaman mengikuti template, bukan slug",
+        "Tautan tetap Visi dan Misi (halaman terkait dan penanda aktif Profil) dihapus dari kode",
+        "Form Halaman punya pilihan template; Create dan UpdateStaticPage menolak template di luar daftar",
+        "Rincian di docs/plans/F048-plan.md"
+      ],
+      "owner": "",
+      "handoff": null,
+      "evidence": "Commit 23b51b2, b31955b, cf09407, 7c882dd. Test lulus: Http/Portal, Filament, Actions/Konten, Database (termasuk F048VerifyGapsTest); Pint lulus. Suite penuh belum dijalankan.",
+      "notes": "jalur: penuh; audit S4. Excerpt, gambar unggulan, meta, template wide, dan is_featured posts/albums di luar cakupan (tidak ada pemakai di portal sekarang). Rencana: docs/plans/F048-plan.md."
     }
   ]
 }

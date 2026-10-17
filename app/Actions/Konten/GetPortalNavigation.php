@@ -2,135 +2,173 @@
 
 namespace App\Actions\Konten;
 
+use App\Actions\Konten\Concerns\ValidatesPublicUrls;
+use App\Models\Album;
+use App\Models\Category;
+use App\Models\Post;
 use App\Models\Setting;
 use App\Models\StaticPage;
+use App\Models\Video;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 /**
- * Navigasi portal (F037), dihitung sekali per render layout: item menu header,
- * tombol Daftar, dan tautan cepat footer yang sudah di-resolve.
+ * Navigasi portal (F043), dihitung sekali per render layout: menu utama (tautan dan grup
+ * submenu satu tingkat), tombol header, dan navigasi footer.
  *
- * Menu tersimpan di `portal.menu_items` (`null` = urutan header bawaan). Halaman
- * dirujuk lewat `page_id` dan diambil dengan satu query `pages` (hanya yang terbit)
- * untuk menu dan footer sekaligus; tidak ada query bila modul konten mati atau tidak
- * ada rujukan halaman. Halaman `kontak` tidak tersedia tanpa data kontak.
+ * Item tersimpan `{type, label: ?string, page_id?, category_id?, url?, children?}` di
+ * `portal.navigation_primary`, `portal.navigation_footer`, dan `portal.header_button`
+ * (dibaca bersama profil lewat `GetSchoolProfile::KEYS`). Key tidak ada = bawaan; daftar
+ * kosong = tanpa item; tombol `false` = tanpa tombol. Item rusak dibuang per item saat baca,
+ * dan tujuan yang tidak tersedia (modul mati, halaman draf, daftar kosong, route belum ada)
+ * tidak dirender. Query: halaman, kategori, dan satu cek isi daftar, masing-masing hanya bila dipakai.
  */
 class GetPortalNavigation
 {
-    /** Item bawaan menurut urutan katalog. */
-    public const BUILTIN_KEYS = ['home', 'news', 'gallery', 'videos', 'psb_info'];
+    use ValidatesPublicUrls;
 
-    /** Batas item `visible` (di luar Masuk/Daftar). */
-    public const MAX_VISIBLE = 8;
+    public const SETTING_KEYS = ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button'];
 
-    /** Entri tersimpan yang dibaca: 5 bawaan + batas halaman. */
-    public const MAX_STORED = 60;
+    /** Tipe tujuan; `group` hanya di akar menu utama. */
+    public const TYPES = ['home', 'page', 'posts', 'category', 'albums', 'videos', 'psb.info', 'psb.register', 'psb.status', 'letters.verify', 'url', 'group'];
 
-    public const LABEL_MAX_LENGTH = 30;
+    public const MAX_PRIMARY = 8;
 
-    /** Menu bawaan saat `portal.menu_items` null: sama dengan header sebelum F037. */
-    private const DEFAULT_ORDER = ['home', 'page:profil', 'news', 'gallery', 'videos', 'psb_info', 'page:kontak'];
+    public const MAX_CHILDREN = 8;
+
+    public const MAX_FOOTER = 12;
+
+    /** Batas label menu utama, anak grup, dan tombol header. */
+    public const LABEL_MAX_MENU = 30;
+
+    public const LABEL_MAX_FOOTER = 60;
+
+    public const URL_MAX_LENGTH = 255;
+
+    /** Menu bawaan (sama dengan header sebelum F037); halaman dicari per slug. */
+    public const DEFAULT_PRIMARY = ['home', 'page:profil', 'posts', 'albums', 'videos', 'psb.info', 'page:kontak'];
+
+    public const DEFAULT_FOOTER = ['psb.status', 'letters.verify'];
+
+    public const DEFAULT_HEADER_BUTTON = 'psb.register';
+
+    /** Label bawaan per tipe sistem (`pondok.portal.nav.*`). */
+    private const LABEL_KEYS = [
+        'home' => 'home',
+        'posts' => 'news',
+        'albums' => 'gallery',
+        'videos' => 'videos',
+        'psb.info' => 'psb_info',
+        'psb.register' => 'register',
+        'psb.status' => 'psb_status',
+        'letters.verify' => 'letters_verify',
+    ];
+
+    /** Tipe yang butuh cek "daftar tidak kosong". */
+    private const LIST_TYPES = ['posts', 'albums', 'videos'];
+
+    private bool $contentEnabled = false;
+
+    /** @var Collection<int, StaticPage> */
+    private Collection $pages;
+
+    /** @var Collection<int, Category> */
+    private Collection $categories;
+
+    /** @var array<string, bool> */
+    private array $lists = [];
 
     /**
      * @param  array<string, mixed>  $school  keluaran `GetSchoolProfile`
-     * @return array{items: list<array{label: string, url: string, active: bool}>, registerUrl: ?string, footerLinks: list<array{label: string, url: string}>}
+     * @return array{primary: list<array<string, mixed>>, headerButton: ?array{label: string, url: string, active: bool}, footer: list<array{label: string, url: string, active: bool}>}
      */
     public function handle(array $school): array
     {
-        $contentEnabled = Setting::moduleEnabled('konten');
-        $psbEnabled = Setting::moduleEnabled('psb');
-        $stored = Setting::get('portal.menu_items');
-        $hasContact = GetSchoolProfile::hasContactData($school);
+        $stored = Setting::getMany(self::SETTING_KEYS);
+        $this->contentEnabled = Setting::moduleEnabled('konten');
 
-        $pages = $contentEnabled ? $this->publishedPages($stored, $school['footer']['links']) : collect();
-        $available = $pages->reject(fn (StaticPage $page): bool => $page->slug === 'kontak' && ! $hasContact);
+        $primaryValue = $stored['portal.navigation_primary'];
+        $primary = $primaryValue === null ? $this->defaultPrimary() : self::parseItems($primaryValue, true);
+        $footer = $stored['portal.navigation_footer'] === null
+            ? array_map(fn (string $type): array => ['type' => $type, 'label' => null], self::DEFAULT_FOOTER)
+            : self::parseItems($stored['portal.navigation_footer'], false);
+        $buttonValue = $stored['portal.header_button'];
+        $button = $buttonValue === null ? ['type' => self::DEFAULT_HEADER_BUTTON, 'label' => null] : (is_array($buttonValue) ? self::parseItem($buttonValue, false) : null);
 
-        $items = [];
+        $this->loadReferences([...$primary, ...$footer, ...($button === null ? [] : [$button])], $primaryValue === null, GetSchoolProfile::hasContactData($school));
 
-        foreach ($this->mergedItems($stored, $pages->pluck('id', 'slug')->all()) as $item) {
-            if (! $item['visible']) {
-                continue;
-            }
+        $primaryLinks = [];
 
-            $link = $item['type'] === 'builtin'
-                ? $this->builtinLink($item['key'], $contentEnabled, $psbEnabled)
-                : $this->pageLink($available->get($item['page_id']), $item['label']);
+        foreach ($primary as $item) {
+            $link = $this->link($item, self::LABEL_MAX_MENU);
 
             if ($link !== null) {
-                $items[] = $link;
+                $primaryLinks[] = $link;
             }
         }
 
-        $items = $this->markVisionUnderProfile($items);
-        $showRegister = Setting::get('portal.menu_show_register') !== false;
+        $footerLinks = [];
+
+        foreach ($footer as $item) {
+            $link = $this->link($item, null);
+
+            if ($link !== null) {
+                $footerLinks[] = $link;
+            }
+        }
 
         return [
-            'items' => $items,
-            'registerUrl' => $showRegister && $psbEnabled && Route::has('psb.register') ? route('psb.register') : null,
-            'footerLinks' => $this->footerLinks($school['footer']['links'], $available),
+            'primary' => $this->markVisionUnderProfile($primaryLinks),
+            'headerButton' => $button === null ? null : $this->link($button, self::LABEL_MAX_MENU),
+            'footer' => $footerLinks,
         ];
     }
 
     /**
-     * Gabungan menu tersimpan dengan katalog (dipakai portal dan editor Menu):
-     * item rusak, key tak dikenal, halaman di luar `$pageIds` (bila diberikan),
-     * dan duplikat dibuang; maks 8 `visible`; item bawaan yang belum ada ditambahkan
-     * di akhir, `visible` hanya bila jumlah `visible` masih < 8.
+     * Menu bawaan sebagai item tersimpan, untuk materialisasi (form Navigasi, aksi Tambahkan):
+     * hanya halaman yang ada (draf boleh).
      *
-     * @param  array<string, int>  $systemPageIds  slug → id halaman sistem (untuk menu bawaan)
-     * @param  list<int>|null  $pageIds  halaman yang ada; null = tidak diperiksa
-     * @return list<array{type: 'builtin', key: string, visible: bool}|array{type: 'page', page_id: int, label: ?string, visible: bool}>
+     * @return list<array<string, mixed>>
      */
-    public function mergedItems(mixed $stored, array $systemPageIds, ?array $pageIds = null): array
+    public static function materializedDefaultPrimary(): array
     {
-        $items = is_array($stored) ? $this->storedItems($stored, $pageIds) : $this->defaultItems($systemPageIds);
-        $visible = 0;
+        $slugs = self::defaultPageSlugs();
+        $ids = StaticPage::query()->whereIn('slug', $slugs)->pluck('id', 'slug');
+        $items = [];
 
-        foreach ($items as $index => $item) {
-            if ($item['visible'] && ++$visible > self::MAX_VISIBLE) {
-                $items[$index]['visible'] = false;
+        foreach (self::DEFAULT_PRIMARY as $entry) {
+            if (! str_starts_with($entry, 'page:')) {
+                $items[] = ['type' => $entry, 'label' => null];
+            } elseif ($ids->has(substr($entry, 5))) {
+                $items[] = ['type' => 'page', 'label' => null, 'page_id' => (int) $ids->get(substr($entry, 5))];
             }
-        }
-
-        $visible = min($visible, self::MAX_VISIBLE);
-        $listed = array_column(array_filter($items, fn (array $item): bool => $item['type'] === 'builtin'), 'key');
-
-        foreach (array_diff(self::BUILTIN_KEYS, $listed) as $key) {
-            $show = $visible < self::MAX_VISIBLE;
-            $visible += $show ? 1 : 0;
-            $items[] = ['type' => 'builtin', 'key' => $key, 'visible' => $show];
         }
 
         return $items;
     }
 
     /**
-     * @param  array<mixed>  $stored
-     * @param  list<int>|null  $pageIds
+     * Item tersimpan yang terbaca; baris rusak, tipe tak dikenal, URL tak aman, dan
+     * grup di luar akar dibuang per item (tanpa exception).
+     *
      * @return list<array<string, mixed>>
      */
-    private function storedItems(array $stored, ?array $pageIds): array
+    public static function parseItems(mixed $value, bool $allowGroups): array
     {
+        if (! is_array($value)) {
+            return [];
+        }
+
         $items = [];
-        $seen = [];
 
-        foreach (array_slice(array_values($stored), 0, self::MAX_STORED) as $row) {
-            $item = is_array($row) ? $this->storedItem($row) : null;
+        foreach ($value as $row) {
+            $item = is_array($row) ? self::parseItem($row, $allowGroups) : null;
 
-            if ($item === null) {
-                continue;
+            if ($item !== null) {
+                $items[] = $item;
             }
-
-            $id = $item['type'] === 'builtin' ? $item['key'] : 'page:'.$item['page_id'];
-
-            if (isset($seen[$id]) || ($item['type'] === 'page' && $pageIds !== null && ! in_array($item['page_id'], $pageIds, true))) {
-                continue;
-            }
-
-            $seen[$id] = true;
-            $items[] = $item;
         }
 
         return $items;
@@ -140,160 +178,263 @@ class GetPortalNavigation
      * @param  array<mixed>  $row
      * @return ?array<string, mixed>
      */
-    private function storedItem(array $row): ?array
+    public static function parseItem(array $row, bool $allowGroup): ?array
     {
-        $visible = ($row['visible'] ?? false) === true;
+        $type = $row['type'] ?? null;
 
-        if (($row['type'] ?? null) === 'builtin') {
-            $key = $row['key'] ?? null;
-
-            return in_array($key, self::BUILTIN_KEYS, true) ? ['type' => 'builtin', 'key' => $key, 'visible' => $visible] : null;
-        }
-
-        if (($row['type'] ?? null) !== 'page') {
+        if (! is_string($type) || ! in_array($type, self::TYPES, true)) {
             return null;
         }
 
-        $pageId = filter_var($row['page_id'] ?? null, FILTER_VALIDATE_INT);
-        $label = is_string($row['label'] ?? null) && trim($row['label']) !== '' ? $row['label'] : null;
+        $label = is_string($row['label'] ?? null) && trim($row['label']) !== '' ? trim($row['label']) : null;
+        $item = ['type' => $type, 'label' => $label];
 
-        return $pageId === false || $pageId < 1 ? null : ['type' => 'page', 'page_id' => $pageId, 'label' => $label, 'visible' => $visible];
+        return match ($type) {
+            'page', 'category' => ($id = self::positiveId($row[$type.'_id'] ?? null)) === null ? null : [...$item, $type.'_id' => $id],
+            'url' => $label !== null && self::isSafeTarget($row['url'] ?? null) ? [...$item, 'url' => $row['url']] : null,
+            'group' => $allowGroup && $label !== null ? (($children = self::parseItems($row['children'] ?? null, false)) === [] ? null : [...$item, 'children' => $children]) : null,
+            default => $item,
+        };
     }
 
     /**
-     * @param  array<string, int>  $systemPageIds
+     * URL tujuan tipe `url`: absolut http(s) atau path internal aman, maks. 255 karakter.
+     */
+    public static function isSafeTarget(mixed $url): bool
+    {
+        $checker = new self;
+
+        return is_string($url) && mb_strlen($url) <= self::URL_MAX_LENGTH && ($checker->isSafeAbsoluteUrl($url) || $checker->isSafeInternalPath($url));
+    }
+
+    private static function positiveId(mixed $value): ?int
+    {
+        $id = is_int($value) || is_string($value) ? filter_var($value, FILTER_VALIDATE_INT) : false;
+
+        return $id === false || $id < 1 ? null : $id;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function defaultPageSlugs(): array
+    {
+        return array_values(array_map(fn (string $entry): string => substr($entry, 5), array_filter(self::DEFAULT_PRIMARY, fn (string $entry): bool => str_starts_with($entry, 'page:'))));
+    }
+
+    /**
+     * Menu bawaan untuk baca portal; halaman di-resolve per slug di `loadReferences`.
+     *
      * @return list<array<string, mixed>>
      */
-    private function defaultItems(array $systemPageIds): array
+    private function defaultPrimary(): array
     {
-        $items = [];
+        return array_map(fn (string $entry): array => str_starts_with($entry, 'page:')
+            ? ['type' => 'page', 'label' => null, 'slug' => substr($entry, 5)]
+            : ['type' => $entry, 'label' => null], self::DEFAULT_PRIMARY);
+    }
 
-        foreach (self::DEFAULT_ORDER as $entry) {
-            if (! str_starts_with($entry, 'page:')) {
-                $items[] = ['type' => 'builtin', 'key' => $entry, 'visible' => true];
-            } elseif (isset($systemPageIds[substr($entry, 5)])) {
-                $items[] = ['type' => 'page', 'page_id' => $systemPageIds[substr($entry, 5)], 'label' => null, 'visible' => true];
+    /**
+     * Satu query halaman terbit, satu query kategori berita bertautan berita terbit, dan satu
+     * query cek isi daftar; masing-masing hanya bila modul konten aktif dan tujuannya dipakai.
+     *
+     * @param  list<array<string, mixed>>  $items
+     */
+    private function loadReferences(array $items, bool $defaultPages, bool $hasContact): void
+    {
+        $this->pages = collect();
+        $this->categories = collect();
+        $this->lists = [];
+
+        if (! $this->contentEnabled) {
+            return;
+        }
+
+        $flat = [];
+
+        foreach ($items as $item) {
+            array_push($flat, $item, ...($item['children'] ?? []));
+        }
+
+        $pageIds = array_values(array_unique(array_column($flat, 'page_id')));
+        $slugs = $defaultPages ? self::defaultPageSlugs() : [];
+
+        if ($pageIds !== [] || $slugs !== []) {
+            $this->pages = StaticPage::query()
+                ->published()
+                ->where(fn ($query) => $query->whereIn('id', $pageIds)->orWhereIn('slug', $slugs))
+                ->get(['id', 'slug', 'title'])
+                ->reject(fn (StaticPage $page): bool => $page->slug === 'kontak' && ! $hasContact)
+                ->keyBy('id');
+        }
+
+        $categoryIds = array_values(array_unique(array_column($flat, 'category_id')));
+
+        if ($categoryIds !== []) {
+            $this->categories = Category::query()
+                ->ofType(Category::TYPE_POST)
+                ->whereIn('id', $categoryIds)
+                ->whereHas('posts', fn ($query) => $query->published())
+                ->get(['id', 'slug', 'name'])
+                ->keyBy('id');
+        }
+
+        $listTypes = array_values(array_intersect(self::LIST_TYPES, array_column($flat, 'type')));
+
+        if ($listTypes !== []) {
+            $queries = [
+                'posts' => fn () => Post::query()->published(),
+                'albums' => fn () => Album::query()->has('photos'),
+                'videos' => fn () => Video::query(),
+            ];
+            $select = DB::query();
+
+            foreach ($listTypes as $type) {
+                $select->selectSub($queries[$type]()->selectRaw('1')->limit(1), $type);
+            }
+
+            $row = (array) $select->first();
+
+            foreach ($listTypes as $type) {
+                $this->lists[$type] = ($row[$type] ?? null) !== null;
             }
         }
-
-        return $items;
     }
 
     /**
-     * Seperti header sebelum F037: di halaman Visi & misi yang tidak punya item sendiri,
-     * item Profil yang ditandai aktif.
+     * Tautan tersedia, atau `null`. `$labelMax` = batas fallback judul halaman (null = penuh).
      *
-     * @param  list<array{label: string, url: string, active: bool}>  $items
-     * @return list<array{label: string, url: string, active: bool}>
+     * @param  array<string, mixed>  $item
+     * @return ?array<string, mixed>
      */
-    private function markVisionUnderProfile(array $items): array
+    private function link(array $item, ?int $labelMax): ?array
     {
-        if (! request()->routeIs('portal.pages.show') || request()->route('page') !== 'visi-misi' || in_array(true, array_column($items, 'active'), true)) {
-            return $items;
-        }
+        $type = $item['type'];
 
-        $profileUrl = route('portal.pages.show', 'profil');
+        if ($type === 'group') {
+            $children = [];
 
-        return array_map(fn (array $item): array => $item['url'] === $profileUrl ? [...$item, 'active' => true] : $item, $items);
-    }
+            foreach ($item['children'] as $child) {
+                $link = $this->link($child, $labelMax);
 
-    /**
-     * Satu query untuk semua halaman terbit yang dirujuk menu dan footer.
-     *
-     * @param  list<array<string, mixed>>  $footerLinks
-     * @return Collection<int, StaticPage>
-     */
-    private function publishedPages(mixed $stored, array $footerLinks): Collection
-    {
-        $ids = array_filter(array_column($footerLinks, 'page_id'));
-        $slugs = [];
-
-        if (is_array($stored)) {
-            foreach ($this->storedItems($stored, null) as $item) {
-                if ($item['type'] === 'page' && $item['visible']) {
-                    $ids[] = $item['page_id'];
+                if ($link !== null) {
+                    $children[] = $link;
                 }
             }
-        } else {
-            $slugs = ['profil', 'kontak'];
+
+            return $children === [] ? null : [
+                'label' => $item['label'],
+                'children' => $children,
+                'active' => in_array(true, array_column($children, 'active'), true),
+            ];
         }
 
-        if ($ids === [] && $slugs === []) {
-            return collect();
-        }
+        $target = $this->target($item, $labelMax);
 
-        return StaticPage::query()
-            ->published()
-            ->where(fn ($query) => $query->whereIn('id', array_values(array_unique($ids)))->orWhereIn('slug', $slugs))
-            ->get(['id', 'slug', 'title'])
-            ->keyBy('id');
+        return $target === null ? null : ['label' => $item['label'] ?? $target['label'], 'url' => $target['url'], 'active' => $target['active']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return ?array{label: string, url: string, active: bool}
+     */
+    private function target(array $item, ?int $labelMax): ?array
+    {
+        $type = $item['type'];
+
+        return match ($type) {
+            'home' => $this->system($type, 'portal.home', 'portal.home', true),
+            'posts' => $this->system($type, 'portal.posts.index', 'portal.posts.*', $this->lists['posts'] ?? false),
+            'albums' => $this->system($type, 'portal.albums.index', 'portal.albums.*', $this->lists['albums'] ?? false),
+            'videos' => $this->system($type, 'portal.videos.index', 'portal.videos.*', $this->lists['videos'] ?? false),
+            'psb.info', 'psb.register', 'psb.status' => $this->system($type, $type, $type, Setting::moduleEnabled('psb')),
+            'letters.verify' => $this->system($type, 'dokumen.letters.verify-form', 'dokumen.letters.verify-form', Setting::moduleEnabled('dokumen')),
+            'page' => $this->pageTarget($item, $labelMax),
+            'category' => $this->categoryTarget($item['category_id']),
+            'url' => ['label' => $item['label'], 'url' => $item['url'], 'active' => false],
+            default => null,
+        };
     }
 
     /**
      * @return ?array{label: string, url: string, active: bool}
      */
-    private function builtinLink(string $key, bool $contentEnabled, bool $psbEnabled): ?array
+    private function system(string $type, string $routeName, string $activePattern, bool $available): ?array
     {
-        [$routeName, $activePattern] = match ($key) {
-            'home' => ['portal.home', 'portal.home'],
-            'news' => ['portal.posts.index', 'portal.posts.*'],
-            'gallery' => ['portal.albums.index', 'portal.albums.*'],
-            'videos' => ['portal.videos.index', 'portal.videos.*'],
-            'psb_info' => ['psb.info', 'psb.info'],
-        };
+        if (! $available || ! Route::has($routeName)) {
+            return null;
+        }
 
-        $shown = match ($key) {
-            'home' => true,
-            'psb_info' => $psbEnabled && Route::has('psb.info'),
-            default => $contentEnabled,
-        };
-
-        return $shown ? [
-            'label' => __("pondok.portal.nav.{$key}"),
+        return [
+            'label' => __('pondok.portal.nav.'.self::LABEL_KEYS[$type]),
             'url' => route($routeName),
             'active' => request()->routeIs($activePattern),
-        ] : null;
+        ];
     }
 
     /**
+     * @param  array<string, mixed>  $item
      * @return ?array{label: string, url: string, active: bool}
      */
-    private function pageLink(?StaticPage $page, ?string $label): ?array
+    private function pageTarget(array $item, ?int $labelMax): ?array
     {
+        $page = isset($item['slug'])
+            ? $this->pages->firstWhere('slug', $item['slug'])
+            : $this->pages->get($item['page_id']);
+
         if ($page === null) {
             return null;
         }
 
         return [
-            'label' => $label ?? Str::limit($page->title, self::LABEL_MAX_LENGTH),
+            'label' => $labelMax === null ? $page->title : Str::limit($page->title, $labelMax),
             'url' => route('portal.pages.show', $page->slug),
             'active' => request()->routeIs('portal.pages.show') && request()->route('page') === $page->slug,
         ];
     }
 
     /**
-     * @param  list<array<string, mixed>>  $links
-     * @param  Collection<int, StaticPage>  $available
-     * @return list<array{label: string, url: string}>
+     * @return ?array{label: string, url: string, active: bool}
      */
-    private function footerLinks(array $links, Collection $available): array
+    private function categoryTarget(int $id): ?array
     {
-        $resolved = [];
+        $category = $this->categories->get($id);
 
-        foreach ($links as $link) {
-            if (! isset($link['page_id'])) {
-                $resolved[] = ['label' => $link['label'], 'url' => $link['url']];
-
-                continue;
-            }
-
-            $page = $available->get($link['page_id']);
-
-            if ($page !== null) {
-                $resolved[] = ['label' => $link['label'] ?? $page->title, 'url' => route('portal.pages.show', $page->slug)];
-            }
+        if ($category === null) {
+            return null;
         }
 
-        return $resolved;
+        return [
+            'label' => $category->name,
+            'url' => route('portal.posts.index', ['kategori' => $category->slug]),
+            'active' => request()->routeIs('portal.posts.index') && request()->query('kategori') === $category->slug,
+        ];
+    }
+
+    /**
+     * Seperti header sebelum F037: di halaman Visi & misi yang tidak punya item sendiri,
+     * item Profil (di akar atau di grup) yang ditandai aktif.
+     *
+     * @param  list<array<string, mixed>>  $links
+     * @return list<array<string, mixed>>
+     */
+    private function markVisionUnderProfile(array $links): array
+    {
+        if (! request()->routeIs('portal.pages.show') || request()->route('page') !== 'visi-misi' || in_array(true, array_column($links, 'active'), true)) {
+            return $links;
+        }
+
+        $profileUrl = route('portal.pages.show', 'profil');
+        $mark = fn (array $link): array => ($link['url'] ?? null) === $profileUrl ? [...$link, 'active' => true] : $link;
+
+        return array_map(function (array $link) use ($mark): array {
+            if (! isset($link['children'])) {
+                return $mark($link);
+            }
+
+            $children = array_map($mark, $link['children']);
+
+            return [...$link, 'children' => $children, 'active' => in_array(true, array_column($children, 'active'), true)];
+        }, $links);
     }
 }

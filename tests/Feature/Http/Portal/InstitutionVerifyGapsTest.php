@@ -1,6 +1,6 @@
 <?php
 
-use App\Actions\Konten\UpdatePortalFooter;
+use App\Actions\Konten\UpdatePortalNavigation;
 use App\Actions\Konten\UpdateSchoolContacts;
 use App\Actions\Konten\UpdateSchoolProfile;
 use App\Models\Setting;
@@ -23,8 +23,7 @@ it('VERIFY: escapes every free text field in header, home and footer', function 
     profilSet([
         'school.short_name' => $x, 'school.arabic_name' => $x, 'school.tagline' => $x, 'school.address' => $x,
         'portal.hero_greeting' => $x, 'portal.hero_subtitle' => $x,
-        'portal.footer_quote_arabic' => $x, 'portal.footer_quote_translation' => $x,
-        'portal.footer_quote_source' => $x, 'portal.footer_description' => $x,
+        'portal.footer_description' => $x, 'portal.footer_text' => ['title' => $x, 'body' => $x],
         'school.contacts' => [profilContact(['label' => 'L', 'name' => $x, 'phone' => $x])],
         'school.social_links' => [['platform' => 'lainnya', 'label' => $x, 'url' => 'https://a.test/"onmouseover="x']],
     ]);
@@ -67,7 +66,7 @@ it('VERIFY: rejects tricky social and footer urls on write', function (string $u
 
     expect(fn () => app(UpdateSchoolContacts::class)->handle(['social_links' => [['platform' => 'website', 'url' => $url]]], $admin))
         ->toThrow(ValidationException::class);
-    expect(fn () => app(UpdatePortalFooter::class)->handle(['footer_links' => [['label' => 'x', 'url' => $url]]], $admin))
+    expect(fn () => app(UpdatePortalNavigation::class)->handle(['primary' => [], 'footer' => [navItem('url', 'x', ['url' => $url])], 'header_button' => null], $admin))
         ->toThrow(ValidationException::class);
     expect(Setting::get('school.social_links'))->toBeNull();
 })->with(['https://a.test\\@evil.test', 'https:///x', 'JAVASCRIPT:alert(1)', "https://a.test/\u{0085}", 'vbscript:x', 'https://']);
@@ -101,7 +100,7 @@ it('VERIFY: replacing the desktop logo keeps the other logo files', function () 
 it('VERIFY: a fresh install with only some fields filled shows no built in content', function () {
     profilFreshInstall();
     Setting::set('school.tagline', 'Slogan uji');
-    Setting::set('portal.footer_links', [['label' => 'Tautan Uji', 'url' => '/berita']]);
+    navSet(null, [navItem('url', 'Tautan Uji', ['url' => '/berita'])]);
 
     foreach (['/', '/profil', '/kontak', '/visi-misi'] as $url) {
         $html = html_entity_decode(profilVisibleText($this->get($url)->getContent()));

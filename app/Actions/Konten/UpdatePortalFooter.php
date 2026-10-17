@@ -3,20 +3,22 @@
 namespace App\Actions\Konten;
 
 use App\Actions\Konten\Concerns\SavesProfileSettings;
-use App\Actions\Konten\Concerns\ValidatesPublicUrls;
-use App\Models\StaticPage;
 use App\Models\User;
 
 /**
- * Simpan footer portal (halaman Footer): kutipan (Arab, terjemah, sumber),
- * deskripsi lembaga, dan tautan cepat. Tautan berupa URL absolut aman, path
- * internal aman, atau halaman situs (`page_id`, F037). Kosong → null.
+ * Simpan footer portal generik (halaman Footer, F043): deskripsi lembaga, teks pendek
+ * (judul opsional + isi, teks polos), dan saklar tampil kontak serta media sosial.
+ * Tautan footer diatur lewat `UpdatePortalNavigation`. Teks kosong → null.
  */
 class UpdatePortalFooter
 {
-    use SavesProfileSettings, ValidatesPublicUrls;
+    use SavesProfileSettings;
 
-    public const MAX_LINKS = 8;
+    public const DESCRIPTION_MAX_LENGTH = 500;
+
+    public const TEXT_TITLE_MAX_LENGTH = 60;
+
+    public const TEXT_BODY_MAX_LENGTH = 300;
 
     /**
      * @param  array<string, mixed>  $data
@@ -24,62 +26,36 @@ class UpdatePortalFooter
     public function handle(array $data, User $actor): void
     {
         $this->saveProfileSettings([
-            'portal.footer_quote_arabic' => $this->optionalText($data['footer_quote_arabic'] ?? null, 'footer_quote_arabic', 1000),
-            'portal.footer_quote_translation' => $this->optionalText($data['footer_quote_translation'] ?? null, 'footer_quote_translation', 1000),
-            'portal.footer_quote_source' => $this->optionalText($data['footer_quote_source'] ?? null, 'footer_quote_source', 100),
-            'portal.footer_description' => $this->optionalText($data['footer_description'] ?? null, 'footer_description', 500),
-            'portal.footer_links' => $this->links($data['footer_links'] ?? null) ?: null,
+            'portal.footer_description' => $this->optionalText($data['footer_description'] ?? null, 'footer_description', self::DESCRIPTION_MAX_LENGTH),
+            'portal.footer_text' => $this->footerText($data['footer_text'] ?? null),
+            'portal.footer_show_contacts' => $this->toggle($data['footer_show_contacts'] ?? null),
+            'portal.footer_show_social' => $this->toggle($data['footer_show_social'] ?? null),
         ], 'portal_footer_updated', $actor);
     }
 
     /**
-     * Tautan URL `{label, url}` (label wajib) atau tautan halaman `{label: ?string, page_id}`
-     * (label opsional, halaman boleh draf). Tepat satu dari `url` dan `page_id` harus diisi.
+     * Isi kosong → null; judul tanpa isi ditolak.
      *
-     * @return list<array{label: string, url: string}|array{label: ?string, page_id: int}>
+     * @return ?array{title: ?string, body: string}
      */
-    private function links(mixed $value): array
+    private function footerText(mixed $value): ?array
     {
-        $links = [];
-        $items = $this->listInput($value, 'footer_links', self::MAX_LINKS);
-        $pageIds = null;
+        $value = is_array($value) ? $value : [];
+        $title = $this->plainText($value['title'] ?? null, 'footer_text.title', self::TEXT_TITLE_MAX_LENGTH);
+        $body = $this->plainText($value['body'] ?? null, 'footer_text.body', self::TEXT_BODY_MAX_LENGTH);
 
-        foreach ($items as $index => $item) {
-            $field = "footer_links.{$index}";
-            $url = is_scalar($item['url'] ?? null) ? (string) $item['url'] : '';
-            $pageId = $item['page_id'] ?? null;
-            $hasPage = $pageId !== null && $pageId !== '';
-
-            if ((trim($url) !== '') === $hasPage) {
-                $this->fail($field, 'link_target_invalid');
-            }
-
-            if ($hasPage) {
-                $pageIds ??= StaticPage::query()->pluck('id')->all();
-                $id = filter_var($pageId, FILTER_VALIDATE_INT);
-
-                if ($id === false || ! in_array($id, $pageIds, true)) {
-                    $this->fail("{$field}.page_id", 'page_not_found');
-                }
-
-                $links[] = ['label' => $this->optionalText($item['label'] ?? null, "{$field}.label", 60), 'page_id' => $id];
-
-                continue;
-            }
-
-            $label = $this->requiredText($item['label'] ?? null, "{$field}.label", 60, 'label_required');
-
-            if (mb_strlen($url) > 255) {
-                $this->fail("{$field}.url", 'too_long', ['max' => 255]);
-            }
-
-            if (! $this->isSafeAbsoluteUrl($url) && ! $this->isSafeInternalPath($url)) {
-                $this->fail("{$field}.url", 'link_invalid');
-            }
-
-            $links[] = ['label' => $label, 'url' => $url];
+        if ($body === null && $title !== null) {
+            $this->fail('footer_text.body', 'footer_text_body_required');
         }
 
-        return $links;
+        return $body === null ? null : ['title' => $title, 'body' => $body];
+    }
+
+    /**
+     * Saklar tampil; tidak diisi → true.
+     */
+    private function toggle(mixed $value): bool
+    {
+        return $value === null || filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }

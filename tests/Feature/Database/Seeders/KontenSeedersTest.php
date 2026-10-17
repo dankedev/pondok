@@ -81,7 +81,7 @@ it('AC-3 (F037): seeds system pages with draft profile and published contact', f
             'kontak' => __('pondok.static_page.defaults.kontak'),
         ])
         ->and($pages->pluck('body')->unique()->all())->toBe([''])
-        ->and(Setting::query()->whereIn('key', ['portal.menu_items', 'portal.menu_show_register'])->count())->toBe(0);
+        ->and(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button', 'portal.footer_text'])->count())->toBe(0);
 
     StaticPage::query()->where('slug', 'profil')->update(['status' => 'terbit', 'body' => '<p>Diisi</p>']);
     StaticPage::query()->where('slug', 'kontak')->update(['status' => 'draft']);
@@ -90,5 +90,5 @@ it('AC-3 (F037): seeds system pages with draft profile and published contact', f
 
     expect(StaticPage::query()->where('slug', 'profil')->first())->status->toBe('terbit')->body->toBe('<p>Diisi</p>')
         ->and(StaticPage::query()->where('slug', 'kontak')->value('status'))->toBe('draft')
-        ->and(Setting::query()->whereIn('key', ['portal.menu_items', 'portal.menu_show_register'])->count())->toBe(0);
+        ->and(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button', 'portal.footer_text'])->count())->toBe(0);
 });

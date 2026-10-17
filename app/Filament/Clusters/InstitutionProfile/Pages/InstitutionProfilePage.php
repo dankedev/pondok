@@ -134,17 +134,23 @@ abstract class InstitutionProfilePage extends Page
     }
 
     /**
-     * `contacts.1.phone` → `contacts.<kunci baris ke-1>.phone`.
+     * `contacts.1.phone` → `contacts.<kunci baris ke-1>.phone`, juga untuk repeater
+     * bersarang (`primary.0.children.1.url` → `primary.<uuid>.children.<uuid>.url`).
      *
      * @param  array<string, mixed>  $state
      */
     private function stateField(string $field, array $state): string
     {
-        $parts = explode('.', $field, 3);
+        $parts = explode('.', $field);
+        $node = $state;
 
-        if (count($parts) >= 2 && is_array($state[$parts[0]] ?? null) && ctype_digit($parts[1])) {
-            $keys = array_keys($state[$parts[0]]);
-            $parts[1] = (string) ($keys[(int) $parts[1]] ?? $parts[1]);
+        foreach ($parts as $index => $part) {
+            if ($index > 0 && is_array($node) && ctype_digit($part)) {
+                $keys = array_keys($node);
+                $parts[$index] = $part = (string) ($keys[(int) $part] ?? $part);
+            }
+
+            $node = is_array($node) ? ($node[$part] ?? null) : null;
         }
 
         return implode('.', $parts);

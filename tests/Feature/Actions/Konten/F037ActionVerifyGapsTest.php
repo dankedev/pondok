@@ -2,7 +2,6 @@
 
 use App\Actions\Konten\CreateStaticPage;
 use App\Actions\Konten\DeleteStaticPage;
-use App\Actions\Konten\UpdatePortalMenu;
 use App\Actions\Konten\UpdateStaticPage;
 use App\Models\Setting;
 use App\Models\StaticPage;
@@ -117,20 +116,19 @@ it('VERIFY: free page body is sanitized on create and update', function () {
 
 it('VERIFY: deleting a system page is refused for every path and leaves references untouched', function (string $slug) {
     $page = StaticPage::query()->where('slug', $slug)->firstOrFail();
-    Setting::set('portal.menu_items', [menuPage($page)]);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $page->id]]);
+    navSet([navPage($page)], [navPage($page)], navPage($page));
 
     kontenAssertRejected(fn () => app(DeleteStaticPage::class)->handle($page), 'page_system_locked');
 
     expect(StaticPage::query()->whereKey($page->id)->exists())->toBeTrue()
-        ->and(Setting::get('portal.menu_items'))->toBe([menuPage($page)])
-        ->and(Setting::get('portal.footer_links'))->toBe([['label' => null, 'page_id' => $page->id]]);
+        ->and(Setting::get('portal.navigation_primary'))->toEqual([navPage($page)])
+        ->and(Setting::get('portal.navigation_footer'))->toEqual([navPage($page)])
+        ->and(Setting::get('portal.header_button'))->toEqual(navPage($page));
 })->with(['profil', 'visi-misi', 'kontak']);
 
 it('VERIFY: delete is atomic, a failure while cleaning settings keeps the page', function () {
     $x = staticPage(['slug' => 'x-atomik']);
-    Setting::set('portal.menu_items', [menuPage($x)]);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $x->id]]);
+    navSet([navPage($x)], [navPage($x)], navPage($x));
 
     Setting::saving(fn () => throw new RuntimeException('boom'));
 
@@ -141,70 +139,18 @@ it('VERIFY: delete is atomic, a failure while cleaning settings keeps the page',
 
     Setting::flushEventListeners();
 
-    expect(StaticPage::query()->whereKey($x->id)->exists())->toBeTrue();
+    expect(StaticPage::query()->whereKey($x->id)->exists())->toBeTrue()
+        ->and(Setting::get('portal.navigation_primary'))->toEqual([navPage($x)]);
 });
 
 it('VERIFY: delete ignores malformed settings values without crashing', function () {
     $x = staticPage(['slug' => 'x-rusak']);
-    Setting::set('portal.menu_items', ['bukan-array', 5, null, menuPage($x), menuBuiltin('home')]);
-    Setting::set('portal.footer_links', 'rusak');
+    Setting::set('portal.navigation_primary', ['bukan-array', 5, null, navPage($x), navItem('home'), ['type' => 'group', 'label' => 'G', 'children' => 'rusak']]);
+    Setting::set('portal.navigation_footer', 'rusak');
+    Setting::set('portal.header_button', 'rusak');
 
     app(DeleteStaticPage::class)->handle($x);
 
-    expect(StaticPage::query()->whereKey($x->id)->exists())->toBeFalse();
-});
-
-it('VERIFY: menu rejects more than 8 visible, unknown builtin, foreign page id, duplicates and bad types', function (array $items, string $reason) {
-    kontenAssertRejected(fn () => app(UpdatePortalMenu::class)->handle(['items' => $items, 'show_register' => true], kontenUser('admin-konten')), $reason);
-})->with(function () {
-    $b = fn (string $k, bool $v = true) => ['type' => 'builtin', 'key' => $k, 'visible' => $v];
-    $p = fn (int $id, bool $v = true) => ['type' => 'page', 'page_id' => $id, 'label' => null, 'visible' => $v];
-
-    return [
-        'builtin tak dikenal' => [[$b('admin')], 'menu_item_invalid'],
-        'builtin key array' => [[['type' => 'builtin', 'key' => ['home'], 'visible' => true]], 'menu_item_invalid'],
-        'page id asing' => [[$p(99999)], 'page_not_found'],
-        'page id nol' => [[$p(0)], 'page_not_found'],
-        'page id negatif' => [[$p(-1)], 'page_not_found'],
-        'duplikat builtin' => [[$b('home'), $b('home', false)], 'menu_item_duplicate'],
-        'duplikat page' => [[$p(1), $p(1, false)], 'menu_item_duplicate'],
-        'tipe asing' => [[['type' => 'url', 'url' => 'https://evil.test', 'visible' => true]], 'menu_item_invalid'],
-    ];
-});
-
-it('VERIFY: menu accepts exactly 8 visible and hidden items beyond that', function () {
-    $pages = collect(range(1, 4))->map(fn ($i) => staticPage(['slug' => "m-{$i}"]));
-    $items = [menuBuiltin('home'), menuBuiltin('news'), menuBuiltin('gallery'), menuBuiltin('videos'), menuBuiltin('psb_info', false)];
-    foreach ($pages as $page) {
-        $items[] = menuPage($page);
-    }
-    $items[] = menuPage(StaticPage::query()->where('slug', 'profil')->firstOrFail(), null, false);
-
-    app(UpdatePortalMenu::class)->handle(['items' => $items, 'show_register' => true], kontenUser('admin-konten'));
-
-    expect(count(Setting::get('portal.menu_items')))->toBe(10);
-});
-
-it('VERIFY: menu label over 30 characters is rejected or stored within 30', function () {
-    $page = staticPage();
-    $action = fn () => app(UpdatePortalMenu::class)->handle(['items' => [menuBuiltin('home'), menuPage($page, str_repeat('a', 31))], 'show_register' => true], kontenUser('admin-konten'));
-
-    kontenAssertRejected($action, 'too_long');
-});
-
-it('VERIFY: menu label script tag is stored as plain text (no markup)', function () {
-    $page = staticPage();
-    app(UpdatePortalMenu::class)->handle(['items' => [menuPage($page, '<b>Tebal</b>')], 'show_register' => true], kontenUser('admin-konten'));
-
-    $stored = Setting::get('portal.menu_items')[0]['label'] ?? '';
-    expect($stored)->not->toContain('<b>');
-});
-
-it('VERIFY: menu rejects 9 visible items (draft pages still count)', function () {
-    $items = [menuBuiltin('home'), menuBuiltin('news'), menuBuiltin('gallery'), menuBuiltin('videos'), menuBuiltin('psb_info')];
-    foreach (range(1, 4) as $i) {
-        $items[] = menuPage(staticPage(['slug' => "d-{$i}", 'status' => 'draft']));
-    }
-
-    kontenAssertRejected(fn () => app(UpdatePortalMenu::class)->handle(['items' => $items, 'show_register' => true], kontenUser('admin-konten')), 'menu_too_many', 'items');
+    expect(StaticPage::query()->whereKey($x->id)->exists())->toBeFalse()
+        ->and(collect(Setting::get('portal.navigation_primary'))->contains(fn (mixed $item): bool => is_array($item) && ($item['page_id'] ?? null) === $x->id))->toBeFalse();
 });

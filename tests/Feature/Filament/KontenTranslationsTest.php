@@ -57,15 +57,14 @@ it('AC-37 (F037): page and menu screens have no raw keys or content examples', f
         ->and(__('pondok.static_page.slug_helper_create'))->not->toStartWith('pondok.')
         ->and(__('pondok.static_page.slug_helper_locked'))->toBe('Alamat halaman sistem tidak bisa diubah.')
         ->and($visible)->not->toBeEmpty();
-})->with(['/admin/static-pages', '/admin/static-pages/create', '/admin/static-pages/{id}/edit', '/admin/institution-profile/menu']);
+})->with(['/admin/static-pages', '/admin/static-pages/create', '/admin/static-pages/{id}/edit', '/admin/institution-profile/navigation']);
 
 it('AC-37 (F037): defines the new interface texts in lang/id', function () {
     foreach ([
         'pondok.portal.nav.psb_info', 'pondok.static_page.statuses.draft', 'pondok.static_page.statuses.terbit', 'pondok.static_page.system_badge',
         'pondok.konten.errors.slug_format', 'pondok.konten.errors.slug_reserved', 'pondok.konten.errors.slug_locked', 'pondok.konten.errors.status_invalid',
-        'pondok.konten.errors.page_system_locked', 'pondok.konten.errors.page_not_found', 'pondok.konten.errors.menu_item_invalid',
-        'pondok.konten.errors.menu_item_duplicate', 'pondok.konten.errors.menu_too_many', 'pondok.konten.errors.link_target_invalid',
-        'pondok.konten.errors.page_limit_reached', 'pondok.school_profile.pages.menu',
+        'pondok.konten.errors.page_system_locked', 'pondok.konten.errors.page_not_found',
+        'pondok.konten.errors.page_limit_reached', 'pondok.school_profile.pages.navigation',
     ] as $key) {
         expect(__($key))->not->toBe($key, "{$key} belum ada di lang/id");
     }

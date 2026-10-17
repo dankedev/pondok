@@ -158,8 +158,9 @@ it('AC-51: escapes the free text fields of the home page', function () {
         'portal.highlights_heading' => $script,
         'portal.highlights' => [['title' => 'Kartu', 'description' => $script]],
         'school.contacts' => [profilContact(['label' => $script])],
-        'portal.footer_links' => [['label' => $script, 'url' => '/berita']],
+        'portal.footer_text' => ['title' => $script, 'body' => $script],
     ]);
+    navSet([navItem('url', $script, ['url' => '/berita'])], [navItem('url', $script, ['url' => '/berita'])]);
 
     $html = $this->get('/')->assertOk()->getContent();
 

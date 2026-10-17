@@ -40,14 +40,12 @@ class GetSchoolProfile
         'portal.hero_album_id',
         'portal.profile_video_id',
         'portal.psb_video_id',
-        'portal.footer_quote_arabic',
-        'portal.footer_quote_translation',
-        'portal.footer_quote_source',
         'portal.footer_description',
-        'portal.footer_links',
-        // Dibaca bersama agar `GetPortalNavigation` memakai cache tanpa query tambahan (F037).
-        'portal.menu_items',
-        'portal.menu_show_register',
+        'portal.footer_text',
+        'portal.footer_show_contacts',
+        'portal.footer_show_social',
+        // Dibaca bersama agar `GetPortalNavigation` memakai cache tanpa query tambahan (F043).
+        ...GetPortalNavigation::SETTING_KEYS,
     ];
 
     /** Field profil yang dihitung sebagai data kontak (aturan Kontak F037). */
@@ -97,11 +95,10 @@ class GetSchoolProfile
             'profile_video_id' => $this->id($values['portal.profile_video_id']),
             'psb_video_id' => $this->id($values['portal.psb_video_id']),
             'footer' => [
-                'quote_arabic' => $text('portal.footer_quote_arabic'),
-                'quote_translation' => $text('portal.footer_quote_translation'),
-                'quote_source' => $text('portal.footer_quote_source'),
                 'description' => $text('portal.footer_description'),
-                'links' => $this->footerLinks($values['portal.footer_links']),
+                'text' => $this->footerText($values['portal.footer_text']),
+                'show_contacts' => $values['portal.footer_show_contacts'] !== false,
+                'show_social' => $values['portal.footer_show_social'] !== false,
             ],
         ];
     }
@@ -217,34 +214,14 @@ class GetSchoolProfile
     }
 
     /**
-     * Tautan URL `{label, url}` atau tautan halaman `{label: ?string, page_id: int}`, urut tersimpan.
+     * Teks pendek footer: `null` bila isi kosong atau nilai rusak; judul opsional.
      *
-     * @return list<array{label: string, url: string}|array{label: ?string, page_id: int}>
+     * @return ?array{title: ?string, body: string}
      */
-    private function footerLinks(mixed $value): array
+    private function footerText(mixed $value): ?array
     {
-        $links = [];
+        $body = is_array($value) ? $this->text($value['body'] ?? null) : null;
 
-        foreach ($this->items($value) as $item) {
-            $label = $this->text($item['label'] ?? null);
-
-            if (array_key_exists('page_id', $item)) {
-                $pageId = $this->id($item['page_id']);
-
-                if ($pageId !== null) {
-                    $links[] = ['label' => $label, 'page_id' => $pageId];
-                }
-
-                continue;
-            }
-
-            $url = $item['url'] ?? null;
-
-            if ($label !== null && ($this->isSafeAbsoluteUrl($url) || $this->isSafeInternalPath($url))) {
-                $links[] = ['label' => $label, 'url' => $url];
-            }
-        }
-
-        return $links;
+        return $body === null ? null : ['title' => $this->text($value['title'] ?? null), 'body' => $body];
     }
 }

@@ -9,11 +9,8 @@ beforeEach(function () {
     Setting::set('school.name', "Ma'had Al-Khair");
 });
 
-it('AC-48: renders the footer quote, contacts, socials and quick links', function () {
+it('AC-48: renders the description, contacts, socials and footer links (the quote is gone, F043)', function () {
     profilSet([
-        'portal.footer_quote_arabic' => 'نص عربي للاختبار',
-        'portal.footer_quote_translation' => 'Terjemah uji',
-        'portal.footer_quote_source' => 'Sumber uji 1',
         'portal.footer_description' => 'Deskripsi lembaga uji',
         'school.contacts' => [
             profilContact(['key' => 'aaaa1111', 'label' => 'Panitia', 'name' => 'Ust. Ahmad', 'phone' => '081234567890', 'is_whatsapp' => true]),
@@ -24,14 +21,13 @@ it('AC-48: renders the footer quote, contacts, socials and quick links', functio
             ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.com/@alkhair'],
             ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test'],
         ],
-        'portal.footer_links' => [['label' => 'Berita Pilihan', 'url' => '/berita'], ['label' => 'Info PSB', 'url' => 'https://contoh.test/psb']],
     ]);
+    navSet(null, [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Info PSB', ['url' => 'https://contoh.test/psb'])]);
 
     $footer = profilFooter($this->get('/')->assertOk()->getContent());
     $text = profilVisibleText($footer);
 
-    expect($footer)->toMatch('/<[a-z0-9]+\b(?=[^>]*\blang="ar")(?=[^>]*\bdir="rtl")[^>]*>\s*نص عربي للاختبار/u')
-        ->and($text)->toContain('Terjemah uji')->toContain('Sumber uji 1')->toContain('Deskripsi lembaga uji')
+    expect($text)->toContain('Deskripsi lembaga uji')
         ->toContain('Panitia')->toContain('0812-3456-7890')->toContain('Telepon Kantor')
         ->toContain(__('pondok.portal.social.instagram'))->toContain(__('pondok.portal.social.youtube'))->toContain('Blog Kami')
         ->and(__('pondok.portal.social.instagram'))->not->toBe('pondok.portal.social.instagram')
@@ -119,7 +115,7 @@ it('AC-50: still renders the contact page when only legacy keys remain in settin
 
 it('AC-29 (F037): renders page links that follow slug and status', function () {
     $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $page->id], ['label' => 'Tentang', 'page_id' => $page->id]]);
+    navSet(null, [navPage($page), navPage($page, 'Tentang')]);
 
     $footer = profilFooter($this->get('/')->assertOk()->getContent());
 
@@ -133,7 +129,7 @@ it('AC-29 (F037): renders page links that follow slug and status', function () {
 
 it('AC-29 (F037): drops page links of draft pages, deleted pages and a disabled content module', function () {
     $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $page->id]]);
+    navSet(null, [navPage($page)]);
 
     $page->update(['status' => 'draft']);
     expect(profilFooter($this->get('/')->getContent()))->not->toContain('/pengurus');

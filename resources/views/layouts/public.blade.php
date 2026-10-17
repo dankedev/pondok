@@ -12,11 +12,13 @@
     'noindex' => false,
     // true: halaman mengatur kontainernya sendiri (portal); false: kontainer sempit untuk form PSB.
     'bare' => false,
+    // true: footer ringkas (nama, navigasi footer, hak cipta). Null: otomatis untuk route `psb.*`.
+    'compactFooter' => null,
 ])
 
 @php
     $school = app(\App\Actions\Konten\GetSchoolProfile::class)->handle();
-    // Menu header dan tautan footer dihitung sekali (satu query `pages`) untuk kedua nav dan footer.
+    // Menu utama, tombol header, dan navigasi footer dihitung sekali (satu query `pages`) untuk kedua nav dan footer.
     $navigation = app(\App\Actions\Konten\GetPortalNavigation::class)->handle($school);
     $pageTitle = filled($title)
         ? __('pondok.portal.meta.title', ['title' => $title, 'name' => $school['name']])
@@ -28,6 +30,7 @@
     $imageUrl = $ogImage ?? $school['logo_url'];
     $desktopLogo = $school['logo_desktop_url'];
     $mobileLogo = $school['logo_mobile_url'];
+    $compactFooter ??= request()->routeIs('psb.*');
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -121,6 +124,6 @@
         @endif
     </main>
 
-    @include('portal.partials.footer', ['school' => $school, 'footerLinks' => $navigation['footerLinks']])
+    @include('portal.partials.footer', ['school' => $school, 'navigation' => $navigation, 'compact' => $compactFooter])
 </body>
 </html>

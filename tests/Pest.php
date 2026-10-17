@@ -7,6 +7,8 @@ use App\Actions\Keuangan\FinanceReportFilter;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
+use App\Actions\Konten\GetPortalNavigation;
+use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
@@ -4055,4 +4057,129 @@ function profilFreshInstall(): void
     test()->seed(InstallSeeder::class);
     Storage::fake('public');
     test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+}
+
+/*
+|--------------------------------------------------------------------------
+| F043 konten-navigasi-footer
+|--------------------------------------------------------------------------
+|
+| Item navigasi tersimpan: `{type, label, ...}`; `page_id`, `category_id`, `url`, `children` hanya bila relevan.
+| Bandingkan dengan `toEqual` (urutan key tidak penting).
+|
+*/
+
+/**
+ * Item navigasi tersimpan.
+ *
+ * @param  array<string, mixed>  $extra
+ * @return array<string, mixed>
+ */
+function navItem(string $type, ?string $label = null, array $extra = []): array
+{
+    return ['type' => $type, 'label' => $label, ...$extra];
+}
+
+/**
+ * @return array{type: string, label: ?string, page_id: int}
+ */
+function navPage(StaticPage|int $page, ?string $label = null): array
+{
+    return navItem('page', $label, ['page_id' => $page instanceof StaticPage ? $page->id : $page]);
+}
+
+/**
+ * @param  list<array<string, mixed>>  $children
+ * @return array{type: string, label: ?string, children: list<array<string, mixed>>}
+ */
+function navGroup(string $label, array $children): array
+{
+    return navItem('group', $label, ['children' => $children]);
+}
+
+/**
+ * Simpan navigasi langsung ke settings (tanpa Action). `null` = key tidak ada (bawaan).
+ *
+ * @param  list<array<string, mixed>>|null  $primary
+ * @param  list<array<string, mixed>>|null  $footer
+ * @param  array<string, mixed>|false|null  $headerButton
+ */
+function navSet(?array $primary = null, ?array $footer = null, array|false|null $headerButton = null): void
+{
+    foreach (['portal.navigation_primary' => $primary, 'portal.navigation_footer' => $footer, 'portal.header_button' => $headerButton] as $key => $value) {
+        if ($value === null) {
+            Setting::query()->whereKey($key)->delete();
+        } else {
+            Setting::set($key, $value);
+        }
+    }
+
+    app()->forgetScopedInstances();
+}
+
+/**
+ * Hasil `GetPortalNavigation` untuk profil saat ini.
+ *
+ * @return array{primary: list<array<string, mixed>>, headerButton: ?array<string, mixed>, footer: list<array<string, mixed>>}
+ */
+function navResolve(): array
+{
+    app()->forgetScopedInstances();
+
+    return app(GetPortalNavigation::class)->handle(app(GetSchoolProfile::class)->handle());
+}
+
+/**
+ * Label hasil navigasi; grup menjadi `Label > [anak, ...]`.
+ *
+ * @param  list<array<string, mixed>>  $links
+ * @return list<string|array<string, list<string>>>
+ */
+function navLabels(array $links): array
+{
+    return array_map(fn (array $link): string|array => isset($link['children']) ? [$link['label'] => array_column($link['children'], 'label')] : $link['label'], $links);
+}
+
+/**
+ * Migrasi data F043 (berkas dimuat ulang tiap panggilan).
+ */
+function navMigration(): object
+{
+    return require database_path('migrations/2026_10_19_000000_move_portal_navigation_settings.php');
+}
+
+/**
+ * Konten publik minimal agar tujuan berita, galeri, dan video tersedia.
+ */
+function navSeedPublicContent(): void
+{
+    portalPost(['title' => 'Berita Uji']);
+    portalAlbumWithPhotos(1, ['title' => 'Album Uji']);
+    kontenVideo(['title' => 'Video Uji']);
+}
+
+/**
+ * HTML satu `<nav>` header (`desktop` atau `mobile`).
+ */
+function navHtml(string $html, string $layout): string
+{
+    $label = $layout === 'desktop' ? __('pondok.portal.nav.label') : __('pondok.portal.nav.mobile_label');
+    preg_match('#<nav\b[^>]*aria-label="'.preg_quote(e($label), '#').'"[^>]*>(.*?)</nav>#is', $html, $match);
+
+    return $match[1] ?? '';
+}
+
+/**
+ * Teks tautan yang aktif pada kedua nav (harus sama).
+ *
+ * @return list<string>
+ */
+function navCurrent(string $html): array
+{
+    $links = portalNavLinks($html);
+    $desktop = collect($links['desktop'])->where('current', true)->pluck('text')->all();
+
+    expect(collect($links['mobile'])->where('current', true)->pluck('text')->all())->toBe($desktop);
+
+    return $desktop;
 }

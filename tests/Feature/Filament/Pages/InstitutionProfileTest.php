@@ -176,35 +176,6 @@ it('AC-36: hides the media selects when the content module is off and keeps the 
         ->and(Setting::get('portal.psb_video_id'))->toBe($video->id);
 });
 
-it('AC-36: saves the footer quote and renders the arabic field right to left', function () {
-    $this->actingAs(kontenUser('admin-konten'));
-
-    $component = Livewire::test(Footer::class)
-        ->fillForm([
-            'footer_quote_arabic' => 'نص عربي للاختبار', 'footer_quote_translation' => 'Terjemah uji',
-            'footer_quote_source' => 'Sumber uji', 'footer_description' => 'Deskripsi uji',
-            'footer_links' => [['label' => 'Berita', 'url' => '/berita']],
-        ])
-        ->call('save')
-        ->assertHasNoFormErrors()
-        ->assertNotified();
-
-    expect(Setting::get('portal.footer_quote_arabic'))->toBe('نص عربي للاختبار')
-        ->and(Setting::get('portal.footer_links'))->toHaveCount(1)
-        ->and(profilTag($this->get('/admin/institution-profile/footer')->getContent(), 'textarea', ['dir="rtl"', 'lang="ar"']))->not->toBeNull();
-});
-
-it('AC-36: shows a footer link error on the right field', function () {
-    $this->actingAs(kontenUser('admin-konten'));
-
-    $component = Livewire::test(Footer::class)
-        ->fillForm(['footer_links' => [['label' => 'X', 'url' => '//evil.test']]])
-        ->call('save');
-
-    expect(collect($component->errors()->keys())->contains(fn (string $key): bool => preg_match('/^data\.footer_links\..+\.url$/', $key) === 1))->toBeTrue()
-        ->and(Setting::get('portal.footer_links'))->toBeNull();
-});
-
 it('AC-37: renders no raw translation keys and no content examples in the four forms', function (string $slug) {
     $html = $this->actingAs(kontenUser('super-admin'))->get("/admin/institution-profile/{$slug}")->assertOk()->getContent();
 
@@ -226,25 +197,4 @@ it('AC-37: explains the logo fields with the helper texts of the plan', function
     expect($text)->toContain('Dipakai di kop surat dan kuitansi')
         ->toContain('Boleh berisi beberapa logo dalam satu gambar')
         ->toContain('PNG persegi, maks. 256 KB');
-});
-
-it('AC-36 (F037): footer repeater links a page and restores the choice on reopen', function () {
-    $this->actingAs(kontenUser('admin-konten'));
-    $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
-
-    Livewire::test(Footer::class)
-        ->fillForm(['footer_links' => [
-            ['type' => 'page', 'page_id' => $page->id, 'label' => ''],
-            ['type' => 'url', 'label' => 'Berita', 'url' => '/berita'],
-        ]])
-        ->call('save')
-        ->assertHasNoFormErrors()
-        ->assertNotified();
-
-    expect(Setting::get('portal.footer_links'))->toBe([['label' => null, 'page_id' => $page->id], ['label' => 'Berita', 'url' => '/berita']]);
-
-    $rows = array_values(Livewire::test(Footer::class)->get('data.footer_links'));
-
-    expect($rows[0])->toMatchArray(['type' => 'page', 'page_id' => $page->id])
-        ->and($rows[1])->toMatchArray(['type' => 'url', 'label' => 'Berita', 'url' => '/berita']);
 });

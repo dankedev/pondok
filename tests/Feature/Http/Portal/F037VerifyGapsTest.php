@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Clusters\InstitutionProfile\Pages\Menu;
+use App\Filament\Clusters\InstitutionProfile\Pages\Navigation;
 use App\Filament\Resources\StaticPages\Pages\CreateStaticPage as CreateStaticPagePage;
 use App\Filament\Resources\StaticPages\Pages\EditStaticPage;
 use App\Filament\Resources\StaticPages\Pages\ListStaticPages;
@@ -33,8 +33,7 @@ beforeEach(function () {
 it('VERIFY: draft pages are 404 and absent from nav, footer and sitemap', function () {
     $draft = staticPage(['slug' => 'rahasia-draf', 'title' => 'Judul Rahasia Draf', 'status' => 'draft']);
     $live = staticPage(['slug' => 'terbuka', 'title' => 'Halaman Terbuka']);
-    menuSet([menuBuiltin('home'), menuPage($draft), menuPage($live)]);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $draft->id], ['label' => null, 'page_id' => $live->id]]);
+    navSet([navItem('home'), navPage($draft), navPage($live)], [navPage($draft), navPage($live)], navPage($draft));
 
     $html = $this->get('/')->assertOk()->getContent();
     expect($html)->not->toContain('rahasia-draf')->not->toContain('Judul Rahasia Draf')->toContain('/terbuka');
@@ -48,7 +47,7 @@ it('VERIFY: a draft system page is 404 and out of the default menu, footer and s
     StaticPage::query()->where('slug', 'profil')->update(['status' => 'draft']);
     $vm = StaticPage::query()->where('slug', 'visi-misi')->firstOrFail();
     $vm->update(['status' => 'draft']);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $vm->id]]);
+    navSet(null, [navPage($vm)]);
 
     $this->get('/profil')->assertNotFound();
     $this->get('/visi-misi')->assertNotFound();
@@ -60,8 +59,7 @@ it('VERIFY: a draft system page is 404 and out of the default menu, footer and s
 it('VERIFY: kontak without contact data is 404, even with a body, and absent everywhere', function () {
     StaticPage::query()->where('slug', 'kontak')->update(['status' => 'terbit', 'body' => '<p>Telepon kami</p>']);
     $kontak = StaticPage::query()->where('slug', 'kontak')->firstOrFail();
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $kontak->id]]);
-    menuSet([menuBuiltin('home'), menuPage($kontak)]);
+    navSet([navItem('home'), navPage($kontak)], [navPage($kontak)]);
 
     $this->get('/kontak')->assertNotFound();
     $html = $this->get('/')->getContent();
@@ -76,7 +74,7 @@ it('VERIFY: kontak without contact data is 404, even with a body, and absent eve
 it('VERIFY: menu label script is escaped and long default titles are truncated', function () {
     $evil = staticPage(['slug' => 'xss', 'title' => '<img src=x onerror=alert(1)>']);
     $long = staticPage(['slug' => 'panjang', 'title' => str_repeat('Kata ', 30)]);
-    menuSet([menuBuiltin('home'), menuPage($evil, '<script>alert(2)</script>'), menuPage($long)]);
+    navSet([navItem('home'), navPage($evil, '<script>alert(2)</script>'), navPage($long)]);
 
     $html = $this->get('/')->assertOk()->getContent();
     expect($html)->not->toContain('<script>alert(2)')->not->toContain('<img src=x onerror');
@@ -87,7 +85,8 @@ it('VERIFY: menu label script is escaped and long default titles are truncated',
 });
 
 it('VERIFY: menu items of a disabled module are hidden but the home item stays', function () {
-    menuSet([menuBuiltin('home'), menuBuiltin('news'), menuBuiltin('gallery'), menuBuiltin('videos'), menuBuiltin('psb_info')]);
+    navSeedPublicContent();
+    navSet([navItem('home'), navItem('posts'), navItem('albums'), navItem('videos'), navItem('psb.info')]);
 
     expect(portalNavTexts($this->get('/')->getContent()))->toContain('Berita');
 
@@ -101,12 +100,12 @@ it('VERIFY: hiding Daftar keeps Masuk, and page items disappear when the konten 
     Setting::set('modules.psb.enabled', true);
     portalPsbOpen();
     $page = staticPage(['slug' => 'ada']);
-    menuSet([menuBuiltin('home'), menuPage($page)], true);
+    navSet([navItem('home'), navPage($page)]);
 
     $texts = array_column(portalNavLinks($this->get('/')->getContent())['desktop'], 'text');
     expect($texts)->toContain(__('pondok.portal.nav.register'));
 
-    menuSet([menuBuiltin('home'), menuPage($page)], false);
+    navSet([navItem('home'), navPage($page)], null, false);
     $texts = array_column(portalNavLinks($this->get('/')->getContent())['desktop'], 'text');
     expect($texts)->not->toContain(__('pondok.portal.nav.register'))
         ->and(collect($texts)->contains(fn ($t) => str_contains(mb_strtolower($t), 'masuk')))->toBeTrue();
@@ -115,15 +114,14 @@ it('VERIFY: hiding Daftar keeps Masuk, and page items disappear when the konten 
 it('VERIFY: nav and footer do not run per-link queries on pages (no N+1)', function () {
     $count = function (int $n): int {
         StaticPage::query()->whereNotIn('slug', StaticPage::SYSTEM_SLUGS)->delete();
-        $items = [menuBuiltin('home')];
+        $items = [navItem('home')];
         $footer = [];
         foreach (range(1, $n) as $i) {
             $page = staticPage(['slug' => "q-{$i}-{$n}"]);
-            $items[] = menuPage($page);
-            $footer[] = ['label' => null, 'page_id' => $page->id];
+            $items[] = navPage($page);
+            $footer[] = navPage($page);
         }
-        menuSet($items);
-        Setting::set('portal.footer_links', $footer);
+        navSet($items, $footer);
         $this->get('/')->assertOk();
 
         return queriesOnTable(recordedQueries(fn () => $this->get('/')->assertOk()), 'pages');
@@ -136,20 +134,9 @@ it('VERIFY: nav and footer do not run per-link queries on pages (no N+1)', funct
 });
 
 it('VERIFY: a menu or footer reference to a deleted page does not break the portal', function () {
-    menuSet([menuBuiltin('home'), menuPage(99999), ['type' => 'page', 'page_id' => 'abc', 'label' => 1, 'visible' => true], 'rusak', ['type' => 'builtin', 'key' => 'bukan', 'visible' => true]]);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => 99999], 'rusak']);
+    navSet([navItem('home'), navPage(99999), ['type' => 'page', 'page_id' => 'abc', 'label' => 1], 'rusak', ['type' => 'bukan', 'label' => null]], [navPage(99999), 'rusak']);
 
     $this->get('/')->assertOk();
-});
-
-it('VERIFY: stored menu with more than 8 visible items renders at most 8 links', function () {
-    $items = [menuBuiltin('home'), menuBuiltin('news'), menuBuiltin('gallery'), menuBuiltin('videos'), menuBuiltin('psb_info')];
-    foreach (range(1, 8) as $i) {
-        $items[] = menuPage(staticPage(['slug' => "b-{$i}"]));
-    }
-    menuSet($items);
-
-    expect(count(portalNavLinks($this->get('/')->getContent())['desktop']))->toBeLessThanOrEqual(8);
 });
 
 it('VERIFY: free page html is sanitized at render time even when stored raw', function () {
@@ -209,18 +196,18 @@ it('VERIFY: forced Livewire delete of a system page never deletes it, for super-
 it('VERIFY: admin-konten deletes a free page from the table and cleans menu and footer references', function () {
     kontenBoot(withPages: true);
     $page = staticPage(['slug' => 'akan-hilang']);
-    Setting::set('portal.menu_items', [menuPage($page)]);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $page->id]]);
+    navSet([navPage($page)], [navPage($page)], navPage($page));
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(ListStaticPages::class)->callAction(TestAction::make('delete')->table($page));
 
     expect(StaticPage::query()->whereKey($page->id)->exists())->toBeFalse()
-        ->and(Setting::get('portal.menu_items'))->toBeNull()
-        ->and(Setting::get('portal.footer_links'))->toBeNull();
+        ->and(Setting::get('portal.navigation_primary'))->toBe([])
+        ->and(Setting::get('portal.navigation_footer'))->toBe([])
+        ->and(Setting::get('portal.header_button'))->toBeFalse();
 });
 
-it('VERIFY: the content module off blocks the page resource and Menu editor for admin-konten', function () {
+it('VERIFY: the content module off blocks the page resource for admin-konten', function () {
     kontenBoot(withPages: true);
     Setting::set('modules.konten.enabled', false);
     $this->actingAs(kontenUser('admin-konten'));
@@ -229,10 +216,10 @@ it('VERIFY: the content module off blocks the page resource and Menu editor for 
     $this->get(StaticPageResource::getUrl('create'))->assertForbidden();
 });
 
-it('VERIFY: Menu editor save is blocked for roles without profile access', function (string $role) {
+it('VERIFY: Navigation editor save is blocked for roles without profile access', function (string $role) {
     kontenBoot(withPages: true);
     $this->actingAs(kontenUser($role));
 
-    verifyGapsAttempt(fn () => Livewire::test(Menu::class)->call('save'));
-    expect(Setting::get('portal.menu_items'))->toBeNull();
+    verifyGapsAttempt(fn () => Livewire::test(Navigation::class)->call('save'));
+    expect(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button'])->count())->toBe(0);
 })->with(['bendahara', 'wali', 'musyrif']);

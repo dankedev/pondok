@@ -142,7 +142,7 @@ it('AC-33: a forced delete of a system page from the table changes nothing', fun
 it('AC-33: deletes a free page after confirmation and names it in the notification', function () {
     $this->actingAs(kontenUser('admin-konten'));
     $free = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
-    Setting::set('portal.footer_links', [['label' => null, 'page_id' => $free->id]]);
+    navSet(null, [navPage($free)]);
 
     $component = Livewire::test(ListStaticPages::class)
         ->mountTableAction('delete', $free)
@@ -150,7 +150,7 @@ it('AC-33: deletes a free page after confirmation and names it in the notificati
         ->callMountedTableAction();
 
     expect(StaticPage::query()->whereKey($free->id)->exists())->toBeFalse()
-        ->and(Setting::get('portal.footer_links'))->toBeNull()
+        ->and(Setting::get('portal.navigation_footer'))->toBe([])
         ->and(asramaNotifications()->map(fn (array $n): string => ($n['title'] ?? '').' '.($n['body'] ?? ''))->implode(' '))->toContain('Pengurus Yayasan');
 });
 

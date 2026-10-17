@@ -28,7 +28,7 @@ it('shows the PSB register link and the status check link only while the PSB mod
     $this->get('/')
         ->assertSee(route('psb.register'), escape: false)
         ->assertSee(route('psb.status'), escape: false)
-        ->assertSeeText(__('pondok.portal.footer.psb_status'));
+        ->assertSeeText(__('pondok.portal.nav.psb_status'));
 
     Setting::set('modules.psb.enabled', false);
 
@@ -41,7 +41,7 @@ it('shows the PSB register link and the status check link only while the PSB mod
 it('shows the letter verification link in the footer only while the dokumen module is enabled', function () {
     Setting::set('modules.dokumen.enabled', true);
     $html = $this->get('/')->assertOk()->assertSee(route('dokumen.letters.verify-form'), escape: false)
-        ->assertSeeText(__('pondok.portal.footer.verify_letter'))->getContent();
+        ->assertSeeText(__('pondok.portal.nav.letters_verify'))->getContent();
     expect(preg_match('/<footer\b.*href="'.preg_quote(route('dokumen.letters.verify-form'), '/').'".*<\/footer>/s', $html))->toBe(1);
 
     Setting::set('modules.dokumen.enabled', false);

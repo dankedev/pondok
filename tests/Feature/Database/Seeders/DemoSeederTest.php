@@ -562,7 +562,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     demoCheck($posts->whereNotNull('cover_path')->filter(fn ($p) => Storage::disk('public')->exists($p->cover_path))->count() >= 4, 'AC-20 sampul berita');
     // Revisi 3: video demo dikosongkan (ID rekaan tidak bisa diputar, ID nyata milik orang lain tidak boleh dipakai).
     expect(DB::table('videos')->count())->toBe(0);
-    expect(Setting::get('portal.profile_video_id'))->toBeEmpty()->and(Setting::get('portal.psb_video_id'))->toBeEmpty();
+    expect(array_column(blkStored(), 'type'))->not->toContain('video');
     // Placeholder gambar: PNG valid dan berukuran wajar (< 200 KB).
     foreach (DB::table('photos')->pluck('path')->merge($posts->whereNotNull('cover_path')->pluck('cover_path')) as $imagePath) {
         $bytes = Storage::disk('public')->get($imagePath);
@@ -645,7 +645,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect($contentHits)->toBe([]);
 
     // AC-59 (F036): profil lembaga fiktif dan logo merek, lewat seed pertama yang sama.
-    $profileKeys = ['school.contacts', 'school.social_links', 'portal.hero_greeting', 'portal.highlights', 'portal.hero_album_id', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
+    $profileKeys = ['school.contacts', 'school.social_links', 'portal.home_blocks', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
     $contacts = collect(Setting::get('school.contacts'));
     expect($contacts->count())->toBeGreaterThanOrEqual(2)
         ->and($contacts->pluck('label')->all())->toContain('Panitia PSB', 'Sekretariat', 'Kantor')
@@ -653,9 +653,11 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $socials = collect(Setting::get('school.social_links'));
     expect($socials->count())->toBeGreaterThanOrEqual(2)
         ->and($socials->every(fn (array $l): bool => str_starts_with($l['url'], 'https://')))->toBeTrue();
-    expect(Setting::get('portal.hero_greeting'))->not->toBeEmpty()
-        ->and(count(Setting::get('portal.highlights')))->toBeGreaterThanOrEqual(3)
-        ->and(Album::query()->whereKey(Setting::get('portal.hero_album_id'))->exists())->toBeTrue();
+    $homeBlocks = blkStored();
+    $hero = collect($homeBlocks)->firstWhere('type', 'hero');
+    expect(array_column($homeBlocks, 'type'))->toContain('hero', 'features', 'quote', 'cta', 'feed')->not->toContain('video')
+        ->and(array_count_values(array_column($homeBlocks, 'type'))['hero'])->toBe(1)
+        ->and(Album::query()->whereKey($hero['data']['album_id'] ?? 0)->exists())->toBeTrue();
     // Revisi 3: logo cetak (kop surat dan kuitansi) memakai logo simbol.
     $printLogo = Setting::get('school.logo_path');
     expect($printLogo)->toBeString()->not->toBeEmpty()

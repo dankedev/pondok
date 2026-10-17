@@ -129,13 +129,8 @@ final class DemoContent
             ], $actor);
         }
 
-        if ($profile['hero']['greeting'] === null && $profile['highlights'] === []) {
-            $this->ensureAllowedContent(json_encode($demo['home'], JSON_UNESCAPED_UNICODE));
-
-            app(UpdatePortalHome::class)->handle([
-                ...$demo['home'],
-                'hero_album_id' => Album::query()->where('slug', $demo['hero_album_slug'])->value('id'),
-            ], $actor);
+        if (Setting::get(UpdatePortalHome::KEY) === null) {
+            $this->seedHomeBlocks();
         }
 
         if ($profile['footer']['description'] === null && $profile['footer']['text'] === null) {
@@ -154,26 +149,16 @@ final class DemoContent
      */
     private function seedNavigation(): void
     {
-        $pageIds = StaticPage::query()->pluck('id', 'slug');
         $navigation = DemoData::NAVIGATION;
         $this->ensureAllowedContent(json_encode($navigation, JSON_UNESCAPED_UNICODE));
 
-        $item = function (string $entry) use ($pageIds): ?array {
-            if (! str_starts_with($entry, 'page:')) {
-                return ['type' => $entry, 'label' => null];
-            }
-
-            $id = $pageIds->get(substr($entry, 5));
-
-            return $id === null ? null : ['type' => 'page', 'label' => null, 'page_id' => (int) $id];
-        };
-        $items = fn (array $entries): array => array_values(array_filter(array_map($item, $entries)));
+        $items = fn (array $entries): array => array_values(array_filter(array_map(fn (string $entry): ?array => $this->linkItem($entry), $entries)));
 
         $primary = [];
 
         foreach ($navigation['primary'] as $entry) {
             if (is_string($entry)) {
-                $primary[] = $item($entry);
+                $primary[] = $this->linkItem($entry);
             } elseif (($children = $items($entry['children'])) !== []) {
                 $primary[] = ['type' => 'group', 'label' => $entry['label'], 'children' => $children];
             }
@@ -184,6 +169,51 @@ final class DemoContent
             'footer' => $items($navigation['footer']),
             'header_button' => $navigation['header_button'],
         ], $this->context->user('super-admin'));
+    }
+
+    /**
+     * Beranda demo (F045) lewat `UpdatePortalHome`, hanya bila beranda belum pernah disimpan.
+     * Tombol ke halaman yang tidak ada dan album hero yang tidak ada dilewati.
+     */
+    private function seedHomeBlocks(): void
+    {
+        $this->ensureAllowedContent(json_encode(DemoData::INSTITUTION['home_blocks'], JSON_UNESCAPED_UNICODE));
+
+        $blocks = array_map(function (array $block): array {
+            $data = $block['data'];
+
+            foreach (['primary', 'secondary', 'button'] as $field) {
+                if (isset($data[$field])) {
+                    [$entry, $label] = $data[$field];
+                    $data[$field] = ($item = $this->linkItem($entry)) === null ? null : [...$item, 'label' => $label];
+                }
+            }
+
+            if (isset($data['album'])) {
+                $data['album_id'] = Album::query()->where('slug', $data['album'])->value('id');
+                unset($data['album']);
+            }
+
+            return [...$block, 'visible' => true, 'data' => $data];
+        }, DemoData::INSTITUTION['home_blocks']);
+
+        app(UpdatePortalHome::class)->handle(['home_blocks' => $blocks], $this->context->user('super-admin'));
+    }
+
+    /**
+     * Entri tujuan demo → Item navigasi: nama tujuan, atau `page:<slug>` (null bila halaman tidak ada).
+     *
+     * @return ?array<string, mixed>
+     */
+    private function linkItem(string $entry): ?array
+    {
+        if (! str_starts_with($entry, 'page:')) {
+            return ['type' => $entry, 'label' => null];
+        }
+
+        $id = StaticPage::query()->where('slug', substr($entry, 5))->value('id');
+
+        return $id === null ? null : ['type' => 'page', 'label' => null, 'page_id' => (int) $id];
     }
 
     /**

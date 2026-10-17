@@ -7,8 +7,10 @@ use Database\Seeders\ContentCategorySeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Demo\DemoContent;
 use Database\Seeders\Demo\DemoContext;
+use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Database\Seeders\StaticPageSeeder;
+use Illuminate\Support\Facades\Storage;
 
 it('AC-3: seeds the three static pages without overwriting edits', function () {
     $this->seed(StaticPageSeeder::class);
@@ -134,4 +136,62 @@ it('AC-8 (F044): repairs the old demo contact page, stays idempotent, and leaves
     (new DemoContent(new DemoContext))->profile();
 
     expect((string) $page->fresh()->body)->toBe($custom);
+});
+
+/**
+ * Kata yang tidak boleh ada di blok beranda demo (basmalah, sapaan, hari besar di luar manhaj proyek).
+ *
+ * @return list<string>
+ */
+function blkDemoForbiddenWords(): array
+{
+    return ['bismillah', 'بسم', 'ahlan', 'assalamu', 'السلام', 'maulid', 'isra', 'nisfu', 'haul', 'tahlil', 'harlah', 'hadrah'];
+}
+
+/**
+ * Konteks demo dengan akun aktor yang dibutuhkan `DemoContent` (biasanya dibuat `DemoSeeder`).
+ */
+function blkDemoContext(): DemoContext
+{
+    $context = new DemoContext;
+
+    foreach (['super-admin', 'admin-konten'] as $role) {
+        $context->users[$role] = kontenUser($role);
+    }
+
+    return $context;
+}
+
+it('AC-14 (F045): the demo seeds a fictional home with the block types except video, once, and without basmalah or greeting', function () {
+    Storage::fake('public');
+    $this->seed([RolePermissionSeeder::class, StaticPageSeeder::class, ContentCategorySeeder::class]);
+    $context = blkDemoContext();
+
+    (new DemoContent($context))->run();
+    $first = blkStored();
+    (new DemoContent($context))->run();
+
+    $types = array_column($first, 'type');
+    $quote = collect($first)->firstWhere('type', 'quote');
+    $json = mb_strtolower(json_encode($first, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+    expect($types)->toContain('hero', 'text_image', 'features', 'quote', 'cta', 'feed')->and(array_count_values($types)['hero'])->toBe(1)
+        // Video demo sengaja tidak dibuat (DemoSeederTest: videos kosong), jadi blok `video` tidak ikut.
+        ->and($types)->not->toContain('video')
+        ->and(array_unique(array_column($first, 'visible')))->toBe([true])
+        ->and(blkStored())->toEqual($first)
+        ->and($quote['data']['rtl'])->toBeTrue()
+        ->and($quote['data']['text'])->toMatch('/\p{Arabic}/u')
+        ->and((string) $quote['data']['source'])->toContain('104')
+        ->and(preg_match('/ali\s*.?imr/iu', (string) $quote['data']['source']))->toBe(1)
+        ->and(profilRawHas('portal.hero_greeting'))->toBeFalse();
+
+    foreach (blkDemoForbiddenWords() as $word) {
+        expect($json)->not->toContain($word);
+    }
+
+    // Blok demo lolos validasi apa adanya.
+    blkSave($first);
+
+    expect(blkStored())->toEqual($first);
 });

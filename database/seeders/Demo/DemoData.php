@@ -47,20 +47,51 @@ final class DemoData
             ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.contoh.test/@alkhair.belitang'],
             ['platform' => 'telegram', 'label' => null, 'url' => 'https://telegram.contoh.test/alkhair.belitang'],
         ],
-        'home' => [
-            'hero_greeting' => 'Bismillahirrahmanirrahim',
-            'hero_title' => "Ahlan wa Sahlan di Ma'had Al-Khair Belitang",
-            'hero_subtitle' => "Tahfidzul Qur'an, Bahasa Arab, dan Studi Islam Intensif untuk putra jenjang MTW/SMP dan TSN/SMA.",
-            'highlights_heading' => "Mengapa memilih Ma'had Al-Khair",
-            'highlights' => [
-                ['title' => 'Kurikulum terintegrasi', 'description' => "Ilmu syar'i, tahfizh Al-Qur'an, bahasa Arab, pendidikan umum, dan pembentukan karakter dalam Jurnal Adab dan Akhlak."],
-                ['title' => 'Pengajar berkompeten', 'description' => 'Ustaz berlatar pendidikan Islam dari dalam dan luar negeri.'],
-                ['title' => "Al-Qur'an & matan bersanad", 'description' => 'Pembinaan tahsin dan tahfizh serta hafalan matan-matan ilmiah bersanad.'],
-                ['title' => 'Proyeksi studi lanjut', 'description' => 'Ke perguruan tinggi Islam dalam dan luar negeri.'],
-                ['title' => 'CCTV full area', 'description' => 'Keamanan asrama dan lingkungan belajar dipantau sepanjang hari.'],
-            ],
+        /**
+         * Blok beranda demo (F045), tanpa blok video (video demo tidak dibuat). Tombol: tujuan
+         * navigasi atau `page:<slug>`; `album` = slug album hero.
+         */
+        'home_blocks' => [
+            ['type' => 'hero', 'data' => [
+                'eyebrow' => 'Pesantren putra berasrama',
+                'title' => "Tumbuh bersama Al-Qur'an, ilmu syar'i, dan adab",
+                'text' => "Tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif untuk putra jenjang MTW/SMP dan TSN/SMA.",
+                'album' => 'fasilitas-mahad',
+                'primary' => ['psb.register', 'Daftar santri baru'],
+                'secondary' => ['page:selayang-pandang', 'Kenali kami'],
+            ]],
+            ['type' => 'features', 'data' => [
+                'heading' => "Mengapa memilih Ma'had Al-Khair",
+                'items' => [
+                    ['title' => 'Kurikulum terintegrasi', 'text' => "Ilmu syar'i, tahfizh Al-Qur'an, bahasa Arab, pendidikan umum, dan pembentukan karakter dalam Jurnal Adab dan Akhlak."],
+                    ['title' => 'Pengajar berkompeten', 'text' => 'Ustaz berlatar pendidikan Islam dari dalam dan luar negeri.'],
+                    ['title' => "Al-Qur'an & matan bersanad", 'text' => 'Pembinaan tahsin dan tahfizh serta hafalan matan-matan ilmiah bersanad.'],
+                    ['title' => 'Proyeksi studi lanjut', 'text' => 'Ke perguruan tinggi Islam dalam dan luar negeri.'],
+                ],
+            ]],
+            ['type' => 'text_image', 'data' => [
+                'heading' => 'Tentang yayasan',
+                'text' => "<p>Yayasan Islam Al-Khair Belitang berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan <strong>berasrama khusus putra</strong>.</p><p>Santri dibina untuk berilmu, beramal, dan beradab sesuai Al-Qur'an dan Sunnah.</p>",
+                'button' => ['page:profil', 'Baca profil lengkap'],
+            ]],
+            ['type' => 'feed', 'data' => ['source' => 'posts']],
+            ['type' => 'feed', 'data' => ['source' => 'achievements']],
+            ['type' => 'feed', 'data' => ['source' => 'albums']],
+            ['type' => 'cta', 'data' => [
+                'eyebrow' => 'Penerimaan santri baru',
+                'heading' => "Bergabung bersama Ma'had Al-Khair",
+                'text' => 'Pendaftaran dibuka setiap tahun ajaran untuk jenjang MTW/SMP dan TSN/SMA, khusus putra.',
+                'primary' => ['psb.register', 'Daftar sekarang'],
+                'secondary' => ['page:kontak', 'Hubungi kami'],
+                'variant' => 'navy',
+            ]],
+            ['type' => 'quote', 'data' => [
+                'text' => 'وَلْتَكُن مِّنكُمْ أُمَّةٌ يَدْعُونَ إِلَى الْخَيْرِ وَيَأْمُرُونَ بِالْمَعْرُوفِ وَيَنْهَوْنَ عَنِ الْمُنكَرِ ۚ وَأُولَٰئِكَ هُمُ الْمُفْلِحُونَ',
+                'translation' => 'Dan hendaklah di antara kamu ada segolongan orang yang menyeru kepada kebajikan, menyuruh kepada yang makruf, dan mencegah dari yang mungkar. Mereka itulah orang-orang yang beruntung.',
+                'source' => "QS. Ali 'Imran: 104",
+                'rtl' => true,
+            ]],
         ],
-        'hero_album_slug' => 'fasilitas-mahad',
         'footer' => [
             'footer_description' => "Ma'had Al-Khair Belitang: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.",
             'footer_text' => [

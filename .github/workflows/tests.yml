@@ -1,9 +1,11 @@
 name: tests
 
+# Repo private: kuota GitHub Actions terbatas. Suite PHP 8.4 dijalankan di mesin pengembang
+# per fitur; CI hanya memeriksa PHP 8.3 (target cPanel) saat push ke main atau dijalankan manual.
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -11,21 +13,16 @@ concurrency:
 
 jobs:
   pest:
-    name: Pest (PHP ${{ matrix.php }})
+    name: Pest (PHP 8.3)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        # 8.3 adalah target cPanel (composer platform 8.3.15); 8.4 dipakai di mesin pengembang.
-        php: ['8.3', '8.4']
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
+          php-version: '8.3'
           extensions: mbstring, intl, gd, zip, pdo_sqlite, sqlite3, fileinfo, exif
           coverage: none
 

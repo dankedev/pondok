@@ -4,35 +4,40 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-arabic: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', serif;
 
-    /* primary → emerald (docs/design-guide.md §2) */
-    --color-primary-50: var(--color-emerald-50);
-    --color-primary-100: var(--color-emerald-100);
-    --color-primary-200: var(--color-emerald-200);
-    --color-primary-300: var(--color-emerald-300);
-    --color-primary-400: var(--color-emerald-400);
-    --color-primary-500: var(--color-emerald-500);
-    --color-primary-600: var(--color-emerald-600);
-    --color-primary-700: var(--color-emerald-700);
-    --color-primary-800: var(--color-emerald-800);
-    --color-primary-900: var(--color-emerald-900);
-    --color-primary-950: var(--color-emerald-950);
+    /* primary → navy logo Al-Khair, 950 = warna logo (docs/design-guide.md §2) */
+    --color-primary-50: #eef2fb;
+    --color-primary-100: #dde4f6;
+    --color-primary-200: #bbc8ec;
+    --color-primary-300: #8ea2db;
+    --color-primary-400: #5f78c4;
+    --color-primary-500: #3d56a8;
+    --color-primary-600: #273e8c;
+    --color-primary-700: #1a2c72;
+    --color-primary-800: #0f1d59;
+    --color-primary-900: #061247;
+    --color-primary-950: #000a3c;
 
-    /* accent → amber (docs/design-guide.md §2) */
-    --color-accent-50: var(--color-amber-50);
-    --color-accent-100: var(--color-amber-100);
-    --color-accent-200: var(--color-amber-200);
-    --color-accent-300: var(--color-amber-300);
-    --color-accent-400: var(--color-amber-400);
-    --color-accent-500: var(--color-amber-500);
-    --color-accent-600: var(--color-amber-600);
-    --color-accent-700: var(--color-amber-700);
-    --color-accent-800: var(--color-amber-800);
-    --color-accent-900: var(--color-amber-900);
-    --color-accent-950: var(--color-amber-950);
+    /* accent → emas logo Al-Khair, 500 = warna logo; tidak pernah jadi warna teks (docs/design-guide.md §2) */
+    --color-accent-50: #fff9e5;
+    --color-accent-100: #fff0bf;
+    --color-accent-200: #ffe28a;
+    --color-accent-300: #ffd452;
+    --color-accent-400: #ffc524;
+    --color-accent-500: #f8b800;
+    --color-accent-600: #d49a00;
+    --color-accent-700: #a67700;
+    --color-accent-800: #7a5700;
+    --color-accent-900: #523a00;
+    --color-accent-950: #2e2100;
+
+    /* Bayangan tipis dan lebar bernada navy (docs/brand/referensi-gaya-coursex.md) */
+    --shadow-card: 0 6px 24px rgb(0 10 60 / 0.05);
+    --shadow-card-lg: 0 20px 48px rgb(0 10 60 / 0.07);
+    --shadow-button: 0 12px 30px rgb(0 10 60 / 0.18);
 
     /* success → green (docs/design-guide.md §2) */
     --color-success-50: var(--color-green-50);
@@ -86,18 +91,18 @@
     --color-info-900: var(--color-sky-900);
     --color-info-950: var(--color-sky-950);
 
-    /* gray → zinc (docs/design-guide.md §2) */
-    --color-gray-50: var(--color-zinc-50);
-    --color-gray-100: var(--color-zinc-100);
-    --color-gray-200: var(--color-zinc-200);
-    --color-gray-300: var(--color-zinc-300);
-    --color-gray-400: var(--color-zinc-400);
-    --color-gray-500: var(--color-zinc-500);
-    --color-gray-600: var(--color-zinc-600);
-    --color-gray-700: var(--color-zinc-700);
-    --color-gray-800: var(--color-zinc-800);
-    --color-gray-900: var(--color-zinc-900);
-    --color-gray-950: var(--color-zinc-950);
+    /* gray → slate, bernada dingin agar menyatu dengan navy (docs/design-guide.md §2) */
+    --color-gray-50: var(--color-slate-50);
+    --color-gray-100: var(--color-slate-100);
+    --color-gray-200: var(--color-slate-200);
+    --color-gray-300: var(--color-slate-300);
+    --color-gray-400: var(--color-slate-400);
+    --color-gray-500: var(--color-slate-500);
+    --color-gray-600: var(--color-slate-600);
+    --color-gray-700: var(--color-slate-700);
+    --color-gray-800: var(--color-slate-800);
+    --color-gray-900: var(--color-slate-900);
+    --color-gray-950: var(--color-slate-950);
 }
 
 /*
@@ -108,11 +113,11 @@
     .portal-prose {
         contain: paint;
         isolation: isolate;
-        @apply space-y-4 text-base leading-relaxed text-gray-800;
+        @apply space-y-4 text-base leading-relaxed text-gray-700 lg:text-lg;
     }
 
     .portal-prose h2 {
-        @apply pt-4 text-2xl font-semibold text-gray-900;
+        @apply pt-4 text-2xl font-bold tracking-tight text-gray-900;
     }
 
     .portal-prose h3 {
@@ -128,7 +133,7 @@
     }
 
     .portal-prose blockquote {
-        @apply border-l-4 border-gray-300 pl-4 text-gray-700;
+        @apply border-l-4 border-accent-500 pl-4 text-gray-700;
     }
 
     .portal-prose a {
@@ -136,7 +141,7 @@
     }
 
     .portal-prose img {
-        @apply h-auto max-w-full rounded-lg;
+        @apply h-auto max-w-full rounded-xl;
     }
 
     .portal-prose table {
@@ -146,5 +151,26 @@
     .portal-prose th,
     .portal-prose td {
         @apply border border-gray-200 px-3 py-2 text-left;
+    }
+
+    /* Input dan select portal/PSB berbentuk pill (F035 K8). Kelas tambahan per field tetap di elemen. */
+    .ui-input {
+        @apply min-h-11 w-full rounded-full border border-gray-300 bg-white px-5 text-base text-gray-900 placeholder:text-gray-500 focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500;
+    }
+
+    /*
+     * Hiasan portal (F035 K4): murni CSS, tanpa gambar. Dipasang sebagai <div aria-hidden="true"> kosong,
+     * ukuran dan posisi lewat utilitas, dan tidak dirender di bawah `sm`.
+     */
+    .portal-decor-ring {
+        aspect-ratio: 1;
+        border-radius: 9999px;
+        border: 1.25rem solid var(--color-accent-400);
+        clip-path: inset(0 50% 0 0);
+    }
+
+    .portal-decor-dots {
+        background-image: radial-gradient(var(--color-primary-200) 2px, transparent 2.5px);
+        background-size: 1.25rem 1.25rem;
     }
 }

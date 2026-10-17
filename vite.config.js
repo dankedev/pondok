@@ -9,8 +9,15 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                bunny('Plus Jakarta Sans', {
+                    weights: [400, 600, 700],
+                    preload: [{ weight: 400 }, { weight: 700 }],
+                }),
+                // Teks Arab (nama lembaga, kutipan footer): hanya diunduh browser bila glyph Arab dipakai.
+                bunny('Noto Naskh Arabic', {
+                    weights: [400, 700],
+                    subsets: ['arabic'],
+                    preload: false,
                 }),
             ],
         }),

@@ -35,10 +35,10 @@ class StaticPageFactory extends Factory
     }
 
     /**
-     * Halaman sistem (`profil`, `visi-misi`, atau `kontak`).
+     * Halaman bertemplate kontak (menampilkan kartu kontak lembaga).
      */
-    public function system(string $slug = 'profil'): static
+    public function contact(): static
     {
-        return $this->state(['slug' => $slug, 'title' => __("pondok.static_page.defaults.{$slug}"), 'body' => '']);
+        return $this->state(['template' => StaticPage::TEMPLATE_CONTACT]);
     }
 }

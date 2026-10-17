@@ -7,8 +7,8 @@ use App\Models\StaticPage;
 use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
- * Buat halaman bebas (F037). Slug kosong dibuat dari judul; status bawaan `draft`.
- * Satu instalasi maksimal `StaticPage::MAX_PAGES` halaman, termasuk halaman sistem.
+ * Buat halaman bebas (F037). Slug kosong dibuat dari judul; status bawaan `draft`,
+ * template bawaan `default`. Satu instalasi maksimal `StaticPage::MAX_PAGES` halaman.
  */
 class CreateStaticPage
 {
@@ -20,7 +20,7 @@ class CreateStaticPage
     ) {}
 
     /**
-     * @param  array{title?: mixed, slug?: mixed, body?: mixed, status?: mixed}  $data
+     * @param  array{title?: mixed, slug?: mixed, body?: mixed, status?: mixed, template?: mixed}  $data
      */
     public function handle(array $data): StaticPage
     {
@@ -33,10 +33,12 @@ class CreateStaticPage
         $body = $this->pageBody($data['body'] ?? null, $this->sanitizer);
         $status = $this->pageStatus($data['status'] ?? StaticPage::STATUS_DRAFT);
 
+        $template = $this->pageTemplate($data['template'] ?? StaticPage::TEMPLATE_DEFAULT);
+
         $page = new StaticPage;
 
         try {
-            $page->fill(['title' => $title, 'slug' => $slug, 'body' => $body, 'status' => $status])->save();
+            $page->fill(['title' => $title, 'slug' => $slug, 'body' => $body, 'status' => $status, 'template' => $template])->save();
         } catch (UniqueConstraintViolationException) {
             $this->fail('slug', 'slug_taken');
         }

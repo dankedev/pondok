@@ -9,9 +9,8 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 
 /**
- * Halaman statis (F037): halaman bebas bisa dibuat dan dihapus; halaman sistem tidak
- * bisa dihapus. Super-admin melewati policy (Shield `intercept_gate = before`), jadi
- * UI menyembunyikan aksi hapus secara eksplisit dan `DeleteStaticPage` menjadi guard akhir.
+ * Halaman statis (F037, F048): semua halaman setara, bisa dibuat dan dihapus oleh
+ * pemegang permission.
  */
 class StaticPagePolicy
 {
@@ -39,7 +38,7 @@ class StaticPagePolicy
 
     public function delete(AuthUser $authUser, StaticPage $staticPage): bool
     {
-        return $authUser->can('delete:static-page') && ! $staticPage->isSystem();
+        return $authUser->can('delete:static-page');
     }
 
     public function deleteAny(AuthUser $authUser): bool

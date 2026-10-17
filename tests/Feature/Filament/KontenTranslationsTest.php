@@ -54,17 +54,23 @@ it('AC-37 (F037): page and menu screens have no raw keys or content examples', f
     expect($html)->not->toMatch('/\bpondok\.[a-z_]+\.[a-z_]+/')
         ->and(implode(' ', $placeholders[1]))->not->toMatch('/\p{Arabic}|\bQS\b|bismillah|assalamu|ahlan/iu')
         ->and(__('pondok.static_page.slug_helper_create'))->not->toStartWith('pondok.')
-        ->and(__('pondok.static_page.slug_helper_locked'))->toBe('Alamat halaman sistem tidak bisa diubah.')
         ->and($visible)->not->toBeEmpty();
 })->with(['/admin/static-pages', '/admin/static-pages/create', '/admin/static-pages/{id}/edit', '/admin/site/navigation']);
 
 it('AC-37 (F037): defines the new interface texts in lang/id', function () {
     foreach ([
-        'pondok.portal.nav.psb_info', 'pondok.static_page.statuses.draft', 'pondok.static_page.statuses.terbit', 'pondok.static_page.system_badge',
-        'pondok.konten.errors.slug_format', 'pondok.konten.errors.slug_reserved', 'pondok.konten.errors.slug_locked', 'pondok.konten.errors.status_invalid',
-        'pondok.konten.errors.page_system_locked', 'pondok.konten.errors.page_not_found',
+        'pondok.portal.nav.psb_info', 'pondok.static_page.statuses.draft', 'pondok.static_page.statuses.terbit',
+        'pondok.konten.errors.slug_format', 'pondok.konten.errors.slug_reserved', 'pondok.konten.errors.status_invalid',
+        'pondok.konten.errors.page_not_found',
         'pondok.konten.errors.page_limit_reached', 'pondok.school_profile.pages.navigation',
     ] as $key) {
         expect(__($key))->not->toBe($key, "{$key} belum ada di lang/id");
     }
+});
+
+it('AC-12 (F048): defines the template texts in lang/id', function () {
+    expectTranslatedKeys([
+        'pondok.static_page.template', 'pondok.static_page.templates.default', 'pondok.static_page.templates.contact',
+        'pondok.static_page.template_helper', 'pondok.konten.errors.template_invalid',
+    ]);
 });

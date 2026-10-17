@@ -39,12 +39,12 @@ final class DemoContent
             $this->seedSchoolIdentity();
         }
 
-        // Halaman sistem diisi bila masih kosong; halaman demo lain dibuat bila belum ada (F037).
+        // Halaman awal (dari StaticPageSeeder) diisi bila masih kosong; halaman demo lain dibuat bila belum ada (F037).
         // Halaman Kontak demo lama yang mengetik ulang kontak diganti isi baru (F044).
         foreach (DemoData::pages() as $slug => $page) {
             $model = StaticPage::query()->where('slug', $slug)->first();
 
-            if ($model === null && ! in_array($slug, StaticPage::SYSTEM_SLUGS, true)) {
+            if ($model === null) {
                 $this->ensureAllowedContent($page['title'].' '.$page['body']);
                 app(CreateStaticPage::class)->handle([...$page, 'slug' => $slug]);
             } elseif ($model !== null && (blank($model->body) || ($slug === 'kontak' && $this->isOldDemoContactPage((string) $model->body)))) {

@@ -10,11 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Halaman statis portal di tabel `pages` (F016, F037). Admin konten bisa membuat
- * dan menghapus halaman bebas; tiga halaman sistem (`SYSTEM_SLUGS`) dibuat
- * `StaticPageSeeder`, tidak bisa dihapus, dan slug-nya terkunci. Halaman draf
- * tidak tampil di portal. Tanpa soft delete.
+ * dan menghapus halaman mana pun; tiga halaman awal dibuat `StaticPageSeeder` tetapi
+ * setara halaman lain. Yang membedakan hanya `template` (F048). Halaman draf tidak
+ * tampil di portal. Tanpa soft delete.
  */
-#[Fillable(['slug', 'title', 'body', 'status'])]
+#[Fillable(['slug', 'title', 'body', 'status', 'template'])]
 class StaticPage extends Model
 {
     /** @use HasFactory<StaticPageFactory> */
@@ -33,8 +33,12 @@ class StaticPage extends Model
         self::STATUS_PUBLISHED => 'success',
     ];
 
-    /** Halaman sistem: tidak bisa dihapus dan slug-nya tidak bisa diubah. */
-    public const SYSTEM_SLUGS = ['profil', 'visi-misi', 'kontak'];
+    public const TEMPLATE_DEFAULT = 'default';
+
+    /** Menampilkan kartu kontak lembaga di bawah isi halaman. */
+    public const TEMPLATE_CONTACT = 'contact';
+
+    public const TEMPLATES = [self::TEMPLATE_DEFAULT, self::TEMPLATE_CONTACT];
 
     /**
      * Slug yang tidak boleh dipakai halaman: route portal/panel, berkas umum, dan
@@ -52,7 +56,7 @@ class StaticPage extends Model
 
     public const TITLE_MAX_LENGTH = 255;
 
-    /** Batas jumlah halaman per instalasi, termasuk halaman sistem. */
+    /** Batas jumlah halaman per instalasi, tanpa pengecualian. */
     public const MAX_PAGES = 50;
 
     public static function findBySlug(string $slug): ?self
@@ -60,9 +64,9 @@ class StaticPage extends Model
         return static::query()->where('slug', $slug)->first();
     }
 
-    public function isSystem(): bool
+    public function isContact(): bool
     {
-        return in_array($this->slug, self::SYSTEM_SLUGS, true);
+        return $this->template === self::TEMPLATE_CONTACT;
     }
 
     public function isPublished(): bool

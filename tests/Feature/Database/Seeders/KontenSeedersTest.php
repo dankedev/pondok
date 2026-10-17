@@ -97,6 +97,20 @@ it('AC-3 (F037): seeds system pages with draft profile and published contact', f
         ->and(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.footer_widgets', 'portal.header_button'])->count())->toBe(0);
 });
 
+it('AC-2 (F048): seeds kontak as a contact page and the others as default, without overwriting a changed template', function () {
+    $this->seed(StaticPageSeeder::class);
+
+    expect(StaticPage::query()->pluck('template', 'slug')->all())->toBe(['profil' => 'default', 'visi-misi' => 'default', 'kontak' => 'contact']);
+
+    StaticPage::query()->where('slug', 'kontak')->update(['template' => 'default', 'title' => 'Hubungi Kami', 'status' => 'draft']);
+    StaticPage::query()->where('slug', 'profil')->update(['template' => 'contact']);
+
+    $this->seed(StaticPageSeeder::class);
+
+    expect(StaticPage::query()->pluck('template', 'slug')->all())->toBe(['profil' => 'contact', 'visi-misi' => 'default', 'kontak' => 'default'])
+        ->and(StaticPage::findBySlug('kontak'))->title->toBe('Hubungi Kami')->status->toBe('draft');
+});
+
 /**
  * Isi halaman Kontak demo versi lama (F037): mengetik ulang alamat, telepon, WhatsApp, dan email demo.
  */

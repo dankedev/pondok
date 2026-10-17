@@ -114,3 +114,20 @@ it('AC-9: refuses the 51st page', function () {
 
     expect(StaticPage::query()->count())->toBe(50)->and(StaticPage::MAX_PAGES)->toBe(50);
 });
+
+/*
+| F048 AC-3. `template` opsional (default `default`), nilai valid: default, contact.
+*/
+
+it('AC-3 (F048): saves the default template when none is given, and contact when asked, also for several pages', function () {
+    expect(kontenCreatePage()->template)->toBe('default')
+        ->and(kontenCreatePage(['title' => 'Hubungi Kami', 'template' => 'contact'])->template)->toBe('contact')
+        ->and(kontenCreatePage(['title' => 'Kontak Cabang', 'template' => 'contact'])->template)->toBe('contact')
+        ->and(StaticPage::query()->where('template', 'contact')->count())->toBe(3);
+});
+
+it('AC-3 (F048): rejects an unknown template and creates nothing', function (mixed $template) {
+    kontenAssertRejected(fn () => kontenCreatePage(['template' => $template]), 'template_invalid', 'template');
+
+    expect(StaticPage::query()->count())->toBe(3);
+})->with(['wide' => ['wide'], 'empty string' => [''], 'array' => [['contact']], 'wrong case' => ['Contact']]);

@@ -70,11 +70,14 @@ it('AC-12: deletes a page that nothing references', function () {
     expect(StaticPage::query()->whereKey($x->id)->exists())->toBeFalse();
 });
 
-it('AC-13: refuses to delete system pages, even for a super admin actor', function (string $slug) {
+it('AC-6 (F048): deletes profil, visi-misi and kontak, even for a super admin, and still detaches menu and header button references', function (string $slug) {
     $this->actingAs(kontenUser('super-admin'));
     $page = StaticPage::findBySlug($slug);
+    navSet([navItem('home'), navPage($page)], navPage($page));
 
-    kontenAssertRejected(fn () => app(DeleteStaticPage::class)->handle($page), 'page_system_locked');
+    app(DeleteStaticPage::class)->handle($page);
 
-    expect(StaticPage::findBySlug($slug))->not->toBeNull();
+    expect(StaticPage::findBySlug($slug))->toBeNull()
+        ->and(Setting::get('portal.navigation_primary'))->toEqual([navItem('home')])
+        ->and(Setting::get('portal.header_button'))->toBeFalse();
 })->with(['profil', 'visi-misi', 'kontak']);

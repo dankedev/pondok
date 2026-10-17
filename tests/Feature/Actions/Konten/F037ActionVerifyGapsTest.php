@@ -62,14 +62,7 @@ it('VERIFY: a punctuation-only title does not produce an empty or invalid slug',
     expect($slug)->not->toBe('')->and($slug)->toMatch('/^[a-z0-9]+(?:-[a-z0-9]+)*$/');
 });
 
-it('VERIFY: system page slug cannot change, even for the same title or status change', function (string $slug) {
-    $page = StaticPage::query()->where('slug', 'kontak')->firstOrFail();
-
-    kontenAssertRejected(fn () => app(UpdateStaticPage::class)->handle($page, ['title' => 'Kontak', 'slug' => $slug]), 'slug_locked', 'slug');
-    expect($page->fresh()->slug)->toBe('kontak');
-})->with(['halaman-lain', 'KONTAK-2', 'profil']);
-
-it('VERIFY: a system page keeps its slug when update omits slug and when slug differs only by case', function () {
+it('VERIFY: a former system page keeps its slug when update omits slug or sends it with different case and spaces', function () {
     $page = StaticPage::query()->where('slug', 'kontak')->firstOrFail();
 
     app(UpdateStaticPage::class)->handle($page, ['title' => 'Hubungi Kami', 'slug' => ' Kontak ', 'status' => 'draft']);
@@ -86,7 +79,7 @@ it('VERIFY: free page cannot take the slug of another free page nor of a system 
     kontenAssertRejected(fn () => app(UpdateStaticPage::class)->handle($two, ['title' => 'Dua', 'slug' => 'info-psb']), 'slug_reserved', 'slug');
 });
 
-it('VERIFY: page limit of 50 counts system pages and blocks the 51st', function () {
+it('VERIFY: page limit of 50 counts the initial pages and blocks the 51st', function () {
     $existing = StaticPage::query()->count();
 
     for ($i = 0; $i < StaticPage::MAX_PAGES - $existing; $i++) {
@@ -113,17 +106,6 @@ it('VERIFY: free page body is sanitized on create and update', function () {
 
     expect($page->fresh()->body)->not->toContain('onerror')->toContain('ok');
 });
-
-it('VERIFY: deleting a system page is refused for every path and leaves references untouched', function (string $slug) {
-    $page = StaticPage::query()->where('slug', $slug)->firstOrFail();
-    navSet([navPage($page)], navPage($page));
-
-    kontenAssertRejected(fn () => app(DeleteStaticPage::class)->handle($page), 'page_system_locked');
-
-    expect(StaticPage::query()->whereKey($page->id)->exists())->toBeTrue()
-        ->and(Setting::get('portal.navigation_primary'))->toEqual([navPage($page)])
-        ->and(Setting::get('portal.header_button'))->toEqual(navPage($page));
-})->with(['profil', 'visi-misi', 'kontak']);
 
 it('VERIFY: delete is atomic, a failure while cleaning settings keeps the page', function () {
     $x = staticPage(['slug' => 'x-atomik']);

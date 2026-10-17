@@ -52,8 +52,7 @@ it('AC-31: requires a title of at most 255 characters', function () {
     expect($this->page->fresh()->title)->toBe('Profil');
 });
 
-it('AC-31: ignores a slug in the data', function () {
-    // F037: slug halaman sistem yang berbeda kini ditolak (slug_locked, lihat AC-11); slug yang sama diterima.
+it('AC-31: keeps the slug when the same slug is sent', function () {
     kontenUpdatePage($this->page, ['slug' => 'profil', 'title' => 'Profil Baru']);
 
     expect($this->page->fresh())->slug->toBe('profil')->title->toBe('Profil Baru')
@@ -62,8 +61,7 @@ it('AC-31: ignores a slug in the data', function () {
 
 it('AC-31: finds a page by slug', function () {
     expect(StaticPage::findBySlug('kontak')?->title)->toBe('Kontak')
-        ->and(StaticPage::findBySlug('beranda'))->toBeNull()
-        ->and(StaticPage::SYSTEM_SLUGS)->toBe(['profil', 'visi-misi', 'kontak']);
+        ->and(StaticPage::findBySlug('beranda'))->toBeNull();
 });
 
 /*
@@ -116,16 +114,39 @@ it('AC-10 (F037): keeps an unchanged slug that now collides with a route or a pu
         ->and($other->fresh()->slug)->toBe('halaman-lain');
 });
 
-it('AC-11: locks the slug of system pages but allows title and status', function () {
-    kontenAssertRejected(fn () => kontenUpdatePage($this->page, ['slug' => 'tentang']), 'slug_locked', 'slug');
+/*
+| F048 AC-4 dan AC-5: template dapat diubah, slug halaman awal tidak lagi terkunci.
+*/
+
+it('AC-4 (F048): changes the template, and keeps it when the template is not sent', function () {
+    kontenUpdatePage($this->page, ['template' => 'contact']);
+    expect($this->page->fresh()->template)->toBe('contact');
+
+    kontenUpdatePage($this->page->fresh(), ['title' => 'Profil Lagi']);
+    expect($this->page->fresh())->template->toBe('contact')->title->toBe('Profil Lagi');
+
+    kontenUpdatePage($this->page->fresh(), ['template' => 'default']);
+    expect($this->page->fresh()->template)->toBe('default');
+});
+
+it('AC-4 (F048): rejects an unknown template and leaves the page unchanged', function (mixed $template) {
+    kontenAssertRejected(fn () => kontenUpdatePage($this->page, ['title' => 'Berubah', 'template' => $template]), 'template_invalid', 'template');
+
+    expect($this->page->fresh())->template->toBe('default')->title->toBe('Profil');
+})->with(['wide' => ['wide'], 'empty string' => [''], 'array' => [['contact']]]);
+
+it('AC-5 (F048): the former system pages can change slug, with the same validation as free pages', function (string $from, string $to) {
+    $page = StaticPage::query()->where('slug', $from)->firstOrFail();
+
+    kontenUpdatePage($page, ['title' => $page->title, 'slug' => $to]);
+
+    expect($page->fresh()->slug)->toBe($to);
+})->with([['profil', 'tentang-kami'], ['visi-misi', 'visi'], ['kontak', 'hubungi-kami']]);
+
+it('AC-5 (F048): rejects a bad, reserved or taken slug on a former system page', function () {
+    kontenAssertRejected(fn () => kontenUpdatePage($this->page, ['slug' => 'Tentang Kami']), 'slug_format', 'slug');
+    kontenAssertRejected(fn () => kontenUpdatePage($this->page, ['slug' => 'berita']), 'slug_reserved', 'slug');
+    kontenAssertRejected(fn () => kontenUpdatePage($this->page, ['slug' => 'kontak']), 'slug_taken', 'slug');
 
     expect($this->page->fresh()->slug)->toBe('profil');
-
-    kontenUpdatePage($this->page, ['slug' => 'profil', 'title' => 'Tentang Yayasan', 'status' => 'terbit']);
-    expect($this->page->fresh())->title->toBe('Tentang Yayasan')->status->toBe('terbit');
-
-    kontenUpdatePage($this->page, ['status' => 'draft']);
-    expect($this->page->fresh()->status)->toBe('draft')
-        ->and($this->page->fresh()->isSystem())->toBeTrue()
-        ->and(StaticPage::SYSTEM_SLUGS)->toBe(['profil', 'visi-misi', 'kontak']);
 });

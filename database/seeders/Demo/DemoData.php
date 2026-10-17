@@ -574,7 +574,7 @@ final class DemoData
     ];
 
     /**
-     * Halaman statis demo (F037): kunci = slug. Halaman sistem (`profil`, `visi-misi`,
+     * Halaman statis demo (F037): kunci = slug. Halaman awal (`profil`, `visi-misi`,
      * `kontak`) diisi bila masih kosong; halaman lain dibuat bila belum ada. Semua terbit.
      *
      * @return array<string, array{title: string, body: string, status: string}>

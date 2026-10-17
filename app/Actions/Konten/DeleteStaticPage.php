@@ -8,13 +8,12 @@ use App\Models\StaticPage;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Hapus permanen halaman bebas (F037) dan lepas rujukannya dari navigasi portal (F043)
+ * Hapus permanen halaman (F037, F048) dan lepas rujukannya dari navigasi portal (F043)
  * dalam satu transaksi, agar ID yang kelak dipakai ulang DB tidak muncul di menu: item
  * menu utama (akar dan anak grup; grup yang jadi kosong ikut dibuang) dan tombol header
  * (menjadi `false`). Daftar yang jadi kosong disimpan `[]` supaya menu bawaan tidak muncul
  * lagi; key yang belum diatur tidak disentuh. Widget footer (F046) tidak disentuh: tautan ke
- * halaman yang hilang tidak dirender dan dibuang saat form Footer diisi. Guard akhir halaman
- * sistem: super-admin melewati policy.
+ * halaman yang hilang tidak dirender dan dibuang saat form Footer diisi.
  */
 class DeleteStaticPage
 {
@@ -25,10 +24,6 @@ class DeleteStaticPage
 
     public function handle(StaticPage $page): void
     {
-        if ($page->isSystem()) {
-            $this->fail('page', 'page_system_locked');
-        }
-
         DB::transaction(function () use ($page): void {
             $page->delete();
 

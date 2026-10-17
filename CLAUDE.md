@@ -40,6 +40,15 @@ Target utama adalah **shared hosting cPanel** atau VPS kecil, karena sekolah pen
 - Struktur modular: Akademik, Asrama, Tahfidz, Perizinan, Dokumen, Prestasi, PSB, Keuangan, Konten. Setiap modul selain inti bisa diaktifkan atau dimatikan lewat `settings` (key `modules.<nama>.enabled`). Navigasi Filament dan route mengikuti status ini.
 - Dashboard bersifat role-aware. Setiap widget dicek permission-nya dan tetap tampil aman ("Modul belum tersedia") jika tabel atau modulnya belum aktif.
 
+### Prinsip: YAGNI, KISS, DRY
+
+Berlaku untuk rencana, kode, dan test. Bila bertentangan, urutannya YAGNI, lalu KISS, lalu DRY.
+
+- **YAGNI.** Bangun hanya yang dibutuhkan kriteria penerimaan sekarang. Jangan menambah tipe, opsi, setting, parameter, atau abstraksi "untuk nanti" yang belum punya pemakai. Fitur yang belum diminta user ditulis sebagai catatan, bukan dikerjakan.
+- **Data demo bukan data produksi.** Tidak perlu kode perbaikan atau migrasi khusus untuk data demo lama; demo cukup diulang dengan `php artisan migrate:fresh --seed`. Migrasi data hanya untuk data nyata milik lembaga, dan `down()` boleh sederhana (cukup mengembalikan skema, catat bila data tidak bisa dipulihkan).
+- **KISS.** Pilih solusi paling sederhana yang lulus kriteria. Pakai fitur bawaan Laravel/Filament sebelum membuat sendiri. Satu Action tambahan, trait, atau komponen baru harus punya alasan yang jelas di rencana.
+- **DRY, secukupnya.** Pakai ulang Action, komponen, dan helper yang sudah ada sebelum membuat yang baru. Ekstrak abstraksi bersama setelah ada pemakai kedua yang nyata, bukan karena dugaan.
+
 ## Konvensi kode & data
 
 - **Nama tabel, kolom, dan kode dalam bahasa Inggris.** Seluruh teks UI dalam bahasa Indonesia, lewat file `lang/id`.

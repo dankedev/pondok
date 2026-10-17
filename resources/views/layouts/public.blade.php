@@ -12,19 +12,19 @@
     'noindex' => false,
     // true: halaman mengatur kontainernya sendiri (portal); false: kontainer sempit untuk form PSB.
     'bare' => false,
-    // true: footer ringkas (nama, navigasi footer, hak cipta). Null: otomatis untuk route `psb.*`.
+    // true: footer ringkas (nama, tautan widget Tautan pertama, hak cipta). Null: otomatis untuk route `psb.*`.
     'compactFooter' => null,
 ])
 
 @php
     $school = app(\App\Actions\Konten\GetSchoolProfile::class)->handle();
-    // Menu utama, tombol header, dan navigasi footer dihitung sekali (satu query `pages`) untuk kedua nav dan footer.
+    // Menu utama dan tombol header dihitung sekali untuk kedua nav; footer menghitung widgetnya sendiri (`GetPortalFooter`).
     $navigation = app(\App\Actions\Konten\GetPortalNavigation::class)->handle($school);
     $pageTitle = filled($title)
         ? __('pondok.portal.meta.title', ['title' => $title, 'name' => $school['name']])
         : ($school['tagline'] !== null ? __('pondok.portal.meta.home_title', ['name' => $school['name'], 'tagline' => $school['tagline']]) : $school['name']);
-    // Tanpa teks bawaan aplikasi: deskripsi halaman, lalu slogan, lalu deskripsi footer, selain itu tanpa tag.
-    $metaDescription = filled($description) ? $description : ($school['tagline'] ?? $school['footer']['description']);
+    // Tanpa teks bawaan aplikasi: deskripsi halaman, lalu slogan, selain itu tanpa tag.
+    $metaDescription = filled($description) ? $description : $school['tagline'];
     $canonicalUrl = $canonical ?? route('portal.home');
     // Logo cetak (bukan logo desktop) sebagai gambar bagikan bawaan.
     $imageUrl = $ogImage ?? $school['logo_url'];
@@ -124,6 +124,6 @@
         @endif
     </main>
 
-    @include('portal.partials.footer', ['school' => $school, 'navigation' => $navigation, 'compact' => $compactFooter])
+    @include('portal.partials.footer', ['school' => $school, 'compact' => $compactFooter])
 </body>
 </html>

@@ -29,7 +29,7 @@ it('AC-3: the default menu matches the previous header when the keys are missing
 
 it('AC-3: an empty menu leaves only Masuk, and the register button follows header_button', function (?array $primary, array|false|null $button, array $expected) {
     portalPsbOpen();
-    navSet($primary, null, $button);
+    navSet($primary, $button);
 
     expect(portalNavTexts($this->get('/')->assertOk()->getContent()))->toBe($expected);
 })->with([
@@ -86,7 +86,7 @@ it('AC-7: marks the active link with aria-current in both navs, per destination 
     portalAlbumWithPhotos(1, ['title' => 'Album Uji']);
     kontenVideo();
     StaticPage::query()->where('slug', 'visi-misi')->update(['status' => 'terbit']);
-    navSet($items($pengurus, $category), null, false);
+    navSet($items($pengurus, $category), false);
 
     expect(navCurrent($this->get($path)->assertOk()->getContent()))->toBe($expected);
 })->with([
@@ -119,7 +119,7 @@ it('AC-7: marks the parent group active when a child is active, and only then', 
 
 it('AC-7: renders the header button with the saved label and target, not as a menu item', function () {
     $page = staticPage(['slug' => 'hubungi', 'title' => 'Hubungi Kami']);
-    navSet([navItem('home')], null, navPage($page, 'Tanya Panitia'));
+    navSet([navItem('home')], navPage($page, 'Tanya Panitia'));
 
     $links = portalNavLinks($this->get('/')->assertOk()->getContent());
 
@@ -132,17 +132,17 @@ it('AC-7: does not render a header button whose target is unavailable', function
     portalPsbOpen();
     $page = staticPage(['slug' => 'hubungi', 'status' => 'draft']);
 
-    navSet([navItem('home')], null, navPage($page, 'Tanya'));
+    navSet([navItem('home')], navPage($page, 'Tanya'));
     expect(portalNavTexts($this->get('/')->getContent()))->toBe(['Beranda', 'Masuk']);
 
-    navSet([navItem('home')], null, navItem('psb.register'));
+    navSet([navItem('home')], navItem('psb.register'));
     Setting::set('modules.psb.enabled', false);
     expect(portalNavTexts($this->get('/')->getContent()))->toBe(['Beranda', 'Masuk']);
 });
 
 it('AC-7: escapes labels and urls in the header', function () {
     $x = '<script>alert(1)</script>';
-    navSet([navItem('home'), navGroup($x, [navItem('url', $x, ['url' => 'https://contoh.test/?a=1&b="x'])]), navItem('url', $x, ['url' => '/berita'])], null, navItem('url', $x, ['url' => '/berita']));
+    navSet([navItem('home'), navGroup($x, [navItem('url', $x, ['url' => 'https://contoh.test/?a=1&b="x'])]), navItem('url', $x, ['url' => '/berita'])], navItem('url', $x, ['url' => '/berita']));
 
     $html = $this->get('/')->assertOk()->getContent();
 
@@ -178,15 +178,16 @@ it('AC-6: shows only Beranda and Masuk, with no content queries, when the conten
         ->and(queriesOnTable($queries, 'categories'))->toBe(0);
 });
 
-it('AC-8: resolves menu and footer pages with a single pages query and no repeated settings query', function () {
+it('AC-8: resolves menu and footer widget pages with at most two pages queries and no repeated settings query', function () {
     $pages = collect(range(1, 4))->map(fn (int $i) => staticPage(['slug' => "menu-{$i}", 'title' => "Menu {$i}"]));
     $footer = collect(range(1, 2))->map(fn (int $i) => staticPage(['slug' => "foot-{$i}", 'title' => "Foot {$i}"]));
-    navSet([navItem('home'), ...$pages->map(fn ($p): array => navPage($p))->all(), navGroup('Grup', [navPage($footer[0])])], $footer->map(fn ($p): array => navPage($p))->all(), navPage($footer[1]));
+    navSet([navItem('home'), ...$pages->map(fn ($p): array => navPage($p))->all(), navGroup('Grup', [navPage($footer[0])])], navPage($footer[1]));
+    ftrSet([ftr('links', ['items' => $footer->map(fn ($p): array => navPage($p))->all()])]);
 
     $queries = recordedQueries(fn () => $this->get('/berita')->assertOk());
     $settings = array_map(fn (array $q): string => $q['sql'].json_encode($q['bindings']), array_filter($queries, fn (array $q): bool => str_contains($q['sql'], 'settings')));
 
-    expect(queriesOnTable($queries, 'pages'))->toBe(1)
+    expect(queriesOnTable($queries, 'pages'))->toBeLessThanOrEqual(2)
         ->and(count($settings))->toBe(count(array_unique($settings)));
 });
 
@@ -194,13 +195,14 @@ it('AC-8: the number of page queries does not grow with the number of linked pag
     $count = function (int $n): int {
         StaticPage::query()->whereNotIn('slug', StaticPage::SYSTEM_SLUGS)->delete();
         $pages = collect(range(1, $n))->map(fn (int $i) => staticPage(['slug' => "q-{$i}-{$n}"]));
-        navSet([navItem('home'), ...$pages->map(fn ($p): array => navPage($p))->take(4)->all(), navGroup('G', $pages->skip(4)->take(4)->map(fn ($p): array => navPage($p))->values()->all() ?: [navItem('home')])], $pages->map(fn ($p): array => navPage($p))->all());
+        navSet([navItem('home'), ...$pages->map(fn ($p): array => navPage($p))->take(4)->all(), navGroup('G', $pages->skip(4)->take(4)->map(fn ($p): array => navPage($p))->values()->all() ?: [navItem('home')])]);
+        ftrSet([ftr('links', ['items' => array_slice($pages->map(fn ($p): array => navPage($p))->all(), 0, 8)])]);
         $this->get('/berita')->assertOk();
 
         return queriesOnTable(recordedQueries(fn () => $this->get('/berita')->assertOk()), 'pages');
     };
 
-    expect($count(8))->toBe($count(2))->and($count(8))->toBeLessThanOrEqual(1);
+    expect($count(8))->toBe($count(2))->and($count(8))->toBeLessThanOrEqual(2);
 });
 
 it('AC-3: ignores the removed legacy menu keys', function () {

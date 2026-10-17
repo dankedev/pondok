@@ -22,12 +22,12 @@ it('VERIFY: escapes every free text field in header, home and footer', function 
     $x = '<script>alert(7)</script>';
     profilSet([
         'school.short_name' => $x, 'school.arabic_name' => $x, 'school.tagline' => $x, 'school.address' => $x,
-        'portal.footer_description' => $x, 'portal.footer_text' => ['title' => $x, 'body' => $x],
         'school.contacts' => [profilContact(['label' => 'L', 'name' => $x, 'phone' => $x])],
         'school.social_links' => [['platform' => 'lainnya', 'label' => $x, 'url' => 'https://a.test/"onmouseover="x']],
     ]);
 
     blkSet([blk('hero', ['eyebrow' => $x, 'title' => $x, 'text' => $x]), blk('cta', ['heading' => $x, 'text' => $x, 'variant' => 'light'])]);
+    ftrSet([ftr('text', ['heading' => $x, 'body' => $x, 'show_logo' => true]), ftr('contacts', ['heading' => $x]), ftr('social', ['heading' => $x])]);
 
     foreach (['/', '/kontak'] as $url) {
         $html = $this->get($url)->assertOk()->getContent();
@@ -54,6 +54,7 @@ it('VERIFY: drops hand stored links with quotes, backslash host tricks and upper
         ['platform' => 'instagram', 'label' => null, 'url' => 'data:text/html,x'],
         ['platform' => 'facebook', 'label' => null, 'url' => 'https://facebook.com/ok'],
     ]]);
+    ftrSet([ftr('social')]);
 
     $html = $this->get('/')->assertOk()->getContent();
 
@@ -61,14 +62,15 @@ it('VERIFY: drops hand stored links with quotes, backslash host tricks and upper
         ->not->toContain('data:text/html')->not->toContain('https:///x');
 });
 
-it('VERIFY: rejects tricky social and footer urls on write', function (string $url) {
+it('VERIFY: rejects tricky social, footer widget and button urls on write', function (string $url) {
     $admin = kontenUser('admin-sekolah');
     Setting::set('school.social_links', null);
 
     expect(fn () => app(UpdateSchoolContacts::class)->handle(['social_links' => [['platform' => 'website', 'url' => $url]]], $admin))
         ->toThrow(ValidationException::class);
-    expect(fn () => app(UpdatePortalNavigation::class)->handle(['primary' => [], 'footer' => [navItem('url', 'x', ['url' => $url])], 'header_button' => null], $admin))
+    expect(fn () => app(UpdatePortalNavigation::class)->handle(['primary' => [], 'header_button' => navItem('url', 'x', ['url' => $url])], $admin))
         ->toThrow(ValidationException::class);
+    expect(fn () => ftrSave([ftr('links', ['items' => [navItem('url', 'x', ['url' => $url])]])]))->toThrow(ValidationException::class);
     expect(Setting::get('school.social_links'))->toBeNull();
 })->with(['https://a.test\\@evil.test', 'https:///x', 'JAVASCRIPT:alert(1)', "https://a.test/\u{0085}", 'vbscript:x', 'https://']);
 
@@ -101,7 +103,7 @@ it('VERIFY: replacing the desktop logo keeps the other logo files', function () 
 it('VERIFY: a fresh install with only some fields filled shows no built in content', function () {
     profilFreshInstall();
     Setting::set('school.tagline', 'Slogan uji');
-    navSet(null, [navItem('url', 'Tautan Uji', ['url' => '/berita'])]);
+    ftrSet([ftr('links', ['items' => [navItem('url', 'Tautan Uji', ['url' => '/berita'])]])]);
 
     foreach (['/', '/profil', '/kontak', '/visi-misi'] as $url) {
         $html = html_entity_decode(profilVisibleText($this->get($url)->getContent()));

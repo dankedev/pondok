@@ -3,12 +3,12 @@
 namespace App\Actions\Konten;
 
 /**
- * Baca blok konten tersimpan (mis. `portal.home_blocks`) dengan toleran: blok rusak, tipe tak
+ * Baca blok konten tersimpan (`portal.home_blocks`, widget `portal.footer_widgets`) dengan toleran: blok rusak, tipe tak
  * dikenal, atau tipe bukan milik area dibuang per blok, dan blok tersembunyi dibuang kecuali
  * `$withHidden` (form admin). Portal tidak pernah merender JSON blok tanpa lewat Action ini.
  *
  * Sanitasi saat baca: teks terbatas lewat `SanitizeBlockText`, Item tombol lewat
- * `GetPortalNavigation::parseItem` (URL tidak aman → tombol dibuang), teks polos dipaksa
+ * `GetPortalNavigation::parseItem` (URL tidak aman → tombol/tautan dibuang), teks polos dipaksa
  * string atau `null`, id dipaksa bilangan bulat positif atau `null`.
  */
 class ParseContentBlocks
@@ -16,9 +16,10 @@ class ParseContentBlocks
     /** Tipe blok per area. */
     public const TYPES = [
         'home' => ['hero', 'text_image', 'features', 'quote', 'cta', 'video', 'feed'],
+        'footer' => ['text', 'links', 'social', 'contacts'],
     ];
 
-    /** Jenis field per tipe: text (polos), html (teks terbatas), item (tombol), id, bool, features. */
+    /** Jenis field per tipe: text (polos), html (teks terbatas), item (tombol), items (daftar tautan), id, bool, features. */
     private const FIELDS = [
         'hero' => ['eyebrow' => 'text', 'title' => 'text', 'text' => 'text', 'image' => 'text', 'image_alt' => 'text', 'album_id' => 'id', 'primary' => 'item', 'secondary' => 'item'],
         'text_image' => ['heading' => 'text', 'text' => 'html', 'image' => 'text', 'image_alt' => 'text', 'button' => 'item'],
@@ -27,6 +28,10 @@ class ParseContentBlocks
         'cta' => ['eyebrow' => 'text', 'heading' => 'text', 'text' => 'text', 'primary' => 'item', 'secondary' => 'item', 'variant' => 'text'],
         'video' => ['heading' => 'text', 'video_id' => 'id'],
         'feed' => ['source' => 'text', 'heading' => 'text'],
+        'text' => ['heading' => 'text', 'body' => 'html', 'show_logo' => 'bool'],
+        'links' => ['heading' => 'text', 'items' => 'items'],
+        'social' => ['heading' => 'text'],
+        'contacts' => ['heading' => 'text'],
     ];
 
     public function __construct(private readonly SanitizeBlockText $sanitizer) {}
@@ -70,6 +75,7 @@ class ParseContentBlocks
             'text' => $this->text($value),
             'html' => is_string($value) && ($html = $this->sanitizer->handle($value)) !== '' ? $html : null,
             'item' => is_array($value) ? GetPortalNavigation::parseItem($value, false) : null,
+            'items' => GetPortalNavigation::parseItems($value, false),
             'id' => is_int($value) || is_string($value) ? (($id = filter_var($value, FILTER_VALIDATE_INT)) === false || $id < 1 ? null : $id) : null,
             'bool' => $value === true,
             'features' => $this->features($value),

@@ -9,9 +9,9 @@ use App\Models\Video;
 use Illuminate\Http\UploadedFile;
 
 /**
- * Validasi penuh daftar blok konten satu area (F045: `home`) sebelum disimpan. Galat pertama
- * membatalkan semuanya, di field `{area}_blocks.{i}.data.{field}` (bersarang `items.{j}.title`,
- * `primary.url`). Hasilnya `{type, visible, data}` dengan urutan key tetap per tipe, jadi blok
+ * Validasi penuh daftar blok konten satu area (F045 `home`, F046 widget `footer`) sebelum disimpan.
+ * Galat pertama membatalkan semuanya, di field `home_blocks.{i}.data.{field}` atau
+ * `footer_widgets.{i}.data.{field}` (bersarang `items.{j}.title`, `primary.url`). Hasilnya `{type, visible, data}` dengan urutan key tetap per tipe, jadi blok
  * tersimpan yang disimpan ulang tidak berubah.
  *
  * Gambar: `UploadedFile` divalidasi (JPG/PNG, 2 MB) dan dikembalikan apa adanya untuk disimpan
@@ -23,9 +23,27 @@ class NormalizeContentBlocks
 
     public const MAX_BLOCKS = 20;
 
+    /** Batas widget footer, termasuk yang tersembunyi (F046). */
+    public const MAX_WIDGETS = 4;
+
+    /** Field input dan batas jumlah blok per area (`reason` = galat bila lebih). */
+    public const AREAS = [
+        'home' => ['field' => 'home_blocks', 'max' => self::MAX_BLOCKS, 'reason' => 'blocks_too_many'],
+        'footer' => ['field' => 'footer_widgets', 'max' => self::MAX_WIDGETS, 'reason' => 'list_too_long'],
+    ];
+
     public const MAX_FEATURES = 8;
 
     public const LIMITED_TEXT_MAX = 2000;
+
+    /** Widget footer (F046): batas judul, isi teks (HTML tersanitasi), tautan, dan label tautan. */
+    public const WIDGET_HEADING_MAX = 60;
+
+    public const WIDGET_TEXT_MAX = 6000;
+
+    public const WIDGET_LINKS_MAX = 12;
+
+    public const WIDGET_LINK_LABEL_MAX = 60;
 
     public const CTA_VARIANTS = ['light', 'navy', 'gold'];
 
@@ -47,14 +65,14 @@ class NormalizeContentBlocks
     {
         $this->resetNavigationReferences();
         $this->knownImages = $knownImages;
-        $field = "{$area}_blocks";
+        ['field' => $field, 'max' => $max, 'reason' => $reason] = self::AREAS[$area];
 
         if (! is_array($blocks)) {
             $this->fail($field, 'block_type_invalid');
         }
 
-        if (count($blocks) > self::MAX_BLOCKS) {
-            $this->fail($field, 'blocks_too_many', ['max' => self::MAX_BLOCKS]);
+        if (count($blocks) > $max) {
+            $this->fail($field, $reason, ['max' => $max]);
         }
 
         $normalized = [];
@@ -94,7 +112,7 @@ class NormalizeContentBlocks
             'hero' => $this->hero($data, $field),
             'text_image' => [
                 'heading' => $this->optionalText($data['heading'] ?? null, "{$field}.heading", 100),
-                'text' => $this->limitedText($data['text'] ?? null, "{$field}.text"),
+                'text' => $this->limitedText($data['text'] ?? null, "{$field}.text", self::LIMITED_TEXT_MAX),
                 ...$this->image($data, $field),
                 'button' => $this->button($data['button'] ?? null, "{$field}.button"),
             ],
@@ -125,6 +143,16 @@ class NormalizeContentBlocks
                 'source' => $this->option($data['source'] ?? null, self::FEED_SOURCES, "{$field}.source"),
                 'heading' => $this->optionalText($data['heading'] ?? null, "{$field}.heading", 100),
             ],
+            'text' => [
+                'heading' => $this->widgetHeading($data, $field),
+                'body' => $this->limitedText($data['body'] ?? null, "{$field}.body", self::WIDGET_TEXT_MAX),
+                'show_logo' => (bool) ($data['show_logo'] ?? false),
+            ],
+            'links' => [
+                'heading' => $this->widgetHeading($data, $field),
+                'items' => $this->links($data['items'] ?? null, "{$field}.items"),
+            ],
+            'social', 'contacts' => ['heading' => $this->widgetHeading($data, $field)],
         };
     }
 
@@ -178,11 +206,39 @@ class NormalizeContentBlocks
         ];
     }
 
-    private function limitedText(mixed $value, string $field): ?string
+    private function limitedText(mixed $value, string $field, int $max): ?string
     {
         $html = $this->sanitizer->handle(is_string($value) ? $value : null);
 
-        return $html === '' ? null : $this->optionalText($html, $field, self::LIMITED_TEXT_MAX);
+        return $html === '' ? null : $this->optionalText($html, $field, $max);
+    }
+
+    /**
+     * @param  array<mixed>  $data
+     */
+    private function widgetHeading(array $data, string $field): ?string
+    {
+        return $this->optionalText($data['heading'] ?? null, "{$field}.heading", self::WIDGET_HEADING_MAX);
+    }
+
+    /**
+     * Tautan widget footer: 1–12 Item navigasi F043 tanpa grup.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function links(mixed $value, string $field): array
+    {
+        $rows = is_array($value) ? array_values($value) : [];
+
+        if ($rows === []) {
+            $this->fail($field, 'items_required');
+        }
+
+        if (count($rows) > self::WIDGET_LINKS_MAX) {
+            $this->fail($field, 'list_too_long', ['max' => self::WIDGET_LINKS_MAX]);
+        }
+
+        return array_map(fn (mixed $row, int $index): array => $this->item($row, "{$field}.{$index}", self::WIDGET_LINK_LABEL_MAX, 'not_allowed'), $rows, array_keys($rows));
     }
 
     /**

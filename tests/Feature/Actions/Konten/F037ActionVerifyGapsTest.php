@@ -116,19 +116,18 @@ it('VERIFY: free page body is sanitized on create and update', function () {
 
 it('VERIFY: deleting a system page is refused for every path and leaves references untouched', function (string $slug) {
     $page = StaticPage::query()->where('slug', $slug)->firstOrFail();
-    navSet([navPage($page)], [navPage($page)], navPage($page));
+    navSet([navPage($page)], navPage($page));
 
     kontenAssertRejected(fn () => app(DeleteStaticPage::class)->handle($page), 'page_system_locked');
 
     expect(StaticPage::query()->whereKey($page->id)->exists())->toBeTrue()
         ->and(Setting::get('portal.navigation_primary'))->toEqual([navPage($page)])
-        ->and(Setting::get('portal.navigation_footer'))->toEqual([navPage($page)])
         ->and(Setting::get('portal.header_button'))->toEqual(navPage($page));
 })->with(['profil', 'visi-misi', 'kontak']);
 
 it('VERIFY: delete is atomic, a failure while cleaning settings keeps the page', function () {
     $x = staticPage(['slug' => 'x-atomik']);
-    navSet([navPage($x)], [navPage($x)], navPage($x));
+    navSet([navPage($x)], navPage($x));
 
     Setting::saving(fn () => throw new RuntimeException('boom'));
 
@@ -146,7 +145,6 @@ it('VERIFY: delete is atomic, a failure while cleaning settings keeps the page',
 it('VERIFY: delete ignores malformed settings values without crashing', function () {
     $x = staticPage(['slug' => 'x-rusak']);
     Setting::set('portal.navigation_primary', ['bukan-array', 5, null, navPage($x), navItem('home'), ['type' => 'group', 'label' => 'G', 'children' => 'rusak']]);
-    Setting::set('portal.navigation_footer', 'rusak');
     Setting::set('portal.header_button', 'rusak');
 
     app(DeleteStaticPage::class)->handle($x);

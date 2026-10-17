@@ -9,6 +9,7 @@ use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
 use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
+use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalHome;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
@@ -4101,14 +4102,14 @@ function navGroup(string $label, array $children): array
 
 /**
  * Simpan navigasi langsung ke settings (tanpa Action). `null` = key tidak ada (bawaan).
+ * Footer bukan bagian navigasi lagi (F046): atur lewat `ftrSet()`.
  *
  * @param  list<array<string, mixed>>|null  $primary
- * @param  list<array<string, mixed>>|null  $footer
  * @param  array<string, mixed>|false|null  $headerButton
  */
-function navSet(?array $primary = null, ?array $footer = null, array|false|null $headerButton = null): void
+function navSet(?array $primary = null, array|false|null $headerButton = null): void
 {
-    foreach (['portal.navigation_primary' => $primary, 'portal.navigation_footer' => $footer, 'portal.header_button' => $headerButton] as $key => $value) {
+    foreach (['portal.navigation_primary' => $primary, 'portal.header_button' => $headerButton] as $key => $value) {
         if ($value === null) {
             Setting::query()->whereKey($key)->delete();
         } else {
@@ -4122,7 +4123,7 @@ function navSet(?array $primary = null, ?array $footer = null, array|false|null 
 /**
  * Hasil `GetPortalNavigation` untuk profil saat ini.
  *
- * @return array{primary: list<array<string, mixed>>, headerButton: ?array<string, mixed>, footer: list<array<string, mixed>>}
+ * @return array{primary: list<array<string, mixed>>, headerButton: ?array<string, mixed>}
  */
 function navResolve(): array
 {
@@ -4345,4 +4346,118 @@ function blkAssertRejected(array $blocks, string|array $fields, string $label): 
     }
 
     test()->fail("{$label}: ValidationException diharapkan, tetapi tidak dilempar.");
+}
+
+/*
+|--------------------------------------------------------------------------
+| F046 konten-footer-widget
+|--------------------------------------------------------------------------
+|
+| Widget footer disimpan di `portal.footer_widgets` sebagai daftar `{type, visible, data}` (bentuk sama dengan
+| blok beranda, jadi `blk()` dipakai untuk membuat satu widget). Tipe: text, links, social, contacts.
+*/
+
+/**
+ * Satu widget footer (alias `blk`).
+ *
+ * @param  array<string, mixed>  $data
+ * @return array{type: string, visible: bool, data: array<string, mixed>}
+ */
+function ftr(string $type, array $data = [], bool $visible = true): array
+{
+    return blk($type, $data, $visible);
+}
+
+function ftrActor(): User
+{
+    return blkActor();
+}
+
+/**
+ * Simpan lewat Action `UpdatePortalFooter` (input `{footer_widgets: [...]}`).
+ *
+ * @param  list<array<string, mixed>>  $widgets
+ */
+function ftrSave(array $widgets): void
+{
+    app(UpdatePortalFooter::class)->handle(['footer_widgets' => $widgets], ftrActor());
+    app()->forgetScopedInstances();
+}
+
+/**
+ * Widget tersimpan (mentah dari tabel `settings`).
+ *
+ * @return list<array<string, mixed>>
+ */
+function ftrStored(): array
+{
+    return profilRawGet('portal.footer_widgets') ?? [];
+}
+
+/**
+ * Tulis widget langsung ke settings tanpa Action (data lama, hasil migrasi, atau ubahan manual).
+ *
+ * @param  list<array<string, mixed>>  $widgets
+ */
+function ftrSet(array $widgets): void
+{
+    profilRawSet('portal.footer_widgets', $widgets);
+    app()->forgetScopedInstances();
+}
+
+/**
+ * Migrasi data F046 (berkas dimuat ulang tiap panggilan).
+ */
+function ftrMigration(): object
+{
+    return require database_path('migrations/2026_10_20_000001_move_portal_footer_to_widgets.php');
+}
+
+/**
+ * Pastikan simpan ditolak dengan galat pada salah satu field `$fields` dan settings tidak berubah.
+ *
+ * @param  list<array<string, mixed>>  $widgets
+ * @param  string|list<string>  $fields
+ */
+function ftrAssertRejected(array $widgets, string|array $fields, string $label): void
+{
+    $before = profilSettingsSnapshot();
+    $fields = (array) $fields;
+
+    try {
+        ftrSave($widgets);
+    } catch (ValidationException $exception) {
+        $keys = array_keys($exception->errors());
+
+        expect(collect($keys)->contains(fn (string $key): bool => in_array($key, $fields, true)))
+            ->toBeTrue("{$label}: galat di ".json_encode($keys).', diharapkan '.json_encode($fields));
+        expect(profilSettingsSnapshot())->toBe($before, "{$label}: settings berubah");
+
+        return;
+    }
+
+    test()->fail("{$label}: ValidationException diharapkan, tetapi tidak dilempar.");
+}
+
+/**
+ * Isi footer lama (F043) langsung ke settings, untuk menguji migrasi.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function ftrLegacy(array $overrides = []): void
+{
+    $values = [
+        'portal.footer_description' => 'Deskripsi lembaga uji',
+        'portal.footer_text' => ['title' => 'Jam Layanan', 'body' => "Senin sampai Jumat\n08.00 sampai 15.00"],
+        'portal.navigation_footer' => [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Situs Mitra', ['url' => 'https://contoh.test/mitra'])],
+        ...$overrides,
+    ];
+
+    foreach ($values as $key => $value) {
+        if ($value === null) {
+            DB::table('settings')->where('key', $key)->delete();
+        } else {
+            profilRawSet($key, $value);
+        }
+    }
 }

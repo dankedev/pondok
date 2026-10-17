@@ -10,9 +10,8 @@ beforeEach(function () {
     Setting::set('school.name', "Ma'had Al-Khair");
 });
 
-it('AC-48: renders the description, contacts, socials and footer links (the quote is gone, F043)', function () {
+it('AC-48: renders the description, contacts, socials and footer links through widgets (F046)', function () {
     profilSet([
-        'portal.footer_description' => 'Deskripsi lembaga uji',
         'school.contacts' => [
             profilContact(['key' => 'aaaa1111', 'label' => 'Panitia', 'name' => 'Ust. Ahmad', 'phone' => '081234567890', 'is_whatsapp' => true]),
             profilContact(['key' => 'bbbb2222', 'label' => 'Telepon Kantor', 'phone' => '0735000170', 'is_whatsapp' => false]),
@@ -23,7 +22,10 @@ it('AC-48: renders the description, contacts, socials and footer links (the quot
             ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test'],
         ],
     ]);
-    navSet(null, [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Info PSB', ['url' => 'https://contoh.test/psb'])]);
+    ftrSet([
+        ftr('text', ['body' => '<p>Deskripsi lembaga uji</p>', 'show_logo' => true]), ftr('contacts'), ftr('social'),
+        ftr('links', ['items' => [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Info PSB', ['url' => 'https://contoh.test/psb'])]]),
+    ]);
 
     $footer = profilFooter($this->get('/')->assertOk()->getContent());
     $text = profilVisibleText($footer);
@@ -50,6 +52,8 @@ it('AC-6 (F044): shows address, email, map and every contact exactly once, with 
             profilContact(['key' => 'bbbb2222', 'label' => 'Kantor', 'phone' => '0735000170', 'is_whatsapp' => false, 'is_print' => true]),
         ],
     ]);
+
+    ftrSet([ftr('contacts')]);
 
     $footer = profilVisibleText(profilFooter($this->get('/')->assertOk()->getContent()));
     $html = $this->get('/kontak')->assertOk()->getContent();
@@ -92,6 +96,7 @@ it('AC-48: does not render the old whatsapp and social keys', function () {
 it('AC-49: shows the map as a plain link only, in the footer and on the contact page', function () {
     StaticPage::findBySlug('kontak')->update(['body' => '']);
     Setting::set('school.map_url', 'https://maps.app.goo.gl/abc');
+    ftrSet([ftr('contacts')]);
     config(['pondok.portal.csp_enabled' => true]);
 
     foreach (['/', '/kontak'] as $url) {
@@ -155,7 +160,7 @@ it('AC-50: still renders the contact page when only legacy keys remain in settin
 
 it('AC-29 (F037): renders page links that follow slug and status', function () {
     $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
-    navSet(null, [navPage($page), navPage($page, 'Tentang')]);
+    ftrSet([ftr('links', ['items' => [navPage($page), navPage($page, 'Tentang')]])]);
 
     $footer = profilFooter($this->get('/')->assertOk()->getContent());
 
@@ -169,7 +174,7 @@ it('AC-29 (F037): renders page links that follow slug and status', function () {
 
 it('AC-29 (F037): drops page links of draft pages, deleted pages and a disabled content module', function () {
     $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
-    navSet(null, [navPage($page)]);
+    ftrSet([ftr('links', ['items' => [navPage($page)]])]);
 
     $page->update(['status' => 'draft']);
     expect(profilFooter($this->get('/')->getContent()))->not->toContain('/pengurus');

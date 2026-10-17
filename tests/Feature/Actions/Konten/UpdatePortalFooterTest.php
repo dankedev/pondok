@@ -1,15 +1,12 @@
 <?php
 
-use App\Actions\Konten\UpdatePortalFooter;
-use App\Models\Setting;
-
 /*
-| F043 AC-11 (sisi simpan). Kontrak: `UpdatePortalFooter::handle(array $data, User $actor): void` dengan
-| `footer_description` (maks 500), `footer_text` ({title: ?string maks 60, body: ?string maks 300}),
-| `footer_show_contacts` dan `footer_show_social` (bool, bawaan true bila tidak diberikan).
-| Key: `portal.footer_description`, `portal.footer_text` ({title, body} atau null), `portal.footer_show_contacts`,
-| `portal.footer_show_social`; log `portal_footer_updated`. Field kutipan dan tautan sudah tidak ada.
-| Galat teks pendek: `footer_text.title` / `footer_text.body`.
+| F046 AC-4 dan AC-5. Kontrak: `UpdatePortalFooter::handle(array $data, User $actor): void` dengan input
+| `{footer_widgets: list<{type, visible, data}>}`; hasil di `portal.footer_widgets` (ternormalisasi), log
+| `portal_footer_updated` hanya bila berubah. Maksimum 4 widget (termasuk yang tersembunyi), field galat
+| `footer_widgets` (jumlah), `footer_widgets.{i}.type`, `footer_widgets.{i}.data.{heading|body|items}`,
+| `footer_widgets.{i}.data.items.{j}.{type|url}`. Data: text {heading, body (HTML ≤6000 setelah sanitasi), show_logo},
+| links {heading, items 1-12 tanpa grup, label ≤60}, social dan contacts {heading}. Heading ≤60.
 */
 
 beforeEach(function () {
@@ -17,86 +14,75 @@ beforeEach(function () {
     $this->admin = kontenUser('admin-konten');
 });
 
-/**
- * @param  array<string, mixed>  $data
- */
-function profilSaveFooter(array $data): void
-{
-    app(UpdatePortalFooter::class)->handle($data, test()->admin);
-}
+it('AC-4: saves every widget type in order, keeps visibility, and logs once', function () {
+    $widgets = [
+        ftr('text', ['heading' => 'Tentang', 'body' => '<p>Isi <strong>tebal</strong></p>', 'show_logo' => true]),
+        ftr('contacts', ['heading' => 'Hubungi']),
+        ftr('social', ['heading' => null], visible: false),
+        ftr('links', ['heading' => 'Tautan', 'items' => [navItem('url', 'Berita', ['url' => '/berita']), navItem('psb.status')]]),
+    ];
 
-it('AC-11: saves the description, the short text and both switches, and logs once', function () {
-    profilSaveFooter([
-        'footer_description' => 'Deskripsi uji', 'footer_text' => ['title' => 'Jam Layanan', 'body' => "Senin-Jumat\n08.00-15.00"],
-        'footer_show_contacts' => false, 'footer_show_social' => false,
-    ]);
+    ftrSave($widgets);
 
-    expect(Setting::get('portal.footer_description'))->toBe('Deskripsi uji')
-        ->and(Setting::get('portal.footer_text'))->toBe(['title' => 'Jam Layanan', 'body' => "Senin-Jumat\n08.00-15.00"])
-        ->and(Setting::get('portal.footer_show_contacts'))->toBeFalse()
-        ->and(Setting::get('portal.footer_show_social'))->toBeFalse()
+    $stored = ftrStored();
+
+    expect(array_column($stored, 'type'))->toBe(['text', 'contacts', 'social', 'links'])
+        ->and(array_column($stored, 'visible'))->toBe([true, true, false, true])
+        ->and($stored[0]['data'])->toEqual(['heading' => 'Tentang', 'body' => '<p>Isi <strong>tebal</strong></p>', 'show_logo' => true])
+        ->and($stored[1]['data'])->toEqual(['heading' => 'Hubungi'])
+        ->and($stored[2]['data'])->toEqual(['heading' => null])
+        ->and($stored[3]['data']['items'])->toEqual([navItem('url', 'Berita', ['url' => '/berita']), navItem('psb.status')])
         ->and(kontenActivities()->where('description', 'portal_footer_updated'))->toHaveCount(1);
 
-    profilSaveFooter([
-        'footer_description' => 'Deskripsi uji', 'footer_text' => ['title' => 'Jam Layanan', 'body' => "Senin-Jumat\n08.00-15.00"],
-        'footer_show_contacts' => false, 'footer_show_social' => false,
-    ]);
+    ftrSave($stored);
 
-    expect(kontenActivities()->where('description', 'portal_footer_updated'))->toHaveCount(1);
+    expect(ftrStored())->toEqual($stored)
+        ->and(kontenActivities()->where('description', 'portal_footer_updated'))->toHaveCount(1);
 });
 
-it('AC-11: stores an empty body as null text, a title without a body is rejected, and a body without a title is fine', function () {
-    profilSaveFooter(['footer_text' => ['title' => '', 'body' => '   ']]);
+it('AC-4: sanitizes the text body on save, and an empty list is stored as empty', function () {
+    ftrSave([ftr('text', ['body' => '<p>Aman</p><script>alert(1)</script><a href="javascript:alert(2)">klik</a>', 'show_logo' => false])]);
 
-    expect(Setting::get('portal.footer_text'))->toBeNull();
+    expect(ftrStored()[0]['data']['body'])->toContain('Aman')->not->toContain('<script')->not->toContain('javascript:');
 
-    $before = profilSettingsSnapshot();
+    ftrSave([]);
 
-    profilAssertInvalid(fn () => profilSaveFooter(['footer_text' => ['title' => 'Judul saja', 'body' => '']]), 'footer_text.body');
-    expect(profilSettingsSnapshot())->toBe($before);
-
-    profilSaveFooter(['footer_text' => ['title' => '', 'body' => 'Isi saja']]);
-
-    expect(Setting::get('portal.footer_text'))->toBe(['title' => null, 'body' => 'Isi saja']);
+    expect(ftrStored())->toBe([]);
 });
 
-it('AC-11: switches default to true and an empty description is stored as null', function () {
-    profilSaveFooter(['footer_description' => 'A']);
-    profilSaveFooter(['footer_description' => '']);
+it('AC-5: rejects an invalid widget list with an error on the right field and changes nothing', function (array $widgets, string $field) {
+    ftrSave([ftr('contacts', ['heading' => 'Lama'])]);
 
-    expect(Setting::get('portal.footer_description'))->toBeNull()
-        ->and(Setting::get('portal.footer_show_contacts') ?? true)->toBeTrue()
-        ->and(Setting::get('portal.footer_show_social') ?? true)->toBeTrue();
+    ftrAssertRejected($widgets, $field, $field);
+})->with(function (): array {
+    $links = fn (array $items): array => [ftr('links', ['items' => $items])];
+    $item = navItem('url', 'X', ['url' => '/berita']);
+
+    return [
+        'fifth widget, hidden ones count' => [[ftr('social'), ftr('social', visible: false), ftr('contacts'), ftr('contacts', visible: false), ftr('social')], 'footer_widgets'],
+        'group item' => [$links([navItem('group', 'G', ['children' => [navItem('home')]])]), 'footer_widgets.0.data.items.0.type'],
+        'unsafe url' => [$links([$item, navItem('url', 'Y', ['url' => 'javascript:alert(1)'])]), 'footer_widgets.0.data.items.1.url'],
+        'protocol relative url' => [$links([navItem('url', 'Y', ['url' => '//evil.test'])]), 'footer_widgets.0.data.items.0.url'],
+        'thirteen items' => [$links(array_fill(0, 13, $item)), 'footer_widgets.0.data.items'],
+        'no items' => [$links([]), 'footer_widgets.0.data.items'],
+        'label over 60' => [$links([navItem('url', str_repeat('a', 61), ['url' => '/berita'])]), 'footer_widgets.0.data.items.0.label'],
+        'heading 61' => [[ftr('social', ['heading' => str_repeat('h', 61)])], 'footer_widgets.0.data.heading'],
+        'body over 6000 after sanitizing' => [[ftr('text', ['body' => '<p>'.str_repeat('a', 6001).'</p>', 'show_logo' => true])], 'footer_widgets.0.data.body'],
+    ];
 });
 
-it('AC-11: enforces the length limits and changes nothing', function (array $input, string $field) {
-    profilSaveFooter(['footer_description' => 'Lama']);
-    $before = profilSettingsSnapshot();
-
-    profilAssertInvalid(fn () => profilSaveFooter($input), $field);
-
-    expect(profilSettingsSnapshot())->toBe($before);
-})->with([
-    'description 501' => [['footer_description' => str_repeat('a', 501)], 'footer_description'],
-    'title 61' => [['footer_text' => ['title' => str_repeat('a', 61), 'body' => 'Isi']], 'footer_text.title'],
-    'body 301' => [['footer_text' => ['title' => 'J', 'body' => str_repeat('a', 301)]], 'footer_text.body'],
-]);
-
-it('AC-11: accepts exactly the limits and keeps the text plain (no markup)', function () {
-    profilSaveFooter(['footer_description' => str_repeat('a', 500), 'footer_text' => ['title' => str_repeat('b', 60), 'body' => str_repeat('c', 300)]]);
-
-    expect(Setting::get('portal.footer_text')['title'])->toHaveLength(60)->and(Setting::get('portal.footer_text')['body'])->toHaveLength(300);
-
-    profilSaveFooter(['footer_text' => ['title' => '<b>Tebal</b>', 'body' => '<script>alert(1)</script>']]);
-
-    expect(json_encode(Setting::get('portal.footer_text')))->not->toContain('<b>')->not->toContain('<script');
+it('AC-5: rejects the widget types that belong to the home page or do not exist', function () {
+    foreach (['quote', 'cta', 'hero', 'feed', 'video', 'bukan-tipe'] as $type) {
+        ftrAssertRejected([ftr('social'), ftr($type, ['heading' => 'X', 'text' => 'X'])], 'footer_widgets.1.type', $type);
+    }
 });
 
-it('AC-11: ignores the removed quote and link fields without writing the old keys', function () {
-    profilSaveFooter([
-        'footer_description' => 'A', 'footer_quote_arabic' => 'نص', 'footer_quote_translation' => 'T', 'footer_quote_source' => 'S',
-        'footer_links' => [['label' => 'X', 'url' => '/berita']],
-    ]);
+it('AC-5: accepts a body of exactly 6000 characters and twelve links', function () {
+    $body = '<p>'.str_repeat('a', 5993).'</p>';
 
-    expect(Setting::query()->whereIn('key', ['portal.footer_quote_arabic', 'portal.footer_quote_translation', 'portal.footer_quote_source', 'portal.footer_links'])->count())->toBe(0);
+    expect(strlen($body))->toBe(6000);
+
+    ftrSave([ftr('text', ['body' => $body, 'show_logo' => false]), ftr('links', ['items' => array_fill(0, 12, navItem('home'))])]);
+
+    expect(ftrStored())->toHaveCount(2)->and(ftrStored()[1]['data']['items'])->toHaveCount(12);
 });

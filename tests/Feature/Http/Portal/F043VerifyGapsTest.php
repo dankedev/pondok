@@ -1,6 +1,5 @@
 <?php
 
-use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalNavigation;
 use App\Models\Setting;
 use Database\Seeders\RolePermissionSeeder;
@@ -20,9 +19,9 @@ beforeEach(function () {
 
 it('GAP: the portal still renders when the stored navigation and footer values are junk', function (string $primary, string $footer, string $button, string $text) {
     profilRawSet('portal.navigation_primary', $primary);
-    profilRawSet('portal.navigation_footer', $footer);
+    profilRawSet('portal.footer_widgets', $footer);
     profilRawSet('portal.header_button', $button);
-    profilRawSet('portal.footer_text', $text);
+    profilRawSet('portal.home_blocks', $text);
     app()->forgetScopedInstances();
 
     $this->get('/')->assertOk();
@@ -38,10 +37,10 @@ it('GAP: the portal still renders when the stored navigation and footer values a
     ],
 ]);
 
-it('GAP: unsafe urls written straight into settings are never rendered (menu, group child, footer, button)', function () {
+it('GAP: unsafe urls written straight into settings are never rendered (menu, group child, footer widget, button)', function () {
     $bad = fn (string $url): array => navItem('url', 'Jahat', ['url' => $url]);
     profilRawSet('portal.navigation_primary', [navItem('home'), $bad('javascript:alert(1)'), navGroup('G', [$bad('data:text/html,x'), $bad('//evil.test')])]);
-    profilRawSet('portal.navigation_footer', [$bad('javascript:alert(2)')]);
+    ftrSet([ftr('links', ['items' => [$bad('javascript:alert(2)')]])]);
     profilRawSet('portal.header_button', $bad('vbscript:x'));
     app()->forgetScopedInstances();
 
@@ -76,23 +75,16 @@ it('GAP: the update action rejects a non-news category and a label that is only 
     'album category' => [fn ($c) => ['primary' => [navItem('category', null, ['category_id' => $c->id])]], 'primary.0.category_id'],
     'url label that is only markup' => [fn () => ['primary' => [navItem('url', '<b></b>', ['url' => '/berita'])]], 'primary.0.label'],
     'group label that is only a script tag' => [fn () => ['primary' => [navGroup('<script></script>', [navItem('home')])]], 'primary.0.label'],
-    'ftp url' => [fn () => ['footer' => [navItem('url', 'X', ['url' => 'ftp://contoh.test/a'])]], 'footer.0.url'],
-    'url without a host' => [fn () => ['footer' => [navItem('url', 'X', ['url' => 'https:///a'])]], 'footer.0.url'],
-    'internal path with a tab' => [fn () => ['footer' => [navItem('url', 'X', ['url' => "/a\t//evil.test"])]], 'footer.0.url'],
     'type given as a list' => [fn () => ['primary' => [['type' => ['home']]]], 'primary.0.type'],
     'children given as text' => [fn () => ['primary' => [navItem('group', 'G', ['children' => 'home'])]], 'primary.0.children'],
 ]);
 
-it('GAP: the footer text action strips markup, rejects overlong text and keeps nothing on failure', function () {
-    $actor = kontenUser('admin-konten');
-    app(UpdatePortalFooter::class)->handle(['footer_description' => 'Awal', 'footer_text' => ['title' => '<i>Jam</i>', 'body' => "<script>x</script>Senin\nSabtu"]], $actor);
-
-    expect(Setting::get('portal.footer_text'))->toBe(['title' => 'Jam', 'body' => "xSenin\nSabtu"]);
-
+it('GAP: the footer widget action rejects tricky link urls and keeps nothing on failure', function () {
+    ftrSave([ftr('social', ['heading' => 'Awal'])]);
     $before = profilSettingsSnapshot();
 
-    foreach ([['title' => str_repeat('a', 61), 'body' => 'x'], ['title' => 'T', 'body' => str_repeat('a', 301)]] as $text) {
-        expect(fn () => app(UpdatePortalFooter::class)->handle(['footer_description' => 'Baru', 'footer_text' => $text], $actor))->toThrow(ValidationException::class);
+    foreach (['ftp://contoh.test/a', 'https:///a', "/a\t//evil.test"] as $url) {
+        expect(fn () => ftrSave([ftr('links', ['items' => [navItem('url', 'X', ['url' => $url])]])]))->toThrow(ValidationException::class);
     }
 
     expect(profilSettingsSnapshot())->toBe($before);

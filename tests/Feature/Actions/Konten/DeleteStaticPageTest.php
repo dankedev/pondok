@@ -6,28 +6,28 @@ use App\Models\StaticPage;
 use Illuminate\Support\Facades\Schema;
 
 /*
-| F037 AC-12 dan AC-13; F043 AC-10 (rujukan `portal.navigation_primary` akar dan anak grup, `portal.navigation_footer`, `portal.header_button` → false). Kontrak: `DeleteStaticPage::handle(StaticPage $page): void`.
+| F037 AC-12 dan AC-13; F043 AC-10 (rujukan `portal.navigation_primary` akar dan anak grup, `portal.header_button` → false); F046 AC-8: `portal.navigation_footer` dan `portal.footer_widgets` tidak disentuh. Kontrak: `DeleteStaticPage::handle(StaticPage $page): void`.
 */
 
 beforeEach(function () {
     $this->f = kontenBoot(withPages: true);
 });
 
-it('AC-10: hard deletes a page and detaches its references from primary menu, footer and header button', function () {
+it('AC-10: hard deletes a page and detaches its references from the primary menu and header button, and leaves footer widgets alone', function () {
     $x = staticPage(['slug' => 'x-halaman']);
     $y = staticPage(['slug' => 'y-halaman']);
-    navSet(
-        [navItem('home'), navPage($x), navPage($y)],
-        [navItem('url', 'Berita', ['url' => '/berita']), navPage($x), navPage($y, 'Y')],
-        navPage($x),
-    );
+    navSet([navItem('home'), navPage($x), navPage($y)], navPage($x));
+    $widgets = [ftr('links', ['heading' => 'Tautan', 'items' => [navPage($x), navPage($y, 'Y')]])];
+    ftrSet($widgets);
+    profilRawSet('portal.navigation_footer', [navPage($x)]);
 
     app(DeleteStaticPage::class)->handle($x);
 
     expect(StaticPage::query()->whereKey($x->id)->exists())->toBeFalse()
         ->and(Schema::hasColumn('pages', 'deleted_at'))->toBeFalse()
         ->and(Setting::get('portal.navigation_primary'))->toEqual([navItem('home'), navPage($y)])
-        ->and(Setting::get('portal.navigation_footer'))->toEqual([navItem('url', 'Berita', ['url' => '/berita']), navPage($y, 'Y')])
+        ->and(ftrStored())->toEqual($widgets)
+        ->and(profilRawGet('portal.navigation_footer'))->toEqual([navPage($x)])
         ->and(Setting::get('portal.header_button'))->toBeFalse();
 });
 
@@ -44,17 +44,17 @@ it('AC-10: removes the page from a group and drops a group that becomes empty', 
 
 it('AC-10: an emptied menu stays an empty list instead of falling back to the default menu', function () {
     $x = staticPage();
-    navSet([navPage($x)], [navPage($x)]);
+    navSet([navPage($x)]);
 
     app(DeleteStaticPage::class)->handle($x);
 
-    expect(Setting::get('portal.navigation_primary'))->toBe([])->and(Setting::get('portal.navigation_footer'))->toBe([]);
+    expect(Setting::get('portal.navigation_primary'))->toBe([]);
 });
 
 it('AC-10: leaves unset keys and a button pointing elsewhere untouched', function () {
     $x = staticPage();
     $y = staticPage();
-    navSet(null, null, navPage($y));
+    navSet(null, navPage($y));
     $before = profilSettingsSnapshot();
 
     app(DeleteStaticPage::class)->handle($x);

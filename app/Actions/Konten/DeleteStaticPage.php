@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * Hapus permanen halaman bebas (F037) dan lepas rujukannya dari navigasi portal (F043)
  * dalam satu transaksi, agar ID yang kelak dipakai ulang DB tidak muncul di menu: item
- * menu utama (akar dan anak grup; grup yang jadi kosong ikut dibuang), navigasi footer,
- * dan tombol header (menjadi `false`). Daftar yang jadi kosong disimpan `[]` supaya menu
- * bawaan tidak muncul lagi; key yang belum diatur tidak disentuh. Guard akhir halaman
+ * menu utama (akar dan anak grup; grup yang jadi kosong ikut dibuang) dan tombol header
+ * (menjadi `false`). Daftar yang jadi kosong disimpan `[]` supaya menu bawaan tidak muncul
+ * lagi; key yang belum diatur tidak disentuh. Widget footer (F046) tidak disentuh: tautan ke
+ * halaman yang hilang tidak dirender dan dibuang saat form Footer diisi. Guard akhir halaman
  * sistem: super-admin melewati policy.
  */
 class DeleteStaticPage
@@ -20,7 +21,7 @@ class DeleteStaticPage
     use ValidatesContentInput;
 
     /** Key settings berisi daftar item ber-`page_id`. */
-    public const REFERENCE_KEYS = ['portal.navigation_primary', 'portal.navigation_footer'];
+    public const REFERENCE_KEYS = ['portal.navigation_primary'];
 
     public function handle(StaticPage $page): void
     {

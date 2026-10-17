@@ -10,7 +10,7 @@ use Livewire\Livewire;
 | F043 AC-9 (UI) dan AC-13. Kontrak halaman: `App\Filament\Pages\Site\Navigation`
 | (slug `site/navigation`, /admin/site/navigation), tombol simpan memanggil `save`. State form:
 | - `data.primary`: repeater baris `{type, label, page_id, category_id, url, children}` (anak grup: repeater yang sama tanpa tipe `group`);
-| - `data.footer`: repeater baris yang sama tanpa grup;
+| - tanpa `data.footer` dan tanpa section Navigasi footer (F046: tautan footer = widget Tautan di halaman Footer);
 | - `data.header_button`: `{type, label, page_id, category_id, url}` dengan `type = 'none'` untuk "Tanpa tombol".
 | Form diisi dari daftar efektif (bawaan dimaterialisasi). Aksi halaman statis: `addToPrimaryNavigation`
 | ("Tambahkan ke menu utama"), tampil dan boleh dipanggil hanya untuk yang punya `view:school-profile`.
@@ -57,14 +57,14 @@ it('AC-13: fills the form with the effective default navigation when nothing is 
 
     expect(array_column($primary, 'type'))->toBe(['home', 'page', 'posts', 'albums', 'videos', 'psb.info', 'page'])
         ->and([$primary[1]['page_id'], $primary[6]['page_id']])->toBe([$profil->id, $kontak->id])
-        ->and(array_column(navRows($component->get('data.footer')), 'type'))->toBe(['psb.status', 'letters.verify'])
+        ->and($component->get('data.footer'))->toBeNull()
         ->and($component->get('data.header_button.type'))->toBe('psb.register');
 });
 
 it('AC-13: fills the form from the saved navigation, including groups and no button', function () {
     $this->actingAs(kontenUser('admin-konten'));
     $page = staticPage(['slug' => 'pengurus']);
-    navSet([navItem('home'), navGroup('Profil', [navPage($page, 'Pengurus'), navItem('url', 'Luar', ['url' => 'https://contoh.test'])])], [navItem('url', 'Berita', ['url' => '/berita'])], false);
+    navSet([navItem('home'), navGroup('Profil', [navPage($page, 'Pengurus'), navItem('url', 'Luar', ['url' => 'https://contoh.test'])])], false);
 
     $component = Livewire::test(Navigation::class);
     $primary = navRows($component->get('data.primary'));
@@ -73,7 +73,6 @@ it('AC-13: fills the form from the saved navigation, including groups and no but
     expect($primary[1])->toMatchArray(['type' => 'group', 'label' => 'Profil'])
         ->and($children[0])->toMatchArray(['type' => 'page', 'page_id' => $page->id, 'label' => 'Pengurus'])
         ->and($children[1])->toMatchArray(['type' => 'url', 'label' => 'Luar', 'url' => 'https://contoh.test'])
-        ->and(navRows($component->get('data.footer'))[0])->toMatchArray(['type' => 'url', 'label' => 'Berita', 'url' => '/berita'])
         ->and($component->get('data.header_button.type'))->toBe('none');
 });
 
@@ -89,7 +88,6 @@ it('AC-13: saves through the form by calling the action', function () {
                 ['type' => 'group', 'label' => 'Profil', 'children' => [['type' => 'page', 'page_id' => $page->id, 'label' => ''], ['type' => 'category', 'category_id' => $category->id, 'label' => '']]],
                 ['type' => 'url', 'label' => 'Situs', 'url' => 'https://contoh.test'],
             ],
-            'footer' => [['type' => 'url', 'label' => 'Berita', 'url' => '/berita']],
             'header_button' => ['type' => 'none'],
         ])
         ->call('save')
@@ -98,7 +96,7 @@ it('AC-13: saves through the form by calling the action', function () {
 
     expect(Setting::get('portal.navigation_primary'))->toEqual([
         navItem('home'), navGroup('Profil', [navPage($page), navItem('category', null, ['category_id' => $category->id])]), navItem('url', 'Situs', ['url' => 'https://contoh.test']),
-    ])->and(Setting::get('portal.navigation_footer'))->toEqual([navItem('url', 'Berita', ['url' => '/berita'])])
+    ])->and(Setting::get('portal.navigation_footer'))->toBeNull()
         ->and(Setting::get('portal.header_button'))->toBeFalse()
         ->and(kontenActivities()->where('description', 'portal_navigation_updated'))->toHaveCount(1);
 });
@@ -109,14 +107,12 @@ it('AC-13: shows nested row errors on the right field and saves nothing', functi
     $component = Livewire::test(Navigation::class)
         ->fillForm([
             'primary' => [['type' => 'group', 'label' => 'Profil', 'children' => [['type' => 'url', 'label' => 'X', 'url' => '//evil.test']]]],
-            'footer' => [['type' => 'url', 'label' => 'Y', 'url' => 'javascript:x']],
             'header_button' => ['type' => 'none'],
         ])
         ->call('save');
     $keys = $component->errors()->keys();
 
     expect(collect($keys)->contains(fn (string $key): bool => preg_match('/^data\.primary\.[^.]+\.children\.[^.]+\.url$/', $key) === 1))->toBeTrue()
-        ->and(collect($keys)->contains(fn (string $key): bool => preg_match('/^data\.footer\.[^.]+\.url$/', $key) === 1))->toBeTrue()
         ->and(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button'])->count())->toBe(0);
 });
 
@@ -124,7 +120,7 @@ it('AC-13: shows an error, not an exception, when more than eight root items are
     $this->actingAs(kontenUser('admin-konten'));
 
     $component = Livewire::test(Navigation::class)
-        ->fillForm(['primary' => array_fill(0, 9, ['type' => 'home', 'label' => '']), 'footer' => [], 'header_button' => ['type' => 'none']])
+        ->fillForm(['primary' => array_fill(0, 9, ['type' => 'home', 'label' => '']), 'header_button' => ['type' => 'none']])
         ->call('save');
 
     expect(collect($component->errors()->keys())->contains(fn (string $key): bool => $key === 'data.primary' || str_starts_with($key, 'data.primary.')))->toBeTrue()
@@ -194,4 +190,10 @@ it('AC-9: the action is hidden and forbidden for a role that may edit pages but 
     }
 
     expect(profilSettingsSnapshot())->toBe($before);
+});
+
+it('AC-9 (F046): the navigation page no longer has a footer navigation field', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(Navigation::class)->assertFormFieldExists('primary')->assertFormFieldDoesNotExist('footer');
 });

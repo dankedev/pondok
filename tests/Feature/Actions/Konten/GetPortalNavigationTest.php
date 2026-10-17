@@ -9,10 +9,10 @@ use Illuminate\Support\Str;
 
 /*
 | F043 AC-3, AC-6, AC-8 (+ Minor 1 dan 2). Kontrak:
-| `GetPortalNavigation::handle(array $school): array{primary: list<Link|Group>, headerButton: ?Link, footer: list<Link>}`
+| `GetPortalNavigation::handle(array $school): array{primary: list<Link|Group>, headerButton: ?Link}` (tanpa `footer`: footer = widget, F046)
 | dengan `Link = {label, url, active}` dan `Group = {label, children: list<Link>, active}` (grup dikenali dari key `children`).
 | Bawaan (key settings tidak ada): primary = home, page:profil, posts, albums, videos, psb.info, page:kontak (halaman dicari
-| per slug saat baca, hanya yang ada); footer = psb.status, letters.verify; tombol = psb.register.
+| per slug saat baca, hanya yang ada); tombol = psb.register.
 */
 
 beforeEach(function () {
@@ -21,7 +21,7 @@ beforeEach(function () {
     Setting::set('modules.dokumen.enabled', true);
 });
 
-it('AC-3: uses the F037 default menu, footer and register button when the keys are missing', function () {
+it('AC-3: uses the F037 default menu and register button when the keys are missing', function () {
     navSeedPublicContent();
     portalContactData();
     portalPsbOpen();
@@ -30,8 +30,7 @@ it('AC-3: uses the F037 default menu, footer and register button when the keys a
     expect(navLabels($nav['primary']))->toBe(['Beranda', 'Profil', 'Berita', 'Galeri', 'Video', 'Kontak'])
         ->and(array_column($nav['primary'], 'url'))->toBe([route('portal.home'), route('portal.pages.show', 'profil'), route('portal.posts.index'), route('portal.albums.index'), route('portal.videos.index'), route('portal.pages.show', 'kontak')])
         ->and($nav['headerButton'])->toMatchArray(['label' => 'Daftar', 'url' => route('psb.register')])
-        ->and(navLabels($nav['footer']))->toBe(['Cek status pendaftaran', 'Verifikasi keaslian surat'])
-        ->and(array_column($nav['footer'], 'url'))->toBe([route('psb.status'), route('dokumen.letters.verify-form')]);
+        ->and($nav)->not->toHaveKey('footer');
 });
 
 it('AC-3: the default menu only contains existing published pages and skips contact without data', function () {
@@ -46,28 +45,23 @@ it('AC-3: the default menu only contains existing published pages and skips cont
     expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Berita', 'Galeri', 'Video']);
 });
 
-it('AC-3: the default footer follows the module switches', function () {
-    Setting::set('modules.dokumen.enabled', false);
+it('AC-8 (F046): the navigation has no footer, even when an old footer key is still stored', function () {
+    profilRawSet('portal.navigation_footer', [navItem('url', 'Sisa Lama', ['url' => '/berita'])]);
 
-    expect(navLabels(navResolve()['footer']))->toBe(['Cek status pendaftaran']);
-
-    Setting::set('modules.psb.enabled', false);
-    Setting::set('modules.dokumen.enabled', true);
-
-    expect(navLabels(navResolve()['footer']))->toBe(['Verifikasi keaslian surat']);
+    expect(navResolve())->not->toHaveKey('footer')->and(GetPortalNavigation::SETTING_KEYS)->not->toContain('portal.navigation_footer');
 });
 
 it('AC-3: an empty primary list renders no menu items and a false button renders no button', function () {
     portalPsbOpen();
-    navSet([], [], false);
+    navSet([], false);
     $nav = navResolve();
 
-    expect($nav['primary'])->toBe([])->and($nav['footer'])->toBe([])->and($nav['headerButton'])->toBeNull();
+    expect($nav['primary'])->toBe([])->and($nav['headerButton'])->toBeNull();
 });
 
 it('AC-3: the register button hides when psb is off even if configured', function () {
     portalPsbOpen();
-    navSet(null, null, navItem('psb.register'));
+    navSet(null, navItem('psb.register'));
     expect(navResolve()['headerButton']['label'])->toBe('Daftar');
 
     Setting::set('modules.psb.enabled', false);
@@ -200,34 +194,25 @@ it('AC-6: renders a group with only its available children', function () {
 it('AC-6: drops broken items one by one and keeps the rest', function () {
     $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus']);
     Setting::set('portal.navigation_primary', ['rusak', 5, null, ['type' => 'page', 'page_id' => 'abc'], navItem('home'), ['label' => 'tanpa tipe'], navPage($page), navGroup('Bersarang', [navGroup('Dalam', [navItem('home')])])]);
-    Setting::set('portal.navigation_footer', 'bukan-daftar');
     app()->forgetScopedInstances();
     $nav = navResolve();
 
-    expect(navLabels($nav['primary']))->toBe(['Beranda', 'Pengurus'])->and($nav['footer'])->toBe([]);
+    expect(navLabels($nav['primary']))->toBe(['Beranda', 'Pengurus']);
 });
 
-it('AC-6: falls back labels per area (menu cuts page titles at 30 characters, footer does not)', function () {
+it('AC-6: falls back labels (the menu cuts page titles at 30 characters)', function () {
     $title = str_repeat('Panjang', 8); // 56 karakter
     $page = staticPage(['slug' => 'panjang', 'title' => $title]);
     $category = kontenCategory('post', 'Pengumuman Penting');
     portalPost(['category_id' => $category->id]);
     navSet(
         [navPage($page), navPage($page, 'Dengan Label'), navItem('category', null, ['category_id' => $category->id]), navItem('home', 'Awal'), navItem('posts', '  ')],
-        [navPage($page), navItem('category', null, ['category_id' => $category->id]), navItem('home')],
         navPage($page),
     );
     $nav = navResolve();
 
     expect(navLabels($nav['primary']))->toBe([Str::limit($title, 30), 'Dengan Label', 'Pengumuman Penting', 'Awal', 'Berita'])
-        ->and(navLabels($nav['footer']))->toBe([$title, 'Pengumuman Penting', 'Beranda'])
         ->and($nav['headerButton']['label'])->toBe(Str::limit($title, 30));
-});
-
-it('AC-6: the footer never shows groups and uses the saved labels', function () {
-    navSet(null, [navItem('url', 'Tautan Uji', ['url' => '/berita']), navGroup('Grup', [navItem('home')]), navItem('home', 'Awal')]);
-
-    expect(navLabels(navResolve()['footer']))->toBe(['Tautan Uji', 'Awal']);
 });
 
 it('AC-8: composes the navigation with at most 3 extra queries and one settings read for profile and navigation', function () {
@@ -237,7 +222,6 @@ it('AC-8: composes the navigation with at most 3 extra queries and one settings 
     $categories->each(fn ($category) => portalPost(['title' => "Berita {$category->id}", 'category_id' => $category->id]));
     navSet(
         [navItem('home'), ...$pages->map(fn ($page): array => navPage($page))->all(), ...$categories->map(fn ($category): array => navItem('category', null, ['category_id' => $category->id]))->all()],
-        [navPage($pages[0]), navPage($pages[1])],
     );
     app()->forgetScopedInstances();
     Setting::moduleEnabled('konten');
@@ -266,7 +250,7 @@ it('AC-8: composes list checks for posts, albums and videos without per-item que
 
     expect(count($lists))->toBeLessThanOrEqual(3);
 
-    navSet([navItem('home'), navItem('url', 'X', ['url' => '/berita']), navItem('psb.status'), navItem('letters.verify')], [navItem('psb.status')], navItem('psb.register'));
+    navSet([navItem('home'), navItem('url', 'X', ['url' => '/berita']), navItem('psb.status'), navItem('letters.verify')], navItem('psb.register'));
     app()->forgetScopedInstances();
     $profile = app(GetSchoolProfile::class)->handle();
     Setting::moduleEnabled('konten');

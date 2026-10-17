@@ -25,10 +25,10 @@ it('AC-5: escapes the free text fields of the home page', function () {
     $script = '<script>alert(1)</script>';
     profilSet([
         'school.contacts' => [profilContact(['label' => $script])],
-        'portal.footer_text' => ['title' => $script, 'body' => $script],
     ]);
     blkSet([blk('hero', ['title' => $script, 'eyebrow' => $script, 'text' => $script]), blk('features', ['heading' => $script, 'items' => [['title' => 'Kartu', 'text' => $script]]])]);
-    navSet([navItem('url', $script, ['url' => '/berita'])], [navItem('url', $script, ['url' => '/berita'])]);
+    navSet([navItem('url', $script, ['url' => '/berita'])]);
+    ftrSet([ftr('text', ['heading' => $script, 'body' => $script, 'show_logo' => false]), ftr('links', ['heading' => $script, 'items' => [navItem('url', $script, ['url' => '/berita'])]])]);
 
     $html = $this->get('/')->assertOk()->getContent();
 

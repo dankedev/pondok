@@ -32,10 +32,7 @@ class GetSchoolProfile
         'school.contacts',
         'school.social_links',
         'portal.home_blocks',
-        'portal.footer_description',
-        'portal.footer_text',
-        'portal.footer_show_contacts',
-        'portal.footer_show_social',
+        'portal.footer_widgets',
         // Dibaca bersama agar `GetPortalNavigation` memakai cache tanpa query tambahan (F043).
         ...GetPortalNavigation::SETTING_KEYS,
     ];
@@ -77,12 +74,7 @@ class GetSchoolProfile
             'social_links' => $this->socialLinks($values['school.social_links']),
             // Mentah: dibaca (dan disanitasi) hanya lewat `ParseContentBlocks`.
             'home_blocks' => $values['portal.home_blocks'],
-            'footer' => [
-                'description' => $text('portal.footer_description'),
-                'text' => $this->footerText($values['portal.footer_text']),
-                'show_contacts' => $values['portal.footer_show_contacts'] !== false,
-                'show_social' => $values['portal.footer_show_social'] !== false,
-            ],
+            'footer_widgets' => $values['portal.footer_widgets'],
         ];
     }
 
@@ -170,17 +162,5 @@ class GetSchoolProfile
         }
 
         return $links;
-    }
-
-    /**
-     * Teks pendek footer: `null` bila isi kosong atau nilai rusak; judul opsional.
-     *
-     * @return ?array{title: ?string, body: string}
-     */
-    private function footerText(mixed $value): ?array
-    {
-        $body = is_array($value) ? $this->text($value['body'] ?? null) : null;
-
-        return $body === null ? null : ['title' => $this->text($value['title'] ?? null), 'body' => $body];
     }
 }

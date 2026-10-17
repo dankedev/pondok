@@ -16,10 +16,11 @@ use Illuminate\Support\Str;
 
 /**
  * Navigasi portal (F043), dihitung sekali per render layout: menu utama (tautan dan grup
- * submenu satu tingkat), tombol header, dan navigasi footer.
+ * submenu satu tingkat) dan tombol header. Tautan footer ada di widget footer (F046,
+ * `GetPortalFooter`), yang memakai `resolveItems()`.
  *
  * Item tersimpan `{type, label: ?string, page_id?, category_id?, url?, children?}` di
- * `portal.navigation_primary`, `portal.navigation_footer`, dan `portal.header_button`
+ * `portal.navigation_primary` dan `portal.header_button`
  * (dibaca bersama profil lewat `GetSchoolProfile::KEYS`). Key tidak ada = bawaan; daftar
  * kosong = tanpa item; tombol `false` = tanpa tombol. Item rusak dibuang per item saat baca,
  * dan tujuan yang tidak tersedia (modul mati, halaman draf, daftar kosong, route belum ada)
@@ -29,7 +30,7 @@ class GetPortalNavigation
 {
     use ValidatesPublicUrls;
 
-    public const SETTING_KEYS = ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button'];
+    public const SETTING_KEYS = ['portal.navigation_primary', 'portal.header_button'];
 
     /** Tipe tujuan; `group` hanya di akar menu utama. */
     public const TYPES = ['home', 'page', 'posts', 'category', 'albums', 'videos', 'psb.info', 'psb.register', 'psb.status', 'letters.verify', 'url', 'group'];
@@ -38,19 +39,13 @@ class GetPortalNavigation
 
     public const MAX_CHILDREN = 8;
 
-    public const MAX_FOOTER = 12;
-
     /** Batas label menu utama, anak grup, dan tombol header. */
     public const LABEL_MAX_MENU = 30;
-
-    public const LABEL_MAX_FOOTER = 60;
 
     public const URL_MAX_LENGTH = 255;
 
     /** Menu bawaan (sama dengan header sebelum F037); halaman dicari per slug. */
     public const DEFAULT_PRIMARY = ['home', 'page:profil', 'posts', 'albums', 'videos', 'psb.info', 'page:kontak'];
-
-    public const DEFAULT_FOOTER = ['psb.status', 'letters.verify'];
 
     public const DEFAULT_HEADER_BUTTON = 'psb.register';
 
@@ -82,7 +77,7 @@ class GetPortalNavigation
 
     /**
      * @param  array<string, mixed>  $school  keluaran `GetSchoolProfile`
-     * @return array{primary: list<array<string, mixed>>, headerButton: ?array{label: string, url: string, active: bool}, footer: list<array{label: string, url: string, active: bool}>}
+     * @return array{primary: list<array<string, mixed>>, headerButton: ?array{label: string, url: string, active: bool}}
      */
     public function handle(array $school): array
     {
@@ -91,18 +86,14 @@ class GetPortalNavigation
 
         $primaryValue = $stored['portal.navigation_primary'];
         $primary = $primaryValue === null ? $this->defaultPrimary() : self::parseItems($primaryValue, true);
-        $footer = $stored['portal.navigation_footer'] === null
-            ? array_map(fn (string $type): array => ['type' => $type, 'label' => null], self::DEFAULT_FOOTER)
-            : self::parseItems($stored['portal.navigation_footer'], false);
         $buttonValue = $stored['portal.header_button'];
         $button = $buttonValue === null ? ['type' => self::DEFAULT_HEADER_BUTTON, 'label' => null] : (is_array($buttonValue) ? self::parseItem($buttonValue, false) : null);
 
-        $this->loadReferences([...$primary, ...$footer, ...($button === null ? [] : [$button])], $primaryValue === null, GetSchoolProfile::hasContactData($school));
+        $this->loadReferences([...$primary, ...($button === null ? [] : [$button])], $primaryValue === null, GetSchoolProfile::hasContactData($school));
 
         return [
             'primary' => $this->markVisionUnderProfile($this->links($primary, self::LABEL_MAX_MENU)),
             'headerButton' => $button === null ? null : $this->link($button, self::LABEL_MAX_MENU),
-            'footer' => $this->links($footer, null),
         ];
     }
 

@@ -56,7 +56,8 @@ it('AC-15: does not shadow reserved routes', function () {
 it('AC-16: escapes page titles, menu labels and footer labels', function () {
     $x = '<script>alert(1)</script>';
     $page = staticPage(['slug' => 'pengurus', 'title' => $x]);
-    navSet([navItem('home'), navPage($page, $x)], [navItem('url', $x, ['url' => '/berita']), navPage($page, $x)]);
+    navSet([navItem('home'), navPage($page, $x)]);
+    ftrSet([ftr('links', ['items' => [navItem('url', $x, ['url' => '/berita']), navPage($page, $x)]])]);
 
     foreach (['/', '/pengurus'] as $url) {
         $html = $this->get($url)->assertOk()->getContent();
@@ -104,7 +105,7 @@ it('AC-17a: the contact page needs contact data', function () {
     $this->get('/kontak')->assertNotFound();
     expect(portalNavTexts($this->get('/')->getContent()))->not->toContain('Kontak');
 
-    navSet(null, [navPage(StaticPage::findBySlug('kontak'))]);
+    ftrSet([ftr('links', ['items' => [navPage(StaticPage::findBySlug('kontak'))]])]);
     expect(profilFooter($this->get('/')->getContent()))->not->toContain('/kontak');
     expect($this->get('/sitemap.xml')->getContent())->not->toContain('/kontak');
 });

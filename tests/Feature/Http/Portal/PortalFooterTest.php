@@ -3,10 +3,12 @@
 use App\Models\Setting;
 
 /*
-| F043 AC-11 dan AC-12. Kontrak footer: `<footer>` generik berisi nama, deskripsi, kontak (saklar `footer_show_contacts`),
-| media sosial (`footer_show_social`), kolom navigasi footer berjudul `pondok.portal.footer.links` ("Tautan"),
-| teks pendek (`portal.footer_text`: judul + isi dengan `whitespace-pre-line`, teks polos ter-escape), dan hak cipta.
-| Tidak ada markup kutipan. Footer ringkas (route `psb.*` dan 404): hanya nama, navigasi footer, dan hak cipta.
+| F046 AC-3, AC-6, AC-7. Kontrak footer: `<footer>` penuh berisi widget `portal.footer_widgets` sesuai urutan
+| (heading widget sebagai `<h2>`), lalu baris hak cipta (`pondok.portal.footer.rights`). Widget `text` dengan
+| `show_logo`: tile logo (`<img>` dari `school.logo_mobile_path`) dan nama lembaga; `links` dibungkus `<nav>` dengan
+| `aria-labelledby` (ke id heading) atau `aria-label` bila heading kosong; `contacts` dan `social` menampilkan semua
+| data Kontak & sosial. Grid memakai kelas literal `lg:grid-cols-{n}` (n = jumlah widget tampil). Footer ringkas
+| (`psb.*` dan 404): nama, `compactLinks` sebaris, hak cipta.
 */
 
 beforeEach(function () {
@@ -17,124 +19,192 @@ beforeEach(function () {
 });
 
 /**
- * Isi lengkap footer untuk membandingkan footer penuh dan ringkas.
+ * Footer lengkap lewat widget untuk membandingkan footer penuh dan ringkas.
  */
 function footerFill(): void
 {
     profilSet([
-        'portal.footer_description' => 'Deskripsi lembaga uji',
-        'portal.footer_text' => ['title' => 'Jam Layanan', 'body' => "Senin sampai Jumat\n08.00 sampai 15.00"],
         'school.contacts' => [profilContact(['label' => 'Panitia Uji', 'phone' => '081234567890'])],
         'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair']],
     ]);
-    navSet(null, [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Situs Mitra', ['url' => 'https://contoh.test/mitra'])]);
+    ftrSet([
+        ftr('text', ['body' => '<p>Deskripsi lembaga uji</p>', 'show_logo' => true]),
+        ftr('contacts', ['heading' => 'Hubungi']),
+        ftr('social', ['heading' => 'Ikuti']),
+        ftr('links', ['heading' => 'Tautan', 'items' => [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Situs Mitra', ['url' => 'https://contoh.test/mitra'])]]),
+    ]);
 }
 
-it('AC-11: renders the name, description, contacts, socials, footer links, short text and copyright', function () {
+function footerHtml(string $path = '/'): string
+{
+    return profilFooter(test()->get($path)->assertOk()->getContent());
+}
+
+it('AC-6: renders the widgets in order with their headings, then the copyright', function () {
     footerFill();
 
-    $footer = profilFooter($this->get('/')->assertOk()->getContent());
+    $footer = footerHtml();
+    $text = profilVisibleText($footer);
+    $positions = array_map(fn (string $needle): int|false => strpos($text, $needle), ['Deskripsi lembaga uji', 'Hubungi', 'Panitia Uji', 'Ikuti', 'Tautan', 'Berita Pilihan']);
+
+    expect($text)->toContain("Ma'had Al-Khair")->toContain('0812-3456-7890')->toContain(__('pondok.portal.social.instagram'))->toContain('Situs Mitra')
+        ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
+        ->and($positions)->each->not->toBeFalse()
+        ->and($positions)->toBe(collect($positions)->sort()->values()->all())
+        ->and($footer)->toMatch('#<h2\b[^>]*>\s*Hubungi\s*</h2>#')->toContain('href="/berita"')->toContain('href="https://contoh.test/mitra"')->toContain('href="https://instagram.com/alkhair"');
+});
+
+it('AC-6: shows the logo tile only when the text widget asks for it', function (bool $showLogo) {
+    Setting::set('school.logo_mobile_path', 'school/logo-uji.png');
+    ftrSet([ftr('text', ['body' => '<p>Isi</p>', 'show_logo' => $showLogo])]);
+
+    expect(str_contains(footerHtml(), 'school/logo-uji.png'))->toBe($showLogo);
+})->with([true, false]);
+
+it('AC-6: skips hidden and empty widgets without leaving headings or empty lists', function () {
+    ftrSet([
+        ftr('text', ['heading' => 'Teks Tersembunyi', 'body' => '<p>Rahasia</p>', 'show_logo' => false], visible: false),
+        ftr('text', ['heading' => 'Teks Kosong', 'body' => null, 'show_logo' => false]),
+        ftr('links', ['heading' => 'Tautan Hilang', 'items' => [navPage(99999), navPage(staticPage(['status' => 'draft']))]]),
+        ftr('contacts', ['heading' => 'Kontak Kosong']),
+        ftr('social', ['heading' => 'Sosial Kosong']),
+        ftr('text', ['heading' => 'Satu-satunya', 'body' => '<p>Tampil</p>', 'show_logo' => false]),
+    ]);
+
+    $footer = footerHtml();
     $text = profilVisibleText($footer);
 
-    expect($text)->toContain("Ma'had Al-Khair")->toContain('Deskripsi lembaga uji')
-        ->toContain('Panitia Uji')->toContain('0812-3456-7890')->toContain(__('pondok.portal.social.instagram'))
-        ->toContain(__('pondok.portal.footer.links'))->toContain('Berita Pilihan')->toContain('Situs Mitra')
-        ->toContain('Jam Layanan')->toContain('Senin sampai Jumat')->toContain('08.00 sampai 15.00')
-        ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
-        ->and($footer)->toContain('href="/berita"')->toContain('href="https://contoh.test/mitra"')->toContain('href="https://instagram.com/alkhair"');
+    expect($text)->toContain('Satu-satunya')->toContain('Tampil')
+        ->not->toContain('Teks Tersembunyi')->not->toContain('Rahasia')->not->toContain('Teks Kosong')->not->toContain('Tautan Hilang')
+        ->not->toContain('Kontak Kosong')->not->toContain('Sosial Kosong')
+        ->and($footer)->not->toMatch('#<(ul|nav)\b[^>]*>\s*</(ul|nav)>#')->toContain('lg:grid-cols-1');
 });
 
-it('AC-11: shows no quote markup even when an archived quote exists', function () {
-    footerFill();
-    Setting::set('portal.archived_footer_quote', ['arabic' => 'نص عربي للاختبار', 'translation' => 'Terjemah arsip', 'source' => 'Sumber arsip']);
-    profilRawSet('portal.footer_quote_arabic', 'نص عربي للاختبار');
-    profilRawSet('portal.footer_quote_translation', 'Terjemah lama');
+it('AC-6: sizes the grid by the number of shown widgets with literal classes', function (int $shown) {
+    $widgets = array_map(fn (int $i): array => ftr('text', ['heading' => "Teks {$i}", 'body' => '<p>Isi</p>', 'show_logo' => false]), range(1, $shown));
+    ftrSet([...$widgets, ftr('text', ['body' => '<p>Tersembunyi</p>', 'show_logo' => false], visible: false)]);
 
-    $footer = profilFooter($this->get('/')->assertOk()->getContent());
+    $footer = footerHtml();
 
-    expect($footer)->not->toContain('<blockquote')->not->toContain('<figure')->not->toContain('lang="ar"')
-        ->not->toContain('Terjemah arsip')->not->toContain('Terjemah lama')->not->toContain('Sumber arsip');
+    // Empat widget: dua kolom sampai 1279px, empat kolom mulai xl (1280px).
+    $expected = $shown === 4 ? 'xl:grid-cols-4' : "lg:grid-cols-{$shown}";
+
+    expect($footer)->toContain($expected);
+
+    foreach (array_diff([1, 2, 3, 4], [$shown]) as $other) {
+        expect($footer)->not->toContain("lg:grid-cols-{$other}")->not->toContain("xl:grid-cols-{$other}");
+    }
+
+    if ($shown === 4) {
+        expect($footer)->not->toContain('lg:grid-cols-4');
+    }
+})->with([1, 2, 3, 4]);
+
+it('AC-6: the contacts and social widgets always show all current Kontak & sosial data', function () {
+    profilSet([
+        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@alkhair.sch.id',
+        'school.contacts' => [profilContact(['key' => 'aaaa1111', 'label' => 'Panitia', 'phone' => '081234567890']), profilContact(['key' => 'bbbb2222', 'label' => 'Kantor', 'phone' => '0735000170', 'is_whatsapp' => false])],
+        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair'], ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test']],
+    ]);
+    ftrSet([ftr('contacts'), ftr('social')]);
+
+    $text = profilVisibleText(footerHtml());
+
+    expect($text)->toContain('Jl. Pesantren No. 1')->toContain('info@alkhair.sch.id')->toContain('Panitia')->toContain('Kantor')
+        ->toContain(__('pondok.portal.social.instagram'))->toContain('Blog Kami');
+
+    profilSet(['school.contacts' => [profilContact(['key' => 'cccc3333', 'label' => 'Baru Saja', 'phone' => '081200000009'])]]);
+
+    $text = profilVisibleText(footerHtml());
+
+    expect($text)->toContain('Baru Saja')->not->toContain('Panitia')->not->toContain('Kantor');
 });
 
-it('AC-11: the contact and social switches hide their blocks independently', function (bool $contacts, bool $social) {
-    footerFill();
-    Setting::set('portal.footer_show_contacts', $contacts);
-    Setting::set('portal.footer_show_social', $social);
+it('AC-6: without widgets the full footer only has the copyright line', function () {
+    $footer = footerHtml();
 
-    $text = profilVisibleText(profilFooter($this->get('/')->assertOk()->getContent()));
-
-    expect(str_contains($text, 'Panitia Uji'))->toBe($contacts)
-        ->and(str_contains($text, __('pondok.portal.social.instagram')))->toBe($social)
-        ->and($text)->toContain('Deskripsi lembaga uji')->toContain('Berita Pilihan');
-})->with([[true, true], [false, true], [true, false], [false, false]]);
-
-it('AC-11: renders no empty sections when only the name is known', function () {
-    navSet(null, []);
-
-    $footer = profilFooter($this->get('/')->assertOk()->getContent());
-
-    expect(profilVisibleText($footer))->toContain("Ma'had Al-Khair")->not->toContain(__('pondok.portal.footer.links'))->not->toContain('Jam Layanan')
-        ->and($footer)->not->toContain('<blockquote')->not->toMatch('#<(ul|nav)\b[^>]*>\s*</(ul|nav)>#');
+    expect(profilVisibleText($footer))->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
+        ->and($footer)->not->toMatch('#<(ul|nav|h2)\b#');
 });
 
-it('AC-11: escapes the short text and keeps its line breaks', function () {
-    Setting::set('portal.footer_text', ['title' => '<script>alert(1)</script>', 'body' => "Baris satu\nBaris <b>dua</b>"]);
-    navSet(null, [navItem('url', '<script>alert(2)</script>', ['url' => '/berita'])]);
+it('AC-6: the links widget is a labelled nav, by its heading or by an aria-label when it has none', function () {
+    ftrSet([ftr('links', ['heading' => 'Tautan Penting', 'items' => [navItem('url', 'Berita', ['url' => '/berita'])]])]);
 
-    $footer = profilFooter($this->get('/')->assertOk()->getContent());
+    $footer = footerHtml();
+    $nav = profilTag($footer, 'nav', ['aria-labelledby="']);
+    preg_match('/aria-labelledby="([^"]+)"/', (string) $nav, $id);
 
-    expect($footer)->not->toContain('<script>alert')->not->toContain('<b>dua')
-        ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;')->toContain('&lt;b&gt;dua&lt;/b&gt;')
-        ->toMatch('#whitespace-pre-line[^>]*>\s*Baris satu\nBaris#');
+    expect($nav)->not->toBeNull()->and($id[1] ?? '')->not->toBe('')
+        ->and($footer)->toMatch('#<h2\b[^>]*\bid="'.preg_quote($id[1] ?? 'x', '#').'"[^>]*>\s*Tautan Penting#');
+
+    ftrSet([ftr('links', ['heading' => null, 'items' => [navItem('url', 'Berita', ['url' => '/berita'])]])]);
+
+    $footer = footerHtml();
+
+    expect(profilTag($footer, 'nav', ['aria-label="']))->not->toBeNull()->and($footer)->not->toContain('aria-labelledby');
 });
 
-it('AC-11: a body-only short text renders without a heading', function () {
-    Setting::set('portal.footer_text', ['title' => null, 'body' => 'Hanya isi pendek']);
+it('AC-6: sanitizes widgets written straight to settings and escapes headings and labels', function () {
+    ftrSet([
+        ftr('text', ['heading' => '<script>alert(0)</script>', 'body' => '<p>Aman</p><script>alert(1)</script><a href="javascript:alert(2)">klik</a>', 'show_logo' => false]),
+        ftr('links', ['items' => [
+            navItem('url', 'Jahat', ['url' => '//evil.test']), navItem('url', 'Skrip', ['url' => 'javascript:alert(3)']),
+            navItem('url', '<b>Tebal</b>', ['url' => '/berita']),
+        ]]),
+    ]);
 
-    expect(profilVisibleText(profilFooter($this->get('/')->assertOk()->getContent())))->toContain('Hanya isi pendek');
+    $footer = footerHtml();
+
+    expect(profilVisibleText($footer))->toContain('Aman')->toContain('<script>alert(0)</script>')->toContain('<b>Tebal</b>')
+        ->and($footer)->not->toContain('<script>alert')->not->toContain('javascript:')->not->toContain('evil.test')->not->toContain('<b>Tebal')
+        ->toContain('href="/berita"');
 });
 
-it('AC-11: the footer has no hidden system links beyond the saved footer navigation', function () {
-    Setting::set('modules.psb.enabled', true);
-    Setting::set('modules.dokumen.enabled', true);
-    navSet(null, [navItem('url', 'Satu', ['url' => '/berita'])]);
-
-    $footer = profilFooter($this->get('/')->assertOk()->getContent());
-
-    expect(profilVisibleText($footer))->not->toContain(__('pondok.portal.footer.psb_status'))->not->toContain(__('pondok.portal.footer.verify_letter'));
-});
-
-it('AC-3: the default footer navigation lists the status check and the letter verification', function () {
-    Setting::set('modules.psb.enabled', true);
-    Setting::set('modules.dokumen.enabled', true);
-
-    $footer = profilFooter($this->get('/')->assertOk()->getContent());
-
-    expect($footer)->toContain('href="'.route('psb.status').'"')->toContain('href="'.route('dokumen.letters.verify-form').'"')
-        ->and(profilVisibleText($footer))->toContain('Cek status pendaftaran')->toContain('Verifikasi keaslian surat');
-});
-
-it('AC-12: uses the compact footer on the psb pages and the 404 page', function (string $path, int $status) {
+it('AC-7: uses the compact footer on the psb pages and the 404 page', function (string $path, int $status) {
     portalPsbOpen();
-    footerFill();
+    profilSet(['school.contacts' => [profilContact(['label' => 'Panitia Uji', 'phone' => '081234567890'])]]);
+    ftrSet([
+        ftr('links', ['heading' => 'Semua Hilang', 'items' => [navPage(99999)]]),
+        ftr('links', ['heading' => 'Tautan', 'items' => [navItem('url', 'Berita Pilihan', ['url' => '/berita']), navItem('url', 'Situs Mitra', ['url' => 'https://contoh.test/mitra'])]]),
+        ftr('text', ['heading' => 'Tentang', 'body' => '<p>Deskripsi lembaga uji</p>', 'show_logo' => true]),
+        ftr('contacts', ['heading' => 'Hubungi']),
+    ]);
 
-    $response = $this->get($path)->assertStatus($status);
-    $footer = profilFooter($response->getContent());
+    $footer = profilFooter($this->get($path)->assertStatus($status)->getContent());
     $text = profilVisibleText($footer);
 
     expect($footer)->not->toBe('')
         ->and($text)->toContain("Ma'had Al-Khair")->toContain('Berita Pilihan')->toContain('Situs Mitra')
         ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
-        ->not->toContain('Deskripsi lembaga uji')->not->toContain('Panitia Uji')->not->toContain('0812-3456-7890')
-        ->not->toContain(__('pondok.portal.social.instagram'))->not->toContain('Jam Layanan')
-        ->and($footer)->not->toContain('href="https://instagram.com/alkhair"');
+        ->not->toContain('Deskripsi lembaga uji')->not->toContain('Panitia Uji')->not->toContain('0812-3456-7890')->not->toContain('Semua Hilang')->not->toContain('Tentang')->not->toContain('Hubungi');
 })->with([['/psb', 200], ['/psb/status', 200], ['/halaman-yang-tidak-ada', 404]]);
 
-it('AC-12: other portal pages keep the full footer', function (string $path) {
+it('AC-7: other portal pages keep the full footer', function (string $path) {
     portalSeedContent();
     footerFill();
 
-    $text = profilVisibleText(profilFooter($this->get($path)->assertOk()->getContent()));
+    $text = profilVisibleText(footerHtml($path));
 
-    expect($text)->toContain('Deskripsi lembaga uji')->toContain('Panitia Uji')->toContain('Jam Layanan')->toContain('Berita Pilihan');
+    expect($text)->toContain('Deskripsi lembaga uji')->toContain('Panitia Uji')->toContain('Berita Pilihan');
 })->with(['/', '/berita', '/galeri', '/video', '/profil']);
+
+it('AC-3: after the migration the footer shows the same name, logo, description, contacts, socials, links and short text', function () {
+    Setting::set('school.logo_mobile_path', 'school/logo-uji.png');
+    profilSet([
+        'school.contacts' => [profilContact(['label' => 'Panitia Uji', 'phone' => '081234567890'])],
+        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair']],
+    ]);
+    ftrLegacy();
+
+    ftrMigration()->up();
+    app()->forgetScopedInstances();
+
+    $footer = footerHtml();
+    $text = profilVisibleText($footer);
+    $positions = array_map(fn (string $needle): int|false => strpos($text, $needle), ['Deskripsi lembaga uji', 'Jam Layanan', 'Senin sampai Jumat', 'Panitia Uji', __('pondok.portal.social.instagram'), 'Berita Pilihan', 'Situs Mitra']);
+
+    expect($text)->toContain("Ma'had Al-Khair")->toContain('0812-3456-7890')->toContain('08.00 sampai 15.00')
+        ->and($footer)->toContain('school/logo-uji.png')->toContain('href="/berita"')->toContain('href="https://contoh.test/mitra"')
+        ->and($positions)->each->not->toBeFalse()
+        ->and(strpos($text, 'Berita Pilihan'))->toBeLessThan(strpos($text, 'Situs Mitra'));
+});

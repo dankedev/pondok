@@ -116,18 +116,14 @@ it('AC-1: an empty or draft profile page never creates a home section by itself'
         ->and($html)->not->toMatch('/<h2\b[^>]*>\s*Tentang Yayasan\s*<\/h2>/');
 });
 
-it('AC-58: takes the meta description from the tagline, then the footer description, then none', function () {
+it('AC-58: takes the meta description from the tagline, then none (no footer description fallback, F046)', function () {
     portalBoot();
     Setting::set('school.tagline', 'Tagline uji');
-    Setting::set('portal.footer_description', 'Deskripsi footer uji');
+    ftrSet([ftr('text', ['body' => '<p>Deskripsi footer uji</p>', 'show_logo' => true])]);
 
     expect(profilTag($this->get('/')->getContent(), 'meta', ['name="description"', 'content="Tagline uji"']))->not->toBeNull();
 
     Setting::set('school.tagline', '');
-
-    expect(profilTag($this->get('/')->getContent(), 'meta', ['name="description"', 'content="Deskripsi footer uji"']))->not->toBeNull();
-
-    Setting::set('portal.footer_description', null);
 
     expect($this->get('/')->getContent())->not->toContain('<meta name="description"');
 });
@@ -138,7 +134,7 @@ it('AC-39: a fresh install has only the three system pages and interface labels'
     expect(StaticPage::query()->count())->toBe(3)
         ->and(StaticPage::query()->pluck('slug')->sort()->values()->all())->toBe(['kontak', 'profil', 'visi-misi'])
         ->and(Setting::get('portal.navigation_primary'))->toBeNull()
-        ->and(Setting::get('portal.footer_text'))->toBeNull();
+        ->and(Setting::get('portal.footer_widgets'))->toBeNull();
 
     $labels = portalNavTexts($this->get('/')->assertOk()->getContent());
     $interface = [__('pondok.portal.nav.home'), __('pondok.portal.nav.news'), __('pondok.portal.nav.gallery'), __('pondok.portal.nav.videos'), __('pondok.portal.nav.psb_info'), __('pondok.portal.nav.login'), __('pondok.portal.nav.register')];
@@ -146,13 +142,13 @@ it('AC-39: a fresh install has only the three system pages and interface labels'
     expect(array_values(array_diff($labels, $interface)))->toBe([]);
 });
 
-it('AC-14: a fresh install has no footer text and no quote in the footer, even with an archived quote', function () {
+it('AC-10 (F046): a fresh install has no footer widgets, and the footer has no text or quote, even with an archived quote', function () {
     profilFreshInstall();
     Setting::set('portal.archived_footer_quote', ['arabic' => 'نص عربي للاختبار', 'translation' => 'Terjemah arsip', 'source' => 'Sumber arsip']);
 
     $footer = profilFooter($this->get('/')->assertOk()->getContent());
 
-    expect(Setting::get('portal.footer_text'))->toBeNull()
-        ->and($footer)->not->toContain('<blockquote')->not->toContain('lang="ar"')->not->toContain('Terjemah arsip')
+    expect(Setting::get('portal.footer_widgets'))->toBeNull()
+        ->and($footer)->not->toContain('<blockquote')->not->toMatch('#<(ul|nav|h2)\b#')->not->toContain('lang="ar"')->not->toContain('Terjemah arsip')
         ->and($this->get('/')->getContent())->not->toContain('Terjemah arsip');
 });

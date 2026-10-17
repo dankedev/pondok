@@ -33,7 +33,8 @@ beforeEach(function () {
 it('VERIFY: draft pages are 404 and absent from nav, footer and sitemap', function () {
     $draft = staticPage(['slug' => 'rahasia-draf', 'title' => 'Judul Rahasia Draf', 'status' => 'draft']);
     $live = staticPage(['slug' => 'terbuka', 'title' => 'Halaman Terbuka']);
-    navSet([navItem('home'), navPage($draft), navPage($live)], [navPage($draft), navPage($live)], navPage($draft));
+    navSet([navItem('home'), navPage($draft), navPage($live)], navPage($draft));
+    ftrSet([ftr('links', ['items' => [navPage($draft), navPage($live)]])]);
 
     $html = $this->get('/')->assertOk()->getContent();
     expect($html)->not->toContain('rahasia-draf')->not->toContain('Judul Rahasia Draf')->toContain('/terbuka');
@@ -47,7 +48,7 @@ it('VERIFY: a draft system page is 404 and out of the default menu, footer and s
     StaticPage::query()->where('slug', 'profil')->update(['status' => 'draft']);
     $vm = StaticPage::query()->where('slug', 'visi-misi')->firstOrFail();
     $vm->update(['status' => 'draft']);
-    navSet(null, [navPage($vm)]);
+    ftrSet([ftr('links', ['items' => [navPage($vm)]])]);
 
     $this->get('/profil')->assertNotFound();
     $this->get('/visi-misi')->assertNotFound();
@@ -59,7 +60,8 @@ it('VERIFY: a draft system page is 404 and out of the default menu, footer and s
 it('VERIFY: kontak without contact data is 404, even with a body, and absent everywhere', function () {
     StaticPage::query()->where('slug', 'kontak')->update(['status' => 'terbit', 'body' => '<p>Telepon kami</p>']);
     $kontak = StaticPage::query()->where('slug', 'kontak')->firstOrFail();
-    navSet([navItem('home'), navPage($kontak)], [navPage($kontak)]);
+    navSet([navItem('home'), navPage($kontak)]);
+    ftrSet([ftr('links', ['items' => [navPage($kontak)]])]);
 
     $this->get('/kontak')->assertNotFound();
     $html = $this->get('/')->getContent();
@@ -105,7 +107,7 @@ it('VERIFY: hiding Daftar keeps Masuk, and page items disappear when the konten 
     $texts = array_column(portalNavLinks($this->get('/')->getContent())['desktop'], 'text');
     expect($texts)->toContain(__('pondok.portal.nav.register'));
 
-    navSet([navItem('home'), navPage($page)], null, false);
+    navSet([navItem('home'), navPage($page)], false);
     $texts = array_column(portalNavLinks($this->get('/')->getContent())['desktop'], 'text');
     expect($texts)->not->toContain(__('pondok.portal.nav.register'))
         ->and(collect($texts)->contains(fn ($t) => str_contains(mb_strtolower($t), 'masuk')))->toBeTrue();
@@ -121,7 +123,8 @@ it('VERIFY: nav and footer do not run per-link queries on pages (no N+1)', funct
             $items[] = navPage($page);
             $footer[] = navPage($page);
         }
-        navSet($items, $footer);
+        navSet($items);
+        ftrSet([ftr('links', ['items' => $footer])]);
         $this->get('/')->assertOk();
 
         return queriesOnTable(recordedQueries(fn () => $this->get('/')->assertOk()), 'pages');
@@ -134,7 +137,8 @@ it('VERIFY: nav and footer do not run per-link queries on pages (no N+1)', funct
 });
 
 it('VERIFY: a menu or footer reference to a deleted page does not break the portal', function () {
-    navSet([navItem('home'), navPage(99999), ['type' => 'page', 'page_id' => 'abc', 'label' => 1], 'rusak', ['type' => 'bukan', 'label' => null]], [navPage(99999), 'rusak']);
+    navSet([navItem('home'), navPage(99999), ['type' => 'page', 'page_id' => 'abc', 'label' => 1], 'rusak', ['type' => 'bukan', 'label' => null]]);
+    ftrSet([ftr('links', ['items' => [navPage(99999), 'rusak']])]);
 
     $this->get('/')->assertOk();
 });
@@ -196,14 +200,13 @@ it('VERIFY: forced Livewire delete of a system page never deletes it, for super-
 it('VERIFY: admin-konten deletes a free page from the table and cleans menu and footer references', function () {
     kontenBoot(withPages: true);
     $page = staticPage(['slug' => 'akan-hilang']);
-    navSet([navPage($page)], [navPage($page)], navPage($page));
+    navSet([navPage($page)], navPage($page));
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(ListStaticPages::class)->callAction(TestAction::make('delete')->table($page));
 
     expect(StaticPage::query()->whereKey($page->id)->exists())->toBeFalse()
         ->and(Setting::get('portal.navigation_primary'))->toBe([])
-        ->and(Setting::get('portal.navigation_footer'))->toBe([])
         ->and(Setting::get('portal.header_button'))->toBeFalse();
 });
 
@@ -221,5 +224,5 @@ it('VERIFY: Navigation editor save is blocked for roles without profile access',
     $this->actingAs(kontenUser($role));
 
     verifyGapsAttempt(fn () => Livewire::test(Navigation::class)->call('save'));
-    expect(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button'])->count())->toBe(0);
+    expect(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.header_button'])->count())->toBe(0);
 })->with(['bendahara', 'wali', 'musyrif']);

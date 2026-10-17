@@ -313,7 +313,8 @@ Disetujui user, dikerjakan sebagai bagian paket 2 (beranda berbasis blok) dengan
 - Katalog awal:
   - **Teks:** teks singkat (paragraf, tebal, tautan), dengan opsi menampilkan logo.
   - **Tautan:** daftar label + tujuan dari pemilih yang sama dengan menu utama. Menggantikan "navigasi footer" F043; boleh lebih dari satu kelompok.
-  - **Sosmed:** memilih akun yang tampil dari data Kontak & sosial, tanpa mengetik ulang.
-  - **Kontak:** memilih kontak yang tampil dari data Kontak & sosial, tanpa mengetik ulang.
+  - **Sosmed:** menampilkan semua akun dari data Kontak & sosial, tanpa mengetik ulang dan tanpa pilihan per widget.
+  - **Kontak:** menampilkan semua alamat, email, peta, dan kontak dari data Kontak & sosial, tanpa mengetik ulang dan tanpa pilihan per widget.
+  - Keputusan user 17 Okt 2026: pemilihan sebagian akun/kontak per widget ditunda sampai benar-benar dibutuhkan (dicatat sebagai entri baru bila diminta).
 - Tetap di luar widget: baris hak cipta, serta footer ringkas di alur PSB dan 404.
 - Migrasi dari F043: deskripsi dan teks pendek menjadi widget Teks, navigasi footer menjadi widget Tautan, saklar kontak/sosial menjadi widget Kontak/Sosmed. Instalasi baru dimulai tanpa widget.

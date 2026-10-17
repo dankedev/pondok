@@ -1,0 +1,1 @@
+- Prefers communicating in Indonesian (Bahasa Indonesia). Confidence: 0.85

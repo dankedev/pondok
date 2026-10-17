@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(php artisan test tests/Feature/Filament/Widgets/ActiveStudentsWidgetTest.php 2>&1)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

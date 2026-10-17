@@ -30,7 +30,7 @@
                         </tr>
                     </thead>
                     @foreach ($summary['units'] as $unit)
-                        <tbody class="border-b border-gray-200 dark:border-white/10">
+                        <tbody class="divide-y divide-gray-100 border-b border-gray-200 dark:divide-white/5 dark:border-white/10">
                             @forelse ($unit['cohorts'] as $cohort)
                                 <tr>
                                     @if ($loop->first)

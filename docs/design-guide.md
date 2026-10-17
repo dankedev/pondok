@@ -47,7 +47,7 @@ Dua permukaan, nama semantik yang sama:
 | Danger | `danger` | `danger-*` (red) | Terlambat, ditolak, batal, aksi hapus |
 | Info | `info` | `info-*` (sky) | Proses berjalan, informasi netral |
 
-**Portal dan panel sengaja berbeda primer.** Panel admin Filament tetap `Color::Emerald` dan tidak memuat `app.css` (tanpa `viteTheme()`), sehingga token navy/emas hanya berlaku di portal publik, PSB, dan layout publik. Acuan gaya portal: [`docs/brand/referensi-gaya-coursex.md`](brand/referensi-gaya-coursex.md).
+**Portal dan panel sengaja berbeda primer.** Panel admin Filament tetap `Color::Emerald` dan tidak memuat `app.css`. Panel memakai theme Filament sendiri (`resources/css/filament/admin/theme.css`) yang hanya mengimpor `theme.css` bawaan Filament dan memindai `app/Filament` serta `resources/views/filament`, sehingga token navy/emas tetap hanya berlaku di portal publik, PSB, dan layout publik. Acuan gaya portal: [`docs/brand/referensi-gaya-coursex.md`](brand/referensi-gaya-coursex.md).
 
 Skala portal (hex literal di `@theme`, kontras WCAG 2.x):
 

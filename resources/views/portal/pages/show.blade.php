@@ -21,12 +21,5 @@
         @if (! $bodyHtml && ! $isContact)
             <x-ui.empty-state icon="heroicon-o-document-text" class="mt-8">{{ __('pondok.portal.pages.empty') }}</x-ui.empty-state>
         @endif
-
-        @if ($related)
-            <a href="{{ $related['url'] }}" class="mt-10 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                {{ $related['label'] }}
-                <x-heroicon-o-arrow-right class="size-4" aria-hidden="true" />
-            </a>
-        @endif
     </div>
 </x-layouts::public>

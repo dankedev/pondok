@@ -24,7 +24,6 @@ dataset('portalPages', [
     'album' => ['/galeri/album-ramadan', 'portal.albums.index'],
     'videos' => ['/video', 'portal.videos.index'],
     'profil' => ['/profil', 'portal.pages.show'],
-    'visi-misi' => ['/visi-misi', 'portal.pages.show'],
     'kontak' => ['/kontak', 'portal.pages.show'],
     '404' => ['/tidak-ada-halaman', null],
 ]);

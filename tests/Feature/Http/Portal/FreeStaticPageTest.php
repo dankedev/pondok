@@ -86,16 +86,12 @@ describe('system pages follow their status', function () {
         $this->get('/profil')->assertNotFound();
     });
 
-    it('AC-17: links profile and vision only when the target is published', function () {
+    it('AC-9 (F048): profile and vision pages carry no built-in related link to each other', function () {
         StaticPage::findBySlug('profil')->update(['body' => '<p>Isi profil</p>']);
-        StaticPage::findBySlug('visi-misi')->update(['title' => 'Visi Kami', 'status' => 'draft']);
+        StaticPage::findBySlug('visi-misi')->update(['title' => 'Visi Kami', 'body' => '<p>Isi visi</p>']);
 
-        expect(portalMainHtml($this->get('/profil')->assertOk()->getContent()))->not->toContain('/visi-misi');
-
-        StaticPage::findBySlug('visi-misi')->update(['status' => 'terbit']);
-        $main = portalMainHtml($this->get('/profil')->assertOk()->getContent());
-
-        expect($main)->toMatch('#<a\b[^>]*href="[^"]*/visi-misi"[^>]*>\s*Visi Kami\b#s');
+        expect(portalMainHtml($this->get('/profil')->assertOk()->getContent()))->not->toContain('/visi-misi')->not->toContain('Visi Kami');
+        expect(portalMainHtml($this->get('/visi-misi')->assertOk()->getContent()))->not->toContain('/profil');
     });
 });
 
@@ -121,3 +117,49 @@ it('AC-17a: any single contact datum makes the contact page available', function
     'map only' => [['school.map_url' => 'https://maps.app.goo.gl/abc']],
     'one contact' => [['school.contacts' => [['key' => 'abcd1234', 'label' => 'Panitia', 'name' => null, 'phone' => '081200000001', 'is_whatsapp' => true]]]],
 ]);
+
+/*
+| F048 AC-7 dan AC-8: perilaku kontak mengikuti template, bukan slug.
+*/
+
+it('AC-7 (F048): a contact-template page on any slug shows its body and the contact card, and is 404 without contact data', function () {
+    staticPage(['slug' => 'hubungi-kami', 'title' => 'Hubungi Kami', 'body' => '<p>Jam layanan</p>', 'template' => 'contact']);
+
+    $this->get('/hubungi-kami')->assertNotFound();
+
+    portalContactData();
+
+    $this->get('/hubungi-kami')->assertOk()->assertSee('Jam layanan')->assertSee(__('pondok.portal.contact.title'))->assertSee('info@contoh.test');
+});
+
+it('AC-7 (F048): a default-template page with the slug kontak is a plain page, with or without contact data', function () {
+    StaticPage::findBySlug('kontak')->update(['template' => 'default', 'body' => '<p>Halaman biasa</p>']);
+
+    $this->get('/kontak')->assertOk()->assertSee('Halaman biasa')->assertDontSee(__('pondok.portal.contact.title'));
+
+    portalContactData();
+
+    $this->get('/kontak')->assertOk()->assertDontSee(__('pondok.portal.contact.title'));
+});
+
+it('AC-8 (F048): menu and sitemap hide a contact-template page without contact data and show it with data, whatever its slug', function () {
+    $page = staticPage(['slug' => 'hubungi-kami', 'title' => 'Hubungi Kami', 'body' => '<p>Jam layanan</p>', 'template' => 'contact']);
+    navSet([navItem('home'), navPage($page)]);
+
+    expect(portalNavTexts($this->get('/')->getContent()))->not->toContain('Hubungi Kami');
+    expect($this->get('/sitemap.xml')->getContent())->not->toContain('/hubungi-kami');
+
+    portalContactData();
+
+    expect(portalNavTexts($this->get('/')->getContent()))->toContain('Hubungi Kami');
+    expect($this->get('/sitemap.xml')->getContent())->toContain('/hubungi-kami');
+});
+
+it('AC-8 (F048): a default-template page with the slug kontak is treated as a normal page in menu and sitemap even without contact data', function () {
+    $page = StaticPage::findBySlug('kontak');
+    $page->update(['template' => 'default', 'body' => '<p>Halaman biasa</p>']);
+    navSet([navItem('home'), navPage($page)]);
+
+    expect(portalNavTexts($this->get('/')->getContent()))->toContain('Kontak');
+    expect($this->get('/sitemap.xml')->getContent())->toContain('/kontak');
+});

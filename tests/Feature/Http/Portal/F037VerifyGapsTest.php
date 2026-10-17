@@ -2,7 +2,6 @@
 
 use App\Filament\Pages\Site\Navigation;
 use App\Filament\Resources\StaticPages\Pages\CreateStaticPage as CreateStaticPagePage;
-use App\Filament\Resources\StaticPages\Pages\EditStaticPage;
 use App\Filament\Resources\StaticPages\Pages\ListStaticPages;
 use App\Filament\Resources\StaticPages\StaticPageResource;
 use App\Models\Setting;
@@ -115,7 +114,7 @@ it('VERIFY: hiding Daftar keeps Masuk, and page items disappear when the konten 
 
 it('VERIFY: nav and footer do not run per-link queries on pages (no N+1)', function () {
     $count = function (int $n): int {
-        StaticPage::query()->whereNotIn('slug', StaticPage::SYSTEM_SLUGS)->delete();
+        StaticPage::query()->whereNotIn('slug', ['profil', 'visi-misi', 'kontak'])->delete();
         $items = [navItem('home')];
         $footer = [];
         foreach (range(1, $n) as $i) {
@@ -180,21 +179,14 @@ it('VERIFY: users without delete permission cannot delete a free page by forced 
     expect(StaticPage::query()->whereKey($page->id)->exists())->toBeTrue();
 })->with(['bendahara', 'wali', 'musyrif', 'admin-sekolah']);
 
-it('VERIFY: forced Livewire delete of a system page never deletes it, for super-admin and admin-konten', function (string $role, string $slug) {
+it('VERIFY: super-admin and admin-konten can delete the former system pages from the table', function (string $role, string $slug) {
     kontenBoot(withPages: true);
     $page = StaticPage::query()->where('slug', $slug)->firstOrFail();
     $this->actingAs(kontenUser($role));
 
-    try {
-        Livewire::test(ListStaticPages::class)->callAction(TestAction::make('delete')->table($page));
-    } catch (Throwable) {
-    }
-    try {
-        Livewire::test(EditStaticPage::class, ['record' => $page->getRouteKey()])->callAction('delete');
-    } catch (Throwable) {
-    }
+    Livewire::test(ListStaticPages::class)->callAction(TestAction::make('delete')->table($page));
 
-    expect(StaticPage::query()->whereKey($page->id)->exists())->toBeTrue();
+    expect(StaticPage::query()->whereKey($page->id)->exists())->toBeFalse();
 })->with([['super-admin', 'profil'], ['super-admin', 'visi-misi'], ['super-admin', 'kontak'], ['admin-konten', 'kontak']]);
 
 it('VERIFY: admin-konten deletes a free page from the table and cleans menu and footer references', function () {

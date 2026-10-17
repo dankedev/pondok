@@ -91,7 +91,7 @@ it('AC-7: marks the active link with aria-current in both navs, per destination 
     expect(navCurrent($this->get($path)->assertOk()->getContent()))->toBe($expected);
 })->with([
     'page' => ['page', fn ($p) => [navItem('home'), navPage($p), navItem('posts')], '/pengurus', ['Pengurus']],
-    'vision page marks the profile item' => ['vision', fn ($p) => [navPage(StaticPage::findBySlug('profil')), navItem('posts')], '/visi-misi', ['Profil']],
+    'vision page does not mark the profile item' => ['vision', fn ($p) => [navPage(StaticPage::findBySlug('profil')), navItem('posts')], '/visi-misi', []],
     'posts index' => ['posts', fn ($p) => [navItem('home'), navItem('posts')], '/berita', ['Berita']],
     'post detail' => ['post', fn ($p) => [navItem('home'), navItem('posts')], '/berita/wisuda-2026', ['Berita']],
     'category with the same query' => ['category', fn ($p, $c) => [navItem('category', null, ['category_id' => $c->id])], '/berita?kategori=pengumuman', ['Pengumuman']],
@@ -193,7 +193,7 @@ it('AC-8: resolves menu and footer widget pages with at most two pages queries a
 
 it('AC-8: the number of page queries does not grow with the number of linked pages', function () {
     $count = function (int $n): int {
-        StaticPage::query()->whereNotIn('slug', StaticPage::SYSTEM_SLUGS)->delete();
+        StaticPage::query()->whereNotIn('slug', ['profil', 'visi-misi', 'kontak'])->delete();
         $pages = collect(range(1, $n))->map(fn (int $i) => staticPage(['slug' => "q-{$i}-{$n}"]));
         navSet([navItem('home'), ...$pages->map(fn ($p): array => navPage($p))->take(4)->all(), navGroup('G', $pages->skip(4)->take(4)->map(fn ($p): array => navPage($p))->values()->all() ?: [navItem('home')])]);
         ftrSet([ftr('links', ['items' => array_slice($pages->map(fn ($p): array => navPage($p))->all(), 0, 8)])]);

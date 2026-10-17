@@ -92,7 +92,7 @@ class GetPortalNavigation
         $this->loadReferences([...$primary, ...($button === null ? [] : [$button])], $primaryValue === null, GetSchoolProfile::hasContactData($school));
 
         return [
-            'primary' => $this->markVisionUnderProfile($this->links($primary, self::LABEL_MAX_MENU)),
+            'primary' => $this->links($primary, self::LABEL_MAX_MENU),
             'headerButton' => $button === null ? null : $this->link($button, self::LABEL_MAX_MENU),
         ];
     }
@@ -252,8 +252,8 @@ class GetPortalNavigation
             $this->pages = StaticPage::query()
                 ->published()
                 ->where(fn ($query) => $query->whereIn('id', $pageIds)->orWhereIn('slug', $slugs))
-                ->get(['id', 'slug', 'title'])
-                ->reject(fn (StaticPage $page): bool => $page->slug === 'kontak' && ! $hasContact)
+                ->get(['id', 'slug', 'title', 'template'])
+                ->reject(fn (StaticPage $page): bool => $page->isContact() && ! $hasContact)
                 ->keyBy('id');
         }
 
@@ -399,32 +399,5 @@ class GetPortalNavigation
             'url' => route('portal.posts.index', ['kategori' => $category->slug]),
             'active' => request()->routeIs('portal.posts.index') && request()->query('kategori') === $category->slug,
         ];
-    }
-
-    /**
-     * Seperti header sebelum F037: di halaman Visi & misi yang tidak punya item sendiri,
-     * item Profil (di akar atau di grup) yang ditandai aktif.
-     *
-     * @param  list<array<string, mixed>>  $links
-     * @return list<array<string, mixed>>
-     */
-    private function markVisionUnderProfile(array $links): array
-    {
-        if (! request()->routeIs('portal.pages.show') || request()->route('page') !== 'visi-misi' || in_array(true, array_column($links, 'active'), true)) {
-            return $links;
-        }
-
-        $profileUrl = route('portal.pages.show', 'profil');
-        $mark = fn (array $link): array => ($link['url'] ?? null) === $profileUrl ? [...$link, 'active' => true] : $link;
-
-        return array_map(function (array $link) use ($mark): array {
-            if (! isset($link['children'])) {
-                return $mark($link);
-            }
-
-            $children = array_map($mark, $link['children']);
-
-            return [...$link, 'children' => $children, 'active' => in_array(true, array_column($children, 'active'), true)];
-        }, $links);
     }
 }

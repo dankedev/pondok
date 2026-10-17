@@ -40,11 +40,11 @@ class BuildSitemap
             $entries[] = ['loc' => route($name), 'lastmod' => null];
         }
 
-        // Halaman terbit berisi; `kontak` hanya bila profil punya data kontak (aturan Kontak F037).
+        // Halaman terbit berisi; halaman `contact` hanya bila profil punya data kontak (aturan Kontak F037).
         $hasContact = GetSchoolProfile::hasContactData($this->schoolProfile->handle());
 
         StaticPage::query()->published()->orderBy('id')->get()
-            ->reject(fn (StaticPage $page): bool => ($page->slug === 'kontak' && ! $hasContact)
+            ->reject(fn (StaticPage $page): bool => ($page->isContact() && ! $hasContact)
                 || $this->sanitize->isBlank($this->sanitize->handle($page->body)))
             ->each(function (StaticPage $page) use (&$entries): void {
                 $entries[] = ['loc' => route('portal.pages.show', $page->slug), 'lastmod' => $page->updated_at?->toAtomString()];

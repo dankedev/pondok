@@ -24,6 +24,11 @@ Orkestrator akan menyebut mode: **RED** atau **VERIFY**. Bila tidak disebut, ten
 1. Untuk setiap AC di rencana, tulis test Pest di file yang dipetakan rencana (`tests/Feature/...`). Nama test mendeskripsikan perilaku dalam bahasa yang jelas, beri rujukan AC di nama atau `describe` (mis. `it('AC-3: menolak tarif ganda pada angkatan yang sama')`).
 2. Cakup jalur sukses, jalur gagal, dan kasus tepi yang disebut rencana. Ikuti kewajiban test proyek: akses per peran, cakupan jenjang `unit_user`, saklar modul, idempotensi, dan aturan uang bila relevan.
 3. Pakai factory dan state yang ada; buat factory baru hanya bila model sudah ada. Jangan mock hal yang bisa dites nyata dengan SQLite.
+   **Hemat dataset.** Setiap baris dataset adalah satu test penuh: migrasi diulang dan `beforeEach` dijalankan lagi. Jadi:
+   - Kunci terjemahan diperiksa dengan **satu** test per daftar lewat `expectTranslatedKeys([...])` (`tests/Pest.php`), bukan dataset per kunci.
+   - Izin per peran cukup dijaga `RolePermissionSeederTest` › `grants each role exactly its permissions` (daftar persis). Perbarui daftar itu; jangan menambah test "tidak diberikan ke peran lain" per peran.
+   - Pengecekan murni di memori (matriks status, format, parser) memakai satu test dengan loop dan pesan per kasus (`->toBe($x, "{$from} ke {$to}")`).
+   - Dataset tetap dipakai untuk kasus yang benar-benar menjalankan perilaku berbeda, misalnya satu field invalid per baris atau akses halaman per peran.
 4. Jalankan test: `php artisan test --compact <path>`. Pastikan **setiap test gagal karena alasan yang benar** (kelas/route/kolom belum ada atau assertion perilaku gagal), bukan karena typo, syntax error, atau setup test yang salah.
 5. Jalankan `vendor/bin/pint --dirty --format agent`.
 
@@ -33,7 +38,7 @@ Laporan RED: daftar file test, pemetaan AC → nama test, dan output ringkas yan
 
 1. Jalankan test fitur ini dan test yang terdampak; semuanya harus lulus. Laporkan bila ada yang gagal.
 2. Baca diff implementasi (`git diff`, `git status`) dan cari celah: kasus tepi yang belum dites, akses peran yang salah, data jenjang lain bocor, modul mati tapi route masih terbuka, uang memakai float, data keuangan bisa dihapus, query tidak portabel, N+1 di tabel Filament, validasi input yang hilang, file pribadi di disk `public`.
-3. Tulis test tambahan untuk setiap celah yang kamu curigai. Test yang gagal = bug nyata; jangan "memperbaiki" test agar lulus. Batasnya **paling banyak ±15 test baru**, diprioritaskan menurut risiko: akses lintas peran/jenjang, data rusak atau hilang, uang, dan keamanan (XSS, file pribadi). Jangan menulis test yang hanya mengulang perilaku yang sudah tercakup test RED dengan input berbeda.
+3. Tulis test tambahan untuk setiap celah yang kamu curigai. Test yang gagal = bug nyata; jangan "memperbaiki" test agar lulus. Batasnya **paling banyak ±15 test baru**, diprioritaskan menurut risiko: akses lintas peran/jenjang, data rusak atau hilang, uang, dan keamanan (XSS, file pribadi). Jangan menulis test yang hanya mengulang perilaku yang sudah tercakup test RED dengan input berbeda. Batas ±15 dihitung per **kasus** (baris dataset ikut dihitung), bukan per `it()`.
 4. Pastikan green-coder tidak melemahkan atau menghapus test RED (bandingkan dengan versi sebelumnya lewat `git diff tests/`).
 5. Jalankan Pint.
 

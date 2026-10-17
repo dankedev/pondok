@@ -303,3 +303,17 @@ Status: masih dievaluasi; arah audit secara keseluruhan belum disetujui.
 - **Kutipan hanya di beranda,** tidak di footer dan tidak di halaman statis.
 - **Footer tetap ringan:** identitas, kontak, navigasi footer, dan paling banyak satu teks pendek.
 - **Batasan desain blok:** level judul diatur sistem (h2), warna hanya dari varian tema (tanpa color picker bebas), dan isi teks terbatas pada paragraf, tebal, dan tautan.
+
+### Footer sebagai area widget (keputusan 17 Okt 2026)
+
+Disetujui user, dikerjakan sebagai bagian paket 2 (beranda berbasis blok) dengan satu mesin blok untuk dua area: beranda dan footer.
+
+- Footer berisi widget yang jumlah dan isinya diatur admin, **paling banyak 4**. Grid menyesuaikan jumlah widget (1–4 kolom di desktop, bertumpuk di seluler).
+- Setiap widget punya **heading opsional**.
+- Katalog awal:
+  - **Teks:** teks singkat (paragraf, tebal, tautan), dengan opsi menampilkan logo.
+  - **Tautan:** daftar label + tujuan dari pemilih yang sama dengan menu utama. Menggantikan "navigasi footer" F043; boleh lebih dari satu kelompok.
+  - **Sosmed:** memilih akun yang tampil dari data Kontak & sosial, tanpa mengetik ulang.
+  - **Kontak:** memilih kontak yang tampil dari data Kontak & sosial, tanpa mengetik ulang.
+- Tetap di luar widget: baris hak cipta, serta footer ringkas di alur PSB dan 404.
+- Migrasi dari F043: deskripsi dan teks pendek menjadi widget Teks, navigasi footer menjadi widget Tautan, saklar kontak/sosial menjadi widget Kontak/Sosmed. Instalasi baru dimulai tanpa widget.

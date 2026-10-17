@@ -99,31 +99,29 @@ class GetPortalNavigation
 
         $this->loadReferences([...$primary, ...$footer, ...($button === null ? [] : [$button])], $primaryValue === null, GetSchoolProfile::hasContactData($school));
 
-        $primaryLinks = [];
-
-        foreach ($primary as $item) {
-            $link = $this->link($item, self::LABEL_MAX_MENU);
-
-            if ($link !== null) {
-                $primaryLinks[] = $link;
-            }
-        }
-
-        $footerLinks = [];
-
-        foreach ($footer as $item) {
-            $link = $this->link($item, null);
-
-            if ($link !== null) {
-                $footerLinks[] = $link;
-            }
-        }
-
         return [
-            'primary' => $this->markVisionUnderProfile($primaryLinks),
+            'primary' => $this->markVisionUnderProfile($this->links($primary, self::LABEL_MAX_MENU)),
             'headerButton' => $button === null ? null : $this->link($button, self::LABEL_MAX_MENU),
-            'footer' => $footerLinks,
+            'footer' => $this->links($footer, null),
         ];
+    }
+
+    /**
+     * Resolusi tautan untuk Item yang sudah di-parse (`parseItem`) di luar menu, mis. tombol
+     * blok beranda (F045): semua daftar diselesaikan dengan satu batch query yang sama dengan
+     * menu, dan tujuan yang tidak tersedia dibuang. Kunci `$lists` dipertahankan.
+     *
+     * @template TKey of array-key
+     *
+     * @param  array<TKey, list<array<string, mixed>>>  $lists
+     * @return array<TKey, list<array<string, mixed>>>
+     */
+    public function resolveItems(array $lists, ?int $labelMax): array
+    {
+        $this->contentEnabled = Setting::moduleEnabled('konten');
+        $this->loadReferences(array_merge(...array_values($lists)), false, GetSchoolProfile::hasContactData(app(GetSchoolProfile::class)->handle()));
+
+        return array_map(fn (array $items): array => $this->links($items, $labelMax), $lists);
     }
 
     /**
@@ -302,6 +300,15 @@ class GetPortalNavigation
     }
 
     /**
+     * @param  list<array<string, mixed>>  $items
+     * @return list<array<string, mixed>>
+     */
+    private function links(array $items, ?int $labelMax): array
+    {
+        return array_values(array_filter(array_map(fn (array $item): ?array => $this->link($item, $labelMax), $items)));
+    }
+
+    /**
      * Tautan tersedia, atau `null`. `$labelMax` = batas fallback judul halaman (null = penuh).
      *
      * @param  array<string, mixed>  $item
@@ -312,15 +319,7 @@ class GetPortalNavigation
         $type = $item['type'];
 
         if ($type === 'group') {
-            $children = [];
-
-            foreach ($item['children'] as $child) {
-                $link = $this->link($child, $labelMax);
-
-                if ($link !== null) {
-                    $children[] = $link;
-                }
-            }
+            $children = $this->links($item['children'], $labelMax);
 
             return $children === [] ? null : [
                 'label' => $item['label'],

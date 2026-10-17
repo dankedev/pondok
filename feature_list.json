@@ -736,7 +736,7 @@
       "name": "Identitas visual portal (warna logo Al-Khair, gaya modern ringan)",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F017", "F036", "F037"],
       "description": "Mengganti warna portal publik dan PSB dari emerald ke warna logo Al-Khair (navy #000A3C primer, emas #F8B800 aksen) dengan gaya acuan docs/brand/referensi-gaya-coursex.md: ruang kosong lega, bayangan sangat tipis, tombol/input pill, hiasan cincin dan pola titik di belakang foto, selang-seling latar section, judul besar tebal. Layout portal yang ada dipertahankan; tanpa konten bawaan dan tanpa animasi muncul-saat-scroll. Panel admin Filament tidak berubah.",
       "acceptance": [
@@ -749,9 +749,9 @@
         "Panel admin Filament tidak berubah",
         "Lolos checklist §0 design guide, dicek di 360px, 1024px, dan desktop"
       ],
-      "owner": "sesi infallible-hamilton-d9c6ef",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 469ba7f, bf2ebef, 9b0d68f, 67250dd, b8c9567, 10eb301, 2c4fcaf. Test lulus: tests/Feature/Http/Portal 293 (termasuk PortalVisualIdentityTest dan AC-32 PortalAccessibilityTest), Livewire/Psb 46, Http/Psb 50, DemoSeederTest 6; Pint lulus; npm run build OK; VERIFY red-tester PASS; dicek visual 360px, 1024px, 1440px.",
       "notes": "ID dicadangkan sejak arah C (Tegel Masjid) yang dibatalkan user 16 Okt 2026; arah baru diminta user 17 Okt 2026."
     }
   ]

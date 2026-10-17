@@ -22,11 +22,12 @@ it('VERIFY: escapes every free text field in header, home and footer', function 
     $x = '<script>alert(7)</script>';
     profilSet([
         'school.short_name' => $x, 'school.arabic_name' => $x, 'school.tagline' => $x, 'school.address' => $x,
-        'portal.hero_greeting' => $x, 'portal.hero_subtitle' => $x,
         'portal.footer_description' => $x, 'portal.footer_text' => ['title' => $x, 'body' => $x],
         'school.contacts' => [profilContact(['label' => 'L', 'name' => $x, 'phone' => $x])],
         'school.social_links' => [['platform' => 'lainnya', 'label' => $x, 'url' => 'https://a.test/"onmouseover="x']],
     ]);
+
+    blkSet([blk('hero', ['eyebrow' => $x, 'title' => $x, 'text' => $x]), blk('cta', ['heading' => $x, 'text' => $x, 'variant' => 'light'])]);
 
     foreach (['/', '/kontak'] as $url) {
         $html = $this->get($url)->assertOk()->getContent();
@@ -111,7 +112,8 @@ it('VERIFY: a fresh install with only some fields filled shows no built in conte
 });
 
 it('VERIFY: the portal home runs each settings query at most once', function () {
-    profilSet(['school.contacts' => [profilContact()], 'portal.highlights' => [['title' => 'A', 'description' => null]], 'school.map_url' => 'https://maps.app.goo.gl/x']);
+    profilSet(['school.contacts' => [profilContact()], 'school.map_url' => 'https://maps.app.goo.gl/x']);
+    blkSet([blk('hero', ['title' => 'A']), blk('features', ['items' => [['title' => 'A']]]), blk('feed', ['source' => 'posts'])]);
     DB::enableQueryLog();
 
     $this->get('/')->assertOk();

@@ -82,10 +82,22 @@ it('AC-55: carries no content text in the translations and the install seeders',
         ->and(Setting::query()->where('key', 'like', 'portal.%')->count())->toBe(0);
 });
 
-it('AC-56: renders highlights without a section heading when the heading is empty', function () {
+it('AC-14: a fresh install home has no blocks and shows no content sections', function () {
+    profilFreshInstall();
+    Setting::set('modules.konten.enabled', true);
+
+    $data = app(GetPortalHomeData::class)->handle();
+    $html = $this->get('/')->assertOk()->getContent();
+
+    expect($data['blocks'])->toBe([])->and($data['hasHero'])->toBeFalse()
+        ->and(Setting::get('portal.home_blocks'))->toBeNull()
+        ->and($html)->not->toContain('<h2')->not->toContain('<iframe')->not->toContain('role="region"');
+});
+
+it('AC-7: renders a features block without a section heading when the heading is empty', function () {
     portalBoot();
     $baseline = substr_count($this->get('/')->getContent(), '<h2');
-    Setting::set('portal.highlights', [['title' => 'Kartu Satu', 'description' => 'Isi satu'], ['title' => 'Kartu Dua', 'description' => null], ['title' => 'Kartu Tiga', 'description' => null]]);
+    blkSet([blk('features', ['heading' => '', 'items' => [['title' => 'Kartu Satu', 'text' => 'Isi satu'], ['title' => 'Kartu Dua', 'text' => null], ['title' => 'Kartu Tiga', 'text' => null]]])]);
 
     $html = $this->get('/')->assertOk()->getContent();
 
@@ -94,75 +106,14 @@ it('AC-56: renders highlights without a section heading when the heading is empt
         ->and($html)->not->toMatch('/<h2\b[^>]*>\s*Kartu/');
 });
 
-it('AC-56: takes the highlights heading from settings', function () {
-    portalBoot();
-    Setting::set('portal.highlights', [['title' => 'Kartu Satu', 'description' => null]]);
-    Setting::set('portal.highlights_heading', 'Mengapa memilih kami');
-
-    expect($this->get('/')->assertOk()->getContent())->toMatch('/<h2\b[^>]*>\s*Mengapa memilih kami\s*<\/h2>/');
-});
-
-it('AC-57: uses the title of the profile page for the home section', function () {
+it('AC-1: an empty or draft profile page never creates a home section by itself', function () {
     portalBoot();
     StaticPage::findBySlug('profil')->update(['title' => 'Tentang Yayasan', 'body' => '<p>Isi profil yayasan.</p>']);
 
-    $data = app(GetPortalHomeData::class)->handle();
     $html = $this->get('/')->assertOk()->getContent();
 
-    expect($data['profileTitle'])->toBe('Tentang Yayasan')
-        ->and($html)->toMatch('/<h2\b[^>]*>\s*Tentang Yayasan\s*<\/h2>/')
-        ->and(profilVisibleText($html))->toContain('Isi profil yayasan.')->not->toContain('Mengenal kami');
-});
-
-it('AC-57: has no profile title or summary and no section for an empty profile page', function () {
-    portalBoot();
-    StaticPage::findBySlug('profil')->update(['title' => 'Tentang Yayasan', 'body' => '']);
-
-    $data = app(GetPortalHomeData::class)->handle();
-
-    expect($data['profileTitle'])->toBeNull()->and($data['profileSummary'])->toBeNull()
-        // F037: halaman terbit tampil di menu dengan judulnya; yang tidak boleh ada hanya seksi profil beranda.
-        ->and($this->get('/')->assertOk()->getContent())
-        ->not->toContain('seksi-profil')
-        ->not->toMatch('/<h2\b[^>]*>\s*Tentang Yayasan\s*<\/h2>/');
-});
-
-it('AC-57: returns null media and profile title when the content module is off', function () {
-    portalBoot();
-    $album = portalAlbumWithPhotos(2, ['title' => 'Fasilitas']);
-    $video = kontenVideo();
-    StaticPage::findBySlug('profil')->update(['body' => '<p>Isi</p>']);
-    profilSet(['portal.hero_album_id' => $album->id, 'portal.profile_video_id' => $video->id, 'portal.psb_video_id' => $video->id, 'modules.psb.enabled' => true]);
-    Setting::set('modules.konten.enabled', false);
-
-    $data = app(GetPortalHomeData::class)->handle();
-
-    expect($data['profileTitle'])->toBeNull()->and($data['heroAlbum'])->toBeNull()
-        ->and($data['profileVideo'])->toBeNull()->and($data['psbVideo'])->toBeNull();
-});
-
-it('AC-57: builds the hero album with at most ten photos in order and tolerates missing references', function () {
-    portalBoot();
-    $album = kontenAlbum(['title' => 'Fasilitas']);
-
-    foreach (range(12, 1) as $order) {
-        kontenPhoto($album, ['sort_order' => $order, 'caption' => "Foto {$order}"]);
-    }
-
-    $video = kontenVideo(['title' => 'Video Uji']);
-    profilSet(['portal.hero_album_id' => $album->id, 'portal.profile_video_id' => $video->id, 'portal.psb_video_id' => 9999, 'modules.psb.enabled' => true]);
-
-    $data = app(GetPortalHomeData::class)->handle();
-
-    expect($data['heroAlbum']['title'])->toBe('Fasilitas')
-        ->and(data_get($data['heroAlbum']['photos'], '*.sort_order'))->toBe(range(1, 10))
-        ->and(data_get($data['profileVideo'], 'title'))->toBe('Video Uji')
-        ->and($data['psbVideo'])->toBeNull();
-
-    Setting::set('modules.psb.enabled', false);
-    Setting::set('portal.psb_video_id', $video->id);
-
-    expect(app(GetPortalHomeData::class)->handle()['psbVideo'])->toBeNull();
+    expect(profilVisibleText($html))->not->toContain('Isi profil yayasan.')
+        ->and($html)->not->toMatch('/<h2\b[^>]*>\s*Tentang Yayasan\s*<\/h2>/');
 });
 
 it('AC-58: takes the meta description from the tagline, then the footer description, then none', function () {
@@ -202,5 +153,6 @@ it('AC-14: a fresh install has no footer text and no quote in the footer, even w
     $footer = profilFooter($this->get('/')->assertOk()->getContent());
 
     expect(Setting::get('portal.footer_text'))->toBeNull()
-        ->and($footer)->not->toContain('<blockquote')->not->toContain('lang="ar"')->not->toContain('Terjemah arsip');
+        ->and($footer)->not->toContain('<blockquote')->not->toContain('lang="ar"')->not->toContain('Terjemah arsip')
+        ->and($this->get('/')->getContent())->not->toContain('Terjemah arsip');
 });

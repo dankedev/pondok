@@ -31,14 +31,7 @@ class GetSchoolProfile
         'school.map_url',
         'school.contacts',
         'school.social_links',
-        'portal.hero_greeting',
-        'portal.hero_title',
-        'portal.hero_subtitle',
-        'portal.highlights_heading',
-        'portal.highlights',
-        'portal.hero_album_id',
-        'portal.profile_video_id',
-        'portal.psb_video_id',
+        'portal.home_blocks',
         'portal.footer_description',
         'portal.footer_text',
         'portal.footer_show_contacts',
@@ -82,16 +75,8 @@ class GetSchoolProfile
             'favicon_url' => $this->url($faviconPath),
             'contacts' => $this->contacts($values['school.contacts']),
             'social_links' => $this->socialLinks($values['school.social_links']),
-            'hero' => [
-                'greeting' => $text('portal.hero_greeting'),
-                'title' => $text('portal.hero_title'),
-                'subtitle' => $text('portal.hero_subtitle'),
-            ],
-            'highlights_heading' => $text('portal.highlights_heading'),
-            'highlights' => $this->highlights($values['portal.highlights']),
-            'hero_album_id' => $this->id($values['portal.hero_album_id']),
-            'profile_video_id' => $this->id($values['portal.profile_video_id']),
-            'psb_video_id' => $this->id($values['portal.psb_video_id']),
+            // Mentah: dibaca (dan disanitasi) hanya lewat `ParseContentBlocks`.
+            'home_blocks' => $values['portal.home_blocks'],
             'footer' => [
                 'description' => $text('portal.footer_description'),
                 'text' => $this->footerText($values['portal.footer_text']),
@@ -125,13 +110,6 @@ class GetSchoolProfile
     private function url(?string $path): ?string
     {
         return $path === null ? null : Storage::disk(StorePublicImage::DISK)->url($path);
-    }
-
-    private function id(mixed $value): ?int
-    {
-        $id = filter_var($value, FILTER_VALIDATE_INT);
-
-        return $id === false || $id < 1 ? null : $id;
     }
 
     /**
@@ -192,24 +170,6 @@ class GetSchoolProfile
         }
 
         return $links;
-    }
-
-    /**
-     * @return list<array{title: string, description: ?string}>
-     */
-    private function highlights(mixed $value): array
-    {
-        $highlights = [];
-
-        foreach ($this->items($value) as $item) {
-            $title = $this->text($item['title'] ?? null);
-
-            if ($title !== null) {
-                $highlights[] = ['title' => $title, 'description' => $this->text($item['description'] ?? null)];
-            }
-        }
-
-        return $highlights;
     }
 
     /**

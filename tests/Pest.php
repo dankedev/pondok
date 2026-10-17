@@ -9,6 +9,7 @@ use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
 use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
+use App\Actions\Konten\UpdatePortalHome;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
@@ -4222,4 +4223,126 @@ function expectTranslatedKeys(iterable|Closure $keys): void
 
     expect($keys)->not->toBeEmpty()
         ->and($missing)->toBe([], 'Kunci lang tanpa teks: '.implode(', ', $missing));
+}
+
+/*
+|--------------------------------------------------------------------------
+| F045 konten-beranda-blok
+|--------------------------------------------------------------------------
+|
+| Blok beranda tersimpan di `portal.home_blocks` sebagai daftar `{type, visible, data}`.
+| Input `UpdatePortalHome` dan state Builder memakai bentuk yang sama.
+|
+*/
+
+/**
+ * Satu blok beranda.
+ *
+ * @param  array<string, mixed>  $data
+ * @return array{type: string, visible: bool, data: array<string, mixed>}
+ */
+function blk(string $type, array $data = [], bool $visible = true): array
+{
+    return ['type' => $type, 'visible' => $visible, 'data' => $data];
+}
+
+/**
+ * Data minimal yang valid untuk tiap tipe blok (`video` membutuhkan `$videoId`).
+ *
+ * @return array<string, mixed>
+ */
+function blkValidData(string $type, ?int $videoId = null): array
+{
+    return match ($type) {
+        'hero' => ['title' => 'Judul hero'],
+        'text_image' => ['heading' => 'Tentang kami', 'text' => '<p>Isi singkat.</p>'],
+        'features' => ['items' => [['title' => 'Satu']]],
+        'quote' => ['text' => 'نص الاختبار'],
+        'cta' => ['heading' => 'Ajakan uji', 'variant' => 'light'],
+        'video' => ['video_id' => $videoId],
+        'feed' => ['source' => 'posts'],
+    };
+}
+
+function blkActor(): User
+{
+    if (! isset(test()->blkActor)) {
+        test()->blkActor = kontenUser('admin-konten');
+    }
+
+    return test()->blkActor;
+}
+
+/**
+ * Simpan lewat Action `UpdatePortalHome` (input `{home_blocks: [...]}`).
+ *
+ * @param  list<array<string, mixed>>  $blocks
+ */
+function blkSave(array $blocks): void
+{
+    app(UpdatePortalHome::class)->handle(['home_blocks' => $blocks], blkActor());
+    app()->forgetScopedInstances();
+}
+
+/**
+ * Blok tersimpan (mentah dari tabel `settings`).
+ *
+ * @return list<array<string, mixed>>
+ */
+function blkStored(): array
+{
+    return profilRawGet('portal.home_blocks') ?? [];
+}
+
+/**
+ * Tulis blok langsung ke settings tanpa Action (meniru data lama, hasil migrasi, atau ubahan manual).
+ *
+ * @param  list<array<string, mixed>>  $blocks
+ */
+function blkSet(array $blocks): void
+{
+    profilRawSet('portal.home_blocks', $blocks);
+    app()->forgetScopedInstances();
+}
+
+/**
+ * HTML beranda portal (status 200).
+ */
+function blkHome(): string
+{
+    return test()->get('/')->assertOk()->getContent();
+}
+
+/**
+ * Migrasi data F045 (berkas dimuat ulang tiap panggilan).
+ */
+function blkMigration(): object
+{
+    return require database_path('migrations/2026_10_20_000000_move_portal_home_to_blocks.php');
+}
+
+/**
+ * Pastikan simpan ditolak dengan galat pada salah satu field `$fields` dan settings tidak berubah.
+ *
+ * @param  list<array<string, mixed>>  $blocks
+ * @param  string|list<string>  $fields
+ */
+function blkAssertRejected(array $blocks, string|array $fields, string $label): void
+{
+    $before = profilSettingsSnapshot();
+    $fields = (array) $fields;
+
+    try {
+        blkSave($blocks);
+    } catch (ValidationException $exception) {
+        $keys = array_keys($exception->errors());
+
+        expect(collect($keys)->contains(fn (string $key): bool => in_array($key, $fields, true)))
+            ->toBeTrue("{$label}: galat di ".json_encode($keys).', diharapkan '.json_encode($fields));
+        expect(profilSettingsSnapshot())->toBe($before, "{$label}: settings berubah");
+
+        return;
+    }
+
+    test()->fail("{$label}: ValidationException diharapkan, tetapi tidak dilempar.");
 }

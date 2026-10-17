@@ -174,3 +174,12 @@
         background-size: 1.25rem 1.25rem;
     }
 }
+
+/* Slider geser (hero): batang scroll disembunyikan; geser sentuh, trackpad, dan keyboard tetap jalan. */
+@utility scrollbar-hidden {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

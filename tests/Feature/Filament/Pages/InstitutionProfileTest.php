@@ -5,7 +5,6 @@ use App\Filament\Pages\Settings\Identity;
 use App\Filament\Pages\Site\Footer;
 use App\Filament\Pages\Site\Home;
 use App\Models\Setting;
-use Filament\Forms\Components\Select;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -178,52 +177,14 @@ it('AC-35: removes the favicon from the page', function () {
     expect(Setting::get('school.favicon_path'))->toBeNull()->and(Storage::disk('public')->exists('school/f.png'))->toBeFalse();
 });
 
-it('AC-36: lists albums and videos on the home page and saves the chosen ids', function () {
-    $album = kontenAlbum(['title' => 'Fasilitas Pondok']);
-    $video = kontenVideo(['title' => 'Video Profil Uji']);
-    $this->actingAs(kontenUser('admin-konten'));
-
-    $component = Livewire::test(Home::class)
-        ->assertFormFieldExists('hero_album_id', fn (Select $field): bool => in_array('Fasilitas Pondok', array_values($field->getOptions()), true)
-            || in_array('Fasilitas Pondok', array_values($field->getSearchResults('Fasilitas')), true))
-        ->assertFormFieldExists('profile_video_id', fn (Select $field): bool => in_array('Video Profil Uji', array_values($field->getOptions()), true)
-            || in_array('Video Profil Uji', array_values($field->getSearchResults('Video')), true))
-        ->fillForm([
-            'hero_title' => 'Judul uji',
-            'highlights' => [['title' => 'Keunggulan satu', 'description' => 'Deskripsi']],
-            'hero_album_id' => $album->id, 'profile_video_id' => $video->id, 'psb_video_id' => $video->id,
-        ])
-        ->call('save')
-        ->assertHasNoFormErrors()
-        ->assertNotified();
-
-    expect(Setting::get('portal.hero_album_id'))->toBe($album->id)
-        ->and(Setting::get('portal.profile_video_id'))->toBe($video->id)
-        ->and(Setting::get('portal.psb_video_id'))->toBe($video->id)
-        ->and(Setting::get('portal.hero_title'))->toBe('Judul uji')
-        ->and(Setting::get('portal.highlights'))->toHaveCount(1);
-});
-
-it('AC-36: hides the media selects when the content module is off and keeps the stored ids', function () {
-    $album = kontenAlbum();
-    $video = kontenVideo();
-    profilSet(['portal.hero_album_id' => $album->id, 'portal.profile_video_id' => $video->id, 'portal.psb_video_id' => $video->id]);
-    Setting::set('modules.konten.enabled', false);
+it('AC-13 (F045): the home page is a block builder and no longer has the fixed home fields', function () {
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(Home::class)
-        ->assertFormFieldDoesNotExist('hero_album_id')
-        ->assertFormFieldDoesNotExist('profile_video_id')
-        ->assertFormFieldDoesNotExist('psb_video_id')
-        ->assertSee(__('pondok.common.module_disabled'))
-        ->fillForm(['hero_title' => 'Tetap tersimpan'])
-        ->call('save')
-        ->assertHasNoFormErrors();
-
-    expect(Setting::get('portal.hero_title'))->toBe('Tetap tersimpan')
-        ->and(Setting::get('portal.hero_album_id'))->toBe($album->id)
-        ->and(Setting::get('portal.profile_video_id'))->toBe($video->id)
-        ->and(Setting::get('portal.psb_video_id'))->toBe($video->id);
+        ->assertFormFieldExists('home_blocks')
+        ->assertFormFieldDoesNotExist('hero_greeting')
+        ->assertFormFieldDoesNotExist('highlights')
+        ->assertFormFieldDoesNotExist('psb_video_id');
 });
 
 it('AC-37: renders no raw translation keys and no content examples in the four forms', function (string $slug) {

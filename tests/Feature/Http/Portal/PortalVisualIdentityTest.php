@@ -111,21 +111,17 @@ function identitasFullHome(): object
     kontenVideo(['title' => 'Video Unggulan Uji', 'youtube_id' => 'AAAAAAAAAAA', 'is_featured' => true]);
     portalPost(['title' => 'Berita Uji']);
     portalPost(['title' => 'Prestasi Uji', 'type' => Post::TYPE_ACHIEVEMENT]);
-    StaticPage::findBySlug('profil')->update(['body' => '<p>Profil kami.</p>']);
-
-    profilSet([
-        'school.arabic_name' => 'معهد الخير',
-        'portal.hero_greeting' => 'Sambutan uji',
-        'portal.hero_title' => 'Judul hero uji',
-        'portal.hero_subtitle' => 'Subjudul hero uji',
-        'portal.hero_album_id' => $slider->id,
-        'portal.highlights_heading' => 'Judul keunggulan uji',
-        'portal.highlights' => [['title' => 'Kartu Satu', 'description' => 'Deskripsi satu']],
-        'portal.profile_video_id' => $profileVideo->id,
-        'portal.footer_quote_arabic' => 'نص عربي للاختبار',
-        'portal.footer_quote_translation' => 'Terjemah uji',
-        'portal.footer_quote_source' => 'Sumber uji',
-        'school.contacts' => [profilContact()],
+    profilSet(['school.arabic_name' => 'معهد الخير', 'school.contacts' => [profilContact()]]);
+    blkSet([
+        blk('hero', ['eyebrow' => 'Sambutan uji', 'title' => 'Judul hero uji', 'text' => 'Subjudul hero uji', 'album_id' => $slider->id]),
+        blk('features', ['heading' => 'Judul keunggulan uji', 'items' => [['title' => 'Kartu Satu', 'text' => 'Deskripsi satu']]]),
+        blk('video', ['video_id' => $profileVideo->id]),
+        blk('text_image', ['heading' => 'Profil Pondok', 'text' => '<p>Profil kami.</p>']),
+        blk('feed', ['source' => 'posts']),
+        blk('feed', ['source' => 'achievements']),
+        blk('feed', ['source' => 'videos']),
+        blk('feed', ['source' => 'albums']),
+        blk('quote', ['text' => 'نص عربي للاختبار', 'rtl' => true]),
     ]);
 
     return (object) ['slider' => $slider, 'gallery' => $gallery];
@@ -257,29 +253,24 @@ describe('hiasan', function () {
         portalBoot();
     });
 
-    it('AC-9: renders decorations hidden from assistive technology and small screens', function () {
-        $without = $this->get('/')->assertOk()->getContent();
-        $withoutDecor = identitasDecorations($without);
-
+    it('AC-9: renders every decoration hidden from assistive technology and small screens', function () {
         $album = portalAlbumWithPhotos(3, ['title' => 'Fasilitas']);
-        Setting::set('portal.hero_album_id', $album->id);
-        $with = $this->get('/')->assertOk()->getContent();
-        $withDecor = identitasDecorations($with);
+        blkSet([blk('hero', ['title' => 'Judul hero uji', 'album_id' => $album->id]), blk('cta', ['heading' => 'Ajakan uji', 'variant' => 'navy'])]);
 
-        expect($withoutDecor)->not->toBeEmpty('hero tanpa hiasan')
-            ->and(count($withDecor))->toBeGreaterThan(count($withoutDecor));
+        $decorations = identitasDecorations($this->get('/')->assertOk()->getContent());
 
-        foreach ([...$withoutDecor, ...$withDecor] as [$tag, $inner]) {
+        foreach ($decorations as [$tag, $inner]) {
             expect($tag)->toContain('aria-hidden="true"')->toMatch('/'.profilClassPattern(['hidden']).'/')
                 ->and(trim($inner))->toBe('', 'hiasan harus kosong');
         }
     });
 
     it('AC-9: adds no images or scripts and keeps the slider in its own section', function () {
+        blkSet([blk('hero', ['title' => 'Judul hero uji'])]);
         $baseline = substr_count($this->get('/')->getContent(), '<script');
 
         $album = portalAlbumWithPhotos(3, ['title' => 'Fasilitas']);
-        Setting::set('portal.hero_album_id', $album->id);
+        blkSet([blk('hero', ['title' => 'Judul hero uji', 'album_id' => $album->id])]);
         $html = $this->get('/')->assertOk()->getContent();
 
         $slider = identitasSlider($html);
@@ -292,7 +283,7 @@ describe('hiasan', function () {
 
     it('AC-13: keeps snap and shrink classes on slider photos without arbitrary widths', function () {
         $album = portalAlbumWithPhotos(3, ['title' => 'Fasilitas']);
-        Setting::set('portal.hero_album_id', $album->id);
+        blkSet([blk('hero', ['title' => 'Judul hero uji', 'album_id' => $album->id])]);
 
         preg_match_all('/<img\b[^>]*>/i', identitasSlider($this->get('/')->getContent()), $imgs);
 
@@ -317,13 +308,8 @@ describe('aset eksternal', function () {
             'school.logo_mobile_path' => 'school/mobile.png',
             'school.favicon_path' => 'school/favicon.png',
         ]);
-        profilSet([
-            'portal.hero_album_id' => $album->id,
-            'portal.footer_quote_arabic' => 'نص عربي للاختبار',
-            'portal.footer_quote_translation' => 'Terjemah uji',
-            'portal.footer_quote_source' => 'Sumber uji',
-            'school.contacts' => [profilContact()],
-        ]);
+        profilSet(['school.contacts' => [profilContact()]]);
+        blkSet([blk('hero', ['title' => 'Judul hero uji', 'album_id' => $album->id]), blk('quote', ['text' => 'نص عربي للاختبار', 'translation' => 'Terjemah uji', 'rtl' => true])]);
         $this->withoutVite();
 
         $response = $this->get($url);
@@ -348,22 +334,22 @@ describe('aset eksternal', function () {
 });
 
 describe('layout dan struktur', function () {
-    it('AC-11: keeps the home section order', function () {
+    it('AC-11: keeps the home section order of the blocks', function () {
         portalBoot();
         identitasFullHome();
 
         $html = $this->get('/')->assertOk()->getContent();
         $pos = fn (string $needle): int|false => strpos($html, $needle);
 
-        $markers = ['id="seksi-keunggulan"', 'id="seksi-profil"', 'id="seksi-kabar"', 'id="seksi-prestasi"', 'id="seksi-video"', 'id="seksi-galeri"'];
+        $markers = ['Judul keunggulan uji', 'Profil Pondok', __('pondok.portal.home.latest_news'), __('pondok.portal.home.latest_achievements'), __('pondok.portal.home.featured_videos'), __('pondok.portal.home.latest_albums'), 'نص عربي للاختبار'];
         $positions = array_map($pos, $markers);
 
         expect(in_array(false, $positions, true))->toBeFalse('ada seksi yang hilang')
             ->and($positions)->toBe(collect($positions)->sort()->values()->all());
 
         expect($pos('<h1'))->toBeLessThan($pos('role="region"'))
-            ->and($pos('role="region"'))->toBeLessThan($pos('id="seksi-keunggulan"'))
-            ->and(strrpos($html, '<footer'))->toBeGreaterThan($pos('id="seksi-galeri"'))
+            ->and($pos('role="region"'))->toBeLessThan($pos('Judul keunggulan uji'))
+            ->and(strrpos($html, '<footer'))->toBeGreaterThan($pos('نص عربي للاختبار'))
             ->and(substr_count($html, '<footer'))->toBe(1);
     });
 
@@ -404,20 +390,11 @@ describe('nama Arab dan logo', function () {
         portalBoot();
     });
 
-    it('AC-14: aligns the arabic name with the heading in one hgroup', function () {
+    // F045 (C3): nama Arab tidak lagi ditampilkan otomatis di beranda; isi hero sepenuhnya dari blok.
+    it('AC-14 (F045): does not show the arabic name automatically on the home page', function () {
         Setting::set('school.arabic_name', 'معهد الخير');
 
-        $html = $this->get('/')->assertOk()->getContent();
-        preg_match_all('#<hgroup\b[^>]*>(.*?)</hgroup>#is', $html, $groups);
-
-        expect($groups[1])->toHaveCount(1);
-
-        $group = $groups[1][0];
-        $arabic = '#<p\b(?![^>]*\bdir=)[^>]*'.profilClassPattern(['font-arabic']).'[^>]*>\s*<span\b(?=[^>]*\blang="ar")(?=[^>]*\bdir="rtl")[^>]*>\s*معهد الخير\s*</span>#u';
-
-        expect($group)->toContain('<h1')->toMatch($arabic)
-            ->and(preg_match_all('/lang="ar"/', $group))->toBe(1)
-            ->and(mb_strpos($group, 'معهد الخير'))->toBeLessThan(mb_strpos($group, '<h1'));
+        expect($this->get('/')->assertOk()->getContent())->not->toContain('معهد الخير');
     });
 
     it('AC-14: renders the hgroup without arabic markup when the name is empty', function () {

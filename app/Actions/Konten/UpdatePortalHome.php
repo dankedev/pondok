@@ -3,84 +3,79 @@
 namespace App\Actions\Konten;
 
 use App\Actions\Konten\Concerns\SavesProfileSettings;
-use App\Models\Album;
+use App\Models\Setting;
 use App\Models\User;
-use App\Models\Video;
+use Illuminate\Http\UploadedFile;
+use Throwable;
 
 /**
- * Simpan isi beranda portal (halaman Beranda): sambutan, keunggulan, dan media.
+ * Simpan beranda portal sebagai daftar blok (F045) di `portal.home_blocks`.
  *
- * Teks dan daftar memakai full replace (kosong → null). Tiga key media hanya
- * diubah bila key-nya ada di input: saat modul konten mati, halaman admin tidak
- * mengirimnya sehingga pilihan lama tetap. ID yang tidak ada ditolak.
+ * Seluruh blok divalidasi lewat `NormalizeContentBlocks` sebelum berkas apa pun disimpan.
+ * Gambar unggahan disimpan di `portal/blocks`; path lama hanya diterima bila sudah ada di
+ * beranda tersimpan, dan berkas yang tidak dipakai lagi dihapus setelah commit. Log
+ * `portal_home_updated` hanya bila ada perubahan.
  */
 class UpdatePortalHome
 {
     use SavesProfileSettings;
 
-    public const MAX_HIGHLIGHTS = 8;
+    public const KEY = 'portal.home_blocks';
 
-    /** Field input → [key settings, model, reason]. */
-    private const MEDIA = [
-        'hero_album_id' => ['portal.hero_album_id', Album::class, 'album_not_found'],
-        'profile_video_id' => ['portal.profile_video_id', Video::class, 'video_not_found'],
-        'psb_video_id' => ['portal.psb_video_id', Video::class, 'video_not_found'],
-    ];
+    public const IMAGE_DIRECTORY = 'portal/blocks';
+
+    public function __construct(
+        private readonly NormalizeContentBlocks $normalize,
+        private readonly StorePublicImage $images,
+    ) {}
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array{home_blocks?: mixed}  $data
      */
     public function handle(array $data, User $actor): void
     {
-        $values = [
-            'portal.hero_greeting' => $this->optionalText($data['hero_greeting'] ?? null, 'hero_greeting', 100),
-            'portal.hero_title' => $this->optionalText($data['hero_title'] ?? null, 'hero_title', 150),
-            'portal.hero_subtitle' => $this->optionalText($data['hero_subtitle'] ?? null, 'hero_subtitle', 300),
-            'portal.highlights_heading' => $this->optionalText($data['highlights_heading'] ?? null, 'highlights_heading', 100),
-            'portal.highlights' => $this->highlights($data['highlights'] ?? null) ?: null,
-        ];
+        $oldImages = $this->imagePaths(Setting::get(self::KEY));
+        $blocks = $this->normalize->handle('home', $data['home_blocks'] ?? [], $oldImages);
+        $newPaths = [];
 
-        foreach (self::MEDIA as $field => [$key, $model, $reason]) {
-            if (array_key_exists($field, $data)) {
-                $values[$key] = $this->mediaId($data[$field], $field, $model, $reason);
+        try {
+            foreach ($blocks as $index => $block) {
+                $image = $block['data']['image'] ?? null;
+
+                if ($image instanceof UploadedFile) {
+                    $path = $this->images->handle($image, self::IMAGE_DIRECTORY, "home_blocks.{$index}.data.image");
+                    $newPaths[] = $path;
+                    $blocks[$index]['data']['image'] = $path;
+                }
+            }
+        } catch (Throwable $exception) {
+            $this->images->delete(...$newPaths);
+
+            throw $exception;
+        }
+
+        $oldPaths = array_values(array_diff($oldImages, $this->imagePaths($blocks)));
+
+        $this->saveProfileSettings([self::KEY => $blocks], 'portal_home_updated', $actor, $newPaths, $oldPaths);
+    }
+
+    /**
+     * Path gambar yang dipakai blok tersimpan.
+     *
+     * @return list<string>
+     */
+    private function imagePaths(mixed $blocks): array
+    {
+        $paths = [];
+
+        foreach (is_array($blocks) ? $blocks : [] as $block) {
+            $image = is_array($block) && is_array($block['data'] ?? null) ? ($block['data']['image'] ?? null) : null;
+
+            if (is_string($image) && $image !== '') {
+                $paths[] = $image;
             }
         }
 
-        $this->saveProfileSettings($values, 'portal_home_updated', $actor);
-    }
-
-    /**
-     * @return list<array{title: string, description: ?string}>
-     */
-    private function highlights(mixed $value): array
-    {
-        $highlights = [];
-
-        foreach ($this->listInput($value, 'highlights', self::MAX_HIGHLIGHTS) as $index => $item) {
-            $highlights[] = [
-                'title' => $this->requiredText($item['title'] ?? null, "highlights.{$index}.title", 80),
-                'description' => $this->optionalText($item['description'] ?? null, "highlights.{$index}.description", 300),
-            ];
-        }
-
-        return $highlights;
-    }
-
-    /**
-     * @param  class-string<Album|Video>  $model
-     */
-    private function mediaId(mixed $value, string $field, string $model, string $reason): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $id = filter_var($value, FILTER_VALIDATE_INT);
-
-        if ($id === false || $id < 1 || ! $model::query()->whereKey($id)->exists()) {
-            $this->fail($field, $reason);
-        }
-
-        return $id;
+        return $paths;
     }
 }

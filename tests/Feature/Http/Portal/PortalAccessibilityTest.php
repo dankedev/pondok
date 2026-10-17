@@ -63,7 +63,8 @@ it('AC-32: uses design tokens only in portal views', function () {
         ...glob(resource_path('views/portal/*.blade.php')) ?: [],
         ...glob(resource_path('views/portal/**/*.blade.php')) ?: [],
         ...glob(resource_path('views/components/portal/*.blade.php')) ?: [],
-        resource_path('views/components/ui/empty-state.blade.php'),
+        ...glob(resource_path('views/components/ui/*.blade.php')) ?: [],
+        ...glob(resource_path('views/livewire/psb/*.blade.php')) ?: [],
         resource_path('views/layouts/public.blade.php'),
         resource_path('views/errors/404.blade.php'),
     ];
@@ -75,7 +76,10 @@ it('AC-32: uses design tokens only in portal views', function () {
         $name = str_replace(resource_path('views/'), '', $file);
 
         expect($source)->not->toContain('dark:', "dark: di {$name}")->not->toContain('!important', "!important di {$name}");
-        expect(preg_match('/\b(?:bg|text|border|ring|from|to|fill|stroke)-(?:red|green|emerald|amber|sky|zinc|slate|blue|yellow|indigo|neutral|stone)-\d{2,3}\b/', $source))->toBe(0, "warna mentah di {$name}");
+        expect(preg_match('/\b(?:bg|text|border|ring|from|to|fill|stroke|outline|decoration|divide|placeholder)-(?:red|green|emerald|amber|sky|zinc|slate|blue|yellow|indigo|neutral|stone)-\d{2,3}\b/', $source))->toBe(0, "warna mentah di {$name}");
+        // F035: emas bukan warna teks (kontras 1.77:1 di putih) dan bayangan hanya lewat token.
+        expect(preg_match('/\btext-accent-/', $source))->toBe(0, "text-accent- di {$name}");
+        expect($source)->not->toContain('shadow-[', "bayangan arbitrer di {$name}");
         expect(preg_match('/(?:class|style)="[^"]*#[0-9a-fA-F]{3,8}\b/', $source))->toBe(0, "hex di {$name}");
     }
 

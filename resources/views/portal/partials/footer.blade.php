@@ -7,35 +7,36 @@
     $hasQuote = $footer['quote_arabic'] || $footer['quote_translation'];
     // Tautan cepat sudah di-resolve `GetPortalNavigation` (tautan halaman mengikuti slug dan status).
     $quickLinks = $footerLinks;
-    $linkClass = 'inline-flex min-h-11 items-center rounded-lg text-base text-gray-700 underline-offset-4 hover:text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+    // Footer navy (satu-satunya section gelap): teks putih/primary-100/primary-200, fokus emas (11.96:1 terhadap navy).
+    $linkClass = 'inline-flex min-h-11 items-center rounded-lg text-base text-primary-100 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400';
 @endphp
 
-<footer class="mt-12 border-t border-gray-200 bg-white">
+<footer class="border-t-4 border-accent-500 bg-primary-950">
     @if ($hasQuote)
-        <div class="border-b border-gray-200">
-            <figure class="mx-auto max-w-3xl space-y-3 px-4 py-10 text-center sm:px-6">
+        <div class="border-b border-white/10">
+            <figure class="mx-auto max-w-3xl space-y-3 px-4 py-12 text-center sm:px-6 lg:py-16">
                 <blockquote class="space-y-3">
                     @if ($footer['quote_arabic'])
-                        <p lang="ar" dir="rtl" class="whitespace-pre-line text-2xl leading-loose text-gray-900">{{ $footer['quote_arabic'] }}</p>
+                        <p lang="ar" dir="rtl" class="whitespace-pre-line font-arabic text-2xl leading-loose text-white sm:text-3xl">{{ $footer['quote_arabic'] }}</p>
                     @endif
                     @if ($footer['quote_translation'])
-                        <p class="whitespace-pre-line text-base text-gray-700">{{ $footer['quote_translation'] }}</p>
+                        <p class="whitespace-pre-line text-base leading-relaxed text-primary-100 lg:text-lg">{{ $footer['quote_translation'] }}</p>
                     @endif
                 </blockquote>
                 @if ($footer['quote_source'])
-                    <figcaption class="text-sm text-gray-600">{{ $footer['quote_source'] }}</figcaption>
+                    <figcaption class="text-sm text-primary-200">{{ $footer['quote_source'] }}</figcaption>
                 @endif
             </figure>
         </div>
     @endif
 
-    <div class="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-2">
+    <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-2 lg:py-16">
         <div class="min-w-0 space-y-3">
-            <p class="text-lg font-semibold text-gray-900">{{ $school['name'] }}</p>
+            <p class="text-xl font-bold text-white">{{ $school['name'] }}</p>
             @if ($footer['description'])
-                <p class="whitespace-pre-line text-base text-gray-700">{{ $footer['description'] }}</p>
+                <p class="whitespace-pre-line text-base leading-relaxed text-primary-100">{{ $footer['description'] }}</p>
             @endif
-            @include('portal.partials.contact-list', ['school' => $school, 'phoneFormatter' => $phoneFormatter])
+            @include('portal.partials.contact-list', ['school' => $school, 'phoneFormatter' => $phoneFormatter, 'onDark' => true])
 
             @if ($school['social_links'] !== [])
                 <ul class="flex flex-wrap gap-x-4" aria-label="{{ __('pondok.portal.contact.social') }}">
@@ -52,7 +53,7 @@
 
         @if ($quickLinks !== [] || $psbStatusUrl || $verifyLetterUrl)
             <div>
-                <p class="text-sm font-semibold text-gray-900">{{ __('pondok.portal.footer.links') }}</p>
+                <p class="text-sm font-semibold text-white">{{ __('pondok.portal.footer.links') }}</p>
                 <ul class="mt-2">
                     @foreach ($quickLinks as $link)
                         <li><a href="{{ $link['url'] }}" class="{{ $linkClass }}">{{ $link['label'] }}</a></li>
@@ -67,8 +68,8 @@
             </div>
         @endif
     </div>
-    <div class="border-t border-gray-200">
-        <p class="mx-auto max-w-6xl px-4 py-4 text-sm text-gray-600 sm:px-6">
+    <div class="border-t border-white/10">
+        <p class="mx-auto max-w-6xl px-4 py-5 text-sm text-primary-200 sm:px-6">
             {{ __('pondok.portal.footer.rights', ['year' => now()->year, 'name' => $school['name']]) }}
         </p>
     </div>

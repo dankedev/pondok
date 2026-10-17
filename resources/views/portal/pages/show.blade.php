@@ -5,11 +5,11 @@
 @endphp
 
 <x-layouts::public :title="$page->title" :description="$description" :canonical="route('portal.pages.show', $page->slug)" :bare="true">
-    <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">{{ $page->title }}</h1>
+    <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:py-20">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $page->title }}</h1>
 
         @if ($bodyHtml)
-            <div class="portal-prose isolate overflow-hidden break-words mt-6">{!! $bodyHtml !!}</div>
+            <div class="portal-prose isolate overflow-hidden break-words mt-8">{!! $bodyHtml !!}</div>
         @endif
 
         @if ($isContact)

@@ -62,34 +62,34 @@
     @fonts
     @vite(['resources/css/app.css'])
 </head>
-<body class="flex min-h-screen flex-col bg-gray-50 font-sans text-gray-900 antialiased">
+<body class="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased">
     <a href="#konten"
-       class="sr-only rounded-lg bg-white px-4 py-3 text-base font-semibold text-primary-700 focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+       class="sr-only rounded-full bg-white px-5 py-3 text-base font-semibold text-primary-700 shadow-card focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
         {{ __('pondok.portal.nav.skip_to_content') }}
     </a>
 
-    <header class="border-b border-gray-200 bg-white">
+    <header class="border-b border-gray-100 bg-white">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <a href="{{ route('portal.home') }}"
                class="flex min-h-11 min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                 {{-- Logo desktop untuk >= md, logo mobile untuk < md; logo cetak tidak dipakai di header. --}}
                 @if ($desktopLogo && $mobileLogo)
-                    <picture class="min-w-0">
+                    <picture class="block min-w-0 md:max-w-64">
                         <source media="(min-width: 768px)" srcset="{{ $desktopLogo }}">
-                        <img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain">
+                        <img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain md:h-14">
                     </picture>
                     <span class="sr-only">{{ $school['name'] }}</span>
                 @elseif ($desktopLogo)
-                    <img src="{{ $desktopLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto min-w-0 max-w-full object-contain">
+                    <img src="{{ $desktopLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto min-w-0 max-w-full object-contain md:h-14 md:max-w-64">
                     <span class="sr-only">{{ $school['name'] }}</span>
                 @elseif ($mobileLogo)
                     <span class="shrink-0 md:hidden"><img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain"></span>
-                    <span class="hidden truncate text-base font-semibold text-gray-900 md:inline">{{ $school['name'] }}</span>
+                    <span class="hidden truncate text-lg font-bold text-primary-950 md:inline">{{ $school['name'] }}</span>
                 @elseif ($school['short_name'])
-                    <span class="hidden truncate text-base font-semibold text-gray-900 md:inline">{{ $school['name'] }}</span>
-                    <span class="truncate text-base font-semibold text-gray-900 md:hidden">{{ $school['short_name'] }}</span>
+                    <span class="hidden truncate text-lg font-bold text-primary-950 md:inline">{{ $school['name'] }}</span>
+                    <span class="truncate text-lg font-bold text-primary-950 md:hidden">{{ $school['short_name'] }}</span>
                 @else
-                    <span class="truncate text-base font-semibold text-gray-900">{{ $school['name'] }}</span>
+                    <span class="truncate text-lg font-bold text-primary-950">{{ $school['name'] }}</span>
                 @endif
             </a>
 
@@ -99,22 +99,23 @@
             </nav>
 
             <details class="group relative lg:hidden">
-                <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-base font-semibold text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-gray-200 px-4 text-base font-semibold text-primary-950 hover:border-primary-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                     <x-heroicon-o-bars-3 class="size-6" aria-hidden="true" />
                     {{ __('pondok.portal.nav.menu') }}
                 </summary>
-                <nav class="absolute right-0 z-10 mt-2 flex w-64 flex-col gap-1 rounded-lg border border-gray-200 bg-white p-2 shadow-sm" aria-label="{{ __('pondok.portal.nav.mobile_label') }}">
+                <nav class="absolute right-0 z-10 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg" aria-label="{{ __('pondok.portal.nav.mobile_label') }}">
                     @include('portal.partials.nav-links', ['layout' => 'mobile', 'navigation' => $navigation])
                 </nav>
             </details>
         </div>
     </header>
 
-    <main id="konten" class="flex-1">
+    {{-- Halaman non-bare (form PSB) di atas abu muda sampai footer; halaman portal bare di atas body putih. --}}
+    <main id="konten" @class(['flex-1', 'bg-gray-50' => ! $bare])>
         @if ($bare)
             {{ $slot }}
         @else
-            <div class="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+            <div class="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:py-14">
                 {{ $slot }}
             </div>
         @endif

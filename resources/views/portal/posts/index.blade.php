@@ -17,8 +17,8 @@
 @endphp
 
 <x-layouts::public :title="$heading" :canonical="$canonical" :bare="true">
-    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <h1 class="text-2xl font-semibold text-gray-900">{{ $heading }}</h1>
+    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $heading }}</h1>
 
         <div class="mt-6 space-y-3">
             <x-portal.filter-chips :items="$typeChips" :label="__('pondok.portal.posts.filter_types_label')" />
@@ -33,7 +33,7 @@
         @if ($posts->isEmpty())
             <x-ui.empty-state icon="heroicon-o-newspaper" class="mt-8">{{ __('pondok.portal.posts.empty') }}</x-ui.empty-state>
         @else
-            <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($posts as $post)
                     <x-portal.post-card :post="$post" :heading-level="2" />
                 @endforeach

@@ -29,6 +29,7 @@ Orkestrator akan menyebut mode: **RED** atau **VERIFY**. Bila tidak disebut, ten
    - Izin per peran cukup dijaga `RolePermissionSeederTest` › `grants each role exactly its permissions` (daftar persis). Perbarui daftar itu; jangan menambah test "tidak diberikan ke peran lain" per peran.
    - Pengecekan murni di memori (matriks status, format, parser) memakai satu test dengan loop dan pesan per kasus (`->toBe($x, "{$from} ke {$to}")`).
    - Dataset tetap dipakai untuk kasus yang benar-benar menjalankan perilaku berbeda, misalnya satu field invalid per baris atau akses halaman per peran.
+   - **YAGNI:** jangan menulis test untuk perilaku yang tidak diminta AC (opsi tambahan, kasus "kalau nanti"), dan jangan menguji kode perbaikan data demo lama.
 4. Jalankan test: `php artisan test --compact <path>`. Pastikan **setiap test gagal karena alasan yang benar** (kelas/route/kolom belum ada atau assertion perilaku gagal), bukan karena typo, syntax error, atau setup test yang salah.
 5. Jalankan `vendor/bin/pint --dirty --format agent`.
 

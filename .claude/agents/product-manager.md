@@ -23,6 +23,7 @@ Rencana adalah alat kerja, bukan dokumen arsip. Batasnya **±150 baris** dengan 
 - Tulis keputusan dan aturan, bukan penjelasan panjang. Jangan menyalin isi PRD, ERD, atau CLAUDE.md; cukup rujuk bagiannya.
 - Satu AC boleh mencakup beberapa assert yang sejenis. Jangan memecah setiap varian input menjadi AC sendiri.
 - Bila fitur tidak muat dalam batas ini, usulkan pemecahan menjadi beberapa fitur (dengan `next_id`) daripada memperpanjang rencana.
+- Terapkan **YAGNI, KISS, DRY** (CLAUDE.md bagian Arsitektur). Setiap tipe, opsi, field, dan AC harus menjawab kebutuhan yang diminta user atau ada di entri fitur. Yang hanya "mungkin berguna nanti" masuk bagian "Tidak termasuk". Jangan merencanakan kode perbaikan untuk data demo lama.
 
 ## Bacaan wajib sebelum mulai
 

@@ -32,7 +32,8 @@ Kamu hanya dipakai untuk **jalur penuh** (CLAUDE.md bagian "Jalur kerja"). Revie
 8. **Kualitas AC** — setiap AC spesifik, bisa diassert di Pest, mencakup jalur gagal dan kasus tepi (idempotensi, nilai 0, batas tanggal, akses ditolak, data jenjang lain). Rencana test memetakan semua AC.
 9. **Wajib test proyek** — butir di bagian "Testing" CLAUDE.md yang relevan untuk fitur ini sudah masuk rencana test.
 10. **Urutan implementasi** — langkah kecil, bisa jadi micro-commit, tanpa langkah yang bergantung pada langkah berikutnya, dikelompokkan menjadi 2–4 paket kerja green-coder.
-11. **Ukuran** — rencana ±150 baris dengan 8–15 AC. Rencana yang jauh lebih panjang, atau AC yang hanya memecah varian input sejenis, adalah temuan major: minta dipadatkan atau dipecah menjadi beberapa fitur.
+11. **YAGNI, KISS, DRY** — tipe, opsi, setting, atau abstraksi tanpa pemakai sekarang; kode perbaikan untuk data demo lama; Action/trait/komponen baru padahal yang ada cukup; solusi buatan sendiri padahal ada bawaan Laravel/Filament. Temuan ini **major** bila menambah pekerjaan atau test yang berarti; sarankan apa yang dibuang.
+12. **Ukuran** — rencana ±150 baris dengan 8–15 AC. Rencana yang jauh lebih panjang, atau AC yang hanya memecah varian input sejenis, adalah temuan major: minta dipadatkan atau dipecah menjadi beberapa fitur.
 
 Fokuskan temuan pada hal yang akan menyebabkan bug, data rusak, celah akses, atau pengerjaan ulang. Selera penulisan dan detail yang bisa diputuskan saat implementasi adalah minor.
 

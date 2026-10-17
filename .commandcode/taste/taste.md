@@ -1,1 +1,20 @@
 - Prefers communicating in Indonesian (Bahasa Indonesia). Confidence: 0.85
+- Prefers plain, accessible language over jargon-heavy technical discourse; explicitly asks for simpler wording when questions feel too complex ("gunakan bahasa yang lebih umum") and reacts with frustration when phrasing reads like alien jargon ("kamu halu menggunakan bahasa planet mana?"). Confidence: 0.95
+- Self-identifies as a beginner ("ini awal saya") and wants explanations calibrated to that level rather than expert-level framing. Confidence: 0.85
+- Prefers validation/evidence framing for code audits ("bukti tertulis bahwa kode sudah cukup bagus untuk ditunjukkan ke orang lain") rather than purely as a refactor action list. Confidence: 0.8
+- Prefers to discuss and align on understanding before any code changes are made; explicitly chooses "diskusi dulu, belum ada perubahan". Confidence: 0.85
+- Validates AI-generated code through UI behavior and unit test results rather than by reading code directly ("saya tidak melihat detail ke codenya"). Confidence: 0.9
+- Values documentation that explains architectural decisions and their associated risks in detail — especially important because the project is open-source with highly varied installation needs. Confidence: 0.9
+- Prefers preserving existing consistency (e.g. "Pilihan A: biarkan") over removing minor inconsistencies; tolerates small fragments if they preserve uniformity across the codebase. Confidence: 0.85
+- Treats the codebase as open-source software where different installations may have very different needs; argues for keeping components "selama itu masih relevan dengan fungsinya" rather than aggressive simplification. Confidence: 0.85
+- Prefers documentation/audit reports written in two layers: a plain-language summary for non-technical readers on top, with the detailed technical version below. Confidence: 0.9
+- Prefers audits and quality assessments to follow recognized ISO standards — specifically ISO 25010 (software quality model) and ISO 23026 (website engineering/management) — using the standard itself as the assessment framework rather than ad-hoc criteria. Confidence: 0.8
+- Prefers the AI to answer or resolve hard/technical questions itself rather than bouncing open questions back to the user. Confidence: 0.75
+- Uses Command Code and installs Agent Skills by following the SkillsMP install prompt (skillsmp.com/skill-install/prompt.md), installing only the specific skill requested rather than the whole source repository. Confidence: 0.7
+- Applies YAGNI, KISS, and DRY and avoids over-engineering; prefers deferring non-essential scope ("nanti dulu") over speculative builds. Confidence: 0.9
+- Prefers content and behavior to be admin-configurable and data-driven rather than hardcoded defaults; fields should start empty and be filled by the user instead of predefined by the developer. Confidence: 0.9
+- Builds generic, multi-tenant software reusable across institutions rather than solutions tailored to a single client. Confidence: 0.85
+- Wants demo/seed/fixture data to look realistic and internally consistent rather than random. Confidence: 0.85
+- Prefers a modern, non-boxy visual style (dislikes "template/marketplace" look) with brand colors drawn from the logo. Confidence: 0.85
+- Commits and pushes only on explicit request, using micro-commits with Conventional Commits. Confidence: 0.8
+- Is mindful of API/usage limits and prefers lean, token-efficient workflows. Confidence: 0.7

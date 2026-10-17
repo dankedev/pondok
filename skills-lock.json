@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "implementing-iso-27001-information-security-management": {
+      "source": "mukul975/Anthropic-Cybersecurity-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/implementing-iso-27001-information-security-management/SKILL.md",
+      "computedHash": "0abb432d924a060aee0d5beed69a02495714fb7ee1f75f5834aa4020cb8cbee0"
+    }
+  }
+}

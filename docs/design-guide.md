@@ -13,6 +13,8 @@ Bila ada aturan yang tidak bisa diikuti, jangan improvisasi gaya baru. Ikuti pol
 - [ ] Halaman sudah dilihat di desktop dan 360px, atau user diberi tahu bahwa belum dicek visual (§13).
 - [ ] Semua teks UI lewat `__('pondok.…')` di `lang/id/pondok.php`. Tidak ada string Indonesia/Inggris yang di-hardcode di PHP atau Blade.
 - [ ] Warna hanya dari token (§2). Tidak ada hex, `rgb()`, atau kelas Tailwind warna mentah seperti `bg-green-600` di Blade.
+- [ ] Portal/PSB: navy dari logo untuk aksi, emas hanya latar/garis/hiasan (tidak pernah `text-accent-*`), teks isi `gray-600`/`gray-700` (§2).
+- [ ] Bayangan hanya token `shadow-card`/`shadow-card-lg`/`shadow-button`; tanpa nilai arbitrer `shadow-[…]` (§6).
 - [ ] Uang tampil `Rp 1.250.000` (§5). Tanggal tampil `15 Okt 2026` (§5).
 - [ ] Status tampil sebagai badge dengan warna sesuai tabel status (§4).
 - [ ] Ada empty state, dan state "Modul belum tersedia" untuk widget/halaman modul non-inti (§7).
@@ -33,17 +35,44 @@ Bila ada aturan yang tidak bisa diikuti, jangan improvisasi gaya baru. Ikuti pol
 
 ### Token
 
-Satu sumber warna untuk dua permukaan:
+Dua permukaan, nama semantik yang sama:
 
 | Peran | Filament (`AdminPanelProvider`) | Tailwind (`resources/css/app.css`) | Pakai untuk |
 |---|---|---|---|
-| Primary | `Color::Emerald` | `primary-*` (alias emerald) | Tombol utama, link, elemen aktif |
-| Accent | — | `accent-*` (alias amber) | Sorotan sekunder di portal publik: label "Pendaftaran dibuka", ornamen. Maksimal satu elemen accent per layar. |
-| Netral | `gray` (bawaan) | `gray-*` (zinc) | Teks, border, latar |
+| Primary | `Color::Emerald` | `primary-*` navy logo Al-Khair (skala di bawah, 950 = `#000A3C`) | Tombol utama, link, elemen aktif |
+| Accent | — | `accent-*` emas logo Al-Khair (500 = `#F8B800`) | Portal/PSB: latar badge "Pendaftaran dibuka", garis aksen footer, `blockquote`, hiasan. Bukan warna teks. |
+| Netral | `gray` (bawaan) | `gray-*` (alias slate) | Teks, border, latar |
 | Success | `success` | `success-*` (green) | Lunas, aktif, disetujui, diterima |
 | Warning | `warning` | `warning-*` (amber) | Belum lunas sebagian, menunggu, akan jatuh tempo |
 | Danger | `danger` | `danger-*` (red) | Terlambat, ditolak, batal, aksi hapus |
 | Info | `info` | `info-*` (sky) | Proses berjalan, informasi netral |
+
+**Portal dan panel sengaja berbeda primer.** Panel admin Filament tetap `Color::Emerald` dan tidak memuat `app.css` (tanpa `viteTheme()`), sehingga token navy/emas hanya berlaku di portal publik, PSB, dan layout publik. Acuan gaya portal: [`docs/brand/referensi-gaya-coursex.md`](brand/referensi-gaya-coursex.md).
+
+Skala portal (hex literal di `@theme`, kontras WCAG 2.x):
+
+| Shade | `primary-*` (navy) | Kontras di putih | `accent-*` (emas) | Kontras di putih / navy 950 |
+|---|---|---|---|---|
+| 50 | `#EEF2FB` | 1.12 | `#FFF9E5` | 1.05 / 17.98 |
+| 100 | `#DDE4F6` | 1.27 | `#FFF0BF` | 1.14 / 16.66 |
+| 200 | `#BBC8EC` | 1.67 | `#FFE28A` | 1.27 / 14.88 |
+| 300 | `#8EA2DB` | 2.52 | `#FFD452` | 1.42 / 13.34 |
+| 400 | `#5F78C4` | 4.23 | `#FFC524` | 1.58 / 11.96 |
+| 500 | `#3D56A8` | 6.79 | `#F8B800` | 1.77 / 10.69 |
+| 600 | `#273E8C` | 9.75 | `#D49A00` | 2.49 / 7.60 |
+| 700 | `#1A2C72` | 12.75 | `#A67700` | 3.99 / 4.74 |
+| 800 | `#0F1D59` | 15.67 | `#7A5700` | 6.58 / 2.88 |
+| 900 | `#061247` | 17.72 | `#523A00` | 10.69 / 1.77 |
+| 950 | `#000A3C` | 18.94 | `#2E2100` | 15.75 / 1.20 |
+
+Pemakaian navy: tautan `primary-700`, tombol utama/chip aktif/halaman aktif/batang langkah PSB `primary-900` (hover `primary-800`), judul hero dan footer `primary-950`, cincin fokus `primary-500` (dengan `ring-offset-2` pada tombol navy).
+
+Aturan emas (portal/PSB):
+- `text-accent-*` **dilarang** di Blade (emas di putih hanya 1.77:1). Dijaga test sumber.
+- Emas hanya lewat `bg-`, `border-`, `ring-`, `fill-`, `stroke-`, `outline-`, atau `decoration-`. Teks di atas emas memakai `text-primary-950`.
+- Cincin fokus di latar navy memakai `ring-accent-400` (11.96:1 terhadap navy); `primary-500` di atas navy hanya ±2.8:1.
+- Maksimal satu sorotan emas berteks (badge) per layar; garis, hiasan, dan `blockquote` tidak dihitung.
+- Status `warning` (amber) bernada dekat dengan emas. Pembedanya bentuk: badge aksen emas padat berteks navy, badge warning latar `warning-50` dengan teks `warning-800`.
 
 Aturan:
 - Di Filament, warna hanya lewat nama semantik (`'success'`, `'danger'`, `'gray'`, `'primary'`), **bukan** `Color::Green` atau hex.
@@ -53,17 +82,28 @@ Aturan:
 
 ### Kontras & latar
 
-- Teks utama `gray-900` di atas putih, teks sekunder `gray-600`. Jangan `gray-400` untuk teks yang harus dibaca.
-- Teks di atas `primary-600` ke atas: putih. Di bawah `primary-500`: `primary-900`.
-- Latar halaman portal `white` atau `gray-50`. Kartu `white` dengan `border-gray-200`, bukan bayangan tebal.
+- Teks utama `gray-900` di atas putih, teks isi `gray-600`/`gray-700`. `gray-500` hanya untuk ikon; `gray-300`/`gray-400` tidak untuk teks yang harus dibaca (kecuali paginasi nonaktif).
+- Portal: teks di atas `primary-700` ke atas putih; teks di atas emas `primary-950`. Panel admin mengikuti Filament.
+- Latar portal: halaman putih, section beranda berselang-seling `gray-50`/putih, form PSB di atas `gray-50`, footer `primary-950` (satu-satunya section gelap; teks `white`/`primary-100`/`primary-200`). Kartu putih dengan `border-gray-100` + `shadow-card`.
 - Dark mode: panel Filament mengikuti bawaan Filament. Portal publik, portal wali, dan PSB **hanya mode terang** (Fase 1–2). Jangan menambahkan kelas `dark:` di Blade portal.
 
 ## 3. Tipografi & ikon
 
-- **Huruf Latin:** Instrument Sans (sudah dipasang lewat `@fonts`). Jangan menambah font lain untuk teks Latin.
-- **Teks Arab** (nama surah, ayat, doa, kaligrafi nama lembaga): font naskh yang di-self-host di `public/fonts`, dibungkus elemen dengan `lang="ar" dir="rtl"` dan kelas `font-arabic`. Ukuran minimal 1.25× teks sekitarnya. Jangan pernah render teks Arab dengan font Latin.
-- Skala yang dipakai (Tailwind): `text-sm` (keterangan, tabel), `text-base` (isi), `text-lg` (judul kartu), `text-2xl` (judul halaman), `text-3xl`–`text-4xl` (hero portal saja). Jangan memakai ukuran lain tanpa alasan.
-- Bobot: `font-normal` untuk isi, `font-semibold` untuk judul dan angka penting. Hindari `font-bold`/`font-black` kecuali hero.
+- **Huruf Latin:** Plus Jakarta Sans 400/600/700 (bobot 500 tidak dipakai portal, jadi tidak dibundel), di-self-host lewat plugin font Vite (`bunny()` di `vite.config.js`, diunduh saat `npm run build` ke `public/build`) dan dimuat lewat `@fonts`. Jangan menambah font lain untuk teks Latin. Panel Filament tetap memakai font bawaannya.
+- **Teks Arab** (nama surah, ayat, doa, kaligrafi nama lembaga): Noto Naskh Arabic (400/700, subset `arabic`, tanpa preload) yang di-self-host lewat plugin font Vite yang sama, dibungkus elemen dengan `lang="ar" dir="rtl"` dan kelas `font-arabic`. Ukuran minimal 1.25× teks sekitarnya. Jangan pernah render teks Arab dengan font Latin.
+- Skala yang dipakai (Tailwind): `text-sm` (keterangan, tabel), `text-base` (isi), `text-lg` (judul kartu), `text-2xl` (judul halaman panel). Jangan memakai ukuran lain tanpa alasan.
+- Skala judul portal/PSB:
+
+  | Elemen | Kelas |
+  |---|---|
+  | `h1` hero beranda | `text-4xl font-bold tracking-tight text-primary-950 sm:text-5xl lg:text-6xl text-balance` |
+  | `h2` section beranda | `text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl` |
+  | `h1` halaman dalam dan PSB | `text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl` |
+  | Subjudul hero | `text-lg text-gray-600 lg:text-xl` |
+  | Isi section beranda dan `.portal-prose` | `text-base leading-relaxed lg:text-lg` |
+
+  `text-5xl`–`text-6xl` hanya untuk `h1` hero beranda.
+- Bobot: `font-normal` untuk isi, `font-semibold` untuk judul kartu dan angka penting. `font-bold` hanya untuk `h1`/`h2` portal dan nama lembaga di header/footer; `font-black` tidak dipakai.
 - Angka nominal, NIS, dan nomor kuitansi memakai `tabular-nums`. Di tabel Filament, kolom uang rata kanan (`->alignEnd()`).
 - Kapitalisasi: **Huruf kapital di awal kalimat saja** untuk label, tombol, dan judul (`Tambah santri`, bukan `Tambah Santri`). Pengecualian: nama diri, singkatan (PSB, SPP, NIS), dan label model/navigasi Filament yang sudah ada.
 - **Ikon:** hanya `Filament\Support\Icons\Heroicon::Outlined…` di Filament dan `<x-heroicon-o-… />` di Blade. Satu konsep satu ikon; tambahkan pasangannya di tabel bila memakai ikon baru.
@@ -181,8 +221,12 @@ Zona waktu selalu `Asia/Jakarta`. Jangan menampilkan ISO timestamp mentah.
 
 - **Mobile-first.** Rancang untuk 360px dulu, lalu `sm`/`md`/`lg`. Wali dan pendaftar hampir semua memakai HP.
 - Kontainer: `mx-auto max-w-6xl px-4 sm:px-6` (portal publik), `max-w-2xl` (portal wali, form PSB).
-- Spasi memakai skala Tailwind 4 kelipatan: `gap-4`, `p-4`/`p-6`, jarak antarseksi `py-12`/`py-16`. Hindari nilai arbitrer (`p-[13px]`).
-- Sudut: `rounded-lg` untuk kartu dan input, `rounded-full` untuk badge. Bayangan maksimal `shadow-sm`.
+- Spasi memakai skala Tailwind 4 kelipatan: `gap-4`/`gap-6`, `p-4`/`p-6`. Section beranda `py-16 lg:py-24`, kontainer halaman dalam `py-12 lg:py-20`. Hindari nilai arbitrer (`p-[13px]`, `w-[85%]`); pakai pecahan skala (`w-5/6`).
+- Sudut: `rounded-full` (pill) untuk tombol, input, select, input file, badge, chip filter, paginasi, item nav, dan tautan "Daftar". `rounded-xl` untuk kartu, alert, empty state, foto, iframe, menu lipat, dan ubin pilihan radio.
+- Bayangan hanya token di `@theme`: `shadow-card` (kartu, `border-gray-100`), `shadow-card-lg` (kartu besar, menu lipat), `shadow-button` (tombol utama navy). Tanpa `shadow-[…]`.
+- Input dan select memakai kelas komponen `.ui-input` (pill, `px-5`, fokus `ring-primary-500`); kelas tambahan per field (`tabular-nums`) tetap ditulis di elemen.
+- Beranda: hero dan slider putih, lalu section yang dirender berselang-seling `bg-gray-50` → `bg-white` (penghitung `$band()` di `home.blade.php`, hanya dipanggil section yang tampil). Section kosong tidak dirender.
+- Hiasan cincin emas setengah lingkaran (`.portal-decor-ring`) dan pola titik navy muda (`.portal-decor-dots`): murni CSS, hanya di hero (titik, `lg`) dan slider (cincin + titik, `sm`), sebagai `<div aria-hidden="true">` kosong di belakang konten (`-z-10` dalam wadah `isolate`), selalu berkelas `hidden` di bawah breakpoint. Section berhias memakai `overflow-x-clip`.
 - Target sentuh minimal 44×44px. Tombol utama di portal wali/PSB lebar penuh di mobile (`w-full sm:w-auto`).
 - Form PSB dipecah menjadi langkah (wizard) dengan indikator langkah, satu kolom di mobile, label di atas field, dan tombol "Simpan & lanjut" di bawah.
 - Komponen Blade yang dipakai ulang (tombol, badge, kartu, field, empty state, alert) dibuat sebagai anonymous component di `resources/views/components/ui/` dan dipakai sebagai `<x-ui.button>`. Cek komponen yang sudah ada sebelum membuat yang baru.
@@ -240,6 +284,10 @@ Setiap daftar, tabel, dan widget wajib punya:
 - Warna hardcode, ukuran arbitrer, `!important`.
 - Teks UI hardcode di luar `lang/id`.
 - Ilustrasi makhluk bernyawa (manusia/hewan) di UI dan konten bawaan; gunakan ikon, pola geometris, atau foto asli lembaga.
+- Hiasan selain bentuk geometris CSS (cincin, titik, garis); gambar atau SVG dekoratif eksternal.
+- Animasi muncul-saat-scroll (konten tersembunyi sampai digulir) dan animasi dekoratif lain.
+- Bayangan arbitrer `shadow-[…]`; pakai token `shadow-card`/`shadow-card-lg`/`shadow-button`.
+- `text-accent-*` di Blade portal/PSB.
 
 ## 13. Alur kerja UI (anti-ui-slop)
 

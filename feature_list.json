@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F045",
+  "next_id": "F047",
   "features": [
     {
       "id": "F001",
@@ -797,6 +797,52 @@
       "handoff": null,
       "evidence": "Commit d503bd6 (kontak satu sumber), bb6adb3 (menu admin Situs/Pengaturan), 62c24da (data demo), 8222643 (docs). Test F044 hijau termasuk F044VerifyGapsTest (16 kasus VERIFY, bug pencocokan halaman Kontak demo diperbaiki); suite penuh PHP 8.4 4004 test lulus; test Filament 970 lulus setelah urutan grup; migrasi naik/turun/naik dan DemoSeeder lulus di MySQL dengan telepon cetak tetap sama; Pint lulus; admin Navigasi/Footer/Kontak & sosial dan portal /kontak dicek visual (1280px dan 360px).",
       "notes": "jalur: penuh. Paket 1 audit UI/UX (docs/audits/ui-ux-portal-konten.md §5.1, §5.6, S5, C7), permintaan user 17 Okt 2026. Bergantung F043 karena memindahkan halaman Navigasi dan Footer hasil F043 dan mengubah GetSchoolProfile yang sama. Logo cetak tetap di Identitas (pemindahan ke pengaturan kop surat di luar cakupan). Rencana: docs/plans/F044-plan.md."
+    },
+    {
+      "id": "F045",
+      "key": "konten-beranda-blok",
+      "name": "Mesin blok bersama dan beranda berbasis blok",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F043", "F044"],
+      "description": "Paket 2 audit UI/UX (S2, C1, C3, C5, C8). Beranda disusun admin dari blok (Filament Builder, settings portal.home_blocks, satu query settings per request): Hero, Teks + gambar, Daftar poin, Angka, Kutipan, Ajakan, Video, dan Daftar otomatis (berita, prestasi, galeri, video). Setiap blok bisa diurutkan, disembunyikan, dan dihapus; blok kosong tidak dirender. Mesin blok (validasi, sanitasi teks terbatas, pemilih tujuan tombol, grid adaptif) dipakai ulang oleh footer widget F046. Field beranda F036 dan kutipan arsip F043 dimigrasikan menjadi blok.",
+      "acceptance": [
+        "Migrasi field hero, keunggulan, media beranda, ringkasan Tentang (halaman profil), dan portal.archived_footer_quote menjadi blok dengan urutan tampil sama; instalasi baru tanpa blok; idempotent dan punya rollback",
+        "Admin menambah, mengurutkan, menyembunyikan, dan menghapus blok; validasi penuh dengan galat di field blok yang tepat, tanpa pemotongan diam-diam",
+        "Batasan desain: judul seksi h2 diatur sistem, warna hanya varian tema, teks terbatas pada paragraf, tebal, dan tautan (tersanitasi)",
+        "Hero dua kolom di >=1024px dengan gambar atau slider album yang tidak terpotong, nama Arab tidak tampil otomatis; blok otomatis punya judul seksi, jumlah item, dan Lihat semua konsisten; grid adaptif sesuai jumlah item",
+        "Blok kosong, tersembunyi, atau rujukannya hilang tidak dirender; jumlah query tidak bertambah per blok statis",
+        "Tanpa teks konten bawaan; teks bantuan admin tanpa basmalah atau sapaan; DemoSeeder mengisi contoh fiktif semua tipe blok dan memperbaiki judul demo Selayang Pandangan",
+        "Lolos checklist §0 design guide, dicek di 360px, 1024px, dan desktop"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 4755389 (refactor tautan bersama), 926e798 (beranda blok), db3cece (data demo), 77b3d6f (docs). Test F045 hijau termasuk HomeBuilderVerifyTest (VERIFY; bug tombol ke halaman/kategori terhapus diperbaiki); suite penuh PHP 8.4 4021 test lulus; migrasi beranda di MySQL menghasilkan 8 blok dengan urutan sama; DemoSeeder lulus; Pint lulus; portal dicek di 360px, 1024px, 1280px dan admin Beranda dicek visual.",
+      "notes": "jalur: penuh. Paket 2 audit UI/UX (docs/audits/ui-ux-portal-konten.md §5.3, §6 S2/C1/C3/C5/C8, §7 butir 2, §9), permintaan user 17 Okt 2026. Dipecah dengan F046 (footer widget) agar tiap rencana tetap ±150 baris. Blok Info PSB ringkas tidak termasuk (dibahas bersama revisi F038). Rencana: docs/plans/F045-plan.md."
+    },
+    {
+      "id": "F046",
+      "key": "konten-footer-widget",
+      "name": "Footer portal sebagai area widget",
+      "phase": 1,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F045"],
+      "description": "Paket 2 audit UI/UX, keputusan user 17 Okt 2026 (§9 Footer sebagai area widget). Footer berisi paling banyak 4 widget yang diatur admin dengan mesin blok F045 (settings portal.footer_widgets): Teks (opsi logo), Tautan (menggantikan navigasi footer F043, boleh lebih dari satu), Media sosial dan Kontak (memilih dari data Kontak & sosial tanpa mengetik ulang); heading opsional; grid 1-4 kolom sesuai jumlah widget. Baris hak cipta dan footer ringkas PSB/404 tetap di luar widget.",
+      "acceptance": [
+        "Migrasi deskripsi dan teks pendek menjadi widget Teks, navigasi footer menjadi widget Tautan, saklar kontak/sosial menjadi widget Kontak/Media sosial, maksimal 4 tanpa kehilangan data; instalasi baru tanpa widget; idempotent dan punya rollback",
+        "Widget bisa diurutkan, disembunyikan, dan dihapus; lebih dari 4 widget ditolak dengan pesan galat",
+        "Widget Kontak dan Media sosial merujuk key data Kontak & sosial; data yang dihapus tidak tampil",
+        "Widget kosong tidak dirender; footer ringkas di alur PSB dan 404 tetap",
+        "Halaman Navigasi tidak lagi mengatur navigasi footer; menghapus halaman membuang rujukannya dari widget Tautan",
+        "DemoSeeder mengisi widget contoh fiktif secara idempotent",
+        "Lolos checklist §0 design guide, dicek di 360px, 1024px, dan desktop"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Paket 2 audit UI/UX (docs/audits/ui-ux-portal-konten.md §9 Footer sebagai area widget, §5.5, C2), permintaan user 17 Okt 2026. Bergantung F045 karena memakai mesin blok, teks terbatas, dan pemilih tujuan yang sama. Akun media sosial mendapat key seperti kontak. Ikon media sosial di luar cakupan. Rencana: docs/plans/F046-plan.md."
     }
   ]
 }

@@ -19,7 +19,7 @@ class ListPublicPosts
 
     /**
      * @param  array{jenis?: ?string, kategori?: ?string, jenjang?: ?string}  $filters
-     * @return array{posts: LengthAwarePaginator, type: ?string, category: ?Category, unit: ?Unit, categories: Collection<int, Category>, units: Collection<int, Unit>, filters: array<string, string>}
+     * @return array{posts: LengthAwarePaginator, type: ?string, category: ?Category, unit: ?Unit, categories: Collection<int, Category>, units: Collection<int, Unit>, types: list<string>, filters: array<string, string>}
      */
     public function handle(array $filters, int $page = 1): array
     {
@@ -32,10 +32,10 @@ class ListPublicPosts
             abort_if($category === null, 404);
         }
 
-        $units = Unit::query()->orderBy('sort_order')->get();
+        $allUnits = Unit::query()->orderBy('sort_order')->get();
         $unit = null;
         if (($filters['jenjang'] ?? null) !== null) {
-            $unit = $units->firstWhere('code', Str::upper($filters['jenjang']));
+            $unit = $allUnits->firstWhere('code', Str::upper($filters['jenjang']));
             abort_if($unit === null, 404);
         }
 
@@ -65,13 +65,21 @@ class ListPublicPosts
             ->orderBy('name')
             ->get();
 
+        $usedTypes = Post::query()->published()->distinct()->pluck('type')->all();
+        $usedUnitIds = Post::query()->published()->whereNotNull('unit_id')->distinct()->pluck('unit_id')->all();
+
+        // Chip tanpa berita terbit disembunyikan (filter aktif tetap tampil agar bisa dilepas); jenjang hanya bila ≥2.
+        $types = array_values(array_filter(Post::TYPES, fn (string $item): bool => in_array($item, $usedTypes, true) || $item === $type));
+        $units = $allUnits->filter(fn (Unit $item): bool => in_array($item->getKey(), $usedUnitIds, true) || $item->is($unit))->values();
+
         return [
             'posts' => $posts,
             'type' => $type,
+            'types' => $types,
             'category' => $category,
             'unit' => $unit,
             'categories' => $categories,
-            'units' => $units,
+            'units' => $units->count() >= 2 ? $units : collect(),
             'filters' => $applied,
         ];
     }

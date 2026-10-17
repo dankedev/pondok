@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Konten\FormatPhoneForDisplay;
 use App\Http\Middleware\SetPortalSecurityHeaders;
 use App\Models\Setting;
 use App\Models\StaticPage;
@@ -38,6 +39,45 @@ it('AC-48: renders the description, contacts, socials and footer links (the quot
     // F037: tautan visi-misi bawaan dihapus dari footer; hanya tautan pilihan admin yang tampil.
     expect($footer)->not->toContain(route('portal.pages.show', 'visi-misi'))
         ->and(strpos($footer, 'Berita Pilihan'))->not->toBeFalse();
+});
+
+it('AC-6 (F044): shows address, email, map and every contact exactly once, with no separate phone row, in the footer and on /kontak', function () {
+    StaticPage::findBySlug('kontak')->update(['body' => '']);
+    profilSet([
+        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@alkhair.sch.id', 'school.map_url' => 'https://maps.app.goo.gl/abc',
+        'school.contacts' => [
+            profilContact(['key' => 'aaaa1111', 'label' => 'Panitia', 'phone' => '081234567890', 'is_print' => false]),
+            profilContact(['key' => 'bbbb2222', 'label' => 'Kantor', 'phone' => '0735000170', 'is_whatsapp' => false, 'is_print' => true]),
+        ],
+    ]);
+
+    $footer = profilVisibleText(profilFooter($this->get('/')->assertOk()->getContent()));
+    $html = $this->get('/kontak')->assertOk()->getContent();
+    preg_match('#<main\b.*?</main>#is', $html, $main);
+    $page = profilVisibleText($main[0] ?? '');
+
+    expect($page)->not->toBeEmpty();
+
+    foreach ([$footer, $page] as $text) {
+        expect(substr_count($text, 'Jl. Pesantren No. 1'))->toBe(1)
+            ->and(substr_count($text, 'info@alkhair.sch.id'))->toBe(1)
+            ->and(substr_count($text, '0812-3456-7890'))->toBe(1)
+            ->and(substr_count($text, app(FormatPhoneForDisplay::class)->handle('0735000170')))->toBe(1)
+            ->and(substr_count($text, 'Lihat di peta'))->toBe(1);
+    }
+});
+
+it('AC-6 (F044): ignores a leftover school.phone and keeps the contact page for address only', function () {
+    StaticPage::findBySlug('kontak')->update(['body' => '']);
+    profilRawSet('school.phone', '081200009999');
+
+    $this->get('/kontak')->assertNotFound();
+
+    Setting::set('school.address', 'Jl. Pesantren No. 1');
+
+    $text = profilVisibleText($this->get('/kontak')->assertOk()->getContent());
+
+    expect($text)->toContain('Jl. Pesantren No. 1')->not->toContain('0812-0000-9999')->not->toContain('081200009999');
 });
 
 it('AC-48: does not render the old whatsapp and social keys', function () {

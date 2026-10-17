@@ -357,7 +357,7 @@ it('AC-40: falls back when the school profile is empty', function () {
 
 it('AC-40: freezes the school address and phone when they are set', function () {
     Setting::set('school.address', 'Jl. Pesantren No. 1');
-    Setting::set('school.phone', '0812-0000-1111');
+    Setting::set('school.contacts', [profilContact(['phone' => '0812-0000-1111', 'is_print' => true])]);
 
     $letter = suratIssue($this->f);
 
@@ -384,4 +384,23 @@ it('AC-41: leaves classroom and academic year empty without an active academic y
     expect($letter->fresh()->snapshot['student']['classroom_name'])->toBeNull()
         ->and($letter->fresh()->snapshot['student']['academic_year_name'])->toBeNull()
         ->and($letter->fresh()->snapshot['student']['nis'])->toBe('2026000123');
+});
+
+it('AC-3 (F044): replacing the print contact leaves an issued letter snapshot unchanged but new letters use the new phone', function () {
+    Setting::set('school.address', 'Jl. Pesantren No. 1');
+    Setting::set('school.contacts', [profilContact(['key' => 'aaaa1111', 'phone' => '081200001111', 'is_print' => true])]);
+    $old = suratIssue($this->f);
+    $before = $old->fresh()->snapshot['school'];
+
+    Setting::set('school.contacts', [profilContact(['key' => 'aaaa1111', 'phone' => '081200001111']), profilContact(['key' => 'bbbb2222', 'phone' => '081200002222', 'is_print' => true])]);
+    $new = suratIssue($this->f);
+
+    expect($old->fresh()->snapshot['school'])->toEqual($before)->and($before['phone'])->toBe('081200001111')
+        ->and($new->fresh()->snapshot['school']['phone'])->toBe('081200002222');
+});
+
+it('AC-2 (F044): leaves the phone null when no contact is marked for print', function () {
+    Setting::set('school.contacts', [profilContact(['phone' => '081200007777'])]);
+
+    expect(suratIssue($this->f)->fresh()->snapshot['school']['phone'])->toBeNull();
 });

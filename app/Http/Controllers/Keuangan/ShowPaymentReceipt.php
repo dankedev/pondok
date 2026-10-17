@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Keuangan;
 
+use App\Actions\Konten\GetPrintIdentity;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class ShowPaymentReceipt extends Controller
 {
-    public function __invoke(Payment $payment): View
+    public function __invoke(Payment $payment, GetPrintIdentity $printIdentity): View
     {
         Gate::authorize('view', $payment);
 
@@ -41,9 +42,7 @@ class ShowPaymentReceipt extends Controller
             'receivedFrom' => $applicant?->guardian_name ?? $billingContact?->name ?? $student?->name,
             'period' => $invoice?->period !== null ? InvoiceResource::periodLabel($invoice->period) : null,
             'school' => [
-                'name' => Setting::get('school.name', config('app.name')),
-                'address' => Setting::get('school.address'),
-                'phone' => Setting::get('school.phone'),
+                ...$printIdentity->handle(),
                 'logo' => filled($logoPath) && Storage::disk('public')->exists($logoPath) ? Storage::disk('public')->url($logoPath) : null,
             ],
             'printedAt' => now('Asia/Jakarta'),

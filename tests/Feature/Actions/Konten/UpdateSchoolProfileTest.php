@@ -38,29 +38,39 @@ function kontenUpdateProfile(array $overrides = []): void
     app(UpdateSchoolProfile::class)->handle(kontenProfileData($overrides), test()->admin);
 }
 
-it('AC-33: writes the school profile keys with normalized phone numbers', function () {
+it('AC-33: writes the identity keys and no longer writes address, phone or email (F044)', function () {
     kontenUpdateProfile();
 
     expect(Setting::get('school.name'))->toBe("Ma'had Al-Khair")
-        ->and(Setting::get('school.phone'))->toBe('081234567890')
+        ->and(Setting::get('school.phone'))->toBeNull()
         ->and(Setting::get('school.whatsapp'))->toBeNull()
-        ->and(Setting::get('school.email'))->toBe('info@alkhair.sch.id')
-        ->and(Setting::get('school.address'))->toBe('Jl. Pesantren No. 1')
+        ->and(Setting::get('school.email'))->toBeNull()
+        ->and(Setting::get('school.address'))->toBeNull()
         ->and(Setting::get('school.instagram_url'))->toBeNull()
         ->and(Setting::get('school.tagline'))->toBeNull()
         ->and(Setting::get('school.facebook_url'))->toBeNull()
         ->and(Setting::get('school.youtube_url'))->toBeNull();
 });
 
-it('AC-33: normalizes separators in phone numbers', function (string $input, string $expected) {
-    kontenUpdateProfile(['phone' => $input]);
+it('AC-5: identity save with or without address, phone and email leaves address, email and contacts untouched', function (bool $withContactFields) {
+    $contacts = [profilContact(['key' => 'aaaa1111', 'is_print' => true])];
+    Setting::set('school.address', 'Alamat tersimpan');
+    Setting::set('school.email', 'lama@alkhair.sch.id');
+    Setting::set('school.contacts', $contacts);
+    $payload = ['name' => 'Nama Baru'];
 
-    expect(Setting::get('school.phone'))->toBe($expected);
-})->with([
-    'dots' => ['0812.3456.7890', '081234567890'],
-    'parentheses' => ['(0274) 123456', '0274123456'],
-    'plus' => ['+62 274 123456', '+62274123456'],
-]);
+    if ($withContactFields) {
+        $payload += ['address' => 'Alamat dari form', 'phone' => '0812-3456-7890', 'email' => 'bukan-email'];
+    }
+
+    app(UpdateSchoolProfile::class)->handle($payload, $this->admin);
+
+    expect(Setting::get('school.name'))->toBe('Nama Baru')
+        ->and(Setting::get('school.address'))->toBe('Alamat tersimpan')
+        ->and(Setting::get('school.email'))->toBe('lama@alkhair.sch.id')
+        ->and(Setting::get('school.contacts'))->toBe($contacts)
+        ->and(Setting::get('school.phone'))->toBeNull();
+})->with(['without contact fields' => [false], 'with contact fields (ignored, even invalid)' => [true]]);
 
 it('AC-33: clears an optional key when it is emptied', function () {
     kontenUpdateProfile(['tagline' => 'Motto lama']);
@@ -84,17 +94,13 @@ it('AC-34: rejects invalid input and leaves every key unchanged', function (arra
     'blank name' => [['name' => ''], 'name_required', 'name'],
     'name too long' => [['name' => str_repeat('a', 101)], 'too_long', 'name'],
     'tagline too long' => [['tagline' => str_repeat('a', 151)], 'too_long', 'tagline'],
-    'bad email' => [['email' => 'bukan-email'], 'email_invalid', 'email'],
-    'letters in phone' => [['phone' => 'abc'], 'phone_invalid', 'phone'],
-    'short phone' => [['phone' => '123'], 'phone_invalid', 'phone'],
-    'address too long' => [['address' => str_repeat('a', 501)], 'too_long', 'address'],
 ]);
 
 it('AC-34: leaves an invalid update from touching the logo', function () {
     kontenUpdateProfile(['logo' => kontenImage('logo.png', 300)]);
     $path = Setting::get('school.logo_path');
 
-    kontenAssertRejected(fn () => kontenUpdateProfile(['email' => 'salah', 'logo' => kontenImage('baru.png', 300)]), 'email_invalid', 'email');
+    kontenAssertRejected(fn () => kontenUpdateProfile(['name' => str_repeat('a', 101), 'logo' => kontenImage('baru.png', 300)]), 'too_long', 'name');
 
     expect(Setting::get('school.logo_path'))->toBe($path)->and(kontenFiles())->toBe([$path]);
 });
@@ -161,20 +167,20 @@ it('AC-36: logs one activity with only the changed keys', function () {
 
     $changed = $activities[0]->properties['changed'];
 
-    expect(array_keys($changed))->toContain('school.phone', 'school.address', 'school.email')
-        ->not->toContain('school.tagline', 'school.address_lain')
-        ->and($changed['school.phone']['new'])->toBe('081234567890');
+    expect(array_keys($changed))->toContain('school.name')
+        ->not->toContain('school.tagline', 'school.phone', 'school.address', 'school.email')
+        ->and($changed['school.name']['new'])->toBe("Ma'had Al-Khair");
 });
 
 it('AC-36: records old and new values and skips unchanged keys on the next save', function () {
     kontenUpdateProfile();
-    kontenUpdateProfile(['address' => 'Alamat baru']);
+    kontenUpdateProfile(['tagline' => 'Motto baru']);
 
     $activities = kontenActivities();
 
     expect($activities)->toHaveCount(2)
-        ->and(array_keys($activities[1]->properties['changed']))->toBe(['school.address'])
-        ->and($activities[1]->properties['changed']['school.address'])->toBe(['old' => 'Jl. Pesantren No. 1', 'new' => 'Alamat baru']);
+        ->and(array_keys($activities[1]->properties['changed']))->toBe(['school.tagline'])
+        ->and($activities[1]->properties['changed']['school.tagline'])->toBe(['old' => null, 'new' => 'Motto baru']);
 });
 
 it('AC-36: records nothing when nothing changed', function () {
@@ -185,7 +191,7 @@ it('AC-36: records nothing when nothing changed', function () {
 });
 
 it('AC-36: records nothing when validation fails', function () {
-    kontenAssertRejected(fn () => kontenUpdateProfile(['email' => 'salah']), 'email_invalid', 'email');
+    kontenAssertRejected(fn () => kontenUpdateProfile(['tagline' => str_repeat('a', 151)]), 'too_long', 'tagline');
 
     expect(kontenActivities())->toHaveCount(0);
 });
@@ -226,14 +232,12 @@ function profilPng(string $name = 'a.png', int $kb = 100): UploadedFile
 it('AC-12: saves the identity fields and logs only the changed keys', function () {
     kontenUpdateProfile([
         'short_name' => 'Al-Khair', 'arabic_name' => 'معهد الخير', 'tagline' => 'Motto uji',
-        'phone' => '0812-3456 7890',
     ]);
 
     expect(Setting::get('school.short_name'))->toBe('Al-Khair')
         ->and(Setting::get('school.arabic_name'))->toBe('معهد الخير')
         ->and(Setting::get('school.tagline'))->toBe('Motto uji')
-        ->and(Setting::get('school.phone'))->toBe('081234567890')
-        ->and(Setting::get('school.email'))->toBe('info@alkhair.sch.id');
+        ->and(Setting::get('school.phone'))->toBeNull();
 
     $activities = kontenActivities()->where('description', 'school_profile_updated');
 
@@ -241,7 +245,7 @@ it('AC-12: saves the identity fields and logs only the changed keys', function (
 
     $changed = array_keys($activities->first()->properties['changed']);
 
-    expect($changed)->toContain('school.short_name', 'school.arabic_name', 'school.phone')
+    expect($changed)->toContain('school.short_name', 'school.arabic_name')
         ->not->toContain('school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path');
 });
 
@@ -378,9 +382,9 @@ it('AC-19: leaves no file and no change when another field is invalid', function
     $activities = kontenActivities()->count();
 
     kontenAssertRejected(
-        fn () => kontenUpdateProfile(['name' => 'Nama Baru', 'email' => 'salah', 'logo_desktop' => profilPng('d.png', 100), 'favicon' => profilPng('f.png', 100)]),
-        'email_invalid',
-        'email',
+        fn () => kontenUpdateProfile(['name' => 'Nama Baru', 'tagline' => str_repeat('a', 151), 'logo_desktop' => profilPng('d.png', 100), 'favicon' => profilPng('f.png', 100)]),
+        'too_long',
+        'tagline',
     );
 
     expect(kontenFiles())->toBe([])->and(profilSettingsSnapshot())->toBe($before)->and(kontenActivities()->count())->toBe($activities);

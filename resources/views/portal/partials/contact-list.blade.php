@@ -1,4 +1,4 @@
-{{-- Kontak lembaga (footer dan halaman kontak): alamat, telepon kantor, email, tautan peta, lalu daftar kontak berlabel. Butuh $school dan $phoneFormatter; $onDark untuk footer navy. --}}
+{{-- Kontak lembaga (footer dan halaman kontak): alamat, email, tautan peta, lalu daftar kontak berlabel (F044: telepon kantor kini kontak berlabel). Butuh $school dan $phoneFormatter; $onDark untuk footer navy. --}}
 @php
     $onDark ??= false;
     $linkClass = 'inline-flex min-h-11 items-center break-all rounded-lg underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 '
@@ -6,7 +6,6 @@
     $iconClass = 'mt-3 size-5 shrink-0 '.($onDark ? 'text-primary-200' : 'text-gray-500');
     $rows = array_filter([
         $school['address'] ? ['icon' => 'heroicon-o-map-pin', 'label' => __('pondok.portal.contact.address'), 'text' => $school['address'], 'url' => null] : null,
-        $school['phone'] ? ['icon' => 'heroicon-o-phone', 'label' => __('pondok.portal.contact.phone'), 'text' => $phoneFormatter->handle($school['phone']), 'url' => 'tel:'.$school['phone']] : null,
         $school['email'] ? ['icon' => 'heroicon-o-envelope', 'label' => __('pondok.portal.contact.email'), 'text' => $school['email'], 'url' => 'mailto:'.$school['email']] : null,
     ]);
 @endphp

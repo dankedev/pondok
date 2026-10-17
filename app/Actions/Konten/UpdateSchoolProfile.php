@@ -9,13 +9,12 @@ use Illuminate\Http\UploadedFile;
 
 /**
  * Simpan identitas lembaga (halaman Identitas): nama, nama singkat, nama Arab,
- * slogan, alamat, telepon kantor, email, serta logo cetak, logo desktop, logo
- * mobile, dan favicon.
+ * slogan, serta logo cetak, logo desktop, logo mobile, dan favicon.
  *
  * Semua field divalidasi sebelum menulis apa pun. Field teks yang tidak dikirim
- * disimpan null. Key lama `whatsapp` dan URL sosial diabaikan (dipindah ke
- * `UpdateSchoolContacts`). Gambar baru menggantikan yang lama (berkas lama dihapus
- * setelah commit). Log `school_profile_updated` hanya memuat key yang berubah.
+ * disimpan null. Key lama `whatsapp`, URL sosial, `address`, `phone`, dan `email`
+ * diabaikan (pemiliknya `UpdateSchoolContacts`, F044). Gambar baru menggantikan
+ * yang lama (berkas lama dihapus setelah commit). Log `school_profile_updated` hanya memuat key yang berubah.
  */
 class UpdateSchoolProfile
 {
@@ -31,7 +30,7 @@ class UpdateSchoolProfile
         'favicon' => 'school.favicon_path',
     ];
 
-    private const LIMITS = ['name' => 100, 'short_name' => 30, 'arabic_name' => 150, 'tagline' => 150, 'address' => 500, 'email' => 255];
+    private const LIMITS = ['name' => 100, 'short_name' => 30, 'arabic_name' => 150, 'tagline' => 150];
 
     public function __construct(private readonly StorePublicImage $images) {}
 
@@ -45,9 +44,6 @@ class UpdateSchoolProfile
             'school.short_name' => $this->optionalText($data['short_name'] ?? null, 'short_name', self::LIMITS['short_name']),
             'school.arabic_name' => $this->optionalText($data['arabic_name'] ?? null, 'arabic_name', self::LIMITS['arabic_name']),
             'school.tagline' => $this->optionalText($data['tagline'] ?? null, 'tagline', self::LIMITS['tagline']),
-            'school.address' => $this->optionalText($data['address'] ?? null, 'address', self::LIMITS['address']),
-            'school.phone' => $this->phone($data['phone'] ?? null, 'phone'),
-            'school.email' => $this->email($data['email'] ?? null),
         ];
 
         $uploads = [];
@@ -101,16 +97,5 @@ class UpdateSchoolProfile
         }
 
         return 'png';
-    }
-
-    private function email(mixed $value): ?string
-    {
-        $email = $this->optionalText($value, 'email', self::LIMITS['email']);
-
-        if ($email !== null && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $this->fail('email', 'email_invalid');
-        }
-
-        return $email;
     }
 }

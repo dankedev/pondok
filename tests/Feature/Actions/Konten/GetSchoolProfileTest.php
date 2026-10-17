@@ -13,13 +13,13 @@ it('AC-37: lists the school profile keys in one place', function () {
     expect(GetSchoolProfile::KEYS)->toContain(
         'school.name', 'school.short_name', 'school.arabic_name', 'school.tagline', 'school.logo_path',
         'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path', 'school.address',
-        'school.phone', 'school.email', 'school.map_url', 'school.contacts', 'school.social_links',
+        'school.email', 'school.map_url', 'school.contacts', 'school.social_links',
         'portal.hero_greeting', 'portal.hero_title', 'portal.hero_subtitle', 'portal.highlights_heading',
         'portal.highlights', 'portal.hero_album_id', 'portal.profile_video_id', 'portal.psb_video_id',
         'portal.footer_description', 'portal.footer_text', 'portal.footer_show_contacts', 'portal.footer_show_social',
         'portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button',
     )->not->toContain(
-        'school.whatsapp', 'school.instagram_url', 'school.facebook_url', 'school.youtube_url',
+        'school.phone', 'school.whatsapp', 'school.instagram_url', 'school.facebook_url', 'school.youtube_url',
         'portal.footer_quote_arabic', 'portal.footer_quote_translation', 'portal.footer_quote_source', 'portal.footer_links',
         'portal.menu_items', 'portal.menu_show_register', 'portal.archived_footer_quote',
     );
@@ -145,4 +145,20 @@ it('AC-8 (F043): the navigation keys are read in the same single settings query'
 
     expect(queriesOnTable($queries, 'settings'))->toBe(1)
         ->and(GetSchoolProfile::KEYS)->toContain('portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button');
+});
+
+it('AC-6 (F044): carries is_print on contacts (default false), has no phone field, and counts only address, email, map and contacts as contact data', function () {
+    Setting::set('school.phone', '081200009999');
+    Setting::set('school.contacts', [
+        profilContact(['key' => 'aaaa1111', 'is_print' => true]),
+        profilContact(['key' => 'bbbb2222', 'phone' => '081200000002']),
+    ]);
+    app()->forgetScopedInstances();
+
+    $profile = app(GetSchoolProfile::class)->handle();
+
+    expect(array_column($profile['contacts'], 'is_print'))->toBe([true, false])
+        ->and($profile)->not->toHaveKey('phone')
+        ->and(GetSchoolProfile::hasContactData(['address' => null, 'email' => null, 'map_url' => null, 'contacts' => [], 'phone' => '081200009999']))->toBeFalse()
+        ->and(GetSchoolProfile::hasContactData(['address' => null, 'email' => null, 'map_url' => null, 'contacts' => $profile['contacts']]))->toBeTrue();
 });

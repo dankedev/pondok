@@ -194,3 +194,46 @@ it('AC-20: writes nothing when validation fails and leaves the log untouched', f
 
     expect(Setting::get('school.map_url'))->toBeNull()->and(kontenActivities())->toHaveCount(0);
 });
+
+it('AC-4: saves address, email and the print flag and keeps the keys of resent contacts', function () {
+    profilSaveContacts(['contacts' => [profilContact(['key' => 'abcd1234'])]]);
+
+    profilSaveContacts([
+        'address' => 'Jl. Pesantren No. 1',
+        'email' => 'info@alkhair.sch.id',
+        'contacts' => [
+            profilContact(['key' => 'abcd1234', 'is_print' => true]),
+            ['label' => 'Panitia', 'phone' => '081200000002', 'is_whatsapp' => true],
+        ],
+    ]);
+
+    $contacts = Setting::get('school.contacts');
+
+    expect(Setting::get('school.address'))->toBe('Jl. Pesantren No. 1')
+        ->and(Setting::get('school.email'))->toBe('info@alkhair.sch.id')
+        ->and($contacts[0])->toMatchArray(['key' => 'abcd1234', 'is_print' => true])
+        ->and($contacts[1]['is_print'])->toBeFalse()
+        ->and(kontenActivities()->where('description', 'school_contacts_updated'))->not->toBeEmpty();
+});
+
+it('AC-4: rejects invalid address, email or two print contacts on the right field and changes nothing', function (array $input, string $field) {
+    profilSaveContacts(['address' => 'Alamat lama', 'email' => 'lama@alkhair.sch.id', 'contacts' => [profilContact(['key' => 'abcd1234'])]]);
+    $before = profilSettingsSnapshot();
+    $activities = kontenActivities()->count();
+
+    profilAssertInvalid(fn () => profilSaveContacts($input), $field);
+
+    expect(profilSettingsSnapshot())->toBe($before)->and(kontenActivities()->count())->toBe($activities);
+})->with([
+    'bad email' => [['email' => 'bukan-email', 'address' => 'Baru'], 'email'],
+    'email too long' => [['email' => str_repeat('a', 250).'@x.id'], 'email'],
+    'address too long' => [['address' => str_repeat('a', 501)], 'address'],
+    'two print contacts' => [['address' => 'Baru', 'contacts' => [profilContact(['key' => 'abcd1234', 'is_print' => true]), profilContact(['key' => 'efgh5678', 'phone' => '081200000002', 'is_print' => true])]], 'contacts'],
+]);
+
+it('AC-4: reports two print contacts with the print_contact_multiple message', function () {
+    kontenAssertRejected(fn () => profilSaveContacts(['contacts' => [
+        ['label' => 'A', 'phone' => '081200000001', 'is_print' => true],
+        ['label' => 'B', 'phone' => '081200000002', 'is_print' => true],
+    ]]), 'print_contact_multiple', 'contacts');
+});

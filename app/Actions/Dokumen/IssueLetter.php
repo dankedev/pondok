@@ -2,9 +2,9 @@
 
 namespace App\Actions\Dokumen;
 
+use App\Actions\Konten\GetPrintIdentity;
 use App\Models\AcademicYear;
 use App\Models\IssuedLetter;
-use App\Models\Setting;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\User;
@@ -37,6 +37,8 @@ class IssueLetter
     public const MAX_ATTEMPTS = 3;
 
     public const TIMEZONE = 'Asia/Jakarta';
+
+    public function __construct(private readonly GetPrintIdentity $printIdentity) {}
 
     /**
      * @param  array{type?: string|null, signed_by_staff_id?: int|string|null, purpose?: string|null}  $data
@@ -211,19 +213,8 @@ class IssueLetter
                 'position' => $signer->position,
                 'nip' => filled($signer->nip) ? (string) $signer->nip : null,
             ],
-            'school' => [
-                'name' => $this->setting('school.name') ?? (string) config('app.name'),
-                'address' => $this->setting('school.address'),
-                'phone' => $this->setting('school.phone'),
-            ],
+            'school' => $this->printIdentity->handle(),
         ];
-    }
-
-    private function setting(string $key): ?string
-    {
-        $value = Setting::get($key);
-
-        return is_scalar($value) && trim((string) $value) !== '' ? (string) $value : null;
     }
 
     /**

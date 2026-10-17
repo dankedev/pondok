@@ -98,8 +98,10 @@ it('AC-22: renders static pages and contact info', function () {
     $this->get('/visi-misi')->assertOk()->assertSeeText(__('pondok.portal.pages.empty'));
 
     StaticPage::findBySlug('kontak')->update(['body' => '']);
-    Setting::set('school.phone', '081234567890');
-    Setting::set('school.contacts', [['key' => 'abcd1234', 'label' => 'WhatsApp', 'name' => null, 'phone' => '+6281234567890', 'is_whatsapp' => true]]);
+    Setting::set('school.contacts', [
+        ['key' => 'abcd1234', 'label' => 'WhatsApp', 'name' => null, 'phone' => '+6281234567890', 'is_whatsapp' => true],
+        ['key' => 'efgh5678', 'label' => 'Kantor', 'name' => null, 'phone' => '081234567890', 'is_whatsapp' => false, 'is_print' => true],
+    ]);
     Setting::set('school.email', 'info@alkhair.test');
 
     $kontak = $this->get('/kontak')->assertOk();

@@ -4183,3 +4183,22 @@ function navCurrent(string $html): array
 
     return $desktop;
 }
+
+/**
+ * Label item grup menu admin "Situs" (urutan tampil) untuk user; kosong bila grup tidak tampil.
+ *
+ * @return list<string>
+ */
+function situsNavigationLabels(User $user): array
+{
+    test()->actingAs($user);
+    Filament::setCurrentPanel('admin');
+
+    foreach (Filament::getNavigation() as $group) {
+        if ($group->getLabel() === __('pondok.navigation.situs')) {
+            return collect($group->getItems())->map(fn ($item): string => (string) $item->getLabel())->values()->all();
+        }
+    }
+
+    return [];
+}

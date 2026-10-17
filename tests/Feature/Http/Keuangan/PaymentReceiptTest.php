@@ -122,7 +122,7 @@ it('AC-41: shows the school address and phone only when they are set', function 
     $without = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
 
     Setting::set('school.address', 'Jl. Pesantren No. 1');
-    Setting::set('school.phone', '0812-0000-1111');
+    Setting::set('school.contacts', [profilContact(['phone' => '0812-0000-1111', 'is_print' => true])]);
 
     $with = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
 
@@ -224,7 +224,7 @@ it('AC-53: prints the print logo and never the desktop or mobile logo', function
         Setting::set($name === 'cetak' ? 'school.logo_path' : "school.logo_{$name}_path", "school/{$name}.png");
     }
     Setting::set('school.address', 'Jl. Pesantren No. 1');
-    Setting::set('school.phone', '0812-0000-1111');
+    Setting::set('school.contacts', [profilContact(['phone' => '0812-0000-1111', 'is_print' => true])]);
     $payment = receiptPayment($this);
 
     $html = $this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent();
@@ -232,4 +232,36 @@ it('AC-53: prints the print logo and never the desktop or mobile logo', function
     expect($html)->toContain(Storage::disk('public')->url('school/cetak.png'))
         ->not->toContain('school/desktop.png')->not->toContain('school/mobile.png')
         ->and(bayarHtmlText($html))->toContain('Pondok Al-Khair')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+});
+
+it('AC-2 (F044): prints the same name, address and phone after the school.phone migration', function () {
+    profilRawSet('school.address', 'Jl. Pesantren No. 1');
+    profilRawSet('school.phone', '0812-0000-1111');
+    $migration = require database_path('migrations/2026_10_19_000001_move_school_phone_to_contacts.php');
+    $migration->up();
+    $payment = receiptPayment($this);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('Pondok Al-Khair')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+});
+
+it('AC-2 (F044): omits the phone line without a print contact and never prints other contacts', function () {
+    Setting::set('school.address', 'Jl. Pesantren No. 1');
+    Setting::set('school.contacts', [profilContact(['phone' => '081200007777'])]);
+    $payment = receiptPayment($this);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('Jl. Pesantren No. 1')->not->toContain('081200007777')->not->toContain('Telp.');
+});
+
+it('AC-3 (F044): a receipt uses the current print contact phone', function () {
+    Setting::set('school.contacts', [profilContact(['key' => 'aaaa1111', 'phone' => '081200001111', 'is_print' => true])]);
+    $payment = receiptPayment($this);
+    Setting::set('school.contacts', [profilContact(['key' => 'aaaa1111', 'phone' => '081200001111']), profilContact(['key' => 'bbbb2222', 'phone' => '081200002222', 'is_print' => true])]);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('081200002222')->not->toContain('081200001111');
 });

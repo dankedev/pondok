@@ -8,9 +8,12 @@ use App\Models\User;
 use Illuminate\Support\Str;
 
 /**
- * Simpan kontak dan lokasi lembaga (halaman Kontak & lokasi): tautan peta, daftar
+ * Simpan kontak lembaga (halaman Kontak & sosial): alamat, email, tautan peta, daftar
  * kontak berlabel, dan media sosial. Daftar disimpan utuh sesuai urutan input;
  * daftar kosong disimpan null.
+ *
+ * Paling banyak satu kontak bertanda `is_print`: nomornya dicetak di kop surat dan
+ * kuitansi (`GetPrintIdentity`).
  *
  * Key kontak (8 karakter `[a-z0-9]`) dibuat untuk item baru dan dipertahankan untuk
  * item lama yang dikirim ulang; menjadi rujukan stabil kontak PSB. Nomor telepon
@@ -26,12 +29,18 @@ class UpdateSchoolContacts
 
     public const MAX_SOCIAL_LINKS = 10;
 
+    public const MAX_ADDRESS = 500;
+
+    public const MAX_EMAIL = 255;
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function handle(array $data, User $actor): void
     {
         $this->saveProfileSettings([
+            'school.address' => $this->optionalText($data['address'] ?? null, 'address', self::MAX_ADDRESS),
+            'school.email' => $this->email($data['email'] ?? null),
             'school.map_url' => $this->absoluteUrl($data['map_url'] ?? null, 'map_url', 500, required: false),
             'school.contacts' => $this->contacts($data['contacts'] ?? null) ?: null,
             'school.social_links' => $this->socialLinks($data['social_links'] ?? null) ?: null,
@@ -39,7 +48,7 @@ class UpdateSchoolContacts
     }
 
     /**
-     * @return list<array{key: string, label: string, name: ?string, phone: string, is_whatsapp: bool}>
+     * @return list<array{key: string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool}>
      */
     private function contacts(mixed $value): array
     {
@@ -79,7 +88,12 @@ class UpdateSchoolContacts
                 'name' => $name,
                 'phone' => $phone,
                 'is_whatsapp' => filter_var($item['is_whatsapp'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                'is_print' => filter_var($item['is_print'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
+        }
+
+        if (count(array_filter(array_column($contacts, 'is_print'))) > 1) {
+            $this->fail('contacts', 'print_contact_multiple');
         }
 
         return $contacts;
@@ -112,6 +126,17 @@ class UpdateSchoolContacts
         }
 
         return $links;
+    }
+
+    private function email(mixed $value): ?string
+    {
+        $email = $this->optionalText($value, 'email', self::MAX_EMAIL);
+
+        if ($email !== null && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $this->fail('email', 'email_invalid');
+        }
+
+        return $email;
     }
 
     private function absoluteUrl(mixed $value, string $field, int $max, bool $required): ?string

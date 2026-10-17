@@ -167,7 +167,8 @@ it('VERIFY: clears the youtube link when it is emptied on update', function () {
 });
 
 it('VERIFY: rejects a profile update as a whole when only the logo is invalid', function () {
-    app(UpdateSchoolProfile::class)->handle(['name' => 'Lama', 'address' => 'Alamat lama'], $this->admin);
+    app(UpdateSchoolProfile::class)->handle(['name' => 'Lama'], $this->admin);
+    Setting::set('school.address', 'Alamat lama');
     $before = kontenActivities()->count();
 
     kontenAssertRejected(fn () => app(UpdateSchoolProfile::class)->handle(['name' => 'Baru', 'address' => 'Baru', 'logo' => kontenPdf('a.pdf')], $this->admin), 'image_invalid', 'logo');
@@ -177,17 +178,17 @@ it('VERIFY: rejects a profile update as a whole when only the logo is invalid', 
 });
 
 it('VERIFY: validates phone numbers strictly', function (string $phone, bool $valid) {
-    $call = fn () => app(UpdateSchoolProfile::class)->handle(['name' => 'X', 'phone' => $phone], $this->admin);
+    $call = fn () => app(UpdateSchoolContacts::class)->handle(['contacts' => [['label' => 'X', 'phone' => $phone]]], $this->admin);
 
     if ($valid) {
         $call();
 
-        expect(Setting::get('school.phone'))->not->toBeNull();
+        expect(Setting::get('school.contacts'))->toHaveCount(1);
 
         return;
     }
 
-    kontenAssertRejected($call, 'phone_invalid', 'phone');
+    kontenAssertRejected($call, 'phone_invalid', 'contacts.0.phone');
 })->with([
     'eight digits' => ['12345678', true],
     'fifteen digits' => ['123456789012345', true],
@@ -212,5 +213,5 @@ it('VERIFY: rejects a social link longer than 255 characters', function () {
 });
 
 it('VERIFY: rejects an email longer than 255 characters', function () {
-    kontenAssertRejected(fn () => app(UpdateSchoolProfile::class)->handle(['name' => 'X', 'email' => str_repeat('a', 251).'@b.id'], $this->admin), 'too_long', 'email');
+    kontenAssertRejected(fn () => app(UpdateSchoolContacts::class)->handle(['email' => str_repeat('a', 251).'@b.id'], $this->admin), 'too_long', 'email');
 });

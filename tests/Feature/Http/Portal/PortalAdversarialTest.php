@@ -32,7 +32,7 @@ it('VERIFY: does not render dangerous urls from settings as links', function () 
 });
 
 it('VERIFY: escapes contact data and never leaks markup', function () {
-    Setting::set('school.phone', '"><script>alert(1)</script>');
+    Setting::set('school.contacts', [profilContact(['label' => '<b>x</b>', 'name' => '<i>n</i>', 'phone' => '"><script>alert(1)</script>', 'is_print' => true])]);
     Setting::set('school.address', '<img src=x onerror=alert(1)>');
     Setting::set('school.email', '"><b>x</b>');
 

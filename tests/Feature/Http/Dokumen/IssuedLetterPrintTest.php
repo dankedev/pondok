@@ -240,7 +240,7 @@ it('AC-40: prints no logo when the file is missing and a logo when it exists', f
 it('AC-40: prints the frozen address and phone of the school', function () {
     $f = $this->f;
     Setting::set('school.address', 'Jl. Pesantren No. 1');
-    Setting::set('school.phone', '0812-0000-1111');
+    Setting::set('school.contacts', [profilContact(['phone' => '0812-0000-1111', 'is_print' => true])]);
     $letter = suratIssue($f);
     Setting::set('school.address', 'Jl. Baru No. 9');
 
@@ -292,7 +292,7 @@ it('AC-53: prints the print logo and never the desktop or mobile logo on a lette
         Setting::set($name === 'cetak' ? 'school.logo_path' : "school.logo_{$name}_path", "school/{$name}.png");
     }
     Setting::set('school.address', 'Jl. Pesantren No. 1');
-    Setting::set('school.phone', '0812-0000-1111');
+    Setting::set('school.contacts', [profilContact(['phone' => '0812-0000-1111', 'is_print' => true])]);
     $letter = suratIssue($this->f);
 
     $html = suratPrintHtml($this->f, $letter->id);
@@ -300,4 +300,19 @@ it('AC-53: prints the print logo and never the desktop or mobile logo on a lette
     expect($html)->toContain(Storage::disk('public')->url('school/cetak.png'))
         ->not->toContain('school/desktop.png')->not->toContain('school/mobile.png')
         ->and(suratText($html))->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+});
+
+it('AC-2 (F044): prints the same frozen identity after the school.phone migration and omits the phone without a print contact', function () {
+    $f = $this->f;
+    profilRawSet('school.address', 'Jl. Pesantren No. 1');
+    profilRawSet('school.phone', '0812-0000-1111');
+    (require database_path('migrations/2026_10_19_000001_move_school_phone_to_contacts.php'))->up();
+    $letter = suratIssue($f);
+
+    expect(suratText(suratPrintHtml($f, $letter->id)))->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+
+    Setting::set('school.contacts', [profilContact(['phone' => '081200007777'])]);
+    $other = suratIssue($f);
+
+    expect(suratText(suratPrintHtml($f, $other->id)))->not->toContain('081200007777')->not->toContain('Telp.');
 });

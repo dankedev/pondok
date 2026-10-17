@@ -27,7 +27,6 @@ class GetSchoolProfile
         'school.logo_mobile_path',
         'school.favicon_path',
         'school.address',
-        'school.phone',
         'school.email',
         'school.map_url',
         'school.contacts',
@@ -49,7 +48,7 @@ class GetSchoolProfile
     ];
 
     /** Field profil yang dihitung sebagai data kontak (aturan Kontak F037). */
-    private const CONTACT_FIELDS = ['address', 'phone', 'email', 'map_url'];
+    private const CONTACT_FIELDS = ['address', 'email', 'map_url'];
 
     /**
      * @return array<string, mixed>
@@ -71,7 +70,6 @@ class GetSchoolProfile
             'arabic_name' => $text('school.arabic_name'),
             'tagline' => $text('school.tagline'),
             'address' => $text('school.address'),
-            'phone' => $text('school.phone'),
             'email' => $text('school.email'),
             'map_url' => $this->isSafeAbsoluteUrl($mapUrl) ? $mapUrl : null,
             'logo_path' => $logoPath,
@@ -145,7 +143,7 @@ class GetSchoolProfile
     }
 
     /**
-     * @return list<array{key: ?string, label: string, name: ?string, phone: string, is_whatsapp: bool}>
+     * @return list<array{key: ?string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool}>
      */
     private function contacts(mixed $value): array
     {
@@ -165,6 +163,7 @@ class GetSchoolProfile
                 'name' => $this->text($item['name'] ?? null),
                 'phone' => $phone,
                 'is_whatsapp' => (bool) ($item['is_whatsapp'] ?? true),
+                'is_print' => ($item['is_print'] ?? false) === true,
             ];
         }
 

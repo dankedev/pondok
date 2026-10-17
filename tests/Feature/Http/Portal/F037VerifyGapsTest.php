@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Clusters\InstitutionProfile\Pages\Navigation;
+use App\Filament\Pages\Site\Navigation;
 use App\Filament\Resources\StaticPages\Pages\CreateStaticPage as CreateStaticPagePage;
 use App\Filament\Resources\StaticPages\Pages\EditStaticPage;
 use App\Filament\Resources\StaticPages\Pages\ListStaticPages;

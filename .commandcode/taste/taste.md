@@ -8,7 +8,7 @@
 - Prefers preserving existing consistency (e.g. "Pilihan A: biarkan") over removing minor inconsistencies; tolerates small fragments if they preserve uniformity across the codebase. Confidence: 0.85
 - Treats the codebase as open-source software where different installations may have very different needs; argues for keeping components "selama itu masih relevan dengan fungsinya" rather than aggressive simplification. Confidence: 0.85
 - Prefers documentation/audit reports written in two layers: a plain-language summary for non-technical readers on top, with the detailed technical version below. Confidence: 0.9
-- Prefers audits and quality assessments to follow recognized ISO standards — specifically ISO 25010 (software quality model) and ISO 23026 (website engineering/management) — using the standard itself as the assessment framework rather than ad-hoc criteria. Confidence: 0.8
+- Prefers audits and quality assessments to follow recognized ISO standards — ISO 25010 (software quality model), ISO 23026 (website engineering/management), and ISO/IEC 27001 (information security) — using the standard itself as the assessment framework rather than ad-hoc criteria. Confidence: 0.85
 - Prefers the AI to answer or resolve hard/technical questions itself rather than bouncing open questions back to the user. Confidence: 0.75
 - Uses Command Code and installs Agent Skills by following the SkillsMP install prompt (skillsmp.com/skill-install/prompt.md), installing only the specific skill requested rather than the whole source repository. Confidence: 0.7
 - Applies YAGNI, KISS, and DRY and avoids over-engineering; prefers deferring non-essential scope ("nanti dulu") over speculative builds. Confidence: 0.9
@@ -18,3 +18,5 @@
 - Prefers a modern, non-boxy visual style (dislikes "template/marketplace" look) with brand colors drawn from the logo. Confidence: 0.85
 - Commits and pushes only on explicit request, using micro-commits with Conventional Commits. Confidence: 0.8
 - Is mindful of API/usage limits and prefers lean, token-efficient workflows. Confidence: 0.7
+- Risk-averse about implementing recommended changes: worries they will conflict with or break existing working behavior, and appreciates recommendations being grouped by risk so safe, config-only changes can be done first. Confidence: 0.7
+- Prefers that overlapping or conflicting recommendations across documents/reports be consolidated under a single owning document rather than duplicated in both; each action should live in exactly one place to avoid conflict. Confidence: 0.7

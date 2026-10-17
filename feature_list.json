@@ -827,7 +827,7 @@
       "name": "Footer portal sebagai area widget",
       "phase": 1,
       "module": "Konten",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F045"],
       "description": "Paket 2 audit UI/UX, keputusan user 17 Okt 2026 (§9 Footer sebagai area widget). Footer berisi paling banyak 4 widget yang diatur admin dengan mesin blok F045 (settings portal.footer_widgets): Teks (opsi logo), Tautan (menggantikan navigasi footer F043, boleh lebih dari satu), Media sosial dan Kontak (memilih dari data Kontak & sosial tanpa mengetik ulang); heading opsional; grid 1-4 kolom sesuai jumlah widget. Baris hak cipta dan footer ringkas PSB/404 tetap di luar widget.",
       "acceptance": [
@@ -841,7 +841,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit c130866 (footer widget), d391c9b (data demo), 06f7528 (docs + audit). Test F046 hijau termasuk F046VerifyGapsTest (11 test VERIFY); suite penuh PHP 8.4 4044 test lulus sebelum perbaikan grid footer, lalu PortalFooterTest, F046VerifyGapsTest, InstitutionFooterContactTest lulus setelahnya; migrasi footer dan DemoSeeder lulus di MySQL; Pint lulus; portal dicek di 360px, 1024px (2 kolom), 1280px (4 kolom), 1440px dan admin Footer dicek visual.",
       "notes": "jalur: penuh. Paket 2 audit UI/UX (docs/audits/ui-ux-portal-konten.md §9 Footer sebagai area widget, §5.5, C2), permintaan user 17 Okt 2026. Bergantung F045 karena memakai mesin blok, teks terbatas, dan pemilih tujuan yang sama. Akun media sosial mendapat key seperti kontak. Ikon media sosial di luar cakupan. Rencana: docs/plans/F046-plan.md."
     }
   ]

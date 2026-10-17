@@ -39,6 +39,7 @@ it('lets super-admin open the panel', function () {
 
     $this->actingAs($user)->get('/admin')->assertOk();
     $this->actingAs($user)->get('/admin/users')->assertOk();
+    $this->actingAs($user)->get('/admin/profile')->assertOk();
 });
 
 it('lets an active super-admin log in and records the login time', function () {

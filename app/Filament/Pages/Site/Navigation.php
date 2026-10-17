@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Filament\Clusters\InstitutionProfile\Pages;
+namespace App\Filament\Pages\Site;
 
 use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\UpdatePortalNavigation;
+use App\Filament\Pages\SettingsFormPage;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Models\StaticPage;
 use App\Models\User;
+use BackedEnum;
 use Closure;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -18,18 +20,26 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\StateCasts\NumberStateCast;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 /**
  * Navigasi portal (F043): menu utama (dengan grup submenu satu tingkat), tombol header,
  * dan navigasi footer, semuanya memakai pemilih tujuan yang sama. Form diisi dari daftar
  * efektif (bawaan dimaterialisasi) dan disimpan lewat `UpdatePortalNavigation`, yang
- * memegang seluruh validasi; galat baris bersarang dipetakan oleh `InstitutionProfilePage`.
+ * memegang seluruh validasi; galat baris bersarang dipetakan oleh `SettingsFormPage`.
  */
-class Navigation extends InstitutionProfilePage
+class Navigation extends SettingsFormPage
 {
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
-    protected static ?string $slug = 'navigation';
+    protected static ?string $slug = 'site/navigation';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBars3;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('pondok.navigation.situs');
+    }
 
     /** Nilai pemilih tombol header untuk "Tanpa tombol" (disimpan `false`). */
     public const NO_BUTTON = 'none';

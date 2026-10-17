@@ -12,7 +12,7 @@ const KONTEN_ERROR_REASONS = [
     'invalid_type', 'title_required', 'too_long', 'slug_invalid', 'slug_taken', 'invalid_category', 'invalid_unit', 'body_required',
     'youtube_invalid', 'youtube_required', 'invalid_status', 'published_at_invalid', 'image_invalid', 'name_required',
     'category_name_taken', 'category_type_locked', 'category_in_use', 'photos_required', 'photos_too_many', 'sort_order_invalid',
-    'media_source_invalid', 'phone_invalid', 'email_invalid', 'url_invalid',
+    'media_source_invalid', 'phone_invalid', 'email_invalid', 'url_invalid', 'print_contact_multiple',
 ];
 
 it('F016: translates every konten message', function (string $reason) {
@@ -31,10 +31,9 @@ it('F016: gives every konten message a way forward', function () {
         ->and($messages->every(fn (string $message): bool => str_ends_with($message, '.')))->toBeTrue();
 });
 
-it('F016: names the menu groups and the school profile', function () {
-    expect(__('pondok.navigation.konten'))->toBe('Konten')
-        ->and(__('pondok.navigation.pengaturan'))->toBe('Pengaturan')
-        ->and(__('pondok.school_profile.title'))->toBe('Profil lembaga');
+it('F016: names the menu groups (F044: Situs replaces Konten, the cluster Profil lembaga is gone)', function () {
+    expect(__('pondok.navigation.situs'))->toBe('Situs')
+        ->and(__('pondok.navigation.pengaturan'))->toBe('Pengaturan');
 });
 
 it('F016: names the static page defaults', function () {
@@ -57,7 +56,7 @@ it('AC-37 (F037): page and menu screens have no raw keys or content examples', f
         ->and(__('pondok.static_page.slug_helper_create'))->not->toStartWith('pondok.')
         ->and(__('pondok.static_page.slug_helper_locked'))->toBe('Alamat halaman sistem tidak bisa diubah.')
         ->and($visible)->not->toBeEmpty();
-})->with(['/admin/static-pages', '/admin/static-pages/create', '/admin/static-pages/{id}/edit', '/admin/institution-profile/navigation']);
+})->with(['/admin/static-pages', '/admin/static-pages/create', '/admin/static-pages/{id}/edit', '/admin/site/navigation']);
 
 it('AC-37 (F037): defines the new interface texts in lang/id', function () {
     foreach ([

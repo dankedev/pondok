@@ -17,29 +17,37 @@ it('AC-6: lets admin-konten and super-admin open the content pages', function (s
         $this->actingAs($user)->get($url)->assertOk();
     }
 
-    expect(kontenNavigationText($user))->toContain(__('pondok.navigation.konten'));
+    expect(kontenNavigationText($user))->toContain(__('pondok.navigation.situs'));
 })->with(['admin-konten', 'super-admin']);
 
-it('AC-6: forbids the content pages to other roles and hides the menu group', function (string $role) {
+it('AC-6/AC-10: forbids the content pages to other roles and hides the Situs group (F044: Konten became Situs)', function (string $role) {
     $user = kontenUser($role);
 
     foreach (KONTEN_URLS as $url) {
         $this->actingAs($user)->get($url)->assertForbidden();
     }
 
-    expect(__('pondok.navigation.konten'))->toBe('Konten')
-        ->and(kontenNavigationText($user))->not->toContain(__('pondok.navigation.konten'));
-})->with(['bendahara', 'admin-sekolah', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos']);
+    expect(__('pondok.navigation.situs'))->toBe('Situs')
+        ->and(kontenNavigationText($user))->not->toContain(__('pondok.navigation.situs'));
+})->with(['bendahara', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos']);
+
+it('AC-10: admin-sekolah sees only the profile pages in Situs, not the content resources', function () {
+    $user = kontenUser('admin-sekolah');
+
+    foreach (KONTEN_URLS as $url) {
+        $this->actingAs($user)->get($url)->assertForbidden();
+    }
+
+    expect(situsNavigationLabels($user))->toBe(['Beranda', 'Navigasi', 'Footer']);
+});
 
 it('AC-6a: limits the school profile to admin-konten, admin-sekolah and super-admin', function (string $role, bool $allowed) {
     $user = kontenUser($role);
-    $title = __('pondok.school_profile.title');
+    $this->actingAs($user)->get('/admin/settings/identity')->assertStatus($allowed ? 200 : 403);
+    $this->actingAs($user)->get('/admin/settings/contacts')->assertStatus($allowed ? 200 : 403);
 
-    expect($title)->toBe('Profil lembaga');
-
-    $this->actingAs($user)->get('/admin/institution-profile/identity')->assertStatus($allowed ? 200 : 403);
-
-    expect(str_contains(kontenNavigationText($user), $title))->toBe($allowed);
+    expect(str_contains(kontenNavigationText($user), 'Kontak & sosial'))->toBe($allowed)
+        ->and(str_contains(kontenNavigationText($user), 'Profil lembaga'))->toBeFalse();
 })->with([
     'admin-sekolah' => ['admin-sekolah', true],
     'super-admin' => ['super-admin', true],
@@ -65,17 +73,18 @@ it('AC-7: hides konten when the module is disabled but keeps the school profile'
         $this->actingAs($user)->get($url)->assertForbidden();
     }
 
-    $this->actingAs($user)->get('/admin/institution-profile/identity')->assertOk();
+    $this->actingAs($user)->get('/admin/settings/identity')->assertOk();
+    $this->actingAs($user)->get('/admin/site/navigation')->assertOk();
 
-    expect(kontenNavigationText($user))->not->toContain(__('pondok.navigation.konten'))
-        ->and(kontenNavigationText($user))->toContain(__('pondok.school_profile.title'));
+    expect(situsNavigationLabels($user))->toBe(['Beranda', 'Navigasi', 'Footer'])
+        ->and(kontenNavigationText($user))->toContain('Kontak & sosial');
 });
 
 it('AC-7: shows the konten group again when the module is enabled', function () {
     Setting::set('modules.konten.enabled', false);
     Setting::set('modules.konten.enabled', true);
 
-    expect(kontenNavigationText(kontenUser('admin-konten')))->toContain(__('pondok.navigation.konten'));
+    expect(situsNavigationLabels(kontenUser('admin-konten')))->toHaveCount(8);
 });
 
 it('AC-8: does not scope posts by unit', function () {
@@ -92,7 +101,7 @@ it('AC-8: does not scope posts by unit', function () {
 it('AC-39: renders the content pages without raw translation keys', function () {
     $admin = kontenUser('super-admin');
 
-    foreach ([...KONTEN_URLS, '/admin/institution-profile/identity'] as $url) {
+    foreach ([...KONTEN_URLS, '/admin/settings/identity', '/admin/settings/contacts', '/admin/site/home', '/admin/site/navigation', '/admin/site/footer'] as $url) {
         $text = kontenPageText($admin, $url);
 
         preg_match('/\bpondok\.[a-z_]+\.[a-z_.]+/', $text, $match);

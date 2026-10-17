@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Clusters\InstitutionProfile\Pages;
+namespace App\Filament\Pages;
 
 use App\Actions\Konten\GetSchoolProfile;
-use App\Filament\Clusters\InstitutionProfile\InstitutionProfileCluster;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -15,17 +15,17 @@ use Filament\Schemas\Schema;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Dasar empat halaman profil lembaga: satu form (`data`), satu tombol simpan, satu
- * Action. Galat Action dipetakan ke field form, termasuk baris repeater
+ * Dasar halaman pengaturan berbasis settings (grup Situs: Beranda, Navigasi, Footer;
+ * grup Pengaturan: Identitas, Kontak & sosial): satu form (`data`), satu tombol simpan, satu
+ * Action. Akses lewat permission page `view:school-profile` (super-admin, admin-sekolah,
+ * admin-konten); tidak terikat saklar modul. Galat Action dipetakan ke field form, termasuk baris repeater
  * (`contacts.1.phone` → `data.contacts.<uuid>.phone`).
  *
  * @property-read Schema $form
  */
-abstract class InstitutionProfilePage extends Page
+abstract class SettingsFormPage extends Page
 {
-    protected static ?string $cluster = InstitutionProfileCluster::class;
-
-    protected string $view = 'filament.pages.institution-profile';
+    protected string $view = 'filament.pages.settings-form';
 
     /**
      * @var array<string, mixed>|null
@@ -53,6 +53,19 @@ abstract class InstitutionProfilePage extends Page
     public static function canAccess(): bool
     {
         return (bool) auth()->user()?->can('view:school-profile');
+    }
+
+    /**
+     * Item navigasi disimpan di instance panel; cek ulang akses saat dirender.
+     *
+     * @return array<NavigationItem>
+     */
+    public static function getNavigationItems(): array
+    {
+        return array_map(
+            fn (NavigationItem $item): NavigationItem => $item->visible(fn (): bool => static::canAccess()),
+            parent::getNavigationItems(),
+        );
     }
 
     public static function getNavigationLabel(): string

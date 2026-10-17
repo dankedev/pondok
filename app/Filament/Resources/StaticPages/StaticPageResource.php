@@ -59,7 +59,7 @@ class StaticPageResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('pondok.navigation.konten');
+        return __('pondok.navigation.situs');
     }
 
     public static function form(Schema $schema): Schema

@@ -1,26 +1,38 @@
 <?php
 
-namespace App\Filament\Clusters\InstitutionProfile\Pages;
+namespace App\Filament\Pages\Settings;
 
 use App\Actions\Konten\UpdateSchoolContacts;
+use App\Filament\Pages\SettingsFormPage;
 use App\Models\User;
+use BackedEnum;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 /**
- * Kontak & lokasi: tautan peta, daftar kontak berlabel, dan media sosial.
+ * Kontak & sosial, satu-satunya sumber alamat, email, tautan peta, daftar kontak berlabel
+ * (satu boleh ditandai cetak di kop surat dan kuitansi), dan media sosial.
  * Disimpan lewat `UpdateSchoolContacts`.
  */
-class Contacts extends InstitutionProfilePage
+class Contacts extends SettingsFormPage
 {
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $slug = 'contacts';
+    protected static ?string $slug = 'settings/contacts';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPhone;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('pondok.navigation.pengaturan');
+    }
 
     protected static function pageKey(): string
     {
@@ -32,8 +44,18 @@ class Contacts extends InstitutionProfilePage
         return $schema
             ->statePath('data')
             ->components([
-                Section::make(__('pondok.school_profile.section_map'))
+                Section::make(__('pondok.school_profile.section_address'))
+                    ->columns(2)
                     ->schema([
+                        Textarea::make('address')
+                            ->label(__('pondok.school_profile.address'))
+                            ->helperText(__('pondok.school_profile.address_helper'))
+                            ->maxLength(500)
+                            ->rows(2)
+                            ->columnSpanFull(),
+                        TextInput::make('email')
+                            ->label(__('pondok.school_profile.email'))
+                            ->maxLength(255),
                         TextInput::make('map_url')
                             ->label(__('pondok.school_profile.map_url'))
                             ->helperText(__('pondok.school_profile.map_url_helper'))
@@ -69,6 +91,11 @@ class Contacts extends InstitutionProfilePage
                                     ->label(__('pondok.school_profile.contact_is_whatsapp'))
                                     ->default(true)
                                     ->inline(false),
+                                Toggle::make('is_print')
+                                    ->label(__('pondok.school_profile.contact_is_print'))
+                                    ->helperText(__('pondok.school_profile.contact_is_print_helper'))
+                                    ->default(false)
+                                    ->inline(false),
                             ]),
                     ]),
                 Section::make(__('pondok.school_profile.section_social'))
@@ -103,6 +130,8 @@ class Contacts extends InstitutionProfilePage
     protected function formData(array $profile): array
     {
         return [
+            'address' => $profile['address'],
+            'email' => $profile['email'],
             'map_url' => $profile['map_url'],
             'contacts' => $profile['contacts'],
             'social_links' => $profile['social_links'],

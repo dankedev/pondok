@@ -1,20 +1,24 @@
 <?php
 
-use App\Filament\Clusters\InstitutionProfile\Pages\Contacts;
-use App\Filament\Clusters\InstitutionProfile\Pages\Footer;
-use App\Filament\Clusters\InstitutionProfile\Pages\Home;
-use App\Filament\Clusters\InstitutionProfile\Pages\Identity;
+use App\Filament\Pages\Settings\Contacts;
+use App\Filament\Pages\Settings\Identity;
+use App\Filament\Pages\Site\Footer;
+use App\Filament\Pages\Site\Home;
 use App\Models\Setting;
 use Filament\Forms\Components\Select;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
+/*
+| F044: cluster Profil lembaga dibubarkan. Lima halaman: `site/home|navigation|footer` (grup Situs) dan
+| `settings/identity|contacts` (grup Pengaturan); kelas di `App\Filament\Pages\Site` dan `App\Filament\Pages\Settings`.
+*/
 const PROFILE_PAGES = [
-    'identity' => Identity::class,
-    'contacts' => Contacts::class,
-    'home' => Home::class,
-    'footer' => Footer::class,
+    'settings/identity' => Identity::class,
+    'settings/contacts' => Contacts::class,
+    'site/home' => Home::class,
+    'site/footer' => Footer::class,
 ];
 
 beforeEach(function () {
@@ -26,11 +30,8 @@ it('AC-32: lets school and content admins open the four profile pages', function
     $user = kontenUser($role);
 
     foreach (array_keys(PROFILE_PAGES) as $slug) {
-        $this->actingAs($user)->get("/admin/institution-profile/{$slug}")->assertOk();
+        $this->actingAs($user)->get("/admin/{$slug}")->assertOk();
     }
-
-    expect(__('pondok.school_profile.title'))->toBe('Profil lembaga')
-        ->and(kontenNavigationText($user))->toContain('Profil lembaga');
 
     Livewire::test(Identity::class)->assertFormSet(['name' => 'Pondok Lama']);
 })->with(['super-admin', 'admin-sekolah', 'admin-konten']);
@@ -39,7 +40,7 @@ it('AC-32: forbids the four profile pages to the other roles and hides the menu 
     $user = kontenUser($role);
 
     foreach (array_keys(PROFILE_PAGES) as $slug) {
-        $this->actingAs($user)->get("/admin/institution-profile/{$slug}")->assertForbidden();
+        $this->actingAs($user)->get("/admin/{$slug}")->assertForbidden();
     }
 
     foreach (PROFILE_PAGES as $class) {
@@ -47,23 +48,31 @@ it('AC-32: forbids the four profile pages to the other roles and hides the menu 
     }
 
     if ($role !== 'wali') {
-        expect(kontenNavigationText($user))->not->toContain('Profil lembaga');
+        expect(kontenNavigationText($user))->not->toContain('Profil lembaga')->not->toContain('Kontak & sosial');
     }
 })->with(['bendahara', 'admin-psb', 'kesantrian', 'musyrif', 'petugas-pos', 'wali']);
 
-it('AC-32: no longer serves the old school profile url', function () {
-    $this->actingAs(kontenUser('super-admin'))->get('/admin/school-profile')->assertNotFound();
+it('AC-32: no longer serves the old school profile or cluster urls', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    foreach (['/admin/school-profile', '/admin/institution-profile/identity', '/admin/institution-profile/contacts'] as $url) {
+        $this->get($url)->assertNotFound();
+    }
+
+    expect(class_exists('App\\Filament\\Clusters\\InstitutionProfile\\InstitutionProfileCluster'))->toBeFalse();
 });
 
-it('AC-34: saves the contacts through the repeater', function () {
+it('AC-34/AC-7: saves address, email and contacts with the print flag through the repeater', function () {
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(Contacts::class)
         ->fillForm([
+            'address' => 'Jl. Pesantren No. 1',
+            'email' => 'info@alkhair.sch.id',
             'map_url' => 'https://maps.app.goo.gl/abc',
             'contacts' => [
-                ['label' => 'Panitia PSB', 'phone' => '0812-0000-0001', 'is_whatsapp' => true],
-                ['label' => 'Sekretariat', 'phone' => '081200000002', 'is_whatsapp' => false],
+                ['label' => 'Panitia PSB', 'phone' => '0812-0000-0001', 'is_whatsapp' => true, 'is_print' => false],
+                ['label' => 'Sekretariat', 'phone' => '081200000002', 'is_whatsapp' => false, 'is_print' => true],
             ],
             'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/alkhair']],
         ])
@@ -73,6 +82,9 @@ it('AC-34: saves the contacts through the repeater', function () {
 
     expect(Setting::get('school.contacts'))->toHaveCount(2)
         ->and(array_column(Setting::get('school.contacts'), 'phone'))->toBe(['081200000001', '081200000002'])
+        ->and(array_column(Setting::get('school.contacts'), 'is_print'))->toBe([false, true])
+        ->and(Setting::get('school.address'))->toBe('Jl. Pesantren No. 1')
+        ->and(Setting::get('school.email'))->toBe('info@alkhair.sch.id')
         ->and(Setting::get('school.map_url'))->toBe('https://maps.app.goo.gl/abc')
         ->and(Setting::get('school.social_links'))->toHaveCount(1);
 });
@@ -91,6 +103,44 @@ it('AC-34: shows an invalid contact phone on the right repeater field without an
 
     expect(collect($keys)->contains(fn (string $key): bool => preg_match('/^data\.contacts\..+\.phone$/', $key) === 1))->toBeTrue(json_encode($keys))
         ->and(Setting::get('school.contacts'))->toBeNull();
+});
+
+it('AC-7: shows two print contacts as an error on the contacts field and saves nothing', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    Setting::set('school.address', 'Alamat lama');
+
+    $component = Livewire::test(Contacts::class)
+        ->fillForm([
+            'address' => 'Alamat baru',
+            'contacts' => [
+                ['label' => 'A', 'phone' => '081200000001', 'is_whatsapp' => true, 'is_print' => true],
+                ['label' => 'B', 'phone' => '081200000002', 'is_whatsapp' => true, 'is_print' => true],
+            ],
+        ])
+        ->call('save');
+
+    expect(collect($component->errors()->keys())->contains(fn (string $key): bool => $key === 'data.contacts' || str_starts_with($key, 'data.contacts.')))->toBeTrue(json_encode($component->errors()->keys()))
+        ->and(kontenSeeMessage($component, 'print_contact_multiple'))->toBeTrue()
+        ->and(Setting::get('school.address'))->toBe('Alamat lama')
+        ->and(Setting::get('school.contacts'))->toBeNull();
+});
+
+it('AC-7: fills Contacts from the settings and Identity has no address, phone or email field', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    profilSet([
+        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@alkhair.sch.id',
+        'school.contacts' => [profilContact(['key' => 'aaaa1111', 'is_print' => true])],
+    ]);
+
+    Livewire::test(Contacts::class)
+        ->assertFormSet(['address' => 'Jl. Pesantren No. 1', 'email' => 'info@alkhair.sch.id']);
+
+    Livewire::test(Identity::class)
+        ->assertFormFieldDoesNotExist('address')
+        ->assertFormFieldDoesNotExist('phone')
+        ->assertFormFieldDoesNotExist('email');
+
+    expect(kontenPageText(kontenUser('admin-konten'), '/admin/settings/contacts'))->toContain('Cetak di kop surat dan kuitansi');
 });
 
 it('AC-35: uploads the desktop logo and the favicon and shows the logo preview', function () {
@@ -177,7 +227,7 @@ it('AC-36: hides the media selects when the content module is off and keeps the 
 });
 
 it('AC-37: renders no raw translation keys and no content examples in the four forms', function (string $slug) {
-    $html = $this->actingAs(kontenUser('super-admin'))->get("/admin/institution-profile/{$slug}")->assertOk()->getContent();
+    $html = $this->actingAs(kontenUser('super-admin'))->get("/admin/{$slug}")->assertOk()->getContent();
 
     expect($html)->not->toMatch('/\bpondok\.[a-z_]+\.[a-z_]+/');
 
@@ -192,7 +242,7 @@ it('AC-37: renders no raw translation keys and no content examples in the four f
 })->with(array_keys(PROFILE_PAGES));
 
 it('AC-37: explains the logo fields with the helper texts of the plan', function () {
-    $text = kontenPageText(kontenUser('admin-sekolah'), '/admin/institution-profile/identity');
+    $text = kontenPageText(kontenUser('admin-sekolah'), '/admin/settings/identity');
 
     expect($text)->toContain('Dipakai di kop surat dan kuitansi')
         ->toContain('Boleh berisi beberapa logo dalam satu gambar')

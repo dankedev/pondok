@@ -39,7 +39,7 @@ class VideoResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 8;
 
     public static function getModule(): string
     {
@@ -58,7 +58,7 @@ class VideoResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('pondok.navigation.konten');
+        return __('pondok.navigation.situs');
     }
 
     public static function form(Schema $schema): Schema

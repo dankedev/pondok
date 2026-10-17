@@ -42,7 +42,7 @@ class AlbumResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 7;
 
     public static function getModule(): string
     {
@@ -61,7 +61,7 @@ class AlbumResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('pondok.navigation.konten');
+        return __('pondok.navigation.situs');
     }
 
     public static function form(Schema $schema): Schema

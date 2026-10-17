@@ -34,7 +34,7 @@ class PostResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     public static function getModule(): string
     {
@@ -53,7 +53,7 @@ class PostResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('pondok.navigation.konten');
+        return __('pondok.navigation.situs');
     }
 
     public static function form(Schema $schema): Schema

@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Filament\Clusters\InstitutionProfile\Pages;
+namespace App\Filament\Pages\Site;
 
 use App\Actions\Konten\UpdatePortalHome;
+use App\Filament\Pages\SettingsFormPage;
 use App\Models\Album;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Video;
+use BackedEnum;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -14,17 +16,25 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 /**
  * Isi beranda portal: sambutan, keunggulan, dan media (album slider, video profil,
  * video PSB). Media memakai data modul Konten; bila modul mati, select tidak
  * dirender dan pilihan tersimpan tidak diubah. Disimpan lewat `UpdatePortalHome`.
  */
-class Home extends InstitutionProfilePage
+class Home extends SettingsFormPage
 {
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = 'home';
+    protected static ?string $slug = 'site/home';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('pondok.navigation.situs');
+    }
 
     private const MEDIA_FIELDS = ['hero_album_id', 'profile_video_id', 'psb_video_id'];
 

@@ -1,25 +1,35 @@
 <?php
 
-namespace App\Filament\Clusters\InstitutionProfile\Pages;
+namespace App\Filament\Pages\Site;
 
 use App\Actions\Konten\UpdatePortalFooter;
+use App\Filament\Pages\SettingsFormPage;
 use App\Models\User;
+use BackedEnum;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 /**
  * Footer portal (F043): deskripsi lembaga, satu teks pendek (judul opsional + isi), dan
  * saklar tampil kontak/media sosial. Tautan footer diatur di halaman Navigasi.
  * Disimpan lewat `UpdatePortalFooter`.
  */
-class Footer extends InstitutionProfilePage
+class Footer extends SettingsFormPage
 {
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = 'footer';
+    protected static ?string $slug = 'site/footer';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWindow;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('pondok.navigation.situs');
+    }
 
     protected static function pageKey(): string
     {

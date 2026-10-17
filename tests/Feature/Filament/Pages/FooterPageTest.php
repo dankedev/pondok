@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Clusters\InstitutionProfile\Pages\Footer;
+use App\Filament\Pages\Site\Footer;
 use App\Models\Setting;
 use Livewire\Livewire;
 
@@ -58,7 +58,7 @@ it('AC-13: shows the short text error on the right field and saves nothing', fun
 });
 
 it('AC-13: the footer page has no raw translation keys and no Arabic quote example', function () {
-    $html = $this->actingAs(kontenUser('super-admin'))->get('/admin/institution-profile/footer')->assertOk()->getContent();
+    $html = $this->actingAs(kontenUser('super-admin'))->get('/admin/site/footer')->assertOk()->getContent();
 
     expect($html)->not->toMatch('/\bpondok\.[a-z_]+\.[a-z_]+/')
         ->and(profilTag($html, 'textarea', ['dir="rtl"', 'lang="ar"']))->toBeNull();

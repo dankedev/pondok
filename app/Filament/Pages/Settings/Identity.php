@@ -1,28 +1,37 @@
 <?php
 
-namespace App\Filament\Clusters\InstitutionProfile\Pages;
+namespace App\Filament\Pages\Settings;
 
 use App\Actions\Konten\StorePublicImage;
 use App\Actions\Konten\UpdateSchoolProfile;
+use App\Filament\Pages\SettingsFormPage;
 use App\Models\User;
+use BackedEnum;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Http\UploadedFile;
 
 /**
- * Identitas lembaga: nama, logo cetak/desktop/mobile, favicon, alamat, dan kontak
- * resmi untuk cetak. Disimpan lewat `UpdateSchoolProfile`.
+ * Identitas lembaga: nama, logo cetak/desktop/mobile, dan favicon. Alamat, email, dan
+ * telepon cetak diatur di Kontak & sosial. Disimpan lewat `UpdateSchoolProfile`.
  */
-class Identity extends InstitutionProfilePage
+class Identity extends SettingsFormPage
 {
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = 'identity';
+    protected static ?string $slug = 'settings/identity';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('pondok.navigation.pengaturan');
+    }
 
     /** Field unggahan → [kunci path di profil, label, helper, batas KB, jenis]. */
     private const IMAGES = [
@@ -74,24 +83,6 @@ class Identity extends InstitutionProfilePage
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema(collect(self::IMAGES)->flatMap(fn (array $image, string $field): array => $this->imageComponents($field, ...$image))->all()),
-                Section::make(__('pondok.school_profile.section_contact'))
-                    ->columnSpanFull()
-                    ->columns(2)
-                    ->schema([
-                        Textarea::make('address')
-                            ->label(__('pondok.school_profile.address'))
-                            ->maxLength(500)
-                            ->rows(2)
-                            ->columnSpanFull(),
-                        TextInput::make('phone')
-                            ->label(__('pondok.school_profile.phone'))
-                            ->helperText(__('pondok.school_profile.phone_helper'))
-                            ->tel()
-                            ->maxLength(30),
-                        TextInput::make('email')
-                            ->label(__('pondok.school_profile.email'))
-                            ->maxLength(255),
-                    ]),
             ]);
     }
 
@@ -128,7 +119,7 @@ class Identity extends InstitutionProfilePage
     {
         $this->imagePaths = collect(self::IMAGES)->map(fn (array $image): ?string => $profile[$image[0]])->all();
 
-        $data = collect($profile)->only(['name', 'short_name', 'arabic_name', 'tagline', 'address', 'phone', 'email'])->all();
+        $data = collect($profile)->only(['name', 'short_name', 'arabic_name', 'tagline'])->all();
 
         foreach (array_keys(self::IMAGES) as $field) {
             $data[$field] = null;

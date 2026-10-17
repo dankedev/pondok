@@ -1,14 +1,14 @@
 <?php
 
-use App\Filament\Clusters\InstitutionProfile\Pages\Navigation;
+use App\Filament\Pages\Site\Navigation;
 use App\Filament\Resources\StaticPages\Pages\EditStaticPage;
 use App\Models\Setting;
 use App\Models\StaticPage;
 use Livewire\Livewire;
 
 /*
-| F043 AC-9 (UI) dan AC-13. Kontrak halaman: `App\Filament\Clusters\InstitutionProfile\Pages\Navigation`
-| (slug `navigation`, /admin/institution-profile/navigation), tombol simpan memanggil `save`. State form:
+| F043 AC-9 (UI) dan AC-13. Kontrak halaman: `App\Filament\Pages\Site\Navigation`
+| (slug `site/navigation`, /admin/site/navigation), tombol simpan memanggil `save`. State form:
 | - `data.primary`: repeater baris `{type, label, page_id, category_id, url, children}` (anak grup: repeater yang sama tanpa tipe `group`);
 | - `data.footer`: repeater baris yang sama tanpa grup;
 | - `data.header_button`: `{type, label, page_id, category_id, url}` dengan `type = 'none'` untuk "Tanpa tombol".
@@ -32,10 +32,10 @@ function navRows(mixed $state): array
 it('AC-13: lets the profile roles open the navigation page and forbids the rest', function (string $role, bool $allowed) {
     $user = kontenUser($role);
 
-    $this->actingAs($user)->get('/admin/institution-profile/navigation')->assertStatus($allowed ? 200 : 403);
+    $this->actingAs($user)->get('/admin/site/navigation')->assertStatus($allowed ? 200 : 403);
 
     if (! $allowed && $role !== 'wali') {
-        expect(kontenNavigationText($user))->not->toContain('Profil lembaga');
+        expect(kontenNavigationText($user))->not->toContain('Situs');
     }
 })->with([
     ['super-admin', true], ['admin-sekolah', true], ['admin-konten', true],
@@ -132,7 +132,7 @@ it('AC-13: shows an error, not an exception, when more than eight root items are
 });
 
 it('AC-13: the form states that Info PSB appears once its page exists, and renders no raw translation keys', function () {
-    $html = $this->actingAs(kontenUser('super-admin'))->get('/admin/institution-profile/navigation')->assertOk()->getContent();
+    $html = $this->actingAs(kontenUser('super-admin'))->get('/admin/site/navigation')->assertOk()->getContent();
 
     expect($html)->not->toMatch('/\bpondok\.[a-z_]+\.[a-z_]+/')->toContain('Info PSB');
     preg_match('#<form\b.*?</form>#is', $html, $form);

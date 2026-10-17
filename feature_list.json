@@ -729,6 +729,30 @@
       "handoff": null,
       "evidence": "",
       "notes": "Ditunda atas keputusan user 16 Okt 2026 (Jawaban user no. 7): termasuk masa simpan snapshot surat keluar (UU PDP)."
+    },
+    {
+      "id": "F035",
+      "key": "portal-identitas-visual",
+      "name": "Identitas visual portal (warna logo Al-Khair, gaya modern ringan)",
+      "phase": 1,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F017", "F036", "F037"],
+      "description": "Mengganti warna portal publik dan PSB dari emerald ke warna logo Al-Khair (navy #000A3C primer, emas #F8B800 aksen) dengan gaya acuan docs/brand/referensi-gaya-coursex.md: ruang kosong lega, bayangan sangat tipis, tombol/input pill, hiasan cincin dan pola titik di belakang foto, selang-seling latar section, judul besar tebal. Layout portal yang ada dipertahankan; tanpa konten bawaan dan tanpa animasi muncul-saat-scroll. Panel admin Filament tidak berubah.",
+      "acceptance": [
+        "Token primary (navy) dan accent (emas) di resources/css/app.css mengikuti logo; tidak ada sisa emerald di portal publik dan PSB",
+        "Emas tidak dipakai sebagai warna teks di atas putih; teks isi lolos kontras 4.5:1",
+        "Tombol dan input pill, kartu bayangan tipis, hiasan cincin/pola titik dekoratif tanpa aset eksternal",
+        "Layout dan urutan section portal tetap; section kosong tetap disembunyikan",
+        "Catatan F036 diperbaiki: logo header desktop lebih besar, nama Arab sejajar, slider tanpa w-[85%]",
+        "docs/design-guide.md diperbarui (warna, bentuk, tipografi) dan docs/brand/referensi-gaya-coursex.md ikut di repo",
+        "Panel admin Filament tidak berubah",
+        "Lolos checklist §0 design guide, dicek di 360px, 1024px, dan desktop"
+      ],
+      "owner": "sesi infallible-hamilton-d9c6ef",
+      "handoff": null,
+      "evidence": null,
+      "notes": "ID dicadangkan sejak arah C (Tegel Masjid) yang dibatalkan user 16 Okt 2026; arah baru diminta user 17 Okt 2026."
     }
   ]
 }

@@ -783,7 +783,7 @@
       "name": "Kontak lembaga satu sumber dan susunan menu admin Situs",
       "phase": 1,
       "module": "Konten",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F043"],
       "description": "Paket 1 audit UI/UX (S5 + C7). Alamat, email, dan telepon diisi hanya di halaman Kontak & sosial; telepon kantor menjadi kontak berlabel yang bisa ditandai untuk kop surat dan kuitansi (maks. satu). Data demo halaman Kontak dirapikan tanpa duplikasi nomor. Panel admin: Beranda, Navigasi, Footer, Halaman, Berita, Kategori, Galeri, dan Video di grup Situs; Identitas dan Kontak & sosial di grup Pengaturan; cluster Profil lembaga dibubarkan. Permission per peran tidak berubah.",
       "acceptance": [
@@ -795,7 +795,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit d503bd6 (kontak satu sumber), bb6adb3 (menu admin Situs/Pengaturan), 62c24da (data demo), 8222643 (docs). Test F044 hijau termasuk F044VerifyGapsTest (16 kasus VERIFY, bug pencocokan halaman Kontak demo diperbaiki); suite penuh PHP 8.4 4004 test lulus; test Filament 970 lulus setelah urutan grup; migrasi naik/turun/naik dan DemoSeeder lulus di MySQL dengan telepon cetak tetap sama; Pint lulus; admin Navigasi/Footer/Kontak & sosial dan portal /kontak dicek visual (1280px dan 360px).",
       "notes": "jalur: penuh. Paket 1 audit UI/UX (docs/audits/ui-ux-portal-konten.md §5.1, §5.6, S5, C7), permintaan user 17 Okt 2026. Bergantung F043 karena memindahkan halaman Navigasi dan Footer hasil F043 dan mengubah GetSchoolProfile yang sama. Logo cetak tetap di Identitas (pemindahan ke pengaturan kop surat di luar cakupan). Rencana: docs/plans/F044-plan.md."
     }
   ]

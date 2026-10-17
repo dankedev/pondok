@@ -142,3 +142,31 @@ Diurutkan dari yang paling penting:
 - Tidak ada `$guarded = []` — semua model pakai `#[Fillable]` allowlist.
 - Upload file divalidasi MIME dari isi berkas, disimpan dengan nama acak, di luar folder web.
 - Pengecualian CSRF hanya pada rute portal publik yang stateless & GET-only, dan sudah diuji.
+
+---
+
+## Catatan Implementasi
+
+**Diperbarui**: 17 Oktober 2026
+
+Batch pertama yang dieksekusi: **kelompok aman** — hanya perubahan pengaturan, tanpa menyentuh logika kode.
+
+| Rekomendasi | Status | Perubahan |
+|---|---|---|
+| #1 Cookie & sesi aman di produksi | ✅ Selesai | `.env.production.example`: `SESSION_ENCRYPT=true` dan `SESSION_SECURE_COOKIE=true`. |
+| #5 HSTS (paksa HTTPS) | ✅ Selesai (sebagian) | `public/.htaccess`: header `Strict-Transport-Security: max-age=31536000` di dalam `<IfModule mod_headers.c>`. |
+| #5 CSP di `/admin` | ⏳ Belum | Ditunda — butuh konfigurasi hati-hati agar Filament/Livewire tidak rusak. |
+
+**File yang diubah:**
+
+- `.env.production.example` — `SESSION_ENCRYPT` diubah dari `false` menjadi `true`, dan menambah baris `SESSION_SECURE_COOKIE=true`.
+- `public/.htaccess` — menambah blok header HSTS.
+
+**Yang sengaja TIDAK diubah:**
+
+- `.env.example` (template pengembangan lokal) dibiarkan — supaya login lewat `http://localhost` tetap berfungsi.
+
+**Peringatan untuk operator produksi:**
+
+- `SESSION_SECURE_COOKIE=true` berarti login hanya bisa lewat HTTPS. Pastikan AutoSSL/HTTPS sudah aktif sebelum login pertama.
+- `SESSION_ENCRYPT=true` berarti sesi lama yang tersimpan polos akan kedaluwarsa sekali setelah update — pengguna cukup login ulang.

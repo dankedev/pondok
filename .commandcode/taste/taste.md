@@ -18,5 +18,5 @@
 - Prefers a modern, non-boxy visual style (dislikes "template/marketplace" look) with brand colors drawn from the logo. Confidence: 0.85
 - Commits and pushes only on explicit request, using micro-commits with Conventional Commits. Confidence: 0.8
 - Is mindful of API/usage limits and prefers lean, token-efficient workflows. Confidence: 0.7
-- Risk-averse about implementing recommended changes: worries they will conflict with or break existing working behavior, and appreciates recommendations being grouped by risk so safe, config-only changes can be done first. Confidence: 0.7
+- Risk-averse about implementing recommended changes: worries they will conflict with or break existing working behavior, and appreciates recommendations being grouped by risk so safe, config-only changes can be done first. Confidence: 0.85
 - Prefers that overlapping or conflicting recommendations across documents/reports be consolidated under a single owning document rather than duplicated in both; each action should live in exactly one place to avoid conflict. Confidence: 0.7

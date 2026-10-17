@@ -33,3 +33,9 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Paksa browser selalu memakai HTTPS untuk domain ini (HSTS).
+# Abaikan bila mod_headers tidak aktif di hosting.
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000"
+</IfModule>

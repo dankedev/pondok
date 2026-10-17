@@ -16,7 +16,7 @@ it('creates the super-admin account from the environment', function () {
     config([
         'pondok.super_admin.name' => 'Admin Pondok',
         'pondok.super_admin.email' => 'admin@pondok.test',
-        'pondok.super_admin.password' => 'rahasia-sekali',
+        'pondok.super_admin.password' => 'rahasia-sekali1',
     ]);
 
     $this->seed(SuperAdminSeeder::class);

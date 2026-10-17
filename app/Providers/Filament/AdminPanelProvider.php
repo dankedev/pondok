@@ -48,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->passwordReset()
             ->brandName(fn (): string => config('app.name'))
             ->colors([
                 'primary' => Color::Emerald,

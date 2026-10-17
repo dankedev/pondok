@@ -170,3 +170,24 @@ Batch pertama yang dieksekusi: **kelompok aman** — hanya perubahan pengaturan,
 
 - `SESSION_SECURE_COOKIE=true` berarti login hanya bisa lewat HTTPS. Pastikan AutoSSL/HTTPS sudah aktif sebelum login pertama.
 - `SESSION_ENCRYPT=true` berarti sesi lama yang tersimpan polos akan kedaluwarsa sekali setelah update — pengguna cukup login ulang.
+
+### Batch 2 — Kelompok Kuning (17 Oktober 2026)
+
+| Rekomendasi | Status | Perubahan |
+|---|---|---|
+| #4 Perkuat aturan password | ✅ Selesai (sebagian) | `app/Actions/Core/CreateSuperAdmin.php` & `app/Filament/Resources/Users/Schemas/UserForm.php`: password wajib minimal 8 karakter, memuat huruf dan angka (`Password::min(8)->letters()->numbers()`). |
+| #4 Aktifkan lupa password | ✅ Selesai | `app/Providers/Filament/AdminPanelProvider.php`: menambah `->passwordReset()`. |
+| #3 MFA/2FA | ⏳ Ditunda | Butuh SMTP (MFA email) atau dependensi QR/TOTP baru (MFA aplikasi). Email produksi belum dikonfigurasi. |
+| #10 Verifikasi email | ⏳ Ditunda | Butuh SMTP + `MustVerifyEmail`; berisiko mengunci user yang belum verifikasi bila email gagal terkirim. |
+
+**File yang diubah:**
+
+- `app/Actions/Core/CreateSuperAdmin.php` — aturan password.
+- `app/Filament/Resources/Users/Schemas/UserForm.php` — aturan password.
+- `app/Providers/Filament/AdminPanelProvider.php` — aktifkan lupa password.
+- `tests/Feature/Filament/PanelAccessTest.php` — password super-admin test disesuaikan menjadi `rahasia-sekali1`.
+
+**Catatan:**
+
+- Aturan `mixedCase`, simbol, `confirmed`, dan `uncompromised()` sengaja ditunda: `mixedCase` butuh penyesuaian banyak test, `confirmed` butuh kolom konfirmasi di formulir, `uncompromised()` butuh akses layanan eksternal.
+- Lupa password baru berfungsi penuh setelah operator mengisi SMTP (`MAIL_*` di `.env.production`).

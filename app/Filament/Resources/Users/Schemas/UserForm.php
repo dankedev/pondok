@@ -11,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rules\Password;
 
 class UserForm
 {
@@ -35,6 +36,7 @@ class UserForm
                             ->password()
                             ->revealable()
                             ->minLength(8)
+                            ->rules([Password::min(8)->letters()->numbers()])
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->helperText(fn (string $operation): ?string => $operation === 'edit' ? __('pondok.user.password_helper') : null),

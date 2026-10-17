@@ -5,6 +5,7 @@ namespace App\Actions\Core;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use RuntimeException;
 use Spatie\Permission\Models\Role;
 
@@ -57,7 +58,7 @@ class CreateSuperAdmin
             [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'email', 'max:255'],
-                'password' => ['required', 'string', 'min:8'],
+                'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
             ],
             [],
             [

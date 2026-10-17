@@ -2423,7 +2423,6 @@ function kontenPdf(string $name = 'a.pdf', int $kb = 100): UploadedFile
 function kontenPostData(array $overrides = []): array
 {
     return [
-        'type' => 'berita',
         'title' => 'Wisuda Tahfidz 2026',
         'body' => '<p>Alhamdulillah</p>',
         'status' => 'draft',
@@ -2444,7 +2443,6 @@ function kontenPost(array $attributes = []): Post
     $title = $attributes['title'] ?? "Berita uji {$counter}";
     $post = new Post;
     $post->forceFill([
-        'type' => 'berita',
         'title' => $title,
         'slug' => Str::slug($title),
         'body' => '<p>Isi berita</p>',
@@ -3494,6 +3492,16 @@ function portalPost(array $attributes = []): Post
         'published_at' => CarbonImmutable::parse('2026-10-14 08:00', 'Asia/Jakarta'),
         ...$attributes,
     ]);
+}
+
+/**
+ * Post terbit yang berasal dari sebuah prestasi (`achievement_id` terisi).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function portalAchievementPost(array $attributes = []): Post
+{
+    return portalPost(['achievement_id' => Achievement::factory()->create()->id, ...$attributes]);
 }
 
 /**

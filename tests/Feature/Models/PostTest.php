@@ -3,6 +3,7 @@
 use App\Models\Post;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Lang;
 
 beforeEach(function () {
     $this->f = kontenBoot();
@@ -36,15 +37,16 @@ it('AC-18: display status and its color', function () {
     expect($draft->displayStatus())->toBe('draft')
         ->and([$draft->displayStatusColor(), $published->displayStatusColor(), $scheduled->displayStatusColor()])->toBe(['gray', 'success', 'info'])
         ->and(Post::DISPLAY_SCHEDULED)->toBe('terjadwal')
-        ->and(Post::STATUSES)->toBe(['draft', 'terbit'])
-        ->and(Post::TYPES)->toEqualCanonicalizing(['kegiatan', 'prestasi', 'berita']);
+        ->and(Post::STATUSES)->toBe(['draft', 'terbit']);
 });
 
-it('AC-18: filters posts by type', function () {
-    kontenPost(['title' => 'Berita', 'type' => 'berita']);
-    kontenPost(['title' => 'Kegiatan', 'type' => 'kegiatan']);
+it('AC-10: no longer has post type constants or the type scope', function () {
+    $constants = array_filter(array_keys((new ReflectionClass(Post::class))->getConstants()), fn (string $name): bool => str_starts_with($name, 'TYPE'));
 
-    expect(Post::ofType('kegiatan')->pluck('title')->all())->toBe(['Kegiatan']);
+    expect($constants)->toBe([])
+        ->and(method_exists(Post::class, 'scopeOfType'))->toBeFalse()
+        ->and(Lang::has('pondok.post.type'))->toBeFalse()
+        ->and(Lang::has('pondok.post.types'))->toBeFalse();
 });
 
 it('AC-18: casts meta to an array and published_at to a datetime', function () {

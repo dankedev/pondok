@@ -13,21 +13,13 @@ use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 /**
- * Berita, kegiatan, dan prestasi untuk portal publik (F016). Ditulis lewat
+ * Berita, kegiatan, dan prestasi (dibedakan lewat kategori) untuk portal publik (F016). Ditulis lewat
  * `App\Actions\Konten\SavePost`; body adalah HTML tersanitasi. Soft delete.
  */
-#[Fillable(['category_id', 'unit_id', 'type', 'title', 'slug', 'excerpt', 'body', 'cover_path', 'youtube_url', 'status', 'published_at'])]
+#[Fillable(['category_id', 'unit_id', 'title', 'slug', 'excerpt', 'body', 'cover_path', 'youtube_url', 'status', 'published_at'])]
 class Post extends Model
 {
     use SoftDeletes;
-
-    public const TYPE_ACTIVITY = 'kegiatan';
-
-    public const TYPE_ACHIEVEMENT = 'prestasi';
-
-    public const TYPE_NEWS = 'berita';
-
-    public const TYPES = [self::TYPE_ACTIVITY, self::TYPE_ACHIEVEMENT, self::TYPE_NEWS];
 
     public const STATUS_DRAFT = 'draft';
 
@@ -87,11 +79,6 @@ class Post extends Model
         $query->where('status', self::STATUS_PUBLISHED)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', $now ?? now());
-    }
-
-    public function scopeOfType(Builder $query, string $type): void
-    {
-        $query->where('type', $type);
     }
 
     public function displayStatus(): string

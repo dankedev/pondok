@@ -273,7 +273,6 @@ final class DemoContent
             $this->ensureAllowedContent($title.' '.$row['excerpt'].' '.$body);
 
             app(SavePost::class)->handle([
-                'type' => $row['type'],
                 'title' => $title,
                 'slug' => $row['slug'],
                 'category_id' => $categories[$row['category']]->id,

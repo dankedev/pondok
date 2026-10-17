@@ -45,12 +45,6 @@ class SavePost
      */
     public function handle(array $data, User $actor, ?Post $post = null): Post
     {
-        $type = $data['type'] ?? null;
-
-        if (! is_string($type) || ! in_array($type, Post::TYPES, true)) {
-            $this->fail('type', 'invalid_type');
-        }
-
         $title = $this->requiredText($data['title'] ?? null, 'title', self::TITLE_MAX_LENGTH);
         $slug = $this->slugs->handle(Post::class, $title, $this->stringOrNull($data['slug'] ?? null), Post::SLUG_MAX_LENGTH, $post);
         $categoryId = $this->categoryId($data['category_id'] ?? null);
@@ -88,13 +82,12 @@ class SavePost
         $oldPaths = $coverPath !== $oldCover ? [$oldCover] : [];
 
         try {
-            return $this->saveWithFiles($newPaths, $oldPaths, function () use ($post, $actor, $type, $title, $slug, $categoryId, $unitId, $excerpt, $body, $youtubeUrl, $status, $publishedAt, $coverPath): Post {
+            return $this->saveWithFiles($newPaths, $oldPaths, function () use ($post, $actor, $title, $slug, $categoryId, $unitId, $excerpt, $body, $youtubeUrl, $status, $publishedAt, $coverPath): Post {
                 if (! $post->exists) {
                     $post->author_id = $actor->getKey();
                 }
 
                 $post->fill([
-                    'type' => $type,
                     'title' => $title,
                     'slug' => $slug,
                     'category_id' => $categoryId,

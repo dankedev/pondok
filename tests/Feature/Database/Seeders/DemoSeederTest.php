@@ -20,6 +20,7 @@ use Database\Seeders\InstallSeeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
@@ -536,17 +537,18 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     demoCheck($achievements->every(fn ($a) => stripos($a->title, 'Putri') === false), 'AC-19 tanpa judul Putri');
     $achievementPosts = DB::table('posts')->whereNotNull('achievement_id')->get();
     expect($achievementPosts)->toHaveCount(1);
-    demoCheck($achievementPosts->first()->type === 'prestasi' && $achievementPosts->first()->status === 'terbit' && substr($achievementPosts->first()->published_at, 0, 10) <= $today, 'AC-19 berita prestasi');
-    expect(DB::table('categories')->where('id', $achievementPosts->first()->category_id)->value('name'))->toBe('Prestasi Al-Khair');
+    demoCheck($achievementPosts->first()->status === 'terbit' && substr($achievementPosts->first()->published_at, 0, 10) <= $today, 'AC-19 berita prestasi');
+    expect(DB::table('categories')->where('id', $achievementPosts->first()->category_id)->value('name'))->toBe('Prestasi');
     foreach ($participants as $participant) {
         $achievedOn = $achievements->firstWhere('id', $participant->achievement_id)->achieved_on;
         demoCheck(substr($participant->entered_on, 0, 10) <= substr($achievedOn, 0, 10), 'AC-19 peserta masuk sebelum prestasi');
     }
 
     // AC-20
-    $briefCategories = ['Kegiatan Al-Khair', 'Prestasi Al-Khair', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
+    $briefCategories = ['Kegiatan Al-Khair', 'Prestasi', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
     $postCategories = DB::table('categories')->where('type', 'post')->get();
-    expect($postCategories->pluck('name')->sort()->values()->all())->toBe(collect($briefCategories)->sort()->values()->all());
+    expect($postCategories->pluck('name')->all())->toContain(...$briefCategories)->and($postCategories->where('name', 'Prestasi'))->toHaveCount(1);
+    expect(Schema::hasColumn('posts', 'type'))->toBeFalse();
     $posts = DB::table('posts')->get();
     demoCheck($postCategories->filter(fn ($c) => $posts->where('category_id', $c->id)->isNotEmpty())->count() >= 6, 'AC-20 >= 6 kategori terpakai');
     demoCheck($posts->where('status', 'terbit')->filter(fn ($p) => substr($p->published_at, 0, 10) <= $today)->count() >= 8, 'AC-20 berita terbit >= 8');

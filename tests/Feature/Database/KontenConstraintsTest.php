@@ -13,7 +13,7 @@ beforeEach(function () {
 it('AC-1: creates the content tables with the planned columns', function () {
     $columns = [
         'categories' => ['id', 'type', 'name', 'slug', 'created_at', 'updated_at'],
-        'posts' => ['id', 'category_id', 'unit_id', 'author_id', 'type', 'title', 'slug', 'excerpt', 'body', 'cover_path', 'youtube_url', 'achievement_id', 'meta', 'status', 'published_at', 'created_at', 'updated_at', 'deleted_at'],
+        'posts' => ['id', 'category_id', 'unit_id', 'author_id', 'title', 'slug', 'excerpt', 'body', 'cover_path', 'youtube_url', 'achievement_id', 'meta', 'status', 'published_at', 'created_at', 'updated_at', 'deleted_at'],
         'albums' => ['id', 'category_id', 'title', 'slug', 'description', 'created_at', 'updated_at'],
         'photos' => ['id', 'album_id', 'path', 'caption', 'sort_order', 'created_at', 'updated_at'],
         'videos' => ['id', 'title', 'youtube_id', 'description', 'is_featured', 'sort_order', 'created_at', 'updated_at'],

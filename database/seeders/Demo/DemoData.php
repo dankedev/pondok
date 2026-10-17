@@ -511,53 +511,53 @@ final class DemoData
     ];
 
     /** Kategori berita sesuai brief. */
-    public const POST_CATEGORIES = ['Kegiatan Al-Khair', 'Prestasi Al-Khair', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
+    public const POST_CATEGORIES = ['Kegiatan Al-Khair', 'Prestasi', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
 
-    public const ACHIEVEMENT_CATEGORY = 'Prestasi Al-Khair';
+    public const ACHIEVEMENT_CATEGORY = 'Prestasi';
 
     /**
      * Berita. `{S}` = tahun ajaran tujuan PSB. `offset` = hari sebelum hari ini (null = draft).
      *
-     * @var list<array{slug: string, title: string, type: string, category: string, offset: int|null, cover: bool, excerpt: string, body: string}>
+     * @var list<array{slug: string, title: string, category: string, offset: int|null, cover: bool, excerpt: string, body: string}>
      */
     public const POSTS = [
         [
-            'slug' => 'penerimaan-santri-baru-dibuka', 'title' => 'Penerimaan Santri Baru Tahun Ajaran {S} Dibuka', 'type' => 'berita', 'category' => 'Umum', 'offset' => 2, 'cover' => true,
+            'slug' => 'penerimaan-santri-baru-dibuka', 'title' => 'Penerimaan Santri Baru Tahun Ajaran {S} Dibuka', 'category' => 'Umum', 'offset' => 2, 'cover' => true,
             'excerpt' => 'Pendaftaran santri baru MTW/SMP dan TSN/SMA khusus putra dibuka sepanjang tahun selama kuota tersedia.',
             'body' => "<p>Ma'had Al-Khair Belitang menerima santri baru untuk tahun ajaran {S} pada jenjang MTW/SMP dan TSN/SMA, khusus putra. Pendaftaran dibuka sepanjang tahun selama kuota tersedia, terbagi dalam Gelombang I dan Gelombang II.</p><p>Program utama ma'had adalah tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum.</p><h2>Berkas yang disiapkan</h2><ul><li>Kartu Keluarga</li><li>Akta kelahiran</li><li>Rapor semester terakhir</li><li>Pas foto 3x4 latar biru</li></ul><p>Pendaftaran dilakukan melalui laman PSB. Calon santri akan dihubungi panitia untuk tes seleksi bersama orang tua atau wali.</p>",
         ],
         [
-            'slug' => 'masa-taaruf-santri-baru', 'title' => "Masa Ta'aruf Santri Baru", 'type' => 'kegiatan', 'category' => 'Kegiatan Al-Khair', 'offset' => 6, 'cover' => true,
+            'slug' => 'masa-taaruf-santri-baru', 'title' => "Masa Ta'aruf Santri Baru", 'category' => 'Kegiatan Al-Khair', 'offset' => 6, 'cover' => true,
             'excerpt' => "Santri baru mengikuti masa ta'aruf untuk mengenal adab, jadwal harian, dan lingkungan ma'had.",
             'body' => "<p>Santri baru mengikuti masa ta'aruf selama lima hari setelah serah terima. Kegiatan meliputi pengenalan tata tertib asrama, jadwal harian, halaqah tahfidz, dan pembiasaan Jurnal Adab.</p><p>Setiap kamar didampingi seorang musyrif yang membimbing santri sejak bangun tidur hingga istirahat malam.</p>",
         ],
         [
-            'slug' => 'santri-ikut-kerja-bakti-bersama-warga-mojosari', 'title' => 'Santri Ikut Kerja Bakti Bersama Warga Mojosari', 'type' => 'kegiatan', 'category' => 'Kegiatan Al-Khair', 'offset' => 10, 'cover' => true,
+            'slug' => 'santri-ikut-kerja-bakti-bersama-warga-mojosari', 'title' => 'Santri Ikut Kerja Bakti Bersama Warga Mojosari', 'category' => 'Kegiatan Al-Khair', 'offset' => 10, 'cover' => true,
             'excerpt' => 'Santri TSN/SMA membersihkan saluran air dan jalan desa bersama warga.',
             'body' => '<p>Pada Ahad pagi, santri TSN/SMA bergabung dengan warga Mojosari membersihkan saluran air dan bahu jalan menjelang musim hujan.</p><p>Kegiatan ini melatih kepedulian santri kepada lingkungan dan masyarakat sekitar ma\'had.</p>',
         ],
         [
-            'slug' => 'jadwal-kajian-kitab-pekanan-wali-santri', 'title' => 'Jadwal Kajian Kitab Pekanan untuk Wali Santri', 'type' => 'berita', 'category' => 'Info Kajian', 'offset' => 14, 'cover' => true,
+            'slug' => 'jadwal-kajian-kitab-pekanan-wali-santri', 'title' => 'Jadwal Kajian Kitab Pekanan untuk Wali Santri', 'category' => 'Info Kajian', 'offset' => 14, 'cover' => true,
             'excerpt' => 'Kajian kitab untuk wali santri diadakan setiap Ahad pagi di masjid ma\'had.',
             'body' => "<p>Ma'had Al-Khair Belitang mengadakan kajian kitab pekanan untuk wali santri dan masyarakat umum setiap Ahad pukul 08.00 sampai 09.30 di masjid ma'had.</p><p>Kajian membahas akidah, adab, dan fiqih ibadah sehari-hari secara berurutan. Peserta dipersilakan membawa catatan; kitab dapat dipinjam di perpustakaan.</p>",
         ],
         [
-            'slug' => 'ringkasan-kajian-menuntut-ilmu-sebelum-beramal', 'title' => 'Ringkasan Kajian: Pentingnya Menuntut Ilmu Sebelum Beramal', 'type' => 'berita', 'category' => 'Akidah & Manhaj', 'offset' => 18, 'cover' => false,
+            'slug' => 'ringkasan-kajian-menuntut-ilmu-sebelum-beramal', 'title' => 'Ringkasan Kajian: Pentingnya Menuntut Ilmu Sebelum Beramal', 'category' => 'Akidah & Manhaj', 'offset' => 18, 'cover' => false,
             'excerpt' => 'Ringkasan kajian pekanan tentang adab menuntut ilmu dan mengamalkannya.',
             'body' => '<p>Kajian pekan ini membahas pentingnya menuntut ilmu sebelum berkata dan beramal, agar ibadah dikerjakan di atas pemahaman yang benar.</p><p>Pemateri mengingatkan wali santri untuk mendampingi anak mengulang pelajaran, menjaga adab kepada guru, dan bersabar dalam proses belajar.</p>',
         ],
         [
-            'slug' => 'program-hafalan-matan-dan-hadits-arbain', 'title' => "Program Hafalan Matan dan Hadits Arba'in Santri", 'type' => 'kegiatan', 'category' => 'Tafsir & Hadits', 'offset' => 22, 'cover' => false,
+            'slug' => 'program-hafalan-matan-dan-hadits-arbain', 'title' => "Program Hafalan Matan dan Hadits Arba'in Santri", 'category' => 'Tafsir & Hadits', 'offset' => 22, 'cover' => false,
             'excerpt' => "Santri menghafal matan ilmiah dan hadits Arba'in secara bertahap dengan setoran harian.",
             'body' => "<p>Selain hafalan Al-Qur'an, santri mengikuti program hafalan matan ilmiah dan hadits Arba'in. Setoran dilakukan setiap hari kepada ustadz pembimbing, lalu diuji setiap akhir bulan.</p><p>Santri yang memenuhi syarat dapat melanjutkan ke program hafalan bersanad.</p>",
         ],
         [
-            'slug' => 'praktik-penyembelihan-hewan-kurban-idul-adha', 'title' => 'Santri Belajar Praktik Penyembelihan Hewan Kurban saat Idul Adha', 'type' => 'kegiatan', 'category' => 'Fiqh', 'offset' => 26, 'cover' => false,
+            'slug' => 'praktik-penyembelihan-hewan-kurban-idul-adha', 'title' => 'Santri Belajar Praktik Penyembelihan Hewan Kurban saat Idul Adha', 'category' => 'Fiqh', 'offset' => 26, 'cover' => false,
             'excerpt' => 'Pelajaran fiqih kurban dipraktikkan langsung saat penyembelihan hewan kurban di ma\'had.',
             'body' => '<p>Saat Idul Adha, santri mempraktikkan pelajaran fiqih kurban: memilih hewan yang memenuhi syarat, adab menyembelih, hingga membagikan daging kepada warga.</p><p>Kegiatan didampingi ustadz dan petugas penyembelihan yang berpengalaman.</p>',
         ],
         [
-            'slug' => 'rencana-pembangunan-ruang-kelas-tahap-ii', 'title' => 'Rencana Pembangunan Ruang Kelas Tahap II', 'type' => 'berita', 'category' => 'Umum', 'offset' => null, 'cover' => false,
+            'slug' => 'rencana-pembangunan-ruang-kelas-tahap-ii', 'title' => 'Rencana Pembangunan Ruang Kelas Tahap II', 'category' => 'Umum', 'offset' => null, 'cover' => false,
             'excerpt' => 'Pembangunan tambahan ruang kelas direncanakan tahun depan.',
             'body' => '<p>Yayasan merencanakan pembangunan tahap II berupa empat ruang kelas baru dan ruang belajar bersama.</p><p>Rincian anggaran dan jadwal pembangunan akan diumumkan setelah rapat pengurus yayasan.</p>',
         ],

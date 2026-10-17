@@ -12,7 +12,6 @@ use App\Actions\Prestasi\PublishAchievementAsPost;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Prestasi\VerifyAchievement;
 use App\Models\Achievement;
-use App\Models\Category;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\IssuedLetter;
@@ -197,10 +196,9 @@ final class DemoRecords
         $post = app(PublishAchievementAsPost::class)->handle($achievement, $actor);
 
         app(SavePost::class)->handle([
-            'type' => $post->type,
             'title' => $post->title,
             'slug' => $post->slug,
-            'category_id' => Category::query()->where('type', Category::TYPE_POST)->where('name', DemoData::ACHIEVEMENT_CATEGORY)->value('id'),
+            'category_id' => $post->category_id,
             'unit_id' => $post->unit_id,
             'excerpt' => $post->excerpt,
             'body' => $post->body,

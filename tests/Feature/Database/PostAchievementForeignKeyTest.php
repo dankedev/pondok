@@ -33,7 +33,7 @@ it('AC-3: links posts to achievements and keeps posts indexes', function () {
         ->and(strtolower($find('unit_id')['on_delete']))->toBe('restrict')
         ->and(strtolower($find('author_id')['on_delete']))->toBe('set null')
         ->and($indexes->where('unique', true)->pluck('columns')->all())->toContain(['slug'])->toContain(['achievement_id'])
-        ->and($indexes->where('unique', false)->pluck('columns')->all())->toContain(['status', 'published_at'])->toContain(['type'])->not->toContain(['achievement_id'])
+        ->and($indexes->where('unique', false)->pluck('columns')->all())->toContain(['status', 'published_at'])->not->toContain(['type'])->not->toContain(['achievement_id'])
         ->and(Schema::hasColumns('posts', ['deleted_at', 'meta', 'cover_path']))->toBeTrue();
 });
 
@@ -44,7 +44,7 @@ it('AC-3: keeps soft delete, the status default and nullable achievement_id afte
     expect(Post::query()->count())->toBe(0)
         ->and(Post::withTrashed()->count())->toBe(1);
 
-    DB::table('posts')->insert(['type' => 'berita', 'title' => 'Tanpa status', 'slug' => 'tanpa-status', 'body' => '<p>x</p>', 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('posts')->insert(['title' => 'Tanpa status', 'slug' => 'tanpa-status', 'body' => '<p>x</p>', 'created_at' => now(), 'updated_at' => now()]);
 
     expect(DB::table('posts')->where('slug', 'tanpa-status')->value('status'))->toBe('draft')
         ->and(DB::table('posts')->where('slug', 'tanpa-status')->value('achievement_id'))->toBeNull()

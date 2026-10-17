@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -27,7 +28,6 @@ it('AC-9: creates a draft post with a generated slug and the actor as author', f
 
     expect(Post::query()->count())->toBe(1)
         ->and($post->fresh())
-        ->type->toBe('berita')
         ->title->toBe('Wisuda Tahfidz 2026')
         ->slug->toBe('wisuda-tahfidz-2026')
         ->body->toBe('<p>Alhamdulillah</p>')
@@ -49,15 +49,13 @@ it('AC-9: stores unit, category, plain-text excerpt and trimmed title', function
         'unit_id' => $this->f->sltp->id,
         'category_id' => $category->id,
         'excerpt' => '  <b>Ringkas</b> saja  ',
-        'type' => 'kegiatan',
     ]);
 
     expect($post->fresh())
         ->title->toBe('Pengumuman Libur')
         ->unit_id->toBe($this->f->sltp->id)
         ->category_id->toBe($category->id)
-        ->excerpt->toBe('Ringkas saja')
-        ->type->toBe('kegiatan');
+        ->excerpt->toBe('Ringkas saja');
 });
 
 it('AC-10: appends a numeric suffix when the slug is taken, including soft-deleted posts', function () {
@@ -141,7 +139,6 @@ it('AC-12: rejects invalid input without writing a row', function (array $overri
 
     expect(Post::withTrashed()->count())->toBe(0);
 })->with([
-    'unknown type' => [['type' => 'artikel'], 'invalid_type', 'type'],
     'blank title' => [['title' => '   '], 'title_required', 'title'],
     'title too long' => [['title' => str_repeat('a', 256)], 'too_long', 'title'],
     'unknown status' => [['status' => 'publish'], 'invalid_status', 'status'],
@@ -155,6 +152,15 @@ it('AC-12: rejects invalid input without writing a row', function (array $overri
     'relative date next monday' => [['published_at' => 'next monday'], 'published_at_invalid', 'published_at'],
     'impossible date' => [['published_at' => '2026-13-45 08:00'], 'published_at_invalid', 'published_at'],
 ]);
+
+it('AC-4: ignores a legacy type input without error and does not store it', function () {
+    $post = kontenSave(['type' => 'kegiatan']);
+    $updated = kontenSave(['type' => 'artikel', 'title' => 'Judul Baru'], post: $post);
+
+    expect($updated->id)->toBe($post->id)->and($updated->fresh()->title)->toBe('Judul Baru')
+        ->and(Schema::hasColumn('posts', 'type'))->toBeFalse()
+        ->and($updated->fresh()->getAttributes())->not->toHaveKey('type');
+});
 
 it('AC-12: accepts an excerpt of exactly 255 characters', function () {
     expect(kontenSave(['excerpt' => str_repeat('a', 255)])->fresh()->excerpt)->toHaveLength(255);

@@ -54,14 +54,13 @@ final class DemoData
         ],
         'hero_album_slug' => 'fasilitas-mahad',
         'footer' => [
-            'footer_quote_arabic' => 'وَلْتَكُن مِّنكُمْ أُمَّةٌ يَدْعُونَ إِلَى الْخَيْرِ وَيَأْمُرُونَ بِالْمَعْرُوفِ وَيَنْهَوْنَ عَنِ الْمُنكَرِ ۚ وَأُولَٰئِكَ هُمُ الْمُفْلِحُونَ',
-            'footer_quote_translation' => 'Dan hendaklah di antara kamu ada segolongan orang yang menyeru kepada kebajikan, menyuruh kepada yang makruf, dan mencegah dari yang mungkar. Mereka itulah orang-orang yang beruntung.',
-            'footer_quote_source' => "QS. Ali 'Imran: 104",
             'footer_description' => "Ma'had Al-Khair Belitang: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.",
-            'footer_links' => [
-                ['label' => 'Berita', 'url' => '/berita'],
-                ['label' => 'Galeri', 'url' => '/galeri'],
+            'footer_text' => [
+                'title' => 'Jam layanan tata usaha',
+                'body' => "Senin sampai Kamis dan Sabtu: 08.00 sampai 14.00\nJumat: 08.00 sampai 11.00",
             ],
+            'footer_show_contacts' => true,
+            'footer_show_social' => true,
         ],
         /** Logo merek dari `docs/brand/` (dilewati bila berkas tidak ada). */
         'logos' => [
@@ -559,14 +558,19 @@ final class DemoData
     }
 
     /**
-     * Menu header demo (brief): Beranda, Tentang Yayasan, Pengurus Al-Khair, Selayang
-     * Pandang, Info PSB (tampil setelah F038), Kontak. Berita, Galeri, dan Video tetap
-     * terjangkau dari beranda dan footer. Kunci `page:` = slug halaman.
+     * Navigasi demo (F043): Beranda, grup "Tentang Kami" berisi halaman profil dari brief,
+     * daftar berita/galeri/video, Info PSB (tampil setelah F038), dan Kontak. Kunci `page:`
+     * = slug halaman; halaman yang tidak ada dilewati.
      *
-     * @var list<array{0: string, 1: bool}>
+     * @var array{primary: list<string|array{label: string, children: list<string>}>, footer: list<string>, header_button: array{type: string, label: ?string}}
      */
-    public const MENU = [
-        ['home', true], ['page:profil', true], ['page:pengurus', true], ['page:selayang-pandang', true],
-        ['psb_info', true], ['page:kontak', true], ['news', false], ['gallery', false], ['videos', false],
+    public const NAVIGATION = [
+        'primary' => [
+            'home',
+            ['label' => 'Tentang Kami', 'children' => ['page:profil', 'page:pengurus', 'page:selayang-pandang', 'page:visi-misi']],
+            'posts', 'albums', 'videos', 'psb.info', 'page:kontak',
+        ],
+        'footer' => ['page:visi-misi', 'posts', 'psb.status', 'letters.verify'],
+        'header_button' => ['type' => 'psb.register', 'label' => 'Daftar PSB'],
     ];
 }

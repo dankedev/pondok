@@ -4,13 +4,14 @@ namespace Database\Seeders\Demo;
 
 use App\Actions\Konten\AddAlbumPhotos;
 use App\Actions\Konten\CreateStaticPage;
+use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Konten\SaveAlbum;
 use App\Actions\Konten\SaveCategory;
 use App\Actions\Konten\SavePost;
 use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalHome;
-use App\Actions\Konten\UpdatePortalMenu;
+use App\Actions\Konten\UpdatePortalNavigation;
 use App\Actions\Konten\UpdateSchoolContacts;
 use App\Actions\Konten\UpdateSchoolProfile;
 use App\Actions\Konten\UpdateStaticPage;
@@ -100,42 +101,52 @@ final class DemoContent
             ], $actor);
         }
 
-        if ($profile['footer']['quote_arabic'] === null && $profile['footer']['links'] === []) {
+        if ($profile['footer']['description'] === null && $profile['footer']['text'] === null) {
             $this->ensureAllowedContent(json_encode($demo['footer'], JSON_UNESCAPED_UNICODE));
 
-            // Tautan Visi & misi kini diatur admin (F037): contoh tautan halaman di footer.
-            $vision = StaticPage::findBySlug('visi-misi');
-            $footer = $demo['footer'];
-
-            if ($vision !== null) {
-                $footer['footer_links'][] = ['label' => null, 'page_id' => $vision->id];
-            }
-
-            app(UpdatePortalFooter::class)->handle($footer, $actor);
+            app(UpdatePortalFooter::class)->handle($demo['footer'], $actor);
         }
 
-        if (Setting::get('portal.menu_items') === null) {
-            $this->seedMenu();
+        if (Setting::query()->whereIn('key', GetPortalNavigation::SETTING_KEYS)->doesntExist()) {
+            $this->seedNavigation();
         }
     }
 
     /**
-     * Menu header demo dari brief (F037) lewat Action panel.
+     * Navigasi demo (F043) lewat Action panel: menu bergrup, tautan footer, tombol header.
      */
-    private function seedMenu(): void
+    private function seedNavigation(): void
     {
         $pageIds = StaticPage::query()->pluck('id', 'slug');
-        $items = [];
+        $navigation = DemoData::NAVIGATION;
+        $this->ensureAllowedContent(json_encode($navigation, JSON_UNESCAPED_UNICODE));
 
-        foreach (DemoData::MENU as [$entry, $visible]) {
+        $item = function (string $entry) use ($pageIds): ?array {
             if (! str_starts_with($entry, 'page:')) {
-                $items[] = ['type' => 'builtin', 'key' => $entry, 'visible' => $visible];
-            } elseif ($pageIds->has(substr($entry, 5))) {
-                $items[] = ['type' => 'page', 'page_id' => $pageIds->get(substr($entry, 5)), 'label' => null, 'visible' => $visible];
+                return ['type' => $entry, 'label' => null];
+            }
+
+            $id = $pageIds->get(substr($entry, 5));
+
+            return $id === null ? null : ['type' => 'page', 'label' => null, 'page_id' => (int) $id];
+        };
+        $items = fn (array $entries): array => array_values(array_filter(array_map($item, $entries)));
+
+        $primary = [];
+
+        foreach ($navigation['primary'] as $entry) {
+            if (is_string($entry)) {
+                $primary[] = $item($entry);
+            } elseif (($children = $items($entry['children'])) !== []) {
+                $primary[] = ['type' => 'group', 'label' => $entry['label'], 'children' => $children];
             }
         }
 
-        app(UpdatePortalMenu::class)->handle(['items' => $items, 'show_register' => true], $this->context->user('super-admin'));
+        app(UpdatePortalNavigation::class)->handle([
+            'primary' => array_values(array_filter($primary)),
+            'footer' => $items($navigation['footer']),
+            'header_button' => $navigation['header_button'],
+        ], $this->context->user('super-admin'));
     }
 
     /**

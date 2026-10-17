@@ -8,7 +8,6 @@
 <x-layouts::public :title="$post->title" :description="$summary" :canonical="route('portal.posts.show', $post->slug)" og-type="article" :og-image="$cover" :bare="true">
     <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:py-20">
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600">
-            <x-ui.badge color="gray">{{ __('pondok.post.types.'.$post->type) }}</x-ui.badge>
             <time datetime="{{ $post->published_at->toAtomString() }}">{{ $post->published_at->translatedFormat('j M Y') }}</time>
             @if ($post->category)
                 <span>

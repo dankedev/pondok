@@ -1,10 +1,6 @@
 @php
-    $heading = __('pondok.portal.posts.titles.'.($type ?? 'all'));
+    $heading = __('pondok.portal.posts.titles.all');
     $listUrl = fn (array $overrides): string => route('portal.posts.index', array_filter([...$filters, ...$overrides]));
-    $typeChips = [['label' => __('pondok.portal.posts.all_types'), 'url' => $listUrl(['jenis' => null]), 'active' => $type === null]];
-    foreach ($types as $postType) {
-        $typeChips[] = ['label' => __('pondok.post.types.'.$postType), 'url' => $listUrl(['jenis' => $postType]), 'active' => $type === $postType];
-    }
     $categoryChips = [['label' => __('pondok.portal.posts.all_categories'), 'url' => $listUrl(['kategori' => null]), 'active' => $category === null]];
     foreach ($categories as $item) {
         $categoryChips[] = ['label' => $item->name, 'url' => $listUrl(['kategori' => $item->slug]), 'active' => $category?->is($item) ?? false];
@@ -21,9 +17,6 @@
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $heading }}</h1>
 
         <div class="mt-6 space-y-3">
-            @if ($types !== [])
-                <x-portal.filter-chips :items="$typeChips" :label="__('pondok.portal.posts.filter_types_label')" />
-            @endif
             @if ($categories->isNotEmpty() || $category)
                 <x-portal.filter-chips :items="$categoryChips" :label="__('pondok.portal.posts.filter_categories_label')" />
             @endif

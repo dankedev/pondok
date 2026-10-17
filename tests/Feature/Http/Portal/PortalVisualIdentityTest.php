@@ -110,7 +110,7 @@ function identitasFullHome(): object
     $profileVideo = kontenVideo(['title' => 'Video Profil Uji', 'youtube_id' => 'BBBBBBBBBBB']);
     kontenVideo(['title' => 'Video Unggulan Uji', 'youtube_id' => 'AAAAAAAAAAA', 'is_featured' => true]);
     portalPost(['title' => 'Berita Uji']);
-    portalPost(['title' => 'Prestasi Uji', 'type' => Post::TYPE_ACHIEVEMENT]);
+    portalAchievementPost(['title' => 'Prestasi Uji']);
     profilSet(['school.arabic_name' => 'معهد الخير', 'school.contacts' => [profilContact()]]);
     blkSet([
         blk('hero', ['eyebrow' => 'Sambutan uji', 'title' => 'Judul hero uji', 'text' => 'Subjudul hero uji', 'album_id' => $slider->id]),

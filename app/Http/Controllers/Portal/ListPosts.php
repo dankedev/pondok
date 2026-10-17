@@ -15,7 +15,6 @@ class ListPosts extends Controller
     public function __invoke(Request $request, ListPublicPosts $listPosts): View
     {
         $filters = [
-            'jenis' => $this->queryFilter($request, 'jenis'),
             'kategori' => $this->queryFilter($request, 'kategori'),
             'jenjang' => $this->queryFilter($request, 'jenjang'),
         ];

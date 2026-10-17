@@ -3,6 +3,7 @@
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -15,9 +16,9 @@ function portalAt(string $date): CarbonImmutable
 }
 
 it('AC-7: lists only published posts newest first', function () {
-    portalPost(['title' => 'Judul Alpha', 'type' => 'berita', 'published_at' => portalAt('2026-10-14')]);
-    portalPost(['title' => 'Judul Beta', 'type' => 'kegiatan', 'published_at' => portalAt('2026-10-13')]);
-    portalPost(['title' => 'Judul Gamma', 'type' => 'prestasi', 'published_at' => portalAt('2026-10-12')]);
+    portalPost(['title' => 'Judul Alpha', 'published_at' => portalAt('2026-10-14')]);
+    portalPost(['title' => 'Judul Beta', 'published_at' => portalAt('2026-10-13')]);
+    portalPost(['title' => 'Judul Gamma', 'published_at' => portalAt('2026-10-12')]);
     kontenPost(['title' => 'Judul Draf']);
     portalPost(['title' => 'Judul Jadwal', 'published_at' => portalAt('2026-10-20')]);
     portalPost(['title' => 'Judul Hapus'])->delete();
@@ -33,39 +34,62 @@ it('AC-7: lists only published posts newest first', function () {
 });
 
 it('AC-8: paginates and keeps filters', function () {
+    $category = kontenCategory('post', 'Pengumuman');
     foreach (range(1, 10) as $i) {
-        portalPost(['title' => sprintf('Kabar nomor %02d', $i), 'published_at' => portalAt('2026-10-14')->subMinutes($i)]);
+        portalPost(['title' => sprintf('Kabar nomor %02d', $i), 'category_id' => $category->id, 'published_at' => portalAt('2026-10-14')->subMinutes($i)]);
     }
 
-    $first = $this->get('/berita?jenis=berita')->assertOk();
+    $first = $this->get('/berita?kategori=pengumuman')->assertOk();
     expect(substr_count($first->getContent(), 'Kabar nomor'))->toBe(9);
     $first->assertDontSee('Kabar nomor 10');
-    expect(portalDecoded($first))->toContain('jenis=berita&page=2');
+    expect(portalDecoded($first))->toContain('kategori=pengumuman&page=2');
 
     $this->get('/berita?page=2')->assertOk()->assertSee('Kabar nomor 10')->assertDontSee('Kabar nomor 01');
 });
 
-it('AC-9: filters by type, category and unit', function () {
+it('AC-7: filters by category and unit, stacked, with the heading always Berita & kegiatan', function () {
     $tahfidz = kontenCategory('post', 'Tahfidz');
-    portalPost(['title' => 'Berita Umum', 'type' => 'berita']);
-    portalPost(['title' => 'Kegiatan Pramuka', 'type' => 'kegiatan']);
-    portalPost(['title' => 'Berita Tahfidz', 'type' => 'berita', 'category_id' => $tahfidz->id]);
-    portalPost(['title' => 'Berita SLTP', 'type' => 'berita', 'unit_id' => $this->f->sltp->id]);
-    portalPost(['title' => 'Kegiatan SLTP', 'type' => 'kegiatan', 'unit_id' => $this->f->sltp->id]);
-    portalPost(['title' => 'Berita SD', 'type' => 'berita', 'unit_id' => $this->f->sd->id]);
+    portalPost(['title' => 'Berita Umum']);
+    portalPost(['title' => 'Berita Tahfidz', 'category_id' => $tahfidz->id]);
+    portalPost(['title' => 'Tahfidz SLTP', 'category_id' => $tahfidz->id, 'unit_id' => $this->f->sltp->id]);
+    portalPost(['title' => 'Berita SLTP', 'unit_id' => $this->f->sltp->id]);
+    portalPost(['title' => 'Berita SD', 'unit_id' => $this->f->sd->id]);
 
-    $jenis = $this->get('/berita?jenis=kegiatan')->assertOk();
-    $jenis->assertSee('Kegiatan Pramuka')->assertDontSee('Berita Umum')->assertSeeText(__('pondok.portal.posts.titles.kegiatan'));
-    expect($jenis->getContent())->toContain('aria-current="true"');
-
-    $this->get('/berita?kategori=tahfidz')->assertOk()->assertSee('Berita Tahfidz')->assertDontSee('Berita Umum');
+    $this->get('/berita?kategori=tahfidz')->assertOk()->assertSee('Berita Tahfidz')->assertDontSee('Berita Umum')
+        ->assertSeeText(__('pondok.portal.posts.titles.all'));
 
     $this->get('/berita?jenjang=sltp')->assertOk()
-        ->assertSee('Berita SLTP')->assertSee('Kegiatan SLTP')
+        ->assertSee('Berita SLTP')->assertSee('Tahfidz SLTP')
         ->assertDontSee('Berita Umum')->assertDontSee('Berita SD');
 
-    $this->get('/berita?jenis=berita&jenjang=sltp')->assertOk()
-        ->assertSee('Berita SLTP')->assertDontSee('Kegiatan SLTP')->assertDontSee('Berita SD');
+    $this->get('/berita?kategori=tahfidz&jenjang=sltp')->assertOk()
+        ->assertSee('Tahfidz SLTP')->assertDontSee('Berita SLTP')->assertDontSee('Berita Tahfidz')->assertDontSee('Berita SD');
+});
+
+it('AC-8: shows the category name as the card badge only when the post has a category', function () {
+    $category = kontenCategory('post', 'Pengumuman Resmi');
+    portalPost(['title' => 'Dengan Kategori', 'category_id' => $category->id]);
+    portalPost(['title' => 'Tanpa Kategori']);
+
+    $cards = explode('<article', $this->get('/berita')->assertOk()->getContent());
+    $with = collect($cards)->first(fn (string $card): bool => str_contains($card, 'Dengan Kategori'));
+    $without = collect($cards)->first(fn (string $card): bool => str_contains($card, 'Tanpa Kategori'));
+
+    expect($with)->toMatch('/rounded-full[^>]*>\s*Pengumuman Resmi\s*<\/span>/')
+        ->and($without)->not->toBeNull()->not->toContain('rounded-full');
+});
+
+it('AC-8: does not run a category query per post on the list', function () {
+    foreach (range(1, 6) as $i) {
+        portalPost(['title' => "Kabar {$i}", 'category_id' => kontenCategory('post', "Kategori {$i}")->id]);
+    }
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $this->get('/berita')->assertOk();
+    $categoryQueries = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], 'from "categories"'))->count();
+
+    expect($categoryQueries)->toBeLessThanOrEqual(3);
 });
 
 it('AC-10: summarizes posts without author', function () {
@@ -84,7 +108,7 @@ it('AC-10: summarizes posts without author', function () {
 it('AC-11: shows post detail', function () {
     $category = kontenCategory('post', 'Tahfidz');
     portalPost([
-        'title' => 'Wisuda Tahfidz', 'type' => 'prestasi', 'category_id' => $category->id, 'unit_id' => $this->f->sltp->id,
+        'title' => 'Wisuda Tahfidz', 'category_id' => $category->id, 'unit_id' => $this->f->sltp->id,
         'cover_path' => 'posts/covers/c.jpg', 'body' => '<p>Isi lengkap</p>',
     ]);
     Storage::disk('public')->put('posts/covers/c.jpg', 'x');
@@ -94,9 +118,9 @@ it('AC-11: shows post detail', function () {
 
     expect($response->getContent())
         ->toMatch('/<h1[^>]*>\s*Wisuda Tahfidz\s*<\/h1>/')
-        ->toContain(__('pondok.post.types.prestasi'))
         ->toContain('14 Okt 2026')
         ->toContain('/berita?kategori=tahfidz')
+        ->not->toMatch('/rounded-full[^>]*>\s*(Berita|Kegiatan|Prestasi)\s*<\/span>/')
         ->toContain('<img src="'.$cover.'" alt="Wisuda Tahfidz"')
         ->toMatch('/class="[^"]*portal-prose[^"]*isolate[^"]*overflow-hidden[^"]*"/')
         ->toContain('<p>Isi lengkap</p>');

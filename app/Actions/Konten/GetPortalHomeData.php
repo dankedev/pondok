@@ -4,6 +4,7 @@ namespace App\Actions\Konten;
 
 use App\Models\AdmissionWave;
 use App\Models\Album;
+use App\Models\Category;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Models\Setting;
@@ -189,8 +190,8 @@ class GetPortalHomeData
         $limit = self::FEED_LIMITS[$source];
 
         $items = match ($source) {
-            'posts' => $this->latestPosts([Post::TYPE_NEWS, Post::TYPE_ACTIVITY], $limit),
-            'achievements' => $this->latestPosts([Post::TYPE_ACHIEVEMENT], $limit),
+            'posts' => $this->latestPosts(false, $limit),
+            'achievements' => $this->latestPosts(true, $limit),
             'videos' => Video::query()->ordered()->where('is_featured', true)->limit($limit)->get(),
             'albums' => Album::query()->has('photos')->withCount('photos')->with('coverPhoto')
                 ->orderByDesc('updated_at')->orderByDesc('id')->limit($limit)->get(),
@@ -202,7 +203,9 @@ class GetPortalHomeData
 
         $url = match ($source) {
             'posts' => route('portal.posts.index'),
-            'achievements' => route('portal.posts.index', ['jenis' => Post::TYPE_ACHIEVEMENT]),
+            'achievements' => Category::query()->ofType(Category::TYPE_POST)->where('slug', 'prestasi')->exists()
+                ? route('portal.posts.index', ['kategori' => 'prestasi'])
+                : route('portal.posts.index'),
             'videos' => route('portal.videos.index'),
             'albums' => route('portal.albums.index'),
         };
@@ -211,14 +214,14 @@ class GetPortalHomeData
     }
 
     /**
-     * @param  list<string>  $types
+     * @param  bool  $fromAchievement  true = hanya berita dari prestasi, false = berita tanpa prestasi
      * @return Collection<int, Post>
      */
-    private function latestPosts(array $types, int $limit): Collection
+    private function latestPosts(bool $fromAchievement, int $limit): Collection
     {
         return Post::query()
             ->published()
-            ->whereIn('type', $types)
+            ->when($fromAchievement, fn ($query) => $query->whereNotNull('achievement_id'), fn ($query) => $query->whereNull('achievement_id'))
             ->with(['category', 'unit'])
             ->orderByDesc('published_at')
             ->orderByDesc('id')

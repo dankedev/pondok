@@ -145,7 +145,7 @@ it('VERIFY: list and home pages do not run N+1 queries', function () {
 
     foreach (range(2, 9) as $i) {
         $c = kontenCategory('post', "Kat {$i}");
-        portalPost(['title' => "Post {$i}", 'category_id' => $c->id, 'unit_id' => $this->f->sd->id, 'type' => $i % 2 ? 'berita' : 'prestasi']);
+        portalPost(['title' => "Post {$i}", 'category_id' => $c->id, 'unit_id' => $this->f->sd->id]);
         portalAlbumWithPhotos(2, ['title' => "Alb {$i}"]);
     }
 
@@ -156,9 +156,9 @@ it('VERIFY: list and home pages do not run N+1 queries', function () {
 
 it('VERIFY: prestasi posts never expose achievement meta or student names', function () {
     $student = Student::factory()->create(['name' => 'Zainab Rahmawati']);
-    portalPost(['title' => 'Juara Lomba', 'type' => 'prestasi', 'meta' => ['participants' => ['Zainab Rahmawati'], 'nis' => $student->nis]]);
+    portalPost(['title' => 'Juara Lomba', 'category_id' => kontenCategory('post', 'Prestasi')->id, 'meta' => ['participants' => ['Zainab Rahmawati'], 'nis' => $student->nis]]);
 
-    foreach (['/', '/berita?jenis=prestasi', '/berita/juara-lomba', '/sitemap.xml'] as $url) {
+    foreach (['/', '/berita?kategori=prestasi', '/berita/juara-lomba', '/sitemap.xml'] as $url) {
         expect($this->get($url)->assertOk()->getContent())->not->toContain('Zainab Rahmawati')->not->toContain((string) $student->nis);
     }
 });

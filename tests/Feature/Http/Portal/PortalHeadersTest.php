@@ -38,7 +38,7 @@ it('AC-28: keeps portal stateless', function (string $url, int $status) {
     $user = User::factory()->create();
     $signedIn = $this->actingAs($user)->withUnencryptedCookie('laravel_session', 'abc')->get($url);
     expect($signedIn->getStatusCode())->toBe($status)->and($signedIn->headers->getCookies())->toBeEmpty();
-})->with([['/', 200], ['/berita', 200], ['/berita/wisuda-2026', 200], ['/sitemap.xml', 200], ['/berita/tidak-ada', 404], ['/berita?jenis=artikel', 404]]);
+})->with([['/', 200], ['/berita', 200], ['/berita/wisuda-2026', 200], ['/sitemap.xml', 200], ['/berita/tidak-ada', 404], ['/berita?kategori=tidak-ada', 404]]);
 
 it('AC-28: sends no cookies for HEAD and no tokens in portal html', function () {
     expect($this->call('HEAD', '/')->headers->getCookies())->toBeEmpty();

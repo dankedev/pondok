@@ -56,13 +56,14 @@ it('AC-24: sets article meta tags', function () {
 
 it('AC-24a: builds pagination and canonical urls from APP_URL', function () {
     config(['app.url' => 'https://alkhair.sch.id']);
+    $category = kontenCategory('post', 'Pengumuman');
     foreach (range(1, 10) as $i) {
-        portalPost(['title' => "Kabar {$i}"]);
+        portalPost(['title' => "Kabar {$i}", 'category_id' => $category->id]);
     }
     portalAlbumWithPhotos(30, ['title' => 'Album Besar']);
 
-    $posts = $this->withHeader('Host', 'evil.test')->get('/berita?jenis=berita')->assertOk();
-    expect(portalDecoded($posts))->toContain('https://alkhair.sch.id/berita?jenis=berita&page=2');
+    $posts = $this->withHeader('Host', 'evil.test')->get('/berita?kategori=pengumuman')->assertOk();
+    expect(portalDecoded($posts))->toContain('https://alkhair.sch.id/berita?kategori=pengumuman&page=2');
     expect($posts->getContent())->not->toContain('evil.test');
 
     $album = $this->withHeader('Host', 'evil.test')->get('/galeri/album-besar')->assertOk();

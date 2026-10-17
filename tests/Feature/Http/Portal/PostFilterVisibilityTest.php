@@ -17,17 +17,10 @@ function postFilterChips(string $html, string $navLabel): ?array
     return array_map('trim', $chips[1]);
 }
 
-it('hides type chips without published posts and the whole row when empty', function () {
-    portalPost(['type' => 'berita', 'unit_id' => null]);
-    portalPost(['type' => 'kegiatan', 'status' => 'draf', 'published_at' => null]);
+it('has no type chip row, even with several published posts', function () {
+    portalPost(['unit_id' => null]);
+    portalPost(['title' => 'Kegiatan lain']);
 
-    $html = $this->get('/berita')->assertOk()->getContent();
-    $chips = postFilterChips($html, 'Saring menurut jenis');
-
-    expect($chips)->toHaveCount(2)->and($chips)->not->toContain(__('pondok.post.types.kegiatan'));
-});
-
-it('omits the type row when there are no published posts', function () {
     $this->get('/berita')->assertOk()->assertDontSee('Saring menurut jenis');
 });
 

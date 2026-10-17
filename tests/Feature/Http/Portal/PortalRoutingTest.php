@@ -96,10 +96,20 @@ it('AC-6: rejects invalid filters with 404', function (string $query) {
 
     $this->get("/berita?{$query}")->assertNotFound();
 })->with([
-    'jenis=artikel', 'kategori=tidak-ada', 'kategori=khusus-album', 'jenjang=smk', 'page=5',
-    'jenis[]=berita', 'kategori[]=a', 'kategori[x]=1', 'jenjang[]=sltp',
+    'kategori=tidak-ada', 'kategori=khusus-album', 'jenjang=smk', 'page=5',
+    'kategori[]=a', 'kategori[x]=1', 'jenjang[]=sltp',
     'page=abc', 'page=0', 'page=-1', 'page[]=2', 'page=1.5', 'page=1234567',
 ]);
+
+it('AC-7: ignores the removed jenis parameter and keeps it out of canonical urls and links', function (string $query) {
+    foreach (range(1, 10) as $i) {
+        portalPost(['title' => sprintf('Kabar nomor %02d', $i), 'published_at' => CarbonImmutable::parse('2026-10-14 08:00', 'Asia/Jakarta')->subMinutes($i)]);
+    }
+
+    $response = $this->get("/berita?{$query}")->assertOk()->assertSee('Kabar nomor 01')->assertSeeText(__('pondok.portal.posts.titles.all'));
+
+    expect(portalDecoded($response))->not->toContain('jenis=')->and($response->getContent())->not->toContain('Saring menurut jenis');
+})->with(['jenis=artikel', 'jenis=prestasi', 'jenis[]=berita']);
 
 it('AC-6: accepts empty and first page and unit codes in any case', function (string $query) {
     $this->get("/berita?{$query}")->assertOk()->assertSeeText(__('pondok.portal.posts.empty'));

@@ -216,12 +216,13 @@ it('AC-9: renders the quote right to left with translation and source, and skips
 
 it('AC-10: feeds show a fixed number of the latest items per source with default headings and always a see all link', function () {
     foreach (range(1, 7) as $i) {
-        portalPost(['title' => "Kabar harian {$i}", 'type' => 'berita', 'published_at' => CarbonImmutable::parse('2026-10-14 08:00', 'Asia/Jakarta')->subDays($i)]);
+        portalPost(['title' => "Kabar harian {$i}", 'published_at' => CarbonImmutable::parse('2026-10-14 08:00', 'Asia/Jakarta')->subDays($i)]);
     }
     foreach (range(1, 4) as $i) {
-        portalPost(['title' => "Juara Olimpiade {$i}", 'type' => 'prestasi']);
+        portalAchievementPost(['title' => "Juara Olimpiade {$i}"]);
     }
-    kontenPost(['title' => 'Draf Rahasia', 'type' => 'berita']);
+    kontenPost(['title' => 'Draf Rahasia']);
+    portalPost(['title' => 'Prestasi Manual Tanpa Prestasi', 'published_at' => CarbonImmutable::parse('2026-10-14 08:00', 'Asia/Jakarta')->subDays(30)]);
     foreach (range(1, 4) as $i) {
         kontenVideo(['title' => "Video Unggulan Uji {$i}", 'youtube_id' => str_repeat((string) $i, 11), 'is_featured' => true]);
     }
@@ -247,10 +248,30 @@ it('AC-10: feeds show a fixed number of the latest items per source with default
 
     expect(preg_match_all('/Kabar harian \d/', $news))->toBe(6)->and($news)->toContain('Kabar harian 1')->not->toContain('Kabar harian 7')->not->toContain('Juara Olimpiade')->not->toContain('Draf Rahasia')
         ->and($news)->toContain('href="'.route('portal.posts.index').'"')->toContain($aria(__('pondok.portal.home.latest_news')))->toContain(__('pondok.portal.home.see_all'))
-        ->and(preg_match_all('/Juara Olimpiade \d/', $achievements))->toBe(3)->and($achievements)->not->toContain('Kabar harian')->toContain(route('portal.posts.index', ['jenis' => 'prestasi']))
+        ->and(preg_match_all('/Juara Olimpiade \d/', $achievements))->toBe(3)->and($achievements)->not->toContain('Kabar harian')->not->toContain('Prestasi Manual')->toContain('href="'.route('portal.posts.index').'"')->not->toContain('jenis=')
         ->and(substr_count($videos, 'embed/'))->toBe(3)->and($videos)->not->toContain('BBBBBBBBBBB')->toContain('href="'.route('portal.videos.index').'"')
         ->and(preg_match_all('/Album Berfoto Uji \d/', $albums))->toBe(4)->and($albums)->not->toContain('Album Kosong Uji')
         ->and($albums)->toContain(__('pondok.portal.home.see_all'))->toContain('href="'.route('portal.albums.index').'"');
+});
+
+it('AC-9: the achievements see all link goes to the Prestasi category when it exists', function () {
+    kontenCategory('post', 'Prestasi');
+    portalAchievementPost(['title' => 'Juara Olimpiade']);
+    blkSet([blk('feed', ['source' => 'achievements'])]);
+
+    expect(blkSection(blkHome(), __('pondok.portal.home.latest_achievements')))->toContain('href="'.route('portal.posts.index', ['kategori' => 'prestasi']).'"');
+});
+
+it('AC-9: the posts feed excludes achievement posts even when they are newer', function () {
+    foreach (range(1, 8) as $i) {
+        portalAchievementPost(['title' => "Juara Terbaru {$i}", 'published_at' => CarbonImmutable::parse('2026-10-14 09:00', 'Asia/Jakarta')->subMinutes($i)]);
+    }
+    portalPost(['title' => 'Berita Lama', 'published_at' => CarbonImmutable::parse('2026-09-01 08:00', 'Asia/Jakarta')]);
+    blkSet([blk('feed', ['source' => 'posts'])]);
+
+    $news = blkSection(blkHome(), __('pondok.portal.home.latest_news'));
+
+    expect($news)->toContain('Berita Lama')->not->toContain('Juara Terbaru');
 });
 
 it('AC-11: the adaptive grid uses as many large screen columns as there are items, up to the maximum', function () {

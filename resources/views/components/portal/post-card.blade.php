@@ -17,7 +17,9 @@
     @endif
     <div class="flex flex-1 flex-col gap-2 p-5">
         <div class="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-            <x-ui.badge color="gray">{{ __('pondok.post.types.'.$post->type) }}</x-ui.badge>
+            @if ($post->category)
+                <x-ui.badge color="gray">{{ $post->category->name }}</x-ui.badge>
+            @endif
             @if ($post->published_at)
                 <time datetime="{{ $post->published_at->toAtomString() }}">{{ $post->published_at->translatedFormat('j M Y') }}</time>
             @endif

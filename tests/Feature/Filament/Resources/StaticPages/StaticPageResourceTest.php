@@ -16,22 +16,16 @@ beforeEach(function () {
     $this->page = StaticPage::query()->where('slug', 'profil')->firstOrFail();
 });
 
-// F037: AC-32 F016 ("tidak bisa membuat atau menghapus") diganti: buat boleh, hapus hanya untuk halaman non-sistem.
-it('AC-32 (F037): has no bulk actions and hides the delete action for system pages', function (string $role) {
+it('AC-32 (F037): has no bulk actions and offers the delete action on every row', function (string $role) {
     $this->actingAs(kontenUser($role));
 
-    $component = Livewire::test(ListStaticPages::class)
-        ->assertCanSeeTableRecords(StaticPage::all())
-        ->assertActionHidden(TestAction::make('delete')->table($this->page));
+    $component = Livewire::test(ListStaticPages::class)->assertCanSeeTableRecords(StaticPage::all());
+
+    foreach (StaticPage::all() as $page) {
+        $component->assertActionVisible(TestAction::make('delete')->table($page));
+    }
 
     expect($component->instance()->getTable()->getFlatBulkActions())->toBe([]);
-})->with(['admin-konten', 'super-admin']);
-
-it('AC-32 (F037): has no delete action on the edit page of a system page', function (string $role) {
-    $this->actingAs(kontenUser($role));
-
-    Livewire::test(EditStaticPage::class, ['record' => $this->page->getRouteKey()])
-        ->assertActionHidden('delete');
 })->with(['admin-konten', 'super-admin']);
 
 it('AC-32: saves the body sanitized from the edit page', function () {
@@ -46,15 +40,30 @@ it('AC-32: saves the body sanitized from the edit page', function () {
         ->and($this->page->fresh()->body)->toContain('<p>Sejarah</p>')->not->toContain('<script');
 });
 
-it('AC-32: shows the slug but does not let it change', function () {
+it('AC-11 (F048): the slug of a former system page is editable and can change', function () {
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(EditStaticPage::class, ['record' => $this->page->getRouteKey()])
-        ->assertSchemaComponentExists('slug', checkComponentUsing: fn ($component): bool => $component->isDisabled())
-        ->fillForm(['slug' => 'beranda', 'title' => 'Profil'])
-        ->call('save');
+        ->assertSchemaComponentExists('slug', checkComponentUsing: fn ($component): bool => ! $component->isDisabled())
+        ->fillForm(['slug' => 'tentang-kami', 'title' => 'Profil'])
+        ->call('save')
+        ->assertHasNoFormErrors();
 
-    expect($this->page->fresh()->slug)->toBe('profil');
+    expect($this->page->fresh()->slug)->toBe('tentang-kami');
+});
+
+it('AC-11 (F048): the template select has exactly two Indonesian options and saves the choice', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    $labels = ['default' => __('pondok.static_page.templates.default'), 'contact' => __('pondok.static_page.templates.contact')];
+
+    Livewire::test(EditStaticPage::class, ['record' => $this->page->getRouteKey()])
+        ->assertSchemaComponentExists('template', checkComponentUsing: fn ($component): bool => $component->getOptions() === $labels)
+        ->fillForm(['template' => 'contact', 'title' => 'Profil'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($labels)->not->toContain('pondok.static_page.templates.default')->not->toContain('pondok.static_page.templates.contact')
+        ->and($this->page->fresh()->template)->toBe('contact');
 });
 
 it('AC-32: shows a rejected data image as an error on the body field', function () {
@@ -101,42 +110,35 @@ it('AC-32: shows a reserved slug error on the form field', function () {
         ->and(StaticPage::query()->count())->toBe(3);
 });
 
-it('AC-33: shows status and system badges, and hides delete for system pages only', function (string $role) {
+it('AC-11 (F048): the table shows status and template, no system badge, and delete is available on all rows including the edit page', function (string $role) {
     $this->actingAs(kontenUser($role));
     $free = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan', 'status' => 'draft']);
 
     $list = Livewire::test(ListStaticPages::class)
         ->assertTableColumnExists('status')
-        ->assertSeeText(__('pondok.static_page.system_badge'))
+        ->assertTableColumnExists('template')
+        ->assertDontSeeText('Halaman sistem')
         ->assertSeeText(__('pondok.static_page.statuses.draft'))
         ->assertSeeText(__('pondok.static_page.statuses.terbit'))
-        ->assertActionVisible(TestAction::make('delete')->table($free));
+        ->assertSeeText(__('pondok.static_page.templates.contact'));
 
-    foreach (StaticPage::SYSTEM_SLUGS as $slug) {
-        $list->assertActionHidden(TestAction::make('delete')->table(StaticPage::findBySlug($slug)));
+    foreach (StaticPage::all() as $page) {
+        $list->assertActionVisible(TestAction::make('delete')->table($page));
     }
 
-    expect(__('pondok.static_page.system_badge'))->not->toBe('pondok.static_page.system_badge');
+    foreach (['profil', 'visi-misi', 'kontak'] as $slug) {
+        Livewire::test(EditStaticPage::class, ['record' => StaticPage::findBySlug($slug)->getRouteKey()])->assertActionVisible('delete');
+    }
 
     Livewire::test(EditStaticPage::class, ['record' => $free->getRouteKey()])->assertActionVisible('delete');
-
-    foreach (StaticPage::SYSTEM_SLUGS as $slug) {
-        Livewire::test(EditStaticPage::class, ['record' => StaticPage::findBySlug($slug)->getRouteKey()])
-            ->assertActionHidden('delete')
-            ->assertSchemaComponentExists('slug', checkComponentUsing: fn ($component): bool => $component->isDisabled());
-    }
 })->with(['admin-konten', 'super-admin']);
 
-it('AC-33: a forced delete of a system page from the table changes nothing', function (string $role) {
+it('AC-6 (F048): deleting a former system page from the table removes it', function (string $role) {
     $this->actingAs(kontenUser($role));
 
-    try {
-        Livewire::test(ListStaticPages::class)->callTableAction('delete', $this->page);
-    } catch (Throwable) {
-        // aksi tersembunyi: boleh melempar
-    }
+    Livewire::test(ListStaticPages::class)->callAction(TestAction::make('delete')->table($this->page));
 
-    expect(StaticPage::findBySlug('profil'))->not->toBeNull();
+    expect(StaticPage::findBySlug('profil'))->toBeNull();
 })->with(['admin-konten', 'super-admin']);
 
 it('AC-33: deletes a free page after confirmation and names it in the notification', function () {
@@ -179,13 +181,21 @@ it('AC-34: grants create and delete (but not delete-any) to content admins, idem
         ->and(Permission::query()->where('name', 'delete:static-page')->count())->toBe(1);
 });
 
-it('AC-34: the policy denies deleting system pages even for a super admin when called directly', function () {
-    $super = kontenUser('super-admin');
+it('AC-10 (F048): the policy lets anyone with delete permission delete any page and nobody without it', function () {
+    $policy = new StaticPagePolicy;
     $free = staticPage();
 
-    expect((new StaticPagePolicy)->delete($super, $this->page))->toBeFalse()
-        ->and((new StaticPagePolicy)->delete(kontenUser('admin-konten'), $free))->toBeTrue()
-        ->and((new StaticPagePolicy)->create(kontenUser('admin-konten')))->toBeTrue()
-        ->and((new StaticPagePolicy)->create(kontenUser('bendahara')))->toBeFalse()
-        ->and((new StaticPagePolicy)->deleteAny(kontenUser('admin-konten')))->toBeFalse();
+    foreach (['super-admin', 'admin-konten'] as $role) {
+        foreach ([$this->page, $free, StaticPage::findBySlug('kontak')] as $page) {
+            expect($policy->delete(kontenUser($role), $page))->toBeTrue("{$role} {$page->slug}");
+        }
+    }
+
+    foreach (['bendahara', 'admin-sekolah', 'wali'] as $role) {
+        expect($policy->delete(kontenUser($role), $this->page))->toBeFalse($role);
+    }
+
+    expect($policy->create(kontenUser('admin-konten')))->toBeTrue()
+        ->and($policy->create(kontenUser('bendahara')))->toBeFalse()
+        ->and($policy->deleteAny(kontenUser('admin-konten')))->toBeFalse();
 });

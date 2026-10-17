@@ -13,6 +13,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\Resource;
@@ -23,10 +24,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 /**
- * Halaman statis portal (F016, F037). Buat, ubah, dan hapus lewat Action
- * (`CreateStaticPage`, `UpdateStaticPage`, `DeleteStaticPage`). Halaman sistem
- * tidak punya aksi hapus (disembunyikan eksplisit karena super-admin melewati
- * policy) dan slug-nya terkunci. Tanpa aksi massal.
+ * Halaman statis portal (F016, F037, F048). Buat, ubah, dan hapus lewat Action
+ * (`CreateStaticPage`, `UpdateStaticPage`, `DeleteStaticPage`). Semua halaman setara;
+ * yang membedakan hanya template. Tanpa aksi massal.
  */
 class StaticPageResource extends Resource
 {
@@ -76,12 +76,16 @@ class StaticPageResource extends Resource
                             ->maxLength(StaticPage::TITLE_MAX_LENGTH),
                         TextInput::make('slug')
                             ->label(__('pondok.static_page.slug'))
-                            ->helperText(fn (?StaticPage $record): string => $record?->isSystem()
-                                ? __('pondok.static_page.slug_helper_locked')
-                                : __('pondok.static_page.slug_helper_create'))
-                            ->maxLength(StaticPage::SLUG_MAX_LENGTH)
-                            ->disabled(fn (?StaticPage $record): bool => (bool) $record?->isSystem())
-                            ->dehydrated(fn (?StaticPage $record): bool => ! $record?->isSystem()),
+                            ->helperText(__('pondok.static_page.slug_helper_create'))
+                            ->maxLength(StaticPage::SLUG_MAX_LENGTH),
+                        Select::make('template')
+                            ->label(__('pondok.static_page.template'))
+                            ->options(self::templateOptions())
+                            ->default(StaticPage::TEMPLATE_DEFAULT)
+                            ->helperText(__('pondok.static_page.template_helper'))
+                            ->native(false)
+                            ->selectablePlaceholder(false)
+                            ->required(),
                         ToggleButtons::make('status')
                             ->label(__('pondok.static_page.status'))
                             ->options(self::statusOptions())
@@ -114,9 +118,9 @@ class StaticPageResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => StaticPage::STATUS_COLORS[$state] ?? 'gray')
                     ->formatStateUsing(fn (string $state): string => self::statusOptions()[$state] ?? $state),
-                TextColumn::make('kind')
-                    ->label(__('pondok.static_page.kind'))
-                    ->state(fn (StaticPage $record): ?string => $record->isSystem() ? __('pondok.static_page.system_badge') : null)
+                TextColumn::make('template')
+                    ->label(__('pondok.static_page.template'))
+                    ->state(fn (StaticPage $record): ?string => $record->isContact() ? self::templateOptions()[StaticPage::TEMPLATE_CONTACT] : null)
                     ->badge()
                     ->color('gray'),
                 TextColumn::make('updated_at')
@@ -133,11 +137,21 @@ class StaticPageResource extends Resource
     public static function deleteAction(): DeleteAction
     {
         return DeleteAction::make()
-            ->hidden(fn (StaticPage $record): bool => $record->isSystem())
             ->modalHeading(fn (StaticPage $record): string => __('pondok.static_page.delete_heading', ['title' => $record->title]))
             ->modalDescription(__('pondok.static_page.delete_description'))
             ->successNotificationTitle(fn (StaticPage $record): string => __('pondok.static_page.deleted', ['title' => $record->title]))
             ->using(fn (StaticPage $record, DeleteStaticPage $deletePage): bool => tap(true, fn () => $deletePage->handle($record)));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function templateOptions(): array
+    {
+        return [
+            StaticPage::TEMPLATE_DEFAULT => __('pondok.static_page.templates.default'),
+            StaticPage::TEMPLATE_CONTACT => __('pondok.static_page.templates.contact'),
+        ];
     }
 
     /**

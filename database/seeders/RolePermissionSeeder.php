@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -78,12 +79,34 @@ class RolePermissionSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        foreach (self::allPermissions() as $permission) {
-            Permission::findOrCreate($permission, 'web');
+        // Permission yang belum ada ditulis sekaligus. `findOrCreate` per nama membersihkan dan memuat
+        // ulang cache Spatie setiap kali (±650 query untuk ±220 permission, ±0,8 detik per seed),
+        // padahal seeder ini dipanggil di setup sebagian besar test. Hasilnya sama dan tetap idempotent.
+        $existing = Permission::query()->where('guard_name', 'web')->pluck('name')->all();
+        $missing = array_values(array_diff(self::allPermissions(), $existing));
+        $now = now();
+
+        foreach (array_chunk($missing, 100) as $chunk) {
+            Permission::query()->insert(array_map(
+                fn (string $name): array => ['name' => $name, 'guard_name' => 'web', 'created_at' => $now, 'updated_at' => $now],
+                $chunk,
+            ));
         }
 
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // Pivot disinkronkan langsung: `syncPermissions` memuat ulang cache Spatie untuk setiap peran.
+        // Hasil akhirnya sama, yaitu tiap peran punya persis daftar `permissionsFor()`.
+        $ids = Permission::query()->where('guard_name', 'web')->pluck('id', 'name');
+
         foreach (self::ROLES as $role) {
-            Role::findOrCreate($role, 'web')->syncPermissions(self::permissionsFor($role));
+            $names = self::permissionsFor($role);
+
+            foreach ($names as $name) {
+                throw_unless($ids->has($name), PermissionDoesNotExist::create($name, 'web'));
+            }
+
+            Role::findOrCreate($role, 'web')->permissions()->sync($ids->only($names)->values()->all());
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

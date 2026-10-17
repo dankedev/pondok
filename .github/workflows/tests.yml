@@ -1,0 +1,56 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pest:
+    name: Pest (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.3 adalah target cPanel (composer platform 8.3.15); 8.4 dipakai di mesin pengembang.
+        php: ['8.3', '8.4']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl, gd, zip, pdo_sqlite, sqlite3, fileinfo, exif
+          coverage: none
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependensi PHP
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Build aset
+        # Beberapa test memeriksa public/build/manifest.json (paket rilis).
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Siapkan .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Jalankan test
+        run: php artisan test --compact --parallel

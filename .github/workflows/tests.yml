@@ -13,7 +13,7 @@ jobs:
   pest:
     name: Pest (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -48,9 +48,13 @@ jobs:
           pnpm run build
 
       - name: Siapkan .env
+        # Seeder super-admin butuh kata sandi, dan beberapa test URL mengandaikan APP_URL tanpa port.
         run: |
           cp .env.example .env
+          sed -i 's|^APP_URL=.*|APP_URL=http://localhost|' .env
+          sed -i 's|^SUPER_ADMIN_PASSWORD=.*|SUPER_ADMIN_PASSWORD=ci-password-only|' .env
           php artisan key:generate
 
       - name: Jalankan test
-        run: php artisan test --compact --parallel
+        # Runner GitHub punya 4 vCPU.
+        run: php artisan test --compact --parallel --processes=4

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Konten\FormatPhoneForDisplay;
 use App\Actions\Konten\StorePublicImage;
 use App\Models\AcademicYear;
 use App\Models\AdmissionWave;
@@ -216,13 +217,19 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     foreach (['Mojosari', 'Belitang', 'OKU Timur'] as $part) {
         expect((string) Setting::get('school.address'))->toContain($part);
     }
-    demoCheck(filled(Setting::get('school.phone')) && filled(Setting::get('school.email')), 'AC-5 telepon dan email');
+    // F044: telepon kantor menjadi kontak "Kantor" bertanda cetak; school.phone tidak ada lagi.
+    $printContacts = collect(Setting::get('school.contacts'))->where('is_print', true);
+    demoCheck($printContacts->count() === 1 && $printContacts->first()['label'] === 'Kantor' && Setting::get('school.phone') === null && filled(Setting::get('school.email')), 'AC-5 kontak Kantor bertanda cetak dan email');
     // F037: konten profil dipecah ke halaman profil, pengurus, dan selayang-pandang.
     $profil = DB::table('pages')->whereIn('slug', ['profil', 'pengurus', 'selayang-pandang'])->get(['title', 'body'])->map(fn (object $row): string => $row->title.' '.$row->body)->implode(' ');
     foreach (['Tentang Yayasan', 'Selayang Pandang', 'Pengurus Al-Khair', 'khusus putra'] as $part) {
         demoCheck(str_contains($profil, $part), "AC-5 profil memuat {$part}");
     }
-    demoCheck(str_contains((string) DB::table('pages')->where('slug', 'kontak')->value('body'), 'Mojosari'), 'AC-5 kontak memuat Mojosari');
+    $kontakBody = (string) DB::table('pages')->where('slug', 'kontak')->value('body');
+    foreach (['Mojosari', 'info@alkhair-belitang.test', '0735', '0812 0000 0170'] as $retyped) {
+        demoCheck(! str_contains($kontakBody, $retyped), "AC-8 halaman kontak tidak mengetik ulang {$retyped}");
+    }
+    demoCheck(str_contains($kontakBody, 'Jam layanan'), 'AC-8 halaman kontak memuat jam layanan');
     demoCheck(filled(DB::table('pages')->where('slug', 'visi-misi')->value('body')), 'AC-5 visi-misi');
     foreach ([['posts', 'body'], ['posts', 'title'], ['pages', 'body']] as [$table, $column]) {
         demoCheck(DB::table($table)->where($column, 'like', '%lorem%')->count() === 0, "AC-5 lorem di {$table}.{$column}");
@@ -641,8 +648,8 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $profileKeys = ['school.contacts', 'school.social_links', 'portal.hero_greeting', 'portal.highlights', 'portal.hero_album_id', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
     $contacts = collect(Setting::get('school.contacts'));
     expect($contacts->count())->toBeGreaterThanOrEqual(2)
-        ->and($contacts->pluck('label')->all())->toContain('Panitia PSB', 'Sekretariat')
-        ->and($contacts->every(fn (array $c): bool => preg_match('/^08120000[0-9]{4}$/', $c['phone']) === 1 && preg_match('/^[a-z0-9]{8}$/', $c['key']) === 1))->toBeTrue();
+        ->and($contacts->pluck('label')->all())->toContain('Panitia PSB', 'Sekretariat', 'Kantor')
+        ->and($contacts->every(fn (array $c): bool => preg_match('/^(08120000|0735000)[0-9]{4}$/', $c['phone']) === 1 && preg_match('/^[a-z0-9]{8}$/', $c['key']) === 1))->toBeTrue();
     $socials = collect(Setting::get('school.social_links'));
     expect($socials->count())->toBeGreaterThanOrEqual(2)
         ->and($socials->every(fn (array $l): bool => str_starts_with($l['url'], 'https://')))->toBeTrue();
@@ -912,7 +919,14 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
     $this->get('/')->assertOk()->assertSee("Generasi Beradab Bersama Al-Qur'an");
     $this->get('/berita')->assertOk()->assertSee('Penerimaan Santri Baru');
     $this->get('/profil')->assertOk()->assertSee('Selayang Pandang');
-    $this->get('/kontak')->assertOk()->assertSee('Mojosari');
+    $kontakHtml = $this->get('/kontak')->assertOk()->assertSee('Mojosari')->getContent();
+    preg_match('#<main\b.*?</main>#is', $kontakHtml, $kontakMain);
+    $kontak = profilVisibleText($kontakMain[0] ?? '');
+    foreach (Setting::get('school.contacts') as $contact) {
+        $shown = app(FormatPhoneForDisplay::class)->handle($contact['phone']);
+        expect(substr_count($kontak, $shown))->toBe(1, "AC-8 nomor {$shown} tepat sekali di /kontak");
+    }
+    expect(substr_count($kontak, 'info@alkhair-belitang.test'))->toBe(1);
 
     // Dashboard panel untuk setiap akun demo tidak error; portal terbit tampil.
     foreach (array_keys(DEMO_ACCOUNTS) as $role) {

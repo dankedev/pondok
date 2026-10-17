@@ -14,14 +14,21 @@ use App\Models\StaticPage;
  */
 final class DemoData
 {
+    /** Identitas (lewat `UpdateSchoolProfile`) dan alamat/email (lewat `UpdateSchoolContacts`, F044). */
     public const SCHOOL = [
         'name' => "Ma'had Al-Khair Belitang",
         'tagline' => "Generasi Beradab Bersama Al-Qur'an",
         'address' => 'Jl. Raya Belitang–Martapura, Mojosari, Belitang, OKU Timur, Sumatera Selatan',
-        'phone' => '0735 000 0170',
-        'whatsapp' => '0812 0000 0170',
         'email' => 'info@alkhair-belitang.test',
     ];
+
+    /**
+     * Nilai yang diketik ulang halaman Kontak demo versi lama (F037). Halaman `kontak`
+     * yang isinya memuat salah satu nilai ini diganti dengan isi baru (F044).
+     *
+     * @var list<string>
+     */
+    public const OLD_CONTACT_PAGE_VALUES = ['info@alkhair-belitang.test', '0735 000 0170', '0812 0000 0170'];
 
     /**
      * Profil lembaga demo (F036): contoh isian admin, bukan teks bawaan aplikasi.
@@ -31,8 +38,9 @@ final class DemoData
         'short_name' => 'Al-Khair',
         'arabic_name' => 'معهد الخير',
         'contacts' => [
-            ['label' => 'Panitia PSB', 'name' => null, 'phone' => '081200000171', 'is_whatsapp' => true],
-            ['label' => 'Sekretariat', 'name' => null, 'phone' => '081200000170', 'is_whatsapp' => true],
+            ['label' => 'Kantor', 'name' => null, 'phone' => '07350000170', 'is_whatsapp' => false, 'is_print' => true],
+            ['label' => 'Panitia PSB', 'name' => null, 'phone' => '081200000171', 'is_whatsapp' => true, 'is_print' => false],
+            ['label' => 'Sekretariat', 'name' => null, 'phone' => '081200000170', 'is_whatsapp' => true, 'is_print' => false],
         ],
         'social_links' => [
             ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.contoh.test/alkhair.belitang'],
@@ -551,7 +559,8 @@ final class DemoData
             'pengurus' => ['title' => 'Pengurus Al-Khair', 'body' => '<p>Pengurus '.self::FOUNDATION." dan pimpinan ma'had:</p><ul>{$board}</ul>"],
             'selayang-pandang' => ['title' => 'Selayang Pandang', 'body' => "<p>Ma'had Al-Khair Belitang berfokus pada tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum dan pembinaan adab. Jenjang yang dibuka adalah MTW/SMP dan TSN/SMA, khusus putra.</p><ul><li>Masjid, asrama, dan ruang belajar ber-AC</li><li>Makan 3 kali sehari dan laundry setiap hari</li><li>Pendampingan musyrif di setiap kamar</li><li>Perpustakaan dan fasilitas olahraga</li></ul>"],
             'visi-misi' => ['title' => 'Visi dan Misi', 'body' => "<h2>Visi</h2><p>Menjadi ma'had yang melahirkan generasi beradab bersama Al-Qur'an, berilmu syar'i, dan siap melanjutkan studi.</p><h2>Misi</h2><ul><li>Menyelenggarakan pembinaan tahsin dan tahfidz Al-Qur'an yang tertib dan bertahap.</li><li>Membiasakan bahasa Arab aktif dalam kegiatan harian.</li><li>Mengajarkan ilmu syar'i berdasarkan Al-Qur'an dan Sunnah dengan pemahaman yang lurus.</li><li>Membina adab dan akhlak santri melalui kehidupan berasrama.</li><li>Memadukan pendidikan agama dan pendidikan umum secara seimbang.</li></ul>"],
-            'kontak' => ['title' => 'Kontak', 'body' => '<p>'.self::SCHOOL['address'].'</p><ul><li>Telepon: '.self::SCHOOL['phone'].'</li><li>WhatsApp: '.self::SCHOOL['whatsapp'].'</li><li>Email: '.self::SCHOOL['email'].'</li></ul><h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>'],
+            // Alamat, nomor, dan email tampil dari Kontak & sosial di bawah isi halaman (F044); isi hanya keterangan.
+            'kontak' => ['title' => 'Kontak', 'body' => '<h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>'],
         ];
 
         return array_map(fn (array $page): array => [...$page, 'status' => StaticPage::STATUS_PUBLISHED], $pages);

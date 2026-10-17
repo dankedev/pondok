@@ -5,6 +5,8 @@ use App\Models\Setting;
 use App\Models\StaticPage;
 use Database\Seeders\ContentCategorySeeder;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\Demo\DemoContent;
+use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\SettingSeeder;
 use Database\Seeders\StaticPageSeeder;
 
@@ -91,4 +93,45 @@ it('AC-3 (F037): seeds system pages with draft profile and published contact', f
     expect(StaticPage::query()->where('slug', 'profil')->first())->status->toBe('terbit')->body->toBe('<p>Diisi</p>')
         ->and(StaticPage::query()->where('slug', 'kontak')->value('status'))->toBe('draft')
         ->and(Setting::query()->whereIn('key', ['portal.navigation_primary', 'portal.navigation_footer', 'portal.header_button', 'portal.footer_text'])->count())->toBe(0);
+});
+
+/**
+ * Isi halaman Kontak demo versi lama (F037): mengetik ulang alamat, telepon, WhatsApp, dan email demo.
+ */
+function oldDemoContactBody(): string
+{
+    return '<p>Jl. Raya Belitang–Martapura, Mojosari, Belitang, OKU Timur, Sumatera Selatan</p><ul><li>Telepon: 0735 000 0170</li><li>WhatsApp: 0812 0000 0170</li><li>Email: info@alkhair-belitang.test</li></ul><h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>';
+}
+
+it('AC-8 (F044): the demo contact page holds only the service hours and never retypes address, phone or email', function () {
+    $this->seed(StaticPageSeeder::class);
+    Setting::set('school.address', 'Alamat demo');
+
+    (new DemoContent(new DemoContext))->profile();
+
+    $body = (string) StaticPage::findBySlug('kontak')->body;
+
+    expect($body)->toContain('Jam layanan')
+        ->not->toContain('Mojosari')->not->toContain('0735')->not->toContain('0812 0000 0170')->not->toContain('info@alkhair-belitang.test');
+});
+
+it('AC-8 (F044): repairs the old demo contact page, stays idempotent, and leaves an admin-written contact page alone', function () {
+    $this->seed(StaticPageSeeder::class);
+    Setting::set('school.address', 'Alamat demo');
+    $page = StaticPage::findBySlug('kontak');
+    $page->update(['body' => oldDemoContactBody()]);
+
+    (new DemoContent(new DemoContext))->profile();
+    $repaired = (string) $page->fresh()->body;
+    (new DemoContent(new DemoContext))->profile();
+
+    expect($repaired)->toContain('Jam layanan')->not->toContain('Mojosari')->not->toContain('info@alkhair-belitang.test')->not->toContain('0735')
+        ->and((string) $page->fresh()->body)->toBe($repaired);
+
+    $custom = '<p>Datang langsung ke kantor kami di Jl. Mawar 5. Telepon 0711 123 456.</p>';
+    $page->update(['body' => $custom]);
+
+    (new DemoContent(new DemoContext))->profile();
+
+    expect((string) $page->fresh()->body)->toBe($custom);
 });

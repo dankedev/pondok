@@ -36,21 +36,56 @@ final class DemoContent
     public function profile(): void
     {
         if (blank(Setting::get('school.address'))) {
-            app(UpdateSchoolProfile::class)->handle(DemoData::SCHOOL, $this->context->user('super-admin'));
+            $this->seedSchoolIdentity();
         }
 
         // Halaman sistem diisi bila masih kosong; halaman demo lain dibuat bila belum ada (F037).
+        // Halaman Kontak demo lama yang mengetik ulang kontak diganti isi baru (F044).
         foreach (DemoData::pages() as $slug => $page) {
             $model = StaticPage::query()->where('slug', $slug)->first();
 
             if ($model === null && ! in_array($slug, StaticPage::SYSTEM_SLUGS, true)) {
                 $this->ensureAllowedContent($page['title'].' '.$page['body']);
                 app(CreateStaticPage::class)->handle([...$page, 'slug' => $slug]);
-            } elseif ($model !== null && blank($model->body)) {
+            } elseif ($model !== null && (blank($model->body) || ($slug === 'kontak' && $this->isOldDemoContactPage((string) $model->body)))) {
                 $this->ensureAllowedContent($page['title'].' '.$page['body']);
                 app(UpdateStaticPage::class)->handle($model, $page);
             }
         }
+    }
+
+    /**
+     * Nama dan slogan lewat `UpdateSchoolProfile`; alamat dan email lewat `UpdateSchoolContacts`
+     * (F044), dengan kontak, media sosial, dan tautan peta yang sudah tersimpan dipertahankan.
+     */
+    private function seedSchoolIdentity(): void
+    {
+        $actor = $this->context->user('super-admin');
+        $school = DemoData::SCHOOL;
+
+        app(UpdateSchoolProfile::class)->handle(collect($school)->only(['name', 'tagline'])->all(), $actor);
+
+        $profile = app(GetSchoolProfile::class)->handle();
+
+        app(UpdateSchoolContacts::class)->handle([
+            'address' => $school['address'],
+            'email' => $profile['email'] ?? $school['email'],
+            'map_url' => $profile['map_url'],
+            'contacts' => $profile['contacts'],
+            'social_links' => $profile['social_links'],
+        ], $actor);
+    }
+
+    /**
+     * Isi halaman Kontak demo versi lama: memuat email atau nomor demo persis.
+     * Halaman Kontak tulisan admin tidak memuat nilai fiktif ini, jadi tidak disentuh.
+     * Nilai dicocokkan utuh: nomor atau email yang hanya mirip (lebih panjang) tidak dianggap sama.
+     */
+    private function isOldDemoContactPage(string $body): bool
+    {
+        return collect(DemoData::OLD_CONTACT_PAGE_VALUES)->contains(
+            fn (string $value): bool => preg_match('/(?<![\w.@-])'.preg_quote($value, '/').'(?![\w@-])/u', $body) === 1,
+        );
     }
 
     public function run(): void
@@ -70,7 +105,7 @@ final class DemoContent
         $demo = DemoData::INSTITUTION;
         $profile = app(GetSchoolProfile::class)->handle();
 
-        $identity = collect($profile)->only(['name', 'short_name', 'arabic_name', 'tagline', 'address', 'phone', 'email'])->all();
+        $identity = collect($profile)->only(['name', 'short_name', 'arabic_name', 'tagline'])->all();
         $identity['short_name'] ??= $demo['short_name'];
         $identity['arabic_name'] ??= $demo['arabic_name'];
 
@@ -86,6 +121,8 @@ final class DemoContent
 
         if ($profile['contacts'] === [] && $profile['social_links'] === []) {
             app(UpdateSchoolContacts::class)->handle([
+                'address' => $profile['address'],
+                'email' => $profile['email'],
                 'map_url' => $profile['map_url'],
                 'contacts' => $demo['contacts'],
                 'social_links' => $demo['social_links'],

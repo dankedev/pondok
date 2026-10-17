@@ -88,7 +88,7 @@ Wajib ada test Pest untuk:
 Cara menjalankan test (mesin pengembang hanya 8GB RAM):
 - Selama bekerja, jalankan file test yang terdampak saja (`php artisan test --compact <path>`).
 - Suite penuh dijalankan **sekali** di akhir fitur, di PHP 8.4, oleh sesi utama dan bukan oleh subagent. Cek `memory_pressure` dulu, dan jangan jalankan dua suite bersamaan, termasuk dari sesi lain (`Storage::fake` bisa bentrok).
-- PHP 8.3 (target cPanel) dan 8.4 dijalankan GitHub Actions (`.github/workflows/tests.yml`) setiap push ke `main` dan setiap PR. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
+- PHP 8.3 (target cPanel) dijalankan GitHub Actions (`.github/workflows/tests.yml`) setiap push ke `main`, atau manual lewat tab Actions. Repo private dengan kuota menit terbatas, jadi push dikelompokkan (mis. satu push per fitur selesai), bukan per commit. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
 - Test baru ditulis untuk perilaku yang berubah dan risiko nyata. Jangan menambah test hanya untuk menaikkan jumlah. Verifikasi adversarial (mode VERIFY) menambah paling banyak ±15 test, dan hanya untuk celah yang benar-benar dicurigai.
 
 ## Alur kerja agent

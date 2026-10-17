@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F049",
+  "next_id": "F050",
   "features": [
     {
       "id": "F001",
@@ -889,6 +889,29 @@
       "handoff": null,
       "evidence": "Commit 23b51b2, b31955b, cf09407, 7c882dd. Test lulus: Http/Portal, Filament, Actions/Konten, Database (termasuk F048VerifyGapsTest); Pint lulus. Suite penuh belum dijalankan.",
       "notes": "jalur: penuh; audit S4. Excerpt, gambar unggulan, meta, template wide, dan is_featured posts/albums di luar cakupan (tidak ada pemakai di portal sekarang). Rencana: docs/plans/F048-plan.md."
+    },
+    {
+      "id": "F049",
+      "key": "konten-taksonomi-berita",
+      "name": "Taksonomi berita disederhanakan (jenis berita menjadi kategori)",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": [
+        "F047"
+      ],
+      "description": "Audit UI/UX S6 (§1 butir 7, §2.4, §5.7 bagian jenis berita). Kolom posts.type (kegiatan/prestasi/berita) dihapus dari admin dan portal (filter jenis, badge); data dimigrasikan menjadi kategori. Berita dari Prestasi otomatis berkategori Prestasi.",
+      "acceptance": [
+        "Form, tabel, dan filter admin tidak lagi punya Jenis; portal tanpa filter jenis dan badge jenis",
+        "Migrasi memberi kategori sesuai tipe (kegiatan, prestasi) pada post yang belum berkategori, lalu menghapus kolom type",
+        "PublishAchievementAsPost memakai kategori Prestasi (dibuat bila belum ada)",
+        "Blok feed beranda tetap berjalan tanpa type",
+        "Rincian di docs/plans/F049-plan.md"
+      ],
+      "owner": "",
+      "handoff": null,
+      "evidence": "commit de11253; suite penuh 4084 test lulus; VERIFY PASS",
+      "notes": "jalur: penuh; audit S6. Berita terkait, tautan kategori baru, dan setting baru di luar cakupan. Rencana: docs/plans/F049-plan.md."
     }
   ]
 }

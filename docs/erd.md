@@ -796,10 +796,11 @@ erDiagram
   }
   pages {
     bigint id PK
-    string slug UK "maks 50; sistem: profil | visi-misi | kontak"
+    string slug UK "maks 50 halaman"
     string title
     longtext body
     string status "draft | terbit, default DB terbit"
+    string template "default | contact, default DB default"
   }
   settings {
     string key PK "school.name, school.logo_path, psb.contact"
@@ -823,7 +824,7 @@ erDiagram
   - Navigasi portal (F043, menggantikan `portal.menu_items`, `portal.menu_show_register`, `portal.footer_links`, dan `portal.footer_quote_*` lewat migrasi `2026_10_19_000000_move_portal_navigation_settings`): `portal.navigation_primary` (JSON list Item, maks 8 akar; grup maks 8 anak, satu tingkat), `portal.header_button` (satu Item tanpa grup, atau `false` = tanpa tombol). Item = `{type, label: ?string, page_id?, category_id?, url?, children?}`, `type` ∈ `home page posts category albums videos psb.info psb.register psb.status letters.verify url group`; label wajib untuk `url` dan `group` (≤30 menu/tombol, ≤60 widget Tautan footer), selain itu fallback ke judul halaman, nama kategori, atau label bawaan. Key tidak ada = bawaan (menu F037; tombol `psb.register`); `[]` = tanpa item. Tujuan yang tidak tersedia (modul mati, halaman draf, daftar kosong, route belum ada) tidak dirender. Menghapus halaman membuang rujukan `page_id`-nya dari menu utama (grup yang jadi kosong ikut dibuang) dan tombol header (menjadi `false`); rujukan di widget footer dan blok beranda tidak diubah, cukup tidak dirender. `portal.navigation_footer` F043 dipindah menjadi widget Tautan oleh migrasi F046.
   - Key lama `school.whatsapp`, `school.instagram_url`, `school.facebook_url`, `school.youtube_url` dipindah ke daftar baru lalu dihapus oleh migrasi `2026_10_17_000000_move_school_profile_settings`.
 - `posts.author_id` nullable dengan `nullOnDelete`: menghapus user tidak menghapus atau menahan beritanya. `posts.achievement_id` unique (satu berita per prestasi, termasuk berita terhapus) dengan FK `restrictOnDelete` ke `achievements` (F015; id yatim dibersihkan saat migrasi).
-- Nama dan slug kategori unik per `type`. `posts.body` dan `pages.body` adalah HTML tersanitasi; tabel model `pages` adalah `StaticPage` di kode. Halaman bisa dibuat dan dihapus admin (F037), maks 50; tiga halaman sistem (`profil`, `visi-misi`, `kontak`) tidak bisa dihapus dan slug-nya terkunci. Slug halaman bebas tidak boleh bentrok dengan slug cadangan, route, atau berkas di `public/`. Portal hanya menampilkan halaman `terbit`; migrasi `2026_10_18_000000_add_status_to_pages_table` menjadikan baris lama `terbit` dan menambahkan tautan Visi & misi ke `portal.footer_links` (sejak F043 dipindah ke `portal.navigation_footer`, sejak F046 ke widget Tautan `portal.footer_widgets`).
+- Nama dan slug kategori unik per `type`. `posts.body` dan `pages.body` adalah HTML tersanitasi; tabel model `pages` adalah `StaticPage` di kode. Halaman bisa dibuat dan dihapus admin (F037), maks 50; semua halaman setara (tanpa halaman sistem, slug bebas diubah dan halaman bebas dihapus) dan hanya dibedakan `template` (F048): `default`, atau `contact` yang menampilkan kartu kontak lembaga dan tersembunyi saat data kontak kosong. Migrasi `2026_10_21_000000_add_template_to_pages_table` menjadikan baris ber-slug `kontak` bertemplate `contact`. Slug halaman bebas tidak boleh bentrok dengan slug cadangan, route, atau berkas di `public/`. Portal hanya menampilkan halaman `terbit`; migrasi `2026_10_18_000000_add_status_to_pages_table` menjadikan baris lama `terbit` dan menambahkan tautan Visi & misi ke `portal.footer_links` (sejak F043 dipindah ke `portal.navigation_footer`, sejak F046 ke widget Tautan `portal.footer_widgets`).
 - Kolom `type`/`status` konten disimpan sebagai string dan divalidasi di Action (portabel SQLite/MySQL/Postgres).
 
 ## Pengguna & RBAC

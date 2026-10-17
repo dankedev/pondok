@@ -1389,12 +1389,6 @@ return [
         'section_content' => 'Isi',
         'section_media' => 'Sampul & video',
         'section_publication' => 'Penerbitan',
-        'type' => 'Jenis',
-        'types' => [
-            'kegiatan' => 'Kegiatan',
-            'prestasi' => 'Prestasi',
-            'berita' => 'Berita',
-        ],
         'title' => 'Judul',
         'slug' => 'Slug',
         'slug_helper' => 'Kosongkan untuk dibuat otomatis dari judul.',
@@ -1993,14 +1987,9 @@ return [
         'posts' => [
             'titles' => [
                 'all' => 'Berita & kegiatan',
-                'berita' => 'Berita',
-                'kegiatan' => 'Kegiatan',
-                'prestasi' => 'Prestasi',
             ],
-            'filter_types_label' => 'Saring menurut jenis',
             'filter_categories_label' => 'Saring menurut kategori',
             'filter_units_label' => 'Saring menurut jenjang',
-            'all_types' => 'Semua',
             'all_categories' => 'Semua kategori',
             'all_units' => 'Semua jenjang',
             'empty' => 'Belum ada berita yang diterbitkan.',

@@ -177,7 +177,7 @@ it('AC-33: publishes an achievement as a draft post', function () {
 
     $post = Post::query()->sole();
 
-    expect($post->achievement_id)->toBe($ready->id)->and($post->status)->toBe('draft')->and($post->type)->toBe('prestasi')
+    expect($post->achievement_id)->toBe($ready->id)->and($post->status)->toBe('draft')->and($post->category->name)->toBe('Prestasi')
         ->and($post->author_id)->toBe($f->admin->id);
 
     Livewire::test(EditPost::class, ['record' => $post->getRouteKey()])->assertSuccessful();

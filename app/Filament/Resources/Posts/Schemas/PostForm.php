@@ -37,11 +37,6 @@ class PostForm
                     ->columnSpan(['default' => 3, 'lg' => 2])
                     ->columns(2)
                     ->schema([
-                        Select::make('type')
-                            ->label(__('pondok.post.type'))
-                            ->options(__('pondok.post.types'))
-                            ->default(Post::TYPE_NEWS)
-                            ->required(),
                         TextInput::make('title')
                             ->label(__('pondok.post.title'))
                             ->required()

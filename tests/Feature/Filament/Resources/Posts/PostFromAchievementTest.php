@@ -71,7 +71,7 @@ it('AC-34: creates a post from an achievement', function () {
 
     $post = Post::query()->where('achievement_id', $ready->id)->sole();
 
-    expect($post->status)->toBe('draft')->and($post->type)->toBe('prestasi')->and($post->author_id)->toBe($f->c->id)
+    expect($post->status)->toBe('draft')->and($post->category->name)->toBe('Prestasi')->and($post->author_id)->toBe($f->c->id)
         ->and(Post::withTrashed()->count())->toBe(3);
 });
 

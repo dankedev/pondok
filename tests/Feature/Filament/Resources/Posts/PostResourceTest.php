@@ -21,7 +21,6 @@ beforeEach(function () {
 function kontenPostForm(array $overrides = []): array
 {
     return [
-        'type' => 'berita',
         'title' => 'Wisuda Tahfidz 2026',
         'body' => '<p>Alhamdulillah</p>',
         'status' => 'draft',
@@ -74,11 +73,11 @@ it('AC-19: shows body and cover errors on their fields', function () {
         ->and(Post::query()->count())->toBe(0);
 });
 
-it('AC-19: requires title, type, body and status', function () {
+it('AC-19: requires title, body and status', function () {
     Livewire::test(CreatePost::class)
-        ->fillForm(['type' => null, 'title' => null, 'body' => null, 'status' => null])
+        ->fillForm(['title' => null, 'body' => null, 'status' => null])
         ->call('create')
-        ->assertHasFormErrors(['type', 'title', 'body', 'status']);
+        ->assertHasFormErrors(['title', 'body', 'status']);
 
     expect(Post::query()->count())->toBe(0);
 });
@@ -146,14 +145,26 @@ it('AC-20: hides soft-deleted posts unless the trashed filter asks for them', fu
         ->assertCanSeeTableRecords([$live, $trashed]);
 });
 
-it('AC-20: filters by type and status and searches by title', function () {
-    $news = kontenPost(['title' => 'Berita satu', 'type' => 'berita']);
-    $activity = kontenPost(['title' => 'Kegiatan satu', 'type' => 'kegiatan', 'status' => 'terbit', 'published_at' => '2026-10-14 08:00:00']);
+it('AC-6: has no type field, column or filter', function () {
+    Livewire::test(CreatePost::class)->assertSchemaComponentDoesNotExist('type');
+
+    $table = Livewire::test(ListPosts::class)->instance()->getTable();
+
+    expect($table->getColumn('type'))->toBeNull()
+        ->and($table->getFilter('type'))->toBeNull()
+        ->and($table->getColumn('category.name'))->not->toBeNull()
+        ->and($table->getFilter('category_id'))->not->toBeNull();
+});
+
+it('AC-6: filters by category and status and searches by title', function () {
+    $category = kontenCategory('post', 'Kegiatan');
+    $news = kontenPost(['title' => 'Berita satu']);
+    $activity = kontenPost(['title' => 'Kegiatan satu', 'category_id' => $category->id, 'status' => 'terbit', 'published_at' => '2026-10-14 08:00:00']);
 
     Livewire::test(ListPosts::class)
-        ->filterTable('type', 'kegiatan')
+        ->filterTable('category_id', $category->id)
         ->assertCanSeeTableRecords([$activity])->assertCanNotSeeTableRecords([$news])
-        ->removeTableFilter('type')
+        ->removeTableFilter('category_id')
         ->filterTable('status', 'draft')
         ->assertCanSeeTableRecords([$news])->assertCanNotSeeTableRecords([$activity])
         ->removeTableFilter('status')

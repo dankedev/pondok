@@ -36,9 +36,6 @@ class PostsTable
                     ->description(fn (Post $record): string => $record->slug)
                     ->searchable()
                     ->wrap(),
-                TextColumn::make('type')
-                    ->label(__('pondok.post.type'))
-                    ->formatStateUsing(fn (string $state): string => __("pondok.post.types.{$state}")),
                 TextColumn::make('category.name')
                     ->label(__('pondok.post.category'))
                     ->placeholder('-'),
@@ -62,9 +59,6 @@ class PostsTable
                     ->formatStateUsing(fn (string $state): string => __("pondok.post.statuses.{$state}")),
             ])
             ->filters([
-                SelectFilter::make('type')
-                    ->label(__('pondok.post.type'))
-                    ->options(__('pondok.post.types')),
                 SelectFilter::make('status')
                     ->label(__('pondok.post.status'))
                     ->options([

@@ -20,3 +20,5 @@
 - Is mindful of API/usage limits and prefers lean, token-efficient workflows. Confidence: 0.7
 - Risk-averse about implementing recommended changes: worries they will conflict with or break existing working behavior, and appreciates recommendations being grouped by risk so safe, config-only changes can be done first. Confidence: 0.85
 - Prefers that overlapping or conflicting recommendations across documents/reports be consolidated under a single owning document rather than duplicated in both; each action should live in exactly one place to avoid conflict. Confidence: 0.7
+- Tracks features/roadmap in a structured JSON file (feature_list.json) with an incrementing `next_id` and structured entries (id, key, name, phase, module, status, depends_on, description, acceptance, owner, handoff, evidence, notes); wants both completed work and audit/assessment recommendations recorded there as `todo`/`deferred` entries (not just left in a standalone report), and the JSON kept valid. Confidence: 0.9
+- Prefers feature IDs / `next_id` to advance sequentially without gaps — do not skip or jump by arbitrary numbers (e.g. "urut jangan lompat 10 angka"). Confidence: 0.85

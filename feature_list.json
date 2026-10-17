@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F050",
+  "next_id": "F057",
   "features": [
     {
       "id": "F001",
@@ -912,6 +912,130 @@
       "handoff": null,
       "evidence": "commit de11253; suite penuh 4084 test lulus; VERIFY PASS",
       "notes": "jalur: penuh; audit S6. Berita terkait, tautan kategori baru, dan setting baru di luar cakupan. Rencana: docs/plans/F049-plan.md."
+    },
+    {
+      "id": "F050",
+      "key": "inti-profil-akun",
+      "name": "Halaman profil & edit profil pengguna login",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F001"],
+      "description": "Mengaktifkan halaman profil bawaan Filament di /admin/profile untuk pengguna yang sedang login: menampilkan dan mengedit nama, email, dan kata sandi. Item menu Profil otomatis muncul di menu user.",
+      "acceptance": [
+        "Halaman /admin/profile hanya bisa dibuka pengguna yang sudah login",
+        "Nama, email, dan kata sandi bisa diubah lewat halaman itu",
+        "Menu user menampilkan item Profil"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "test Pest PanelAccessTest 10 passed (31 assertions); route admin.profile terdaftar",
+      "notes": ""
+    },
+    {
+      "id": "F051",
+      "key": "inti-penyempurnaan-aman",
+      "name": "Penyempurnaan risiko rendah (audit ISO 25010/23026 Grup 1)",
+      "phase": 1,
+      "module": "Inti",
+      "status": "todo",
+      "depends_on": ["F001", "F017"],
+      "description": "Tindak lanjut audit kualitas (docs/audits/iso-25010-23026-audit.md) Grup 1: (1) langkah vendor/bin/pint --test di CI, (2) breadcrumb + alt bermakna di portal, (3) samakan ikon Filament dengan design-guide, (4) opsional pecah lang/id per domain.",
+      "acceptance": [
+        "CI menjalankan vendor/bin/pint --test dan gagal bila ada file tidak lolos",
+        "Breadcrumb muncul di berita/galeri/halaman statis; sampul kartu memakai alt judul",
+        "Ikon Filament sesuai tabel docs/design-guide.md §3"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Poin (4) opsional/menunggu keputusan user. Sumber: docs/audits/iso-25010-23026-audit.md."
+    },
+    {
+      "id": "F052",
+      "key": "keuangan-performa-keandalan",
+      "name": "Performa & keandalan keuangan (audit Grup 2)",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F002", "F006", "F007"],
+      "description": "Tindak lanjut audit Grup 2: (1) indeks invoices(status,due_on)/(period,status) dan students(entered_on), (2) antrekan generate tagihan manual & ekspor CSV, (3) pembersih berkas bukti yatim, (4) pertimbangkan cache agregat dashboard.",
+      "acceptance": [
+        "Indeks baru terpasang tanpa mengubah data",
+        "Operasi berat berjalan lewat antrean + notifikasi",
+        "Berkas bukti tanpa Payment dibersihkan berkala"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Poin (4) pertimbangkan. Sumber: docs/audits/iso-25010-23026-audit.md."
+    },
+    {
+      "id": "F053",
+      "key": "psb-uji-konkurensi",
+      "name": "Uji konversi PSB bersamaan di MySQL (audit Grup 3)",
+      "phase": 1,
+      "module": "PSB",
+      "status": "todo",
+      "depends_on": ["F012"],
+      "description": "Tindak lanjut audit Grup 3: verifikasi lock/unique konversi daftar ulang pada MySQL produksi (baru diuji SQLite). Konsolidasi validasi ke FormRequest/DTO dicatat sebagai YAGNI.",
+      "acceptance": [
+        "Dua konversi bersamaan di MySQL tidak menghasilkan data ganda/rusak"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Konsolidasi validasi = YAGNI, tunda sampai ada pemakai kedua. Sumber: docs/audits/iso-25010-23026-audit.md."
+    },
+    {
+      "id": "F054",
+      "key": "inti-keamanan-dasar",
+      "name": "Pengerasan keamanan risiko rendah (audit ISO 27001)",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F001"],
+      "description": "Tindak lanjut audit ISO 27001 (docs/audits/iso-27001-annex-a-audit.md) kelompok aman & kuning: cookie sesi Secure dan payload terenkripsi di produksi, header HSTS, aturan password minimal 8 karakter dengan huruf dan angka, serta aktifkan lupa password di panel.",
+      "acceptance": [
+        "Template produksi memuat SESSION_ENCRYPT=true dan SESSION_SECURE_COOKIE=true",
+        "public/.htaccess memuat header Strict-Transport-Security",
+        "Password wajib memuat huruf dan angka",
+        "Rute lupa password panel terdaftar"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Test Pest lulus: 984 test Filament (tests/Feature/Filament) + CreateSuperAdminTest, UserResourceTest, PanelAccessTest, InstallCommandTest, InstallSeederTest, DemoSeederTest.",
+      "notes": "Belum di-commit (menunggu permintaan user). MFA & verifikasi email ditunda ke F055; enkripsi PII & CSP admin ditunda ke F056; retensi & backup sudah dipegang F042."
+    },
+    {
+      "id": "F055",
+      "key": "inti-mfa-verifikasi-email",
+      "name": "MFA/2FA & verifikasi email (audit ISO 27001)",
+      "phase": 1,
+      "module": "Inti",
+      "status": "deferred",
+      "depends_on": ["F001"],
+      "description": "Aktifkan autentikasi dua faktor (email OTP atau aplikasi TOTP) untuk akun privilese dan verifikasi email. Keduanya menunggu email produksi (SMTP) terkonfigurasi.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "MFA email butuh SMTP; MFA aplikasi butuh dependensi QR/TOTP baru. Verifikasi email butuh MustVerifyEmail dan berisiko mengunci user bila email tidak terkirim. Sumber: docs/audits/iso-27001-annex-a-audit.md."
+    },
+    {
+      "id": "F056",
+      "key": "inti-enkripsi-pii-csp-admin",
+      "name": "Enkripsi data pribadi & CSP panel admin (audit ISO 27001)",
+      "phase": 1,
+      "module": "Inti",
+      "status": "deferred",
+      "depends_on": ["F001"],
+      "description": "Tindak lanjut audit ISO 27001 kelompok merah yang belum tertampung: enkripsi data pribadi saat tersimpan (NISN, tanggal lahir, alamat, telepon, snapshot surat) dan CSP/header keamanan untuk panel admin (/admin).",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "Enkripsi PII berpotensi memengaruhi pencarian/pengurutan dan butuh migrasi data lama. CSP admin harus hati-hati agar Filament/Livewire tidak rusak. Retensi/anonymisasi dan backup sudah dipegang F042 (tidak diduplikasi). Sumber: docs/audits/iso-27001-annex-a-audit.md."
     }
   ]
 }

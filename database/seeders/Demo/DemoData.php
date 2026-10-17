@@ -92,14 +92,16 @@ final class DemoData
                 'rtl' => true,
             ]],
         ],
-        'footer' => [
-            'footer_description' => "Ma'had Al-Khair Belitang: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.",
-            'footer_text' => [
-                'title' => 'Jam layanan tata usaha',
-                'body' => "Senin sampai Kamis dan Sabtu: 08.00 sampai 14.00\nJumat: 08.00 sampai 11.00",
-            ],
-            'footer_show_contacts' => true,
-            'footer_show_social' => true,
+        /** Widget footer (F046), urutan tampil. Item `links`: nama tujuan atau `page:<slug>` (dilewati bila halaman tidak ada). */
+        'footer_widgets' => [
+            ['type' => 'text', 'data' => [
+                'heading' => null,
+                'body' => "<p>Ma'had Al-Khair Belitang: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.</p><p><strong>Jam layanan tata usaha</strong><br>Senin sampai Kamis dan Sabtu: 08.00 sampai 14.00<br>Jumat: 08.00 sampai 11.00</p>",
+                'show_logo' => true,
+            ]],
+            ['type' => 'contacts', 'data' => ['heading' => 'Hubungi kami']],
+            ['type' => 'social', 'data' => ['heading' => 'Ikuti kami']],
+            ['type' => 'links', 'data' => ['heading' => 'Tautan', 'items' => ['page:visi-misi', 'posts', 'psb.status', 'letters.verify']]],
         ],
         /** Logo merek dari `docs/brand/` (dilewati bila berkas tidak ada). */
         'logos' => [
@@ -610,7 +612,6 @@ final class DemoData
             ['label' => 'Tentang Kami', 'children' => ['page:profil', 'page:pengurus', 'page:selayang-pandang', 'page:visi-misi']],
             'posts', 'albums', 'videos', 'psb.info', 'page:kontak',
         ],
-        'footer' => ['page:visi-misi', 'posts', 'psb.status', 'letters.verify'],
         'header_button' => ['type' => 'psb.register', 'label' => 'Daftar PSB'],
     ];
 }

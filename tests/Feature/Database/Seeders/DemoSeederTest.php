@@ -645,7 +645,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect($contentHits)->toBe([]);
 
     // AC-59 (F036): profil lembaga fiktif dan logo merek, lewat seed pertama yang sama.
-    $profileKeys = ['school.contacts', 'school.social_links', 'portal.home_blocks', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
+    $profileKeys = ['school.contacts', 'school.social_links', 'portal.home_blocks', 'portal.footer_widgets', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
     $contacts = collect(Setting::get('school.contacts'));
     expect($contacts->count())->toBeGreaterThanOrEqual(2)
         ->and($contacts->pluck('label')->all())->toContain('Panitia PSB', 'Sekretariat', 'Kantor')
@@ -700,8 +700,11 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         ->and($groups->first()['label'])->not->toBeEmpty()
         ->and(count($groups->first()['children']))->toBeGreaterThanOrEqual(3)
         ->and(collect($groups->first()['children'])->every(fn (array $child): bool => $child['type'] === 'page' && in_array($child['page_id'], $pageIds, true)))->toBeTrue()
-        ->and(Setting::get('portal.navigation_footer'))->toBeArray()->not->toBeEmpty()
-        ->and(Setting::get('portal.footer_text')['body'])->toBeString()->not->toBeEmpty()
+        ->and(array_column(Setting::get('portal.footer_widgets'), 'type'))->toBe(['text', 'contacts', 'social', 'links'])
+        ->and(Setting::get('portal.footer_widgets')[0]['data'])->toMatchArray(['show_logo' => true])
+        ->and(Setting::get('portal.footer_widgets')[0]['data']['body'])->toBeString()->not->toBeEmpty()
+        ->and(Setting::get('portal.footer_widgets')[3]['data']['items'])->toBeArray()->not->toBeEmpty()
+        ->and(Setting::query()->whereIn('key', ['portal.navigation_footer', 'portal.footer_text', 'portal.footer_description', 'portal.footer_show_contacts', 'portal.footer_show_social'])->count())->toBe(0)
         ->and(Setting::get('portal.header_button'))->toBeArray()->and(Setting::get('portal.header_button')['type'])->not->toBeEmpty()
         ->and(Setting::query()->whereIn('key', ['portal.footer_quote_arabic', 'portal.footer_quote_translation', 'portal.footer_quote_source', 'portal.archived_footer_quote', 'portal.menu_items', 'portal.footer_links'])->count())->toBe(0);
     $demoHome = $this->get('/')->assertOk()->getContent();
@@ -709,12 +712,12 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect($demoNav[0])->toBe('Beranda')->and($demoNav)->toContain('Tentang Yayasan', 'Pengurus Al-Khair', 'Selayang Pandang')
         ->and(substr_count(navHtml($demoHome, 'desktop'), '<details'))->toBe(1)
         ->and(profilFooter($demoHome))->not->toContain('<blockquote')->not->toContain('lang="ar"');
-    $demoFooterText = mb_strtolower(json_encode([Setting::get('portal.footer_text'), Setting::get('portal.navigation_footer'), Setting::get('portal.header_button'), $groups->first()['label']], JSON_UNESCAPED_UNICODE));
+    $demoFooterText = mb_strtolower(json_encode([Setting::get('portal.footer_widgets'), Setting::get('portal.header_button'), $groups->first()['label']], JSON_UNESCAPED_UNICODE));
     expect($demoFooterText)->not->toMatch('/\p{Arabic}/u')->not->toMatch('/maulid|haul|tahlilan|harlah|hadrah|shalawatan/');
     $forbidden = ['maulid', "isra' mi'raj", "nuzulul qur'an", 'tahun baru hijriah', "nisfu sya'ban", 'haul', 'tahlilan', 'harlah', 'hadrah', 'shalawatan'];
     $pagesText = mb_strtolower($pages->map(fn (object $row): string => $row->title.' '.$row->body)->implode(' '));
     expect(array_values(array_filter($forbidden, fn (string $word): bool => str_contains($pagesText, $word))))->toBe([]);
-    $menuSnapshot = [Setting::get('portal.navigation_primary'), Setting::get('portal.navigation_footer'), Setting::get('portal.footer_text'), Setting::get('portal.header_button'), DB::table('pages')->count()];
+    $menuSnapshot = [Setting::get('portal.navigation_primary'), Setting::get('portal.footer_widgets'), Setting::get('portal.header_button'), DB::table('pages')->count()];
 
     // AC-7c dan AC-22: ubah password, snapshot, seed kedua saat admin-sekolah login.
     DB::table('users')->where('email', 'musyrif@demo.test')->update(['password' => Hash::make('sudah-diganti-1')]);
@@ -735,7 +738,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     }
     expect(Storage::disk('public')->allFiles('school'))->toHaveCount(4);
     expect(Setting::get('school.logo_path'))->toBe($printLogo);
-    expect([Setting::get('portal.navigation_primary'), Setting::get('portal.navigation_footer'), Setting::get('portal.footer_text'), Setting::get('portal.header_button'), DB::table('pages')->count()])->toBe($menuSnapshot, 'AC-38 menu dan halaman stabil pada seed ulang');
+    expect([Setting::get('portal.navigation_primary'), Setting::get('portal.footer_widgets'), Setting::get('portal.header_button'), DB::table('pages')->count()])->toBe($menuSnapshot, 'AC-38 menu dan halaman stabil pada seed ulang');
 
     // AC-6 (cakupan jenjang) setelah seluruh seeding.
     $this->actingAs(demoUser('admin-sekolah'));

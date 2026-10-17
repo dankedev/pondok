@@ -133,10 +133,8 @@ final class DemoContent
             $this->seedHomeBlocks();
         }
 
-        if ($profile['footer']['description'] === null && $profile['footer']['text'] === null) {
-            $this->ensureAllowedContent(json_encode($demo['footer'], JSON_UNESCAPED_UNICODE));
-
-            app(UpdatePortalFooter::class)->handle($demo['footer'], $actor);
+        if (Setting::get(UpdatePortalFooter::KEY) === null) {
+            $this->seedFooterWidgets();
         }
 
         if (Setting::query()->whereIn('key', GetPortalNavigation::SETTING_KEYS)->doesntExist()) {
@@ -145,28 +143,25 @@ final class DemoContent
     }
 
     /**
-     * Navigasi demo (F043) lewat Action panel: menu bergrup, tautan footer, tombol header.
+     * Navigasi demo (F043) lewat Action panel: menu bergrup dan tombol header.
      */
     private function seedNavigation(): void
     {
         $navigation = DemoData::NAVIGATION;
         $this->ensureAllowedContent(json_encode($navigation, JSON_UNESCAPED_UNICODE));
 
-        $items = fn (array $entries): array => array_values(array_filter(array_map(fn (string $entry): ?array => $this->linkItem($entry), $entries)));
-
         $primary = [];
 
         foreach ($navigation['primary'] as $entry) {
             if (is_string($entry)) {
                 $primary[] = $this->linkItem($entry);
-            } elseif (($children = $items($entry['children'])) !== []) {
+            } elseif (($children = $this->linkItems($entry['children'])) !== []) {
                 $primary[] = ['type' => 'group', 'label' => $entry['label'], 'children' => $children];
             }
         }
 
         app(UpdatePortalNavigation::class)->handle([
             'primary' => array_values(array_filter($primary)),
-            'footer' => $items($navigation['footer']),
             'header_button' => $navigation['header_button'],
         ], $this->context->user('super-admin'));
     }
@@ -198,6 +193,33 @@ final class DemoContent
         }, DemoData::INSTITUTION['home_blocks']);
 
         app(UpdatePortalHome::class)->handle(['home_blocks' => $blocks], $this->context->user('super-admin'));
+    }
+
+    /**
+     * Footer demo (F046) lewat `UpdatePortalFooter`, hanya bila footer belum pernah disimpan.
+     */
+    private function seedFooterWidgets(): void
+    {
+        $this->ensureAllowedContent(json_encode(DemoData::INSTITUTION['footer_widgets'], JSON_UNESCAPED_UNICODE));
+
+        $widgets = array_map(function (array $widget): array {
+            if (isset($widget['data']['items'])) {
+                $widget['data']['items'] = $this->linkItems($widget['data']['items']);
+            }
+
+            return [...$widget, 'visible' => true];
+        }, DemoData::INSTITUTION['footer_widgets']);
+
+        app(UpdatePortalFooter::class)->handle(['footer_widgets' => $widgets], $this->context->user('super-admin'));
+    }
+
+    /**
+     * @param  list<string>  $entries
+     * @return list<array<string, mixed>>
+     */
+    private function linkItems(array $entries): array
+    {
+        return array_values(array_filter(array_map(fn (string $entry): ?array => $this->linkItem($entry), $entries)));
     }
 
     /**

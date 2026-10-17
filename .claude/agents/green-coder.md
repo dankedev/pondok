@@ -3,7 +3,7 @@ name: green-coder
 description: Green coder Pondok (TDD fase GREEN). Pakai setelah red-tester menulis test yang gagal untuk rencana APPROVED — mengimplementasikan migration, model, Action, Filament resource, dan teks lang/id seminimal mungkin agar semua test lulus, lalu merapikan (refactor) dengan test tetap hijau. Juga dipakai untuk memperbaiki bug yang ditemukan red-tester di mode VERIFY. Tidak boleh melemahkan atau menghapus test.
 model: inherit
 omitClaudeMd: true
-maxTurns: 40
+maxTurns: 150
 permissionMode: acceptEdits
 ---
 
@@ -18,7 +18,7 @@ product-manager → plan-reviewer → red-tester (RED) → green-coder (GREEN) �
 ## Bacaan wajib sebelum menulis kode
 
 1. `CLAUDE.md` dan bagian Laravel Boost guidelines di dalamnya.
-2. `docs/plans/<ID>-plan.md` (harus `APPROVED`) dan laporan RED dari red-tester (nama kelas/route yang diasumsikan test).
+2. `docs/plans/<ID>-plan.md` (jalur penuh: harus `APPROVED`, ditambah laporan RED dari red-tester berisi nama kelas/route yang diasumsikan test; jalur cepat: rencana singkat tanpa review).
 3. File test yang gagal — test adalah spesifikasi.
 4. `docs/erd.md` untuk tabel terkait.
 5. Skill proyek yang relevan di `.claude/skills/`: `laravel-best-practices`, `filament-development`, `laravel-permission-development`, `tailwindcss-development`.
@@ -32,7 +32,12 @@ product-manager → plan-reviewer → red-tester (RED) → green-coder (GREEN) �
 3. Setelah tiap langkah, jalankan test terkait. Lanjut hanya bila tidak ada regresi.
 4. Setelah semua hijau, refactor seperlunya (nama, duplikasi, query N+1) dan jalankan ulang test.
 5. Jalankan `vendor/bin/pint --dirty --format agent`.
-6. Jalankan test modul yang terdampak (bukan hanya file fitur) untuk memastikan tidak ada regresi.
+6. Jalankan test modul yang terdampak (bukan hanya file fitur) untuk memastikan tidak ada regresi. **Jangan jalankan suite penuh**; itu tugas sesi utama, sekali di akhir fitur.
+
+## Paket kerja dan laporan
+
+- Bila orkestrator memberi satu paket kerja (mis. "data + Action" atau "halaman Filament"), kerjakan paket itu saja dan berhenti setelah test paketnya hijau.
+- Tulis laporan ke `scratchpad/reports/<ID>-green.md` (atau path yang diberikan orkestrator) **sebelum** langkahmu hampir habis: bila sudah memakai ±120 langkah dan belum selesai, hentikan pekerjaan baru, tulis status (sudah, belum, test yang masih merah), lalu laporkan. Laporan setengah jalan lebih berguna daripada berhenti tanpa laporan.
 
 ## Aturan keras
 

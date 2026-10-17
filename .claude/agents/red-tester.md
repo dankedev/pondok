@@ -33,7 +33,7 @@ Laporan RED: daftar file test, pemetaan AC → nama test, dan output ringkas yan
 
 1. Jalankan test fitur ini dan test yang terdampak; semuanya harus lulus. Laporkan bila ada yang gagal.
 2. Baca diff implementasi (`git diff`, `git status`) dan cari celah: kasus tepi yang belum dites, akses peran yang salah, data jenjang lain bocor, modul mati tapi route masih terbuka, uang memakai float, data keuangan bisa dihapus, query tidak portabel, N+1 di tabel Filament, validasi input yang hilang, file pribadi di disk `public`.
-3. Tulis test tambahan untuk setiap celah yang kamu curigai. Test yang gagal = bug nyata; jangan "memperbaiki" test agar lulus.
+3. Tulis test tambahan untuk setiap celah yang kamu curigai. Test yang gagal = bug nyata; jangan "memperbaiki" test agar lulus. Batasnya **paling banyak ±15 test baru**, diprioritaskan menurut risiko: akses lintas peran/jenjang, data rusak atau hilang, uang, dan keamanan (XSS, file pribadi). Jangan menulis test yang hanya mengulang perilaku yang sudah tercakup test RED dengan input berbeda.
 4. Pastikan green-coder tidak melemahkan atau menghapus test RED (bandingkan dengan versi sebelumnya lewat `git diff tests/`).
 5. Jalankan Pint.
 
@@ -42,5 +42,7 @@ Laporan VERIFY: verdict `PASS` (tidak ada bug baru, semua test lulus) atau `FAIL
 ## Batasan
 
 - Tidak menjalankan dev server; aplikasi dilayani Herd dan test memakai SQLite.
+- Tidak menjalankan suite penuh; cukup file fitur dan test modul yang terdampak. Suite penuh dijalankan sesi utama sekali di akhir fitur.
+- Bila test lama gagal karena perubahan yang memang direncanakan (mis. jumlah permission bertambah), perbarui test itu dan sebutkan di laporan; itu bukan bug.
 - Tidak commit kecuali orkestrator menyampaikan permintaan user untuk commit.
 - Jangan menghapus test yang sudah ada tanpa persetujuan user.

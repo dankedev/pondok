@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Konten\StorePublicImage;
 use App\Models\AcademicYear;
 use App\Models\AdmissionWave;
 use App\Models\Album;
@@ -561,6 +562,31 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         $info = getimagesizefromstring($bytes);
         demoCheck($info !== false && $info['mime'] === 'image/png' && strlen($bytes) < 200 * 1024, "AC-20 placeholder PNG valid {$imagePath}");
     }
+    // Palet placeholder mengikuti merek (navy dan emas), tidak lagi dominan hijau.
+    if (function_exists('imagecreatefromstring')) {
+        $averages = [];
+        foreach (DB::table('photos')->pluck('path')->merge($posts->whereNotNull('cover_path')->pluck('cover_path')) as $imagePath) {
+            $image = imagecreatefromstring(Storage::disk('public')->get($imagePath));
+            $sum = [0, 0, 0];
+            $count = 0;
+            foreach ([0.1, 0.3, 0.5, 0.7, 0.9] as $fy) {
+                foreach ([0.1, 0.3, 0.5, 0.7, 0.9] as $fx) {
+                    $rgb = imagecolorat($image, (int) (imagesx($image) * $fx), (int) (imagesy($image) * $fy));
+                    $sum[0] += ($rgb >> 16) & 0xFF;
+                    $sum[1] += ($rgb >> 8) & 0xFF;
+                    $sum[2] += $rgb & 0xFF;
+                    $count++;
+                }
+            }
+            $averages[] = array_map(fn (int $v): float => $v / $count, $sum);
+        }
+        expect($averages)->not->toBeEmpty();
+        foreach ($averages as [$r, $g, $b]) {
+            demoCheck(! ($g > $r + 10 && $g > $b + 10), "placeholder tidak dominan hijau (rata-rata {$r},{$g},{$b})");
+        }
+        demoCheck(collect($averages)->contains(fn (array $c): bool => $c[2] > $c[0] && $c[2] >= $c[1]), 'ada placeholder bernuansa navy');
+        demoCheck(collect($averages)->contains(fn (array $c): bool => $c[0] > $c[2] + 40 && $c[1] > $c[2] + 20), 'ada placeholder bernuansa emas');
+    }
     $this->get(route('portal.home'))->assertOk()->assertSee("Ma'had Al-Khair Belitang");
     $this->get(route('portal.posts.index'))->assertOk();
     $this->get(route('portal.albums.index'))->assertOk();
@@ -633,9 +659,17 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect(array_unique($logoPaths))->toHaveCount(3)
         ->and(collect($logoPaths)->every(fn (?string $path): bool => is_string($path) && str_starts_with($path, 'school/') && Storage::disk('public')->exists($path)))->toBeTrue()
         ->and(Storage::disk('public')->allFiles('school'))->toHaveCount(4)
-        ->and(Storage::disk('public')->get($logoPaths[0]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-lengkap.jpg')))
+        ->and(Storage::disk('public')->get($logoPaths[0]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-horizontal.png')))
         ->and(Storage::disk('public')->get($logoPaths[1]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')))
         ->and(Storage::disk('public')->get($logoPaths[2]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')));
+    // Logo desktop: PNG horizontal (rasio >= 3:1), transparan, di bawah batas unggah logo.
+    $desktopBytes = Storage::disk('public')->get($logoPaths[0]);
+    $desktopInfo = getimagesizefromstring($desktopBytes);
+    expect($desktopInfo)->not->toBeFalse()
+        ->and($desktopInfo['mime'])->toBe('image/png')
+        ->and($desktopInfo[0] / $desktopInfo[1])->toBeGreaterThanOrEqual(3.0)
+        ->and(strlen($desktopBytes))->toBeLessThan(StorePublicImage::LOGO_MAX_KILOBYTES * 1024)
+        ->and(substr($desktopBytes, 25, 1))->toBe("\x06"); // PNG IHDR color type 6 = RGBA (transparan)
     $profileJson = json_encode(Setting::query()->where(fn ($q) => $q->where('key', 'like', 'school.%')->orWhere('key', 'like', 'portal.%'))->pluck('value', 'key')->all());
     foreach (['085832333725', '085669941929'] as $brochureNumber) {
         expect($profileJson)->not->toContain($brochureNumber);

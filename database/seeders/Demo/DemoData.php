@@ -66,7 +66,7 @@ final class DemoData
         /** Logo merek dari `docs/brand/` (dilewati bila berkas tidak ada). */
         'logos' => [
             'logo' => 'docs/brand/logo-mahad-simbol.png',
-            'logo_desktop' => 'docs/brand/logo-mahad-lengkap.jpg',
+            'logo_desktop' => 'docs/brand/logo-mahad-horizontal.png',
             'logo_mobile' => 'docs/brand/logo-mahad-simbol.png',
             'favicon' => 'docs/brand/logo-mahad-simbol.png',
         ],

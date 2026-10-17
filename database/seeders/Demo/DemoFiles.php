@@ -11,13 +11,13 @@ use Illuminate\Http\UploadedFile;
  */
 final class DemoFiles
 {
-    /** Pasangan warna gradasi (atas, bawah) dari palet tenang hijau dan krem design guide. */
+    /** Pasangan warna gradasi (atas, bawah) dari palet logo: navy #000A3C dan emas #F8B800 (design guide §2). */
     private const GRADIENTS = [
-        [[22, 101, 52], [74, 140, 98]],
-        [[245, 240, 225], [214, 200, 160]],
-        [[33, 87, 72], [140, 170, 140]],
-        [[200, 180, 130], [245, 236, 214]],
-        [[52, 120, 90], [196, 214, 186]],
+        [[0, 10, 60], [39, 62, 140]],
+        [[255, 249, 229], [255, 212, 82]],
+        [[6, 18, 71], [95, 120, 196]],
+        [[248, 184, 0], [255, 240, 191]],
+        [[221, 228, 246], [238, 242, 251]],
     ];
 
     /** PNG 1x1, dipakai bila GD tidak tersedia. */

@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-6">
-    <h1 class="text-2xl font-semibold text-gray-900">{{ __('pondok.psb_public.status_title') }}</h1>
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ __('pondok.psb_public.status_title') }}</h1>
 
     @if ($this->applicant === null)
         <x-ui.card>
@@ -11,11 +11,11 @@
                 @endif
 
                 <x-ui.field :label="__('pondok.applicant.registration_no')" for="registration_no">
-                    <input type="text" id="registration_no" wire:model="registration_no" autocomplete="off" autocapitalize="characters" placeholder="PSB-2027-0001" class="min-h-11 rounded-lg border border-gray-300 px-3 text-base tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                    <input type="text" id="registration_no" wire:model="registration_no" autocomplete="off" autocapitalize="characters" placeholder="PSB-2027-0001" class="ui-input tabular-nums">
                 </x-ui.field>
 
                 <x-ui.field :label="__('pondok.psb_public.token')" for="token">
-                    <input type="text" id="token" wire:model="token" autocomplete="off" autocapitalize="characters" class="min-h-11 rounded-lg border border-gray-300 px-3 text-base tabular-nums tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                    <input type="text" id="token" wire:model="token" autocomplete="off" autocapitalize="characters" class="ui-input tabular-nums tracking-wide">
                 </x-ui.field>
 
                 <div>
@@ -123,7 +123,7 @@
                             @endif
 
                             @if ($document)
-                                <a href="{{ route('psb.document', $document) }}" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center gap-1 self-start text-sm font-semibold text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                <a href="{{ route('psb.document', $document) }}" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center gap-1 self-start rounded-lg text-sm font-semibold text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                                     <x-heroicon-o-arrow-down-tray class="size-4" aria-hidden="true" />
                                     {{ __('pondok.applicant_document.download') }} <span class="font-normal text-gray-600">({{ $document->original_name }})</span>
                                 </a>
@@ -133,7 +133,7 @@
                                 <form wire:submit="uploadDocument({{ $requirement->id }})" class="flex flex-col gap-2 sm:flex-row sm:items-start">
                                     <div class="flex flex-1 flex-col gap-1">
                                         <label for="document-{{ $requirement->id }}" class="sr-only">{{ __('pondok.psb_public.upload') }} {{ $requirement->name }}</label>
-                                        <input type="file" id="document-{{ $requirement->id }}" wire:model="documents.{{ $requirement->id }}" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1 file:text-sm file:font-semibold file:text-gray-900">
+                                        <input type="file" id="document-{{ $requirement->id }}" wire:model="documents.{{ $requirement->id }}" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="ui-input py-1.5 pl-1.5 text-sm file:mr-3 file:min-h-8 file:rounded-full file:border-0 file:bg-primary-50 file:px-4 file:py-1 file:text-sm file:font-semibold file:text-primary-900">
                                         <p class="text-sm text-gray-600">{{ __('pondok.psb_public.upload_hint') }}</p>
                                         @error('documents.'.$requirement->id)
                                             <p class="text-sm text-danger-700">{{ $message }}</p>

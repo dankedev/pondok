@@ -1,7 +1,7 @@
 name: tests
 
-# Repo private: kuota GitHub Actions terbatas. Suite PHP 8.4 dijalankan di mesin pengembang
-# per fitur; CI hanya memeriksa PHP 8.3 (target cPanel) saat push ke main atau dijalankan manual.
+# Suite PHP 8.4 dijalankan di mesin pengembang per fitur; CI memeriksa PHP 8.3 (target cPanel)
+# saat push ke main atau dijalankan manual.
 on:
   push:
     branches: [main]
@@ -15,8 +15,7 @@ jobs:
   pest:
     name: Pest (PHP 8.3)
     runs-on: ubuntu-latest
-    # Suite ±2 menit di laptop (3 proses); di runner diperkirakan ±10 menit. Batas ketat agar run yang
-    # macet tidak menghabiskan kuota menit repo private.
+    # Suite ±2 menit di laptop (3 proses) dan ±4 menit di runner. Batas ini menghentikan run yang macet.
     timeout-minutes: 30
 
     steps:

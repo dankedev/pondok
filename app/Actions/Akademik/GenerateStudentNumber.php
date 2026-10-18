@@ -27,6 +27,8 @@ class GenerateStudentNumber
 
     public const MAX_LENGTH = 30;
 
+    public const TOKENS = ['YYYY', 'YY', 'UNIT'];
+
     private const SEQUENCE_PATTERN = '/\{(N{3,6})\}$/';
 
     /**
@@ -82,6 +84,69 @@ class GenerateStudentNumber
         $length = strlen(strtr($head, ['{YYYY}' => '0000', '{YY}' => '00', '{UNIT}' => ''])) + strlen($match[1]);
 
         return $length <= self::MAX_LENGTH;
+    }
+
+    /**
+     * Format yang berlaku (nilai tersimpan, atau bawaan bila kosong/tidak sah).
+     */
+    public function resolvedFormat(): string
+    {
+        return $this->format();
+    }
+
+    /**
+     * Validasi format dari halaman admin; melempar `ValidationException` di field `format`.
+     */
+    public function validateFormat(mixed $value): string
+    {
+        $format = is_string($value) ? trim($value) : '';
+
+        if (preg_match(self::SEQUENCE_PATTERN, $format, $match) !== 1) {
+            $this->fail('format', 'format_sequence_missing');
+        }
+
+        $head = substr($format, 0, -strlen($match[0]));
+
+        preg_match_all('/\{([^{}]*)\}/', $head, $tokens);
+
+        if (array_diff($tokens[1], self::TOKENS) !== []) {
+            $this->fail('format', 'format_token_unknown');
+        }
+
+        if (preg_match('#^[A-Za-z0-9.\-/]*$#', (string) preg_replace('/\{[^{}]*\}/', '', $head)) !== 1) {
+            $this->fail('format', 'format_character_invalid');
+        }
+
+        $length = strlen(strtr($head, ['{YYYY}' => '0000', '{YY}' => '00', '{UNIT}' => ''])) + strlen($match[1]);
+
+        if ($length > self::MAX_LENGTH) {
+            $this->fail('format', 'format_too_long');
+        }
+
+        return $format;
+    }
+
+    /**
+     * Pratinjau format untuk halaman admin (contoh nomor urut 1).
+     */
+    public function preview(string $format, Unit $unit, int $entryYear): string
+    {
+        $format = $this->validateFormat($format);
+        $prefix = $this->prefix($format, $unit, $entryYear);
+        $width = $this->width($format);
+
+        if (strlen($prefix) + $width > self::MAX_LENGTH) {
+            $this->fail('format', 'format_too_long');
+        }
+
+        return $prefix.str_pad('1', $width, '0', STR_PAD_LEFT);
+    }
+
+    private function fail(string $field, string $reason): never
+    {
+        throw ValidationException::withMessages([
+            $field => __("pondok.numbering.errors.{$reason}"),
+        ]);
     }
 
     private function format(): string

@@ -33,6 +33,9 @@ class RolePermissionSeeder extends Seeder
         'view:finance-report',
         // Profil lembaga (F016/F036): membuka dan menyimpan keempat halaman cluster.
         'view:school-profile',
+        // Penomoran dokumen (F039): format kuitansi/tagihan (bendahara) dan NIS (admin-sekolah).
+        'view:finance-numbering',
+        'view:student-numbering',
     ];
 
     /** Model yang punya resource Filament, beserta aksi policy-nya. */
@@ -172,6 +175,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel']),
                 ...self::resourcePermissions('Payment', ['viewAny', 'view', 'create', 'cancel']),
                 'view:finance-report',
+                'view:finance-numbering',
             ],
             // Kelola konten situs. Foto album mengikuti `update:album`. Halaman statis tetap tiga:
             // hanya diubah, tidak dibuat atau dihapus.
@@ -208,6 +212,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('IssuedLetter', ['viewAny', 'view', 'create', 'cancel', 'configureNumbering']),
                 // Prestasi (F015): memverifikasi catatan kesantrian, tidak mencatat atau menghapus.
                 ...self::resourcePermissions('Achievement', ['viewAny', 'view', 'verify']),
+                // Penomoran NIS (F039).
+                'view:student-numbering',
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.

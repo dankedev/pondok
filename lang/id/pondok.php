@@ -15,6 +15,38 @@ return [
         'access' => 'Pengguna & Akses',
     ],
 
+    'numbering' => [
+        'save' => 'Simpan',
+        'saved' => 'Pengaturan penomoran disimpan.',
+        'preview' => 'Pratinjau',
+        'invalid_format' => 'Format tidak valid. Perbaiki format atau pakai token yang tersedia.',
+        'no_unit' => 'Belum ada jenjang, pratinjau tidak tersedia.',
+        'errors' => [
+            'format_sequence_missing' => 'Format harus diakhiri token urut {NNN} sampai {NNNNNN}. Contoh: {YYYY}{NNNN}.',
+            'format_token_unknown' => 'Ada token yang tidak dikenal. Pakai token yang tercantum di bantuan.',
+            'format_character_invalid' => 'Karakter di luar token hanya boleh huruf, angka, titik, garis hubung, dan garis miring.',
+            'format_too_long' => 'Format terlalu panjang. Kurangi literal atau lebar angka urut.',
+        ],
+        'student' => [
+            'title' => 'Penomoran NIS',
+            'heading' => 'Format NIS',
+            'description' => 'Atur format nomor induk santri yang dibuat otomatis.',
+            'format_label' => 'Format NIS',
+            'format_helper' => 'Token: {YYYY} tahun masuk, {YY} dua digit terakhir, {UNIT} kode jenjang, dan akhiri dengan token urut {NNN}–{NNNNNN} (jumlah N menentukan lebar angka). Contoh: {UNIT}-{YY}-{NNN} menjadi SLTP-27-001.',
+        ],
+        'finance' => [
+            'title' => 'Penomoran Kuitansi & Tagihan',
+            'invoice_heading' => 'Format nomor tagihan',
+            'invoice_description' => 'Format nomor tagihan bulanan dan tagihan PSB.',
+            'invoice_format_label' => 'Format nomor tagihan',
+            'invoice_format_helper' => 'Token: {YYYY} tahun, {YY} dua digit terakhir, {MM} bulan, dan akhiri dengan token urut {NNN}–{NNNNNN}. Contoh: INV-{YYYY}{MM}-{NNNNN} menjadi INV-202610-00001.',
+            'receipt_heading' => 'Format nomor kuitansi',
+            'receipt_description' => 'Format nomor kuitansi pembayaran.',
+            'receipt_format_label' => 'Format nomor kuitansi',
+            'receipt_format_helper' => 'Token: {YYYY} tahun, {YY} dua digit terakhir, {MM} bulan, dan akhiri dengan token urut {NNN}–{NNNNNN}. Contoh: KW-{YYYY}{MM}-{NNNNN} menjadi KW-202610-00001.',
+        ],
+    ],
+
     'common' => [
         'created_at' => 'Dibuat',
         'updated_at' => 'Diperbarui',

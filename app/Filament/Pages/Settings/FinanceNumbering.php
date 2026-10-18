@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Filament\Pages\Settings;
+
+use App\Actions\Keuangan\GenerateInvoiceNumber;
+use App\Actions\Keuangan\GenerateReceiptNumber;
+use App\Models\Setting;
+use App\Models\User;
+use BackedEnum;
+use Carbon\CarbonImmutable;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * Pengaturan format kuitansi dan tagihan (F039). Akses lewat
+ * `view:finance-numbering` (bendahara dan super-admin).
+ */
+class FinanceNumbering extends NumberingSettingsPage
+{
+    protected static ?int $navigationSort = 7;
+
+    protected static ?string $slug = 'settings/finance-numbering';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('pondok.navigation.keuangan');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('pondok.numbering.finance.title');
+    }
+
+    public function getTitle(): string
+    {
+        return __('pondok.numbering.finance.title');
+    }
+
+    protected static function pagePermission(): string
+    {
+        return 'view:finance-numbering';
+    }
+
+    protected static function moduleKey(): ?string
+    {
+        return 'keuangan';
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->statePath('data')
+            ->components([
+                Section::make(__('pondok.numbering.finance.invoice_heading'))
+                    ->description(__('pondok.numbering.finance.invoice_description'))
+                    ->schema([
+                        TextInput::make('invoice_format')
+                            ->label(__('pondok.numbering.finance.invoice_format_label'))
+                            ->helperText(__('pondok.numbering.finance.invoice_format_helper'))
+                            ->required()
+                            ->maxLength(20)
+                            ->live(),
+                        Placeholder::make('invoice_preview')
+                            ->label(__('pondok.numbering.preview'))
+                            ->content(fn (Get $get): string => $this->invoicePreview($get('invoice_format'))),
+                    ]),
+                Section::make(__('pondok.numbering.finance.receipt_heading'))
+                    ->description(__('pondok.numbering.finance.receipt_description'))
+                    ->schema([
+                        TextInput::make('receipt_format')
+                            ->label(__('pondok.numbering.finance.receipt_format_label'))
+                            ->helperText(__('pondok.numbering.finance.receipt_format_helper'))
+                            ->required()
+                            ->maxLength(20)
+                            ->live(),
+                        Placeholder::make('receipt_preview')
+                            ->label(__('pondok.numbering.preview'))
+                            ->content(fn (Get $get): string => $this->receiptPreview($get('receipt_format'))),
+                    ]),
+            ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function fillData(): array
+    {
+        return [
+            'invoice_format' => app(GenerateInvoiceNumber::class)->resolvedFormat(),
+            'receipt_format' => app(GenerateReceiptNumber::class)->resolvedFormat(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function persist(array $data, User $user): void
+    {
+        $invoice = app(GenerateInvoiceNumber::class);
+        $receipt = app(GenerateReceiptNumber::class);
+
+        try {
+            $invoiceFormat = $invoice->validateFormat($data['invoice_format'] ?? null);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages([
+                'invoice_format' => $exception->errors()['format'][0] ?? __('pondok.numbering.invalid_format'),
+            ]);
+        }
+
+        try {
+            $receiptFormat = $receipt->validateFormat($data['receipt_format'] ?? null);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages([
+                'receipt_format' => $exception->errors()['format'][0] ?? __('pondok.numbering.invalid_format'),
+            ]);
+        }
+
+        DB::transaction(function () use ($invoiceFormat, $receiptFormat, $user): void {
+            $old = [
+                'invoice_format' => Setting::query()->find(GenerateInvoiceNumber::SETTING_KEY)?->value,
+                'receipt_format' => Setting::query()->find(GenerateReceiptNumber::SETTING_KEY)?->value,
+            ];
+
+            Setting::set(GenerateInvoiceNumber::SETTING_KEY, $invoiceFormat);
+            Setting::set(GenerateReceiptNumber::SETTING_KEY, $receiptFormat);
+
+            activity('keuangan')
+                ->causedBy($user)
+                ->event('numbering_updated')
+                ->withProperties([
+                    'old' => $old,
+                    'new' => ['invoice_format' => $invoiceFormat, 'receipt_format' => $receiptFormat],
+                ])
+                ->log('numbering_updated');
+        });
+    }
+
+    public function invoicePreview(?string $format): string
+    {
+        try {
+            return app(GenerateInvoiceNumber::class)->preview((string) $format, CarbonImmutable::now(config('app.timezone')));
+        } catch (ValidationException) {
+            return __('pondok.numbering.invalid_format');
+        }
+    }
+
+    public function receiptPreview(?string $format): string
+    {
+        try {
+            return app(GenerateReceiptNumber::class)->preview((string) $format, CarbonImmutable::now(config('app.timezone')));
+        } catch (ValidationException) {
+            return __('pondok.numbering.invalid_format');
+        }
+    }
+}

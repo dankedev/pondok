@@ -70,6 +70,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice',
         'view-any:payment', 'view:payment', 'create:payment', 'cancel:payment',
         'view:finance-report',
+        'view:finance-numbering',
     ]],
     'admin-konten' => ['admin-konten', [
         'view-dashboard', 'view-content-metrics',
@@ -122,6 +123,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view:school-profile',
         'view-any:issued-letter', 'view:issued-letter', 'create:issued-letter', 'cancel:issued-letter', 'configure-numbering:issued-letter',
         'view-any:achievement', 'view:achievement', 'verify:achievement',
+        'view:student-numbering',
     ]],
 ]);
 

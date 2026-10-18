@@ -10,10 +10,15 @@
         $unitChips[] = ['label' => $item->code, 'url' => $listUrl(['jenjang' => \Illuminate\Support\Str::lower($item->code)]), 'active' => $unit?->is($item) ?? false];
     }
     $canonical = route('portal.posts.index', array_filter([...$filters, 'page' => $page > 1 ? $page : null]));
+    $breadcrumbs = [
+        ['label' => __('pondok.portal.nav.home'), 'url' => route('portal.home')],
+        ['label' => __('pondok.portal.nav.news')],
+    ];
 @endphp
 
 <x-layouts::public :title="$heading" :canonical="$canonical" :bare="true">
     <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" />
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $heading }}</h1>
 
         <div class="mt-6 space-y-3">

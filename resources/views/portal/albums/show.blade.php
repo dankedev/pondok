@@ -1,10 +1,16 @@
 @php
     $canonical = $page > 1 ? route('portal.albums.show', ['slug' => $album->slug, 'page' => $page]) : route('portal.albums.show', $album->slug);
     $firstNumber = $photos->firstItem() ?? 1;
+    $breadcrumbs = [
+        ['label' => __('pondok.portal.nav.home'), 'url' => route('portal.home')],
+        ['label' => __('pondok.portal.nav.gallery'), 'url' => route('portal.albums.index')],
+        ['label' => $album->title],
+    ];
 @endphp
 
 <x-layouts::public :title="$album->title" :description="\Illuminate\Support\Str::limit((string) $album->description, 160, '…')" :canonical="$canonical" :og-image="$photos->first()?->url()" :bare="true">
     <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" />
         <h1 class="break-words text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $album->title }}</h1>
         @if ($album->category)
             <p class="mt-2 text-sm text-gray-600">{{ $album->category->name }}</p>

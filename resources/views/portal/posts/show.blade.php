@@ -3,10 +3,17 @@
     $cover = $post->coverUrl();
     $youtubeId = $post->youtubeId();
     $metaLink = 'rounded-lg text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+    $breadcrumbs = [
+        ['label' => __('pondok.portal.nav.home'), 'url' => route('portal.home')],
+        ['label' => __('pondok.portal.nav.news'), 'url' => route('portal.posts.index')],
+        ['label' => $post->title],
+    ];
 @endphp
 
 <x-layouts::public :title="$post->title" :description="$summary" :canonical="route('portal.posts.show', $post->slug)" og-type="article" :og-image="$cover" :bare="true">
     <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-4" />
+
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600">
             <time datetime="{{ $post->published_at->toAtomString() }}">{{ $post->published_at->translatedFormat('j M Y') }}</time>
             @if ($post->category)

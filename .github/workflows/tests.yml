@@ -40,6 +40,9 @@ jobs:
       - name: Install dependensi PHP
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Periksa gaya kode (Pint)
+        run: vendor/bin/pint --test
+
       - name: Build aset
         # Beberapa test memeriksa public/build/manifest.json (paket rilis).
         run: |

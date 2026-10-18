@@ -62,7 +62,7 @@ class InvoiceResource extends Resource
     // Design guide §3: kapital hanya di awal kalimat.
     protected static bool $hasTitleCaseModelLabel = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
     protected static ?int $navigationSort = 0;
 

@@ -6,7 +6,7 @@
 
 <article {{ $attributes->class('flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-card') }}>
     @if ($album->coverPhoto)
-        <img src="{{ $album->coverPhoto->url() }}" alt="" loading="lazy" class="aspect-video w-full object-cover">
+        <img src="{{ $album->coverPhoto->url() }}" alt="{{ $album->title }}" loading="lazy" class="aspect-video w-full object-cover">
     @else
         <div class="flex aspect-video w-full items-center justify-center bg-gray-100">
             <x-heroicon-o-photo class="size-10 text-gray-400" aria-hidden="true" />

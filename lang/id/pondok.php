@@ -1988,6 +1988,7 @@ return [
     ],
 
     'portal' => [
+        'breadcrumb_label' => 'Navigasi halaman',
         'nav' => [
             'label' => 'Navigasi utama',
             'mobile_label' => 'Navigasi utama (seluler)',

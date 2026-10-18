@@ -51,7 +51,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class FinanceReport extends Page
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static ?int $navigationSort = 6;
 

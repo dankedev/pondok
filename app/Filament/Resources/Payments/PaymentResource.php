@@ -51,7 +51,7 @@ class PaymentResource extends Resource
     // Design guide §3: kapital hanya di awal kalimat.
     protected static bool $hasTitleCaseModelLabel = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
 
     protected static ?int $navigationSort = 1;
 

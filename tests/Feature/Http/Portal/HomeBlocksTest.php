@@ -250,7 +250,7 @@ it('AC-10: feeds show a fixed number of the latest items per source with default
         ->and($news)->toContain('href="'.route('portal.posts.index').'"')->toContain($aria(__('pondok.portal.home.latest_news')))->toContain(__('pondok.portal.home.see_all'))
         ->and(preg_match_all('/Juara Olimpiade \d/', $achievements))->toBe(3)->and($achievements)->not->toContain('Kabar harian')->not->toContain('Prestasi Manual')->toContain('href="'.route('portal.posts.index').'"')->not->toContain('jenis=')
         ->and(substr_count($videos, 'embed/'))->toBe(3)->and($videos)->not->toContain('BBBBBBBBBBB')->toContain('href="'.route('portal.videos.index').'"')
-        ->and(preg_match_all('/Album Berfoto Uji \d/', $albums))->toBe(4)->and($albums)->not->toContain('Album Kosong Uji')
+        ->and(preg_match_all('/>Album Berfoto Uji \d/', $albums))->toBe(4)->and($albums)->not->toContain('Album Kosong Uji')
         ->and($albums)->toContain(__('pondok.portal.home.see_all'))->toContain('href="'.route('portal.albums.index').'"');
 });
 

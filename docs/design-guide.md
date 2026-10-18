@@ -111,8 +111,9 @@ Aturan:
 | Konsep | Ikon |
 |---|---|
 | Santri | `AcademicCap` |
+| Angkatan | `Users` |
 | Wali | `UserGroup` |
-| Staff | `IdentificationCard` |
+| Staff | `Identification` |
 | Asrama / kamar | `HomeModern` |
 | PSB | `ClipboardDocumentList` |
 | Keuangan / tagihan | `Banknotes` |

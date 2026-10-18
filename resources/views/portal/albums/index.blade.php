@@ -4,10 +4,15 @@
         $chips[] = ['label' => $item->name, 'url' => route('portal.albums.index', ['kategori' => $item->slug]), 'active' => $category?->is($item) ?? false];
     }
     $canonical = route('portal.albums.index', array_filter(['kategori' => $category?->slug, 'page' => $page > 1 ? $page : null]));
+    $breadcrumbs = [
+        ['label' => __('pondok.portal.nav.home'), 'url' => route('portal.home')],
+        ['label' => __('pondok.portal.nav.gallery')],
+    ];
 @endphp
 
 <x-layouts::public :title="__('pondok.portal.albums.title')" :canonical="$canonical" :bare="true">
     <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" />
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ __('pondok.portal.albums.title') }}</h1>
 
         @if ($categories->isNotEmpty())

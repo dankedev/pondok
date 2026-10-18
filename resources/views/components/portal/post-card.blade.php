@@ -9,7 +9,7 @@
 
 <article {{ $attributes->class('flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-card') }}>
     @if ($cover)
-        <img src="{{ $cover }}" alt="" loading="lazy" class="aspect-video w-full object-cover">
+        <img src="{{ $cover }}" alt="{{ $post->title }}" loading="lazy" class="aspect-video w-full object-cover">
     @else
         <div class="flex aspect-video w-full items-center justify-center bg-gray-100">
             <x-heroicon-o-newspaper class="size-10 text-gray-400" aria-hidden="true" />

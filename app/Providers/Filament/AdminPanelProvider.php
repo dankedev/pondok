@@ -50,6 +50,9 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->profile()
+            ->databaseNotifications()
+            ->databaseNotificationsPolling(null)
+            ->lazyLoadedDatabaseNotifications(false)
             ->brandName(fn (): string => config('app.name'))
             ->colors([
                 'primary' => Color::Emerald,

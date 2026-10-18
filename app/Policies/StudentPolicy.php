@@ -51,4 +51,9 @@ class StudentPolicy
     {
         return $authUser->can('restore-any:student');
     }
+
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('import:student');
+    }
 }

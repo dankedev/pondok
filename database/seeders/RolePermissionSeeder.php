@@ -54,7 +54,7 @@ class RolePermissionSeeder extends Seeder
 
     /** Aksi tambahan per model, misalnya pemulihan untuk model soft delete. */
     public const EXTRA_RESOURCE_ACTIONS = [
-        'Student' => ['restore', 'restoreAny'],
+        'Student' => ['restore', 'restoreAny', 'import'],
         // Tagihan hanya dibuat generator dan dibatalkan, tidak dibuat manual atau dihapus.
         'Invoice' => ['generate', 'cancel'],
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.

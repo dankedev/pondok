@@ -116,7 +116,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:cohort', 'view:cohort', 'create:cohort', 'update:cohort', 'delete:cohort', 'delete-any:cohort',
         'view-any:classroom', 'view:classroom', 'create:classroom', 'update:classroom', 'delete:classroom', 'delete-any:classroom',
         'view-any:student', 'view:student', 'create:student', 'update:student', 'delete:student', 'delete-any:student',
-        'restore:student', 'restore-any:student',
+        'restore:student', 'restore-any:student', 'import:student',
         'view-any:guardian', 'view:guardian', 'create:guardian', 'update:guardian', 'delete:guardian', 'delete-any:guardian',
         'view-any:document-type', 'view:document-type', 'create:document-type', 'update:document-type', 'delete:document-type', 'delete-any:document-type',
         'view-any:document', 'view:document', 'create:document', 'verify:document', 'view-confidential:document',

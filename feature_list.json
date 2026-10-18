@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F058",
+  "next_id": "F062",
   "features": [
     {
       "id": "F001",
@@ -889,10 +889,7 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": [
-        "F037",
-        "F044"
-      ],
+      "depends_on": ["F037", "F044"],
       "description": "Audit UI/UX S4 (§5.4). Semua halaman statis setara: halaman sistem dan slug terkunci dihapus (slug lama tetap). Kolom template (default, contact) menggantikan pengecekan slug kontak; tautan tetap Visi dan Misi di kode dihapus. Dibutuhkan agar Info PSB (F038) dan Kontak menjadi halaman bertemplate.",
       "acceptance": [
         "Halaman profil, visi-misi, dan kontak bisa dihapus dan slug-nya bisa diubah; tidak ada lagi badge atau kunci halaman sistem",
@@ -914,9 +911,7 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": [
-        "F047"
-      ],
+      "depends_on": ["F047"],
       "description": "Audit UI/UX S6 (§1 butir 7, §2.4, §5.7 bagian jenis berita). Kolom posts.type (kegiatan/prestasi/berita) dihapus dari admin dan portal (filter jenis, badge); data dimigrasikan menjadi kategori. Berita dari Prestasi otomatis berkategori Prestasi.",
       "acceptance": [
         "Form, tabel, dan filter admin tidak lagi punya Jenis; portal tanpa filter jenis dan badge jenis",
@@ -1078,6 +1073,70 @@
       "handoff": null,
       "evidence": "",
       "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Rencana direview langsung karena plan-reviewer gagal dijalankan (model default tidak dikenali). Compose config dan pemeriksaan statis lulus; build/smoke Docker menunggu daemon aktif."
+    },
+    {
+      "id": "F058",
+      "key": "akademik-import-santri",
+      "issue": 27,
+      "name": "Import santri, angkatan, dan wali dengan template",
+      "phase": 1,
+      "module": "Akademik",
+      "status": "done",
+      "depends_on": ["F002"],
+      "description": "Dasar import (Filament ImportAction + template CSV unduhan + baris gagal) dan import santri beserta angkatan otomatis dan wali.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 8020202, 39761ec, 992fb06, fdd17d9. Test lulus: ImportStudentRowTest, ImportStudentsTest, RolePermissionSeederTest; suite penuh 4180 test hijau (PHP 8.4, 19 Okt 2026). Tidak ada kolom NIK/KK di students/guardians sehingga AC NIK/KK tidak berlaku (dicatat di issue #27).",
+      "notes": "jalur: penuh. Kriteria penerimaan di issue #27 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
+    },
+    {
+      "id": "F059",
+      "key": "asrama-import-penghuni",
+      "issue": 28,
+      "name": "Import penghuni asrama dengan template",
+      "phase": 1,
+      "module": "Asrama",
+      "status": "todo",
+      "depends_on": ["F003", "F058"],
+      "description": "Import penempatan santri ke asrama/kamar sebagai room_assignments baru.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Kriteria penerimaan di issue #28 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
+    },
+    {
+      "id": "F060",
+      "key": "keuangan-import-tagihan-awal",
+      "issue": 29,
+      "name": "Import tagihan awal dengan template",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F006", "F007", "F058"],
+      "description": "Import tunggakan/tagihan awal sebagai snapshot invoice_items beserta pembayaran yang sudah ada.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Kriteria penerimaan di issue #29 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
+    },
+    {
+      "id": "F061",
+      "key": "inti-import-staff",
+      "issue": 30,
+      "name": "Import data staff dengan template",
+      "phase": 1,
+      "module": "Inti",
+      "status": "todo",
+      "depends_on": ["F001", "F058"],
+      "description": "Import data staff (ustadz, musyrif, TU) dari file template.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Kriteria penerimaan di issue #30 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
     }
   ]
 }

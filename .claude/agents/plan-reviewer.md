@@ -18,11 +18,11 @@ Kamu hanya dipakai untuk **jalur penuh** (CLAUDE.md bagian "Jalur kerja"). Revie
 
 ## Bacaan wajib
 
-`CLAUDE.md`, entri fitur di `feature_list.json`, `docs/plans/<ID>-plan.md`, bagian terkait `docs/prd.md` dan `docs/erd.md`, `docs/design-guide.md` (bila ada UI), serta kode yang sudah ada (`app/Actions`, `app/Models`, `database/migrations`, `tests/Feature`) untuk memastikan rencana sesuai pola dan tidak bentrok.
+`CLAUDE.md`, issue GitHub fitur (`gh issue view <n>`), entri fitur di `feature_list.json`, `docs/plans/<ID>-plan.md`, bagian terkait `docs/prd.md` dan `docs/erd.md`, `docs/design-guide.md` (bila ada UI), serta kode yang sudah ada (`app/Actions`, `app/Models`, `database/migrations`, `tests/Feature`) untuk memastikan rencana sesuai pola dan tidak bentrok.
 
 ## Checklist review
 
-1. **Kesesuaian kebutuhan** — setiap `acceptance` di `feature_list.json` dan kebutuhan PRD modul ini tercakup oleh minimal satu AC. Tidak ada scope creep di luar entri fitur.
+1. **Kesesuaian kebutuhan** — setiap kriteria di issue dan kebutuhan PRD modul ini tercakup oleh minimal satu AC. Tidak ada scope creep di luar issue. Rencana menautkan issue-nya (`Issue: #<n>`).
 2. **Dependensi** — semua `depends_on` berstatus `done`; tabel/model yang dipakai benar-benar sudah ada.
 3. **Model data vs ERD** — nama tabel/kolom, tipe, nullable, index, unique (termasuk generated column `COALESCE(col, 0)` untuk unique nullable), FK dan aksi on-delete.
 4. **Konvensi keras** — uang `unsignedBigInteger` rupiah; tagihan snapshot; data keuangan tidak dihapus (status `batal`, `restrictOnDelete`); soft delete hanya `students`/`applicants`/`posts`; NIK/KK `encrypted`; dokumen pribadi di disk `private`; riwayat sebagai baris baru.

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F057",
+  "next_id": "F058",
   "features": [
     {
       "id": "F001",
@@ -1036,6 +1036,25 @@
       "handoff": null,
       "evidence": "",
       "notes": "Enkripsi PII berpotensi memengaruhi pencarian/pengurutan dan butuh migrasi data lama. CSP admin harus hati-hati agar Filament/Livewire tidak rusak. Retensi/anonymisasi dan backup sudah dipegang F042 (tidak diduplikasi). Sumber: docs/audits/iso-27001-annex-a-audit.md."
+    },
+    {
+      "id": "F057",
+      "key": "deployment-docker-production",
+      "name": "Dukungan deploy Docker produksi",
+      "phase": 1,
+      "module": "Deploy",
+      "status": "in-progress",
+      "depends_on": [],
+      "description": "Sediakan Dockerfile produksi untuk Pondok dengan PHP 8.4 + Apache, dependency Composer produksi, aset frontend yang dibangun pada build stage, konfigurasi runtime tanpa rahasia, dan database eksternal. Tambahkan berkas pendukung minimum untuk Apache dan build context.",
+      "acceptance": [
+        "Image produksi dapat dibangun dan melayani Laravel dari public/",
+        "Aset build tersedia tanpa Node runtime; rahasia tidak masuk image",
+        "Storage writable/persisten, database eksternal, dan batas worker/scheduler dijelaskan"
+      ],
+      "owner": "VS Code agent",
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Review rencana dilakukan langsung karena plan-reviewer gagal dijalankan (model default tidak dikenali)."
     }
   ]
 }

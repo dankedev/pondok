@@ -206,7 +206,7 @@ it('AC-28a: restricts livewire temporary uploads to small pdf and images', funct
     $rules = config('livewire.temporary_file_upload.rules');
     $rules = is_string($rules) ? explode('|', $rules) : Arr::wrap($rules);
 
-    expect($rules)->toContain('max:2048')->toContain('mimes:pdf,jpg,jpeg,png');
+    expect($rules)->toContain('max:2048')->toContain('mimes:pdf,jpg,jpeg,png,csv,txt');
 });
 
 it('AC-28a: rejects oversized and executable temporary uploads', function (Closure $makeFile) {

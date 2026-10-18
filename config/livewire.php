@@ -130,8 +130,8 @@ return [
 
     'temporary_file_upload' => [
         'disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK'), // Example: 'local', 's3'             | Default: 'default'
-        // Endpoint unggah sementara bersifat publik (form PSB); batasi ke berkas PSB (F010).
-        'rules' => ['required', 'file', 'max:2048', 'mimes:pdf,jpg,jpeg,png'],
+        // Endpoint unggah sementara bersifat publik (form PSB); batasi ke berkas PSB (F010) dan CSV impor (F058).
+        'rules' => ['required', 'file', 'max:2048', 'mimes:pdf,jpg,jpeg,png,csv,txt'],
         'directory' => null,                                  // Example: 'tmp'                     | Default: 'livewire-tmp'
         'middleware' => null,                                 // Example: 'throttle:5,1'            | Default: 'throttle:60,1'
         'preview_mimes' => [                                  // Supported file types for temporary pre-signed file URLs...

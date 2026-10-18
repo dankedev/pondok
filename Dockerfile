@@ -1,3 +1,14 @@
+# CSS Filament (theme.css) dan Tailwind @source membaca file dari vendor/,
+# jadi vendor harus sudah ada sebelum Vite build.
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --no-interaction --no-progress --prefer-dist \
+        --no-scripts --no-autoloader --ignore-platform-reqs
+
 FROM node:26-bookworm-slim AS assets
 
 WORKDIR /app
@@ -5,6 +16,7 @@ WORKDIR /app
 RUN npm install --global pnpm@12
 
 COPY . .
+COPY --from=vendor /app/vendor ./vendor
 
 RUN pnpm install --frozen-lockfile --reporter=append-only
 

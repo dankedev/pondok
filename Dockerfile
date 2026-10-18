@@ -67,6 +67,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY . .
 COPY --from=assets /app/public/build ./public/build
 COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/entrypoint.sh /usr/local/bin/pondok-entrypoint
 
 RUN cp .env.production.example .env \
     && composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader \
@@ -79,8 +80,10 @@ RUN cp .env.production.example .env \
         storage/logs \
         bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
-    && ln -s ../storage/app/public public/storage
+    && ln -s ../storage/app/public public/storage \
+    && chmod +x /usr/local/bin/pondok-entrypoint
 
 EXPOSE 80
 
+ENTRYPOINT ["pondok-entrypoint"]
 CMD ["apache2-foreground"]

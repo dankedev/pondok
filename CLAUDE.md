@@ -9,7 +9,9 @@ Dokumen acuan:
 - `docs/erd.md` — skema database lengkap (Mermaid) beserta aturan bisnis per modul
 - `docs/design-guide.md` — panduan desain UI (warna, tipografi, status, format data, layout, state, bahasa)
 
-Bila ada konflik, urutan prioritas: instruksi user > `docs/prd.md` > `docs/erd.md` > file ini.
+Pekerjaan dikelola lewat **GitHub issue** di [`dankedev/pondok`](https://github.com/dankedev/pondok/issues) (lihat bagian "Alur kerja agent").
+
+Bila ada konflik, urutan prioritas: instruksi user > issue GitHub > `docs/prd.md` > `docs/erd.md` > file ini.
 
 **Wajib:** sebelum membuat atau mengubah apa pun yang tampil ke pengguna (Filament resource/page/widget, Blade, Livewire, teks di `lang/id`, CSS), baca `docs/design-guide.md`, panggil skill `/anti-ui-slop` bila tersedia (alur §13, tetap dalam batas panduan), dan jalankan checklist §0 sebelum menyatakan pekerjaan selesai.
 
@@ -98,7 +100,7 @@ Cara menjalankan test (mesin pengembang hanya 8GB RAM):
 - Selama bekerja, jalankan file test yang terdampak saja (`php artisan test --compact <path>`).
 - Suite penuh dijalankan **sekali** di akhir fitur, di PHP 8.4, oleh sesi utama dan bukan oleh subagent. Cek `memory_pressure` dulu, dan jangan jalankan dua suite bersamaan, termasuk dari sesi lain (`Storage::fake` bisa bentrok).
 - Suite penuh: `php artisan test --compact --parallel --processes=3`, sekitar 2 menit di PHP 8.4 (17 Okt 2026, ±4000 test). Bila tiba-tiba jauh lebih lambat, cari biaya setup yang berulang di setiap test (seeder, fixture di `beforeEach`), bukan test satu per satu. Contohnya `RolePermissionSeeder` yang dipanggil di setup sebagian besar test: dulu ±1 detik per panggilan (`findOrCreate` per permission) dan membuat suite ±18 menit.
-- PHP 8.3 (target cPanel) dijalankan GitHub Actions (`.github/workflows/tests.yml`) setiap push ke `main`, atau manual lewat tab Actions. Repo private dengan kuota menit terbatas, jadi push dikelompokkan (mis. satu push per fitur selesai), bukan per commit. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
+- PHP 8.3 (target cPanel) dijalankan GitHub Actions (`.github/workflows/tests.yml`) setiap push ke `main`, atau manual lewat tab Actions. Push satu kali saat fitur selesai, supaya `Closes #n` menutup issue bersama hasil CI-nya. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
 - Test baru ditulis untuk perilaku yang berubah dan risiko nyata. Jangan menambah test hanya untuk menaikkan jumlah. Verifikasi adversarial (mode VERIFY) menambah paling banyak ±15 test, dan hanya untuk celah yang benar-benar dicurigai.
 
 ## Alur kerja agent
@@ -107,16 +109,28 @@ Cara menjalankan test (mesin pengembang hanya 8GB RAM):
 
 Setiap commit mengikuti skill **git-commit** (`~/.claude/skills/git-commit/SKILL.md`): micro-commits (satu perubahan logis per commit) dengan format Conventional Commits `type(scope): deskripsi`. Scope memakai `key` modul, misalnya `feat(asrama): ...`, `fix(keuangan): ...`. Commit hanya bila user meminta.
 
-### 2. Daftar fitur (`feature_list.json`)
+Commit yang menyelesaikan issue (biasanya commit terakhir fitur, `docs(features): tandai <ID> selesai`) memuat `Closes #<n>` di body. Commit lain yang terkait cukup menyebut `Refs #<n>`. Bila kerja lewat PR, `Closes #<n>` ditulis di deskripsi PR.
 
-`feature_list.json` di root adalah sumber kebenaran status fitur. Aturan:
+### 2. Issue GitHub dan daftar fitur
 
+**GitHub issue adalah sumber kebenaran pekerjaan**: apa yang dikerjakan, ruang lingkup, kriteria, prioritas, dan diskusinya. Repo publik, jadi isi issue tidak boleh memuat kredensial, data pribadi, atau data nyata lembaga.
+
+- **Memilih pekerjaan:** dari issue terbuka (`gh issue list`), bukan dari ingatan atau dokumen lain. Label: `modul: <nama>`, `fase <n>`, `ditunda`, `sedang dikerjakan`, `audit iso`, `audit ui/ux`. Issue berlabel `ditunda` tidak dikerjakan tanpa persetujuan user.
+- **Pekerjaan baru:** buat issue dulu (`gh issue create`, judul diawali ID fitur, mis. `F058 Nama fitur`), lalu entri di `feature_list.json`. Jangan kerjakan diam-diam.
+- **Mulai:** pasang label `sedang dikerjakan` pada issue, dan status `in-progress` di `feature_list.json`.
+- **Selesai:** issue tertutup otomatis oleh `Closes #<n>` saat push ke `main` (lihat bagian 1). Bila ruang lingkup berubah di tengah jalan, perbarui body issue atau tulis komentar.
+- **Batal:** tutup issue sebagai *not planned* dengan alasan, dan jadikan entri `deferred`.
+- Bila issue dan `feature_list.json` berbeda, ruang lingkup mengikuti issue; perbarui `feature_list.json`.
+
+`feature_list.json` di root adalah catatan teknis status fitur untuk agent (ID, dependensi, pemilik, bukti). Aturan:
+
+- **`issue`** berisi nomor issue GitHub fitur itu (angka, mis. `14`). Fitur lama yang sudah `done` sebelum alur issue boleh tanpa `issue`.
 - **ID** berformat `F` + 3 digit (`F001`). Unik, permanen, tidak pernah diubah, dipakai ulang, atau diurutkan ulang. Fitur baru memakai `next_id`, lalu `next_id` dinaikkan satu. `key` (kebab-case, `<modul>-<topik>`) juga unik.
 - **Status:** `todo` (belum), `in-progress` (sedang), `handoff` (dialihkan ke agent lain), `blocked` (tertahan, alasan di `notes`), `deferred` (ditunda), `done` (selesai).
 - **`depends_on`** berisi ID yang wajib `done` sebelum fitur boleh mulai. Jangan mulai fitur yang dependensinya belum `done`; laporkan ke user.
 - **Sebelum mulai:** ubah status ke `in-progress` dan isi `owner` (nama sesi/agent). Satu agent hanya memegang satu fitur `in-progress`. Jangan ambil fitur yang `owner`-nya agent lain.
 - **Menandai `done`:** hanya setelah semua `acceptance` terpenuhi, test terkait lulus, dan Pint dijalankan. Isi `evidence` dengan hash commit dan test yang lulus, lalu kosongkan `owner`.
-- Pekerjaan di luar daftar: tambahkan entri baru dulu, jangan kerjakan diam-diam. Fitur batal tidak dihapus; jadikan `deferred` dan tulis alasan di `notes`.
+- Fitur batal tidak dihapus; jadikan `deferred` dan tulis alasan di `notes`.
 - Perubahan `feature_list.json` ikut commit fiturnya (atau `docs(features): ...` bila berdiri sendiri).
 
 ### 3. Handoff antar agent
@@ -140,17 +154,17 @@ Setiap fitur ditetapkan ke satu jalur saat diklaim, dan jalurnya ditulis di `not
 
 **Jalur penuh**: semua yang menyentuh migration atau skema, uang, tagihan, PSB, dokumen pribadi, permission atau cakupan jenjang, serta Action yang mengubah data. Siklusnya dijalankan orkestrator secara berurutan dengan tim subagent (`.claude/agents/`):
 
-1. `product-manager`: pilih fitur, klaim di `feature_list.json`, tulis `docs/plans/<ID>-plan.md` (maks. ±150 baris, 8–15 AC).
+1. `product-manager`: ambil issue, klaim di issue dan `feature_list.json`, tulis `docs/plans/<ID>-plan.md` (maks. ±150 baris, 8–15 AC).
 2. `plan-reviewer`: verdict `APPROVED` / `CHANGES_REQUESTED`, cukup satu putaran. Temuan blocker atau major direvisi satu kali oleh product-manager. Bila masih ada blocker setelah itu, orkestrator memutuskan atau bertanya ke user; tidak ada putaran ketiga. Temuan minor dicatat dan diselesaikan saat implementasi.
 3. `red-tester` mode RED: test Pest dari kriteria penerimaan, semuanya gagal karena alasan yang benar.
 4. `green-coder`: implementasi sampai hijau, refactor, Pint. Tidak boleh mengubah test. Fitur besar dipecah menjadi beberapa pemanggilan per kelompok test (mis. migration + Action, lalu Filament, lalu portal), masing-masing dengan laporan.
 5. `red-tester` mode VERIFY: cari celah yang berisiko nyata. `FAIL` → kembali ke langkah 4.
 
-Untuk kedua jalur: setelah selesai, orkestrator melaporkan ke user. Commit dan status `done` hanya atas permintaan user (lihat bagian 1 dan 2). Satu sesi pelaksana melapor langsung ke orkestrator; jangan menyisipkan sesi perantara.
+Untuk kedua jalur, rencana `docs/plans/<ID>-plan.md` menautkan issue-nya (`Issue: #<n>`). Setelah selesai, orkestrator melaporkan ke user. Commit dan status `done` hanya atas permintaan user (lihat bagian 1 dan 2). Satu sesi pelaksana melapor langsung ke orkestrator; jangan menyisipkan sesi perantara.
 
 ## Urutan pengembangan
 
-Rincian per fitur dan statusnya ada di `feature_list.json`.
+Rincian per fitur ada di issue GitHub; status teknisnya di `feature_list.json`.
 
 1. **Fase 1 (MVP):** inti (users, RBAC, settings, units, academic_years), Akademik & Santri, Asrama, PSB, Keuangan, Konten, Dokumen, Prestasi, Dashboard.
 2. **Fase 2:** virtual account (Midtrans/Xendit/Tripay/bank syariah), notifikasi WhatsApp (driver bisa diganti), portal wali.

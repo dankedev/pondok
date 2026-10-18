@@ -8,7 +8,14 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile --reporter=append-only
 
-RUN pnpm run build
+RUN node --input-type=module -e '\
+import { build } from "vite"; \
+import { inspect } from "node:util"; \
+try { await build(); } catch (error) { \
+    console.error(error); \
+    if (error && "errors" in error) console.error(inspect(error.errors, { depth: null, getters: true })); \
+    process.exitCode = 1; \
+}'
 
 RUN if [ ! -f public/build/manifest.json ]; then \
         echo "Vite build completed without public/build/manifest.json; generated files:"; \

@@ -50,7 +50,8 @@ COPY . .
 COPY --from=assets /app/public/build ./public/build
 COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 
-RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader \
+RUN cp .env.production.example .env \
+    && composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader \
     && mkdir -p \
         storage/app/private \
         storage/app/public \

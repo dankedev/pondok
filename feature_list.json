@@ -1045,16 +1045,16 @@
       "module": "Deploy",
       "status": "in-progress",
       "depends_on": [],
-      "description": "Sediakan Dockerfile produksi untuk Pondok dengan PHP 8.4 + Apache, dependency Composer produksi, aset frontend yang dibangun pada build stage, konfigurasi runtime tanpa rahasia, dan database eksternal. Tambahkan berkas pendukung minimum untuk Apache dan build context.",
+      "description": "Sediakan image produksi Pondok dengan PHP 8.4 + Apache dan aset frontend dari build stage, serta Docker Compose untuk layanan Laravel dan MySQL. Gunakan named volume untuk database dan storage, rahasia dari environment runtime, healthcheck/dependency DB, port HTTP yang dapat dikonfigurasi, serta alur operasional tanpa daemon worker/scheduler.",
       "acceptance": [
-        "Image produksi dapat dibangun dan melayani Laravel dari public/",
-        "Aset build tersedia tanpa Node runtime; rahasia tidak masuk image",
-        "Storage writable/persisten, database eksternal, dan batas worker/scheduler dijelaskan"
+        "Image produksi melayani Laravel dari public/; aset dibangun tanpa Node runtime dan rahasia tidak masuk image",
+        "Compose menjalankan app + MySQL dengan health/dependency, port HTTP terkonfigurasi, serta named volume DB dan storage yang persisten",
+        "Instruksi runtime secret, instalasi, upgrade, backup, dan trigger scheduler eksternal tersedia; tidak ada Redis atau daemon worker/scheduler"
       ],
       "owner": "VS Code agent",
       "handoff": null,
       "evidence": "",
-      "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Review rencana dilakukan langsung karena plan-reviewer gagal dijalankan (model default tidak dikenali)."
+      "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Rencana direview langsung karena plan-reviewer gagal dijalankan (model default tidak dikenali). Compose config dan pemeriksaan statis lulus; build/smoke Docker menunggu daemon aktif."
     }
   ]
 }

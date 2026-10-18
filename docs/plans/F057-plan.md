@@ -3,15 +3,15 @@
 Status rencana: APPROVED (review langsung; plan-reviewer tidak tersedia karena model agent default tidak dikenali)
 
 ## Ringkasan & tujuan
-Sediakan image web produksi Pondok yang bisa dijalankan pada host Docker umum tanpa mengubah runtime deployment cPanel. Rujukan: `CLAUDE.md` §Batasan deployment, `docs/prd.md` §4, `docs/rilis.md`, dan `docs/instalasi.md`.
+Sediakan deployment produksi Docker berbasis Apache yang dapat dibangun dan dijalankan bersama MySQL melalui Docker Compose. cPanel tetap mengikuti alur rilisnya. Acuan: `CLAUDE.md` §Batasan deployment, `docs/prd.md` §4–5, `docs/rilis.md`, dan `docs/instalasi.md`.
 
 ## Ruang lingkup
-- Termasuk: Dockerfile produksi, `.dockerignore`, dan konfigurasi document root Apache.
-- Build frontend dilakukan pada build stage Node; image runtime tidak menyertakan Node.js.
-- Tidak termasuk: Docker Compose/orchestrator, image/service database, konfigurasi secret manager/proxy/TLS, Redis, service worker/scheduler persisten, dokumentasi deploy terpisah, dan perubahan alur rilis cPanel.
+- Termasuk: Dockerfile produksi, `.dockerignore`, konfigurasi Apache, dan Compose berisi layanan Laravel dan MySQL; volume persisten; instruksi inisialisasi, upgrade, dan trigger scheduler eksternal.
+- Build aset frontend pada stage Node; image runtime tidak menyertakan Node.
+- Tidak termasuk (eksplisit): database eksternal atau database lain, TLS/reverse proxy, secret manager spesifik vendor, Redis, worker/scheduler daemon, backup otomatis, dan perubahan alur cPanel.
 
 ## Model data
-Tidak ada perubahan tabel atau data aplikasi.
+Tidak ada perubahan tabel atau data aplikasi. Data MySQL aplikasi berada pada named volume Compose.
 
 ## Action class
 Tidak ada Action baru; tidak ada operasi bisnis aplikasi.
@@ -23,26 +23,39 @@ Tidak ada UI aplikasi.
 Tidak ada permission, `unit_user`, atau saklar modul yang berubah.
 
 ## Kriteria penerimaan (bisa dites)
-- **AC-1:** Dengan PHP 8.4 dan Apache, image memuat ekstensi runtime untuk koneksi MySQL/MariaDB dan PostgreSQL; image runtime tidak memasang database server, Redis, Node.js, atau process manager tambahan.
-- **AC-2:** Apache document root menunjuk ke `public/`, mengaktifkan rewrite Laravel, dan request aplikasi diteruskan ke `public/index.php`.
-- **AC-3:** Build memasang dependency Composer produksi saja, membangun aset Vite dalam build stage, dan memastikan `public/build/manifest.json` tersedia; image runtime tidak menjalankan Node/Vite.
-- **AC-4:** Build context mengecualikan `.env`, `.env.backup`, `.env.production`, file rahasia lokal lain, dan `node_modules`, tetapi mempertahankan template `.env.example` serta `.env.production.example` yang dipakai installer. `.dockerignore` tidak mengecualikan `public/build` maupun aset Filament yang diperlukan.
-- **AC-5:** Image tidak menyertakan database; kredensial database dan `APP_KEY` diberikan sebagai environment saat runtime, bukan disimpan di Dockerfile/image.
-- **AC-6:** `storage/` dan `bootstrap/cache/` writable oleh user web image; image menyediakan tautan `public/storage` ke storage lokal.
-- **AC-7:** Web process berjalan di foreground, dan image menyajikan endpoint health Laravel. Setup database (`pondok:install` / migrasi), upgrade (`pondok:upgrade --force`), persistensi volume, dan pemicu eksternal scheduler dijelaskan kepada operator saat serah-terima.
+- **AC-1:** Build image pada PHP 8.4 + Apache menyediakan ekstensi PHP untuk MySQL/MariaDB dan PostgreSQL, memasang dependency Composer produksi, mengarahkan document root ke `public/`, mengaktifkan rewrite, dan melayani Laravel dari `public/index.php`.
+- **AC-2:** Build menghasilkan `public/build/manifest.json` dan aset Filament. Node hanya ada di build stage; image runtime tidak berisi Node, server database, Redis, atau process manager.
+- **AC-3:** Build context mengabaikan `.env` dan berkas rahasia lokal lain serta `node_modules`, tetapi memasukkan template environment dan tidak mengecualikan `public/build` atau aset Filament yang diperlukan. Tidak ada nilai rahasia di Dockerfile, Compose, build args, atau image.
+- **AC-4:** `docker compose config` menghasilkan tepat dua layanan aplikasi: Laravel/Apache dan MySQL; tidak ada Redis, worker, scheduler, atau Node runtime. Aplikasi memakai MySQL service Compose, bukan koneksi database eksternal.
+- **AC-5:** APP_KEY, password MySQL, dan kredensial admin awal hanya diberikan saat runtime melalui environment Compose/secret provider operator. File environment lokal boleh dipakai, harus diabaikan Git dan build context, tidak memuat nilai rahasia pada contoh yang dilacak, dan tidak dipasang ke image. App menerima hanya kredensial DB aplikasinya, bukan password root MySQL.
+- **AC-6:** Compose menetapkan `APP_ENV=production`, `APP_DEBUG=false`, `DB_CONNECTION=mysql`, host DB internal `db`, serta konfigurasi queue/cache/session berbasis database. Image memiliki `.env` non-rahasia yang disalin dari template agar installer dapat dijalankan; runtime environment mengalahkan nilai template. APP_KEY wajib disuplai dari environment sebelum install dan startup.
+- **AC-7:** HTTP dipublikasikan pada port host yang dapat dikonfigurasi (`APP_PORT`, default 8080) menuju port 80 container. Port MySQL tidak dipublikasikan ke host; database hanya tersedia di jaringan Compose.
+- **AC-8:** MySQL menggunakan named volume. Setelah container DB dihentikan/dibuat ulang, data uji tetap tersedia; `docker compose down` tanpa `-v` tidak menghapus volume.
+- **AC-9:** Laravel `storage/` menggunakan named volume yang writable dan tetap berisi berkas uji setelah container aplikasi dibuat ulang. `bootstrap/cache` writable; `public/storage` mengarah ke storage publik lokal.
+- **AC-10:** MySQL memiliki healthcheck; layanan app menunggu MySQL berstatus healthy. App memiliki healthcheck HTTP terhadap endpoint Laravel `/up`; status sehat hanya setelah endpoint merespons sukses.
+- **AC-11:** Web server berjalan foreground. Instalasi baru mengikuti urutan konfigurasi runtime → start MySQL sampai healthy → `docker compose run --rm app php artisan pondok:install --no-interaction` → start app. Perintah install tidak dijalankan otomatis setiap startup.
+- **AC-12:** Upgrade mengikuti urutan backup eksternal untuk DB dan `storage/` → build/ganti image → `docker compose run --rm app php artisan pondok:upgrade --force` → start/recreate app. Upgrade mempertahankan named volumes dan tidak menjalankan `migrate:fresh`.
+- **AC-13:** Tidak ada container worker/scheduler persisten. Instruksi operator menjelaskan trigger eksternal per menit `docker compose exec -T app php artisan schedule:run`; cron host atau scheduler platform mengatur trigger. Tugas worker tetap memakai perilaku scheduler proyek, bukan daemon di container.
+- **AC-14:** Operator mendapat instruksi ringkas untuk mengisi environment rahasia hanya di host/runtime, mengatur `APP_PORT`, memeriksa status health, membuat backup/restore volume secara terpisah, serta menjalankan setup dan upgrade tanpa menghapus volume.
 
 ## Rencana test
-- Validasi `docker build` serta smoke test endpoint `/up` bila Docker daemon tersedia.
-- Periksa secara langsung bahwa `.dockerignore` mengecualikan rahasia dan bahwa konfigurasi Apache/Dockerfile memakai document root `public/`, ekstensi yang diperlukan, serta stage build frontend non-runtime.
 - Tidak menambah test Pest untuk konfigurasi infrastruktur statis.
+- Validasi `docker build` dan `docker compose config`; inspeksi image/build context untuk runtime Node, file rahasia, port DB, dan service terlarang.
+- Smoke test dengan Docker daemon: health DB lalu app `/up`, akses HTTP pada port terpilih, persistensi kedua volume setelah recreate, serta instalasi/upgrade menggunakan database disposable.
+- Verifikasi urutan operasional dan perintah scheduler pada catatan serah-terima; jangan menjalankan scheduler sebagai daemon.
 
 ## Urutan implementasi
-1. **Image web:** `Dockerfile`, `.dockerignore`, dan `docker/000-default.conf`.
-2. **Validasi:** build image dan smoke test endpoint health bila Docker daemon tersedia.
+1. **Image web:** `Dockerfile`, `.dockerignore`, dan `docker/000-default.conf`. Hijau: build image dan pemeriksaan AC-1–AC-3.
+2. **Compose dan data persisten:** `docker-compose.yml`, layanan `app` + `db`, healthcheck, port, serta volume. Hijau: validasi config dan smoke test AC-4–AC-10.
+3. **Operasional:** catatan setup/upgrade/scheduler untuk operator, tanpa daemon atau perubahan dokumen cPanel. Hijau: walkthrough AC-11–AC-14.
 
 ## Risiko & pertanyaan terbuka
-- Bentuk scheduler eksternal bergantung pada platform hosting Docker; panduan hanya menetapkan command dan interval, bukan vendor orchestrator.
-- Tidak ada keputusan user yang dibutuhkan untuk rencana ini.
+- Compose mengelola MySQL satu host; backup volume dan pemulihan harus dilakukan operator.
+- Scheduler harus dipicu oleh cron/scheduler di luar container; pemilihan mekanisme spesifik hosting tetap tanggung jawab operator.
+- Tidak ada pertanyaan terbuka yang memblokir: user memilih database MySQL di Compose dan meminta Compose masuk lingkup.
 
 ## Riwayat revisi
-- Revisi review: aset dibangun dalam stage Node agar image dapat dibuat dari checkout bersih; dokumentasi terpisah dan test Pest infrastruktur dikeluarkan dari lingkup. Worker/scheduler tidak dijalankan di web container; database tetap eksternal.
+- Revisi scope atas pilihan eksplisit user: tambahkan Docker Compose dengan MySQL lokal Compose, named volumes DB/storage, runtime secrets, health/dependency, konfigurasi port, dan alur install/upgrade. Database eksternal bukan lagi target.
+- Pertahankan batas proyek: tanpa Redis, Node runtime, atau daemon worker/scheduler; trigger scheduler tetap eksternal.
+- Rencana sebelumnya direview langsung karena plan-reviewer tidak tersedia (model agent default tidak dikenali).
+- Review revisi dilakukan langsung karena plan-reviewer kembali tidak dapat dijalankan. Verifikasi installer memastikan `.env` template harus ada sebelum `pondok:install`, maka image menyediakan template non-rahasia dan APP_KEY diwajibkan saat runtime.

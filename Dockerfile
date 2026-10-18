@@ -8,7 +8,11 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile \
     && pnpm run build \
-    && test -f public/build/manifest.json
+    && if [ ! -f public/build/manifest.json ]; then \
+        echo "Vite build succeeded but public/build/manifest.json is missing; generated files:"; \
+        find public -maxdepth 4 -type f -print; \
+        exit 1; \
+    fi
 
 FROM php:8.4-apache-bookworm
 

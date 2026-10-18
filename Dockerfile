@@ -34,6 +34,7 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public \
     APP_ENV=production \
     APP_DEBUG=false \
     DB_CONNECTION=mysql \
+    TRUSTED_PROXIES=* \
     COMPOSER_ALLOW_SUPERUSER=1
 
 RUN apt-get update \

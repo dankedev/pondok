@@ -15,6 +15,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureTrustedProxies();
+        $this->forceHttpsInProduction();
 
         // Tidak dipaksakan (`enforceMorphMap`): Spatie Permission dan Activitylog menyimpan nama kelas.
         Relation::morphMap(Document::DOCUMENTABLE_TYPES);
@@ -77,6 +79,17 @@ class AppServiceProvider extends ServiceProvider
             if ($translator instanceof CarbonTranslator) {
                 $translator->setMessages('id', $messages);
             }
+        }
+    }
+
+    /**
+     * Produksi dengan `APP_URL` https: semua URL buatan aplikasi (aset Vite, redirect, link)
+     * memakai https walau HTTPS diakhiri di proxy yang tidak meneruskan skemanya.
+     */
+    private function forceHttpsInProduction(): void
+    {
+        if ($this->app->isProduction() && str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
         }
     }
 

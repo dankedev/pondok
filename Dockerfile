@@ -6,10 +6,12 @@ RUN npm install --global pnpm@12
 
 COPY . .
 
-RUN pnpm install --frozen-lockfile \
-    && pnpm run build \
-    && if [ ! -f public/build/manifest.json ]; then \
-        echo "Vite build succeeded but public/build/manifest.json is missing; generated files:"; \
+RUN pnpm install --frozen-lockfile --reporter=append-only
+
+RUN pnpm run build
+
+RUN if [ ! -f public/build/manifest.json ]; then \
+        echo "Vite build completed without public/build/manifest.json; generated files:"; \
         find public -maxdepth 4 -type f -print; \
         exit 1; \
     fi

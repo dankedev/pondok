@@ -358,6 +358,7 @@
     {
       "id": "F020",
       "key": "keuangan-payment-gateway",
+      "issue": 1,
       "name": "Virtual account & payment gateway",
       "phase": 2,
       "module": "Keuangan",
@@ -373,6 +374,7 @@
     {
       "id": "F021",
       "key": "notifikasi-whatsapp",
+      "issue": 2,
       "name": "Notifikasi WhatsApp",
       "phase": 2,
       "module": "Inti",
@@ -388,6 +390,7 @@
     {
       "id": "F022",
       "key": "portal-wali",
+      "issue": 3,
       "name": "Portal wali",
       "phase": 2,
       "module": "Portal Wali",
@@ -403,6 +406,7 @@
     {
       "id": "F023",
       "key": "tahfidz",
+      "issue": 4,
       "name": "Tahfidz",
       "phase": 3,
       "module": "Tahfidz",
@@ -418,6 +422,7 @@
     {
       "id": "F024",
       "key": "perizinan",
+      "issue": 5,
       "name": "Perizinan, kepulangan & kunjungan",
       "phase": 3,
       "module": "Perizinan",
@@ -433,6 +438,7 @@
     {
       "id": "F025",
       "key": "absensi",
+      "issue": 6,
       "name": "Absensi",
       "phase": 3,
       "module": "Akademik",
@@ -448,6 +454,7 @@
     {
       "id": "F026",
       "key": "kedisiplinan",
+      "issue": 7,
       "name": "Kedisiplinan",
       "phase": 3,
       "module": "Akademik",
@@ -463,6 +470,7 @@
     {
       "id": "F027",
       "key": "rapor-diniyah",
+      "issue": 8,
       "name": "Rapor diniyah",
       "phase": 4,
       "module": "Akademik",
@@ -478,6 +486,7 @@
     {
       "id": "F028",
       "key": "tabungan-uang-saku",
+      "issue": 9,
       "name": "Tabungan & uang saku",
       "phase": 4,
       "module": "Keuangan",
@@ -493,6 +502,7 @@
     {
       "id": "F029",
       "key": "kas-umum",
+      "issue": 10,
       "name": "Kas umum yayasan",
       "phase": 4,
       "module": "Keuangan",
@@ -508,6 +518,7 @@
     {
       "id": "F030",
       "key": "kepegawaian-honor",
+      "issue": 11,
       "name": "Kepegawaian & honor",
       "phase": 4,
       "module": "Kepegawaian",
@@ -523,6 +534,7 @@
     {
       "id": "F031",
       "key": "kesehatan",
+      "issue": 12,
       "name": "Kesehatan santri",
       "phase": 4,
       "module": "Kesehatan",
@@ -538,6 +550,7 @@
     {
       "id": "F032",
       "key": "alumni-donasi",
+      "issue": 13,
       "name": "Alumni & donasi",
       "phase": 4,
       "module": "Alumni",
@@ -636,6 +649,7 @@
     {
       "id": "F038",
       "key": "psb-info-publik",
+      "issue": 14,
       "name": "Halaman Info PSB publik (hibrida)",
       "phase": 1,
       "module": "PSB",
@@ -677,6 +691,7 @@
     {
       "id": "F040",
       "key": "psb-syarat-daftar-ulang-nominal",
+      "issue": 15,
       "name": "Syarat bayar daftar ulang dalam nominal rupiah",
       "phase": 1,
       "module": "PSB",
@@ -696,6 +711,7 @@
     {
       "id": "F041",
       "key": "keuangan-tagihan-tahunan",
+      "issue": 16,
       "name": "Generator tagihan tahunan",
       "phase": 1,
       "module": "Keuangan",
@@ -715,6 +731,7 @@
     {
       "id": "F042",
       "key": "inti-backup-pembersihan-data",
+      "issue": 17,
       "name": "Backup dan pembersihan data lama per periode",
       "phase": 1,
       "module": "Inti",
@@ -935,6 +952,7 @@
     {
       "id": "F051",
       "key": "inti-penyempurnaan-aman",
+      "issue": 18,
       "name": "Penyempurnaan risiko rendah (audit ISO 25010/23026 Grup 1)",
       "phase": 1,
       "module": "Inti",
@@ -954,6 +972,7 @@
     {
       "id": "F052",
       "key": "keuangan-performa-keandalan",
+      "issue": 19,
       "name": "Performa & keandalan keuangan (audit Grup 2)",
       "phase": 1,
       "module": "Keuangan",
@@ -973,6 +992,7 @@
     {
       "id": "F053",
       "key": "psb-uji-konkurensi",
+      "issue": 20,
       "name": "Uji konversi PSB bersamaan di MySQL (audit Grup 3)",
       "phase": 1,
       "module": "PSB",
@@ -1010,6 +1030,7 @@
     {
       "id": "F055",
       "key": "inti-mfa-verifikasi-email",
+      "issue": 21,
       "name": "MFA/2FA & verifikasi email (audit ISO 27001)",
       "phase": 1,
       "module": "Inti",
@@ -1025,6 +1046,7 @@
     {
       "id": "F056",
       "key": "inti-enkripsi-pii-csp-admin",
+      "issue": 22,
       "name": "Enkripsi data pribadi & CSP panel admin (audit ISO 27001)",
       "phase": 1,
       "module": "Inti",
@@ -1040,6 +1062,7 @@
     {
       "id": "F057",
       "key": "deployment-docker-production",
+      "issue": 23,
       "name": "Dukungan deploy Docker produksi",
       "phase": 1,
       "module": "Deploy",

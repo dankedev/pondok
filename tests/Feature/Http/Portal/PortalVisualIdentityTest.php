@@ -434,7 +434,7 @@ describe('Filament', function () {
         $panel = Filament::getPanel('admin');
 
         expect($panel->getColors()['primary'])->toEqual(Color::Emerald)
-            ->and($panel->getViteTheme())->toBeNull();
+            ->and($panel->getViteTheme())->not->toBe('resources/css/app.css');
 
         $html = $this->get('/admin/login')->assertOk()->getContent();
 

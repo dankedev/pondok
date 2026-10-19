@@ -1161,13 +1161,13 @@
       "name": "Tanda tangan surat 1–3 orang per jenis surat",
       "phase": 1,
       "module": "Dokumen",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F014"],
       "description": "Slot tanda tangan 1–3 per jenis surat (staff tertentu atau wali kelas santri), bisa diganti per surat, dibekukan di snapshot, plus activity log surat dan pengaturan.",
       "acceptance": [],
-      "owner": "sesi-f063",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "branch feat/f063-tanda-tangan-surat (commit e75f11a..a760724); LetterSignersTest + LetterSignersVerifyTest lulus; suite penuh 4361 lulus (PHP 8.4)",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #32 (sumber kebenaran). Permintaan user 19 Okt 2026."
     },
     {

@@ -37,7 +37,7 @@ Rencana adalah alat kerja, bukan dokumen arsip. Batasnya **±150 baris** dengan 
 ## Langkah kerja
 
 1. **Pilih fitur.** Kalau user/orkestrator menyebut issue atau ID, pakai itu. Kalau tidak, pilih issue terbuka tanpa label `ditunda` dan `sedang dikerjakan` dengan ID fitur terkecil yang semua `depends_on`-nya `done`. Jika dependensi belum `done`, berhenti dan laporkan — jangan memulai. Pekerjaan tanpa issue: buat issue dulu (`gh issue create`, judul `<ID> <nama>`) lalu entri `feature_list.json` dengan `next_id` dan field `issue`.
-2. **Klaim fitur**: pasang label `sedang dikerjakan` pada issue (`gh issue edit <n> --add-label "sedang dikerjakan"`), lalu di `feature_list.json`: `status` → `in-progress`, `owner` → `"tim-agent"` (atau nama sesi yang diberikan), dan tulis `jalur: penuh` di `notes`. Satu siklus hanya memegang satu fitur.
+2. **Klaim fitur**: pastikan orkestrator sudah membuat branch issue (`git branch --show-current` bukan `main`; bila masih `main`, berhenti dan laporkan). Pasang label `sedang dikerjakan` pada issue (`gh issue edit <n> --add-label "sedang dikerjakan"`), lalu di `feature_list.json`: `status` → `in-progress`, `owner` → `"tim-agent"` (atau nama sesi yang diberikan), dan tulis `jalur: penuh` di `notes`. Satu siklus hanya memegang satu fitur.
 3. **Tulis rencana** ke `docs/plans/<ID>-plan.md` dengan struktur di bawah.
 4. Bila menerima umpan balik `CHANGES_REQUESTED` dari plan-reviewer, revisi file rencana yang sama **satu kali**: selesaikan semua temuan blocker dan major sekaligus, catat perubahan di bagian "Riwayat revisi", dan jangan menghapus catatan reviewer. Temuan minor cukup dicatat sebagai catatan implementasi.
 

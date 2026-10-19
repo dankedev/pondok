@@ -5,7 +5,9 @@ namespace App\Filament\Resources\IssuedLetters;
 use App\Actions\Dokumen\CancelIssuedLetter;
 use App\Actions\Dokumen\IssueLetter;
 use App\Actions\Dokumen\LetterNumbering;
+use App\Actions\Dokumen\ResolveLetterSigners;
 use App\Actions\Dokumen\UpdateLetterNumbering;
+use App\Actions\Dokumen\UpdateLetterSigners;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Concerns\ShowsActionErrorsOnForm;
 use App\Filament\Resources\IssuedLetters\Pages\ListIssuedLetters;
@@ -22,6 +24,7 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -30,7 +33,11 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\StateCasts\NumberStateCast;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -65,7 +72,6 @@ class IssuedLetterResource extends Resource
     private const ISSUE_FIELD_MAP = [
         'student' => 'student_id',
         'type' => 'type',
-        'signed_by_staff_id' => 'signed_by_staff_id',
         'purpose' => 'purpose',
     ];
 
@@ -127,7 +133,7 @@ class IssuedLetterResource extends Resource
                     ->date('j M Y'),
                 TextColumn::make('signer_name')
                     ->label(__('pondok.issued_letter.signer'))
-                    ->state(fn (IssuedLetter $record): ?string => $record->snapshot['signer']['name'] ?? null)
+                    ->state(fn (IssuedLetter $record): ?string => $record->signerNames())
                     ->placeholder('-'),
                 TextColumn::make('status')
                     ->label(__('pondok.issued_letter.status'))
@@ -204,24 +210,36 @@ class IssuedLetterResource extends Resource
                     ->getOptionLabelUsing(fn (mixed $value): ?string => is_numeric($value)
                         ? (($student = Student::query()->find($value)) ? static::studentLabel($student) : __('pondok.issued_letter.student_unavailable'))
                         : null)
-                    ->required(),
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(fn (Get $get, Set $set) => static::fillSigners($get, $set)),
                 Select::make('type')
                     ->label(__('pondok.issued_letter.type'))
                     ->options(collect(IssuedLetter::TYPES)->mapWithKeys(fn (string $type): array => [$type => IssuedLetter::typeLabelFor($type)])->all())
                     ->required()
-                    ->live(),
-                Select::make('signed_by_staff_id')
-                    ->label(__('pondok.issued_letter.signer'))
-                    ->options(fn (): array => Staff::query()
-                        ->where('is_active', true)
-                        ->orderBy('name')
-                        ->get()
-                        ->mapWithKeys(fn (Staff $staff): array => [$staff->id => filled($staff->position)
-                            ? __('pondok.issued_letter.signer_option', ['name' => $staff->name, 'position' => $staff->position])
-                            : $staff->name])
-                        ->all())
-                    ->searchable()
-                    ->required(),
+                    ->live()
+                    ->afterStateUpdated(fn (Get $get, Set $set) => static::fillSigners($get, $set)),
+                Repeater::make('signers')
+                    ->label(__('pondok.letter_signers.issue_heading'))
+                    ->default([])
+                    ->minItems(1)
+                    ->maxItems(ResolveLetterSigners::MAX_SLOTS)
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
+                    ->schema([
+                        Hidden::make('label'),
+                        Hidden::make('source'),
+                        Select::make('staff_id')
+                            ->label(__('pondok.letter_signers.staff'))
+                            ->options(fn (): array => static::activeStaffOptions())
+                            ->helperText(fn (Get $get): ?string => $get('source') === ResolveLetterSigners::SOURCE_HOMEROOM && blank($get('staff_id'))
+                                ? __('pondok.letter_signers.homeroom_unresolved')
+                                : null)
+                            ->searchable()
+                            ->required(),
+                    ]),
                 Textarea::make('purpose')
                     ->label(__('pondok.issued_letter.purpose'))
                     ->helperText(__('pondok.issued_letter.purpose_helper'))
@@ -240,7 +258,7 @@ class IssuedLetterResource extends Resource
 
                     return $issueLetter->handle($student, [
                         'type' => $data['type'] ?? null,
-                        'signed_by_staff_id' => $data['signed_by_staff_id'] ?? null,
+                        'signers' => array_map(fn (mixed $row): mixed => is_array($row) ? ($row['staff_id'] ?? null) : null, array_values((array) ($data['signers'] ?? []))),
                         'purpose' => $data['purpose'] ?? null,
                     ], static::user());
                 });
@@ -346,6 +364,99 @@ class IssuedLetterResource extends Resource
 
                 Notification::make()
                     ->title(__('pondok.issued_letter.cancelled', ['number' => $record->letter_no]))
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * Isi ulang slot penandatangan form terbit dari pengaturan jenis surat dan wali kelas santri terpilih.
+     */
+    protected static function fillSigners(Get $get, Set $set): void
+    {
+        $type = $get('type');
+        $student = is_numeric($get('student_id')) ? Student::query()->find((int) $get('student_id')) : null;
+
+        if (! is_string($type) || ! in_array($type, IssuedLetter::TYPES, true) || $student === null) {
+            $set('signers', []);
+
+            return;
+        }
+
+        $set('signers', array_map(fn (array $slot): array => [
+            'label' => $slot['label'],
+            'source' => $slot['source'],
+            'staff_id' => $slot['staff_id'],
+        ], app(ResolveLetterSigners::class)->handle($type, $student)));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected static function activeStaffOptions(): array
+    {
+        return Staff::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (Staff $staff): array => [$staff->id => filled($staff->position)
+                ? __('pondok.issued_letter.signer_option', ['name' => $staff->name, 'position' => $staff->position])
+                : $staff->name])
+            ->all();
+    }
+
+    public static function configureSignersAction(): Action
+    {
+        return Action::make('configureSigners')
+            ->label(__('pondok.letter_signers.title'))
+            ->icon(Heroicon::OutlinedPencilSquare)
+            ->color('gray')
+            ->authorize(fn (): bool => Gate::allows('configureNumbering', IssuedLetter::class))
+            ->modalHeading(__('pondok.letter_signers.title'))
+            ->modalDescription(__('pondok.letter_signers.description'))
+            ->modalSubmitActionLabel(__('pondok.letter_signers.submit'))
+            ->mountUsing(function (Schema $schema, ResolveLetterSigners $resolve): void {
+                $schema->fill(['signers' => collect(IssuedLetter::TYPES)
+                    ->mapWithKeys(fn (string $type): array => [$type => $resolve->slots($type)])
+                    ->all()]);
+            })
+            ->schema(fn (): array => [
+                Group::make(collect(IssuedLetter::TYPES)->map(fn (string $type): Section => Section::make(IssuedLetter::typeLabelFor($type))
+                    ->collapsible()
+                    ->schema([
+                        Repeater::make($type)
+                            ->hiddenLabel()
+                            ->minItems(1)
+                            ->maxItems(ResolveLetterSigners::MAX_SLOTS)
+                            ->schema([
+                                TextInput::make('label')
+                                    ->label(__('pondok.letter_signers.label'))
+                                    ->helperText(__('pondok.letter_signers.label_help'))
+                                    ->required()
+                                    ->maxLength(UpdateLetterSigners::LABEL_MAX_LENGTH),
+                                Select::make('source')
+                                    ->label(__('pondok.letter_signers.source'))
+                                    ->options([
+                                        ResolveLetterSigners::SOURCE_STAFF => __('pondok.letter_signers.sources.staff'),
+                                        ResolveLetterSigners::SOURCE_HOMEROOM => __('pondok.letter_signers.sources.homeroom'),
+                                    ])
+                                    ->required()
+                                    ->live(),
+                                Select::make('staff_id')
+                                    ->label(__('pondok.letter_signers.staff'))
+                                    ->options(fn (): array => static::activeStaffOptions())
+                                    ->searchable()
+                                    ->stateCast(new NumberStateCast(isInteger: true))
+                                    ->visible(fn (Get $get): bool => $get('source') === ResolveLetterSigners::SOURCE_STAFF)
+                                    ->required(),
+                            ]),
+                    ]))->all())->statePath('signers'),
+            ])
+            ->action(function (array $data, UpdateLetterSigners $update, Action $action): void {
+                static::runShowingFormErrors($action, fn () => $update->handle((array) ($data['signers'] ?? []), static::user()));
+
+                Notification::make()
+                    ->title(__('pondok.letter_signers.saved'))
                     ->success()
                     ->send();
             });
@@ -462,7 +573,6 @@ class IssuedLetterResource extends Resource
     protected static function detail(IssuedLetter $record): array
     {
         $record->loadMissing(['student', 'issuer', 'canceller']);
-        $signer = $record->snapshot['signer'] ?? [];
 
         return [
             'letter_no' => $record->letter_no,
@@ -470,7 +580,10 @@ class IssuedLetterResource extends Resource
             'student' => $record->student !== null ? static::studentLabel($record->student) : ($record->snapshot['student']['name'] ?? null),
             'issued_on' => $record->issued_on?->locale('id')->translatedFormat('j M Y'),
             'purpose' => $record->purpose,
-            'signer' => collect([$signer['name'] ?? null, $signer['position'] ?? null])->filter()->implode(', '),
+            'signer' => collect($record->signerList())
+                ->map(fn (array $signer): string => collect([$signer['name'] ?? null, $signer['position'] ?? null])->filter()->implode(', '))
+                ->filter()
+                ->implode('; '),
             'verification_code' => $record->formattedVerificationCode(),
             'verification_url' => $record->verificationUrl(),
             'status' => $record->statusLabel(),

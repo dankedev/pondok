@@ -4,6 +4,7 @@ namespace App\Filament\Imports;
 
 use App\Actions\Akademik\ImportStudentRow;
 use App\Models\Student;
+use App\Models\Unit;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
@@ -28,11 +29,11 @@ class StudentImporter extends Importer
                 ->castStateUsing(fn (?string $state): ?string => filled($state) ? mb_strtoupper(trim($state)) : null),
             static::column('birth_place', true, ['max:255'])->example('Bandung'),
             static::column('birth_date', true, ['date_format:Y-m-d'])->example('2012-03-15'),
-            static::column('unit', true)->example('SLTP'),
+            static::column('unit', true)->example(Unit::query()->orderBy('sort_order')->value('code') ?? 'SLTP'),
             static::column('entry_year', true, ['regex:/^\d{4}$/'])->example('2026'),
             static::column('classroom')->example(''),
-            ...static::guardianColumns(1, 'Abdullah Rahman', 'ayah', '081234567890', 'ya'),
-            ...static::guardianColumns(2, 'Khadijah Aisyah', 'ibu', '081200000000', 'tidak'),
+            ...static::guardianColumns(1, 'Abdullah Rahman', 'ayah', '080000000001', 'ya'),
+            ...static::guardianColumns(2, 'Khadijah Aisyah', 'ibu', '080000000002', 'tidak'),
         ];
     }
 
@@ -60,6 +61,7 @@ class StudentImporter extends Importer
 
         return ImportColumn::make($name)
             ->label($label)
+            ->exampleHeader($label)
             ->guess([$label, mb_strtolower($label)])
             ->requiredMapping($required)
             ->rules([$required ? 'required' : 'nullable', ...$rules])

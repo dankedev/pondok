@@ -11,6 +11,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\DetectsConcurrencyErrors;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -41,21 +42,23 @@ class IssueLetter
     public function __construct(private readonly GetPrintIdentity $printIdentity) {}
 
     /**
-     * @param  array{type?: string|null, signed_by_staff_id?: int|string|null, purpose?: string|null}  $data
+     * `signers` opsional: staff pengganti per indeks slot (`null` = pakai hasil `ResolveLetterSigners`).
+     *
+     * @param  array{type?: string|null, signers?: list<int|string|null>|null, purpose?: string|null}  $data
      */
     public function handle(Student $student, array $data, User $issuer): IssuedLetter
     {
         $type = $this->type($data['type'] ?? null);
         $student = $this->student($student, $type);
-        $signer = $this->signer($data['signed_by_staff_id'] ?? null);
+        $signers = $this->signers($type, $student, $data['signers'] ?? null);
         $purpose = $this->purpose($data['purpose'] ?? null, $type);
 
         return $this->issueWithRetry([
             'type' => $type,
             'student_id' => $student->getKey(),
-            'signed_by_staff_id' => $signer->getKey(),
+            'signed_by_staff_id' => $signers[0]['staff']->getKey(),
             'purpose' => $purpose,
-            'snapshot' => $this->snapshot($student, $signer),
+            'snapshot' => $this->snapshot($student, $signers),
             'issued_by' => $issuer->getKey(),
         ], $issuer);
     }
@@ -118,7 +121,11 @@ class IssueLetter
             ->performedOn($letter)
             ->causedBy($issuer)
             ->event('issued')
-            ->withProperties(['letter_no' => $letter->letter_no, 'type' => $letter->type])
+            ->withProperties([
+                'letter_no' => $letter->letter_no,
+                'type' => $letter->type,
+                'signers' => array_map(fn (array $signer): array => Arr::only($signer, ['label', 'name']), $letter->snapshot['signers']),
+            ])
             ->log('issued');
 
         return $letter;
@@ -158,15 +165,46 @@ class IssueLetter
         return $current;
     }
 
-    private function signer(mixed $value): Staff
+    /**
+     * Staff final per slot (override per indeks, atau hasil resolusi), berurutan sesuai slot.
+     *
+     * @return non-empty-list<array{label: string, staff: Staff}>
+     */
+    private function signers(string $type, Student $student, mixed $overrides): array
     {
-        $signer = is_numeric($value) ? Staff::query()->find((int) $value) : null;
+        $slots = app(ResolveLetterSigners::class)->handle($type, $student);
+        $overrides = is_array($overrides) ? array_values($overrides) : null;
 
-        if ($signer === null || ! $signer->is_active) {
-            $this->fail('signed_by_staff_id', 'signer_invalid');
+        if ($overrides !== null && count($overrides) !== count($slots)) {
+            $this->fail('signers', 'signers_invalid');
         }
 
-        return $signer;
+        $result = [];
+        $used = [];
+
+        foreach ($slots as $i => $slot) {
+            $key = "signers.{$i}.staff_id";
+            $id = $overrides[$i] ?? $slot['staff_id'];
+
+            if ($id === null || $id === '') {
+                $this->fail($key, 'signer_required');
+            }
+
+            $staff = is_numeric($id) ? Staff::query()->find((int) $id) : null;
+
+            if ($staff === null || ! $staff->is_active) {
+                $this->fail($key, 'signer_invalid');
+            }
+
+            if (in_array($staff->getKey(), $used, true)) {
+                $this->fail($key, 'signer_duplicate');
+            }
+
+            $used[] = $staff->getKey();
+            $result[] = ['label' => $slot['label'], 'staff' => $staff];
+        }
+
+        return $result;
     }
 
     private function purpose(mixed $value, string $type): ?string
@@ -191,9 +229,10 @@ class IssueLetter
     /**
      * Isi surat yang dibekukan: data minimal santri, penandatangan, dan lembaga (tanpa wali, NIK, alamat santri).
      *
-     * @return array{student: array<string, mixed>, signer: array<string, mixed>, school: array<string, mixed>}
+     * @param  non-empty-list<array{label: string, staff: Staff}>  $signers
+     * @return array{student: array<string, mixed>, signers: list<array<string, mixed>>, school: array<string, mixed>}
      */
-    private function snapshot(Student $student, Staff $signer): array
+    private function snapshot(Student $student, array $signers): array
     {
         return [
             'student' => [
@@ -208,11 +247,12 @@ class IssueLetter
                 'academic_year_name' => AcademicYear::current()?->name,
                 'status' => $student->status,
             ],
-            'signer' => [
-                'name' => $signer->name,
-                'position' => $signer->position,
-                'nip' => filled($signer->nip) ? (string) $signer->nip : null,
-            ],
+            'signers' => array_map(fn (array $signer): array => [
+                'label' => $signer['label'],
+                'name' => $signer['staff']->name,
+                'position' => $signer['staff']->position,
+                'nip' => filled($signer['staff']->nip) ? (string) $signer['staff']->nip : null,
+            ], $signers),
             'school' => $this->printIdentity->handle(),
         ];
     }

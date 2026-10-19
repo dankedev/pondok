@@ -41,4 +41,9 @@ class RoomAssignmentPolicy
     {
         return $authUser->can('delete-any:room-assignment');
     }
+
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('import:room-assignment');
+    }
 }

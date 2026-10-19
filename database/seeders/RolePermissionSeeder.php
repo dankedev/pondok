@@ -55,6 +55,7 @@ class RolePermissionSeeder extends Seeder
     /** Aksi tambahan per model, misalnya pemulihan untuk model soft delete. */
     public const EXTRA_RESOURCE_ACTIONS = [
         'Student' => ['restore', 'restoreAny', 'import'],
+        'RoomAssignment' => ['import'],
         // Tagihan hanya dibuat generator dan dibatalkan, tidak dibuat manual atau dihapus.
         'Invoice' => ['generate', 'cancel'],
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.
@@ -233,7 +234,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Guardian', $readOnly),
                 ...self::resourcePermissions('Dormitory'),
                 ...self::resourcePermissions('Room'),
-                ...self::resourcePermissions('RoomAssignment', $withoutDelete),
+                ...self::resourcePermissions('RoomAssignment', [...$withoutDelete, 'import']),
                 ...self::resourcePermissions('DormitorySupervisor', $withoutDelete),
                 // Dokumen santri non-rahasia (mis. kartu BPJS) untuk keperluan asrama.
                 ...self::resourcePermissions('Document', $readOnly),

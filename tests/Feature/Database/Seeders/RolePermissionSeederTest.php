@@ -99,7 +99,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:guardian', 'view:guardian',
         'view-any:dormitory', 'view:dormitory', 'create:dormitory', 'update:dormitory', 'delete:dormitory', 'delete-any:dormitory',
         'view-any:room', 'view:room', 'create:room', 'update:room', 'delete:room', 'delete-any:room',
-        'view-any:room-assignment', 'view:room-assignment', 'create:room-assignment', 'update:room-assignment',
+        'view-any:room-assignment', 'view:room-assignment', 'create:room-assignment', 'update:room-assignment', 'import:room-assignment',
         'view-any:dormitory-supervisor', 'view:dormitory-supervisor', 'create:dormitory-supervisor', 'update:dormitory-supervisor',
         'view-any:document', 'view:document',
         'view-any:achievement', 'view:achievement', 'create:achievement', 'update:achievement', 'delete:achievement',

@@ -110,6 +110,23 @@ describe('AC-2: template contoh', function () {
         }
     });
 
+    it('lets importers download the template with Indonesian headers and a fictitious example row', function () {
+        $this->actingAs(importSantriAdmin());
+
+        Livewire::test(ListStudents::class)
+            ->assertActionVisible('downloadImportTemplate')
+            ->callAction('downloadImportTemplate')
+            ->assertFileDownloaded('template-import-santri.csv');
+
+        $columns = collect(StudentImporter::getColumns());
+        expect($columns->map->getExampleHeader()->all())->toBe($columns->map->getLabel()->all())
+            ->and($columns->firstWhere(fn ($column) => $column->getName() === 'unit')->getExamples())->toBe(['SD'])
+            ->and($columns->firstWhere(fn ($column) => $column->getName() === 'guardian1_phone')->getExamples())->toBe(['080000000001']);
+
+        $this->actingAs(User::factory()->create()->assignRole('kesantrian'));
+        Livewire::test(ListStudents::class)->assertActionHidden('downloadImportTemplate');
+    });
+
     it('imports the example row successfully', function () {
         $year = AcademicYear::factory()->active()->create();
         $example = collect(StudentImporter::getColumns())

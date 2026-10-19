@@ -330,7 +330,9 @@ return [
         ],
         'import' => [
             'completed' => ':success santri diimpor, :failed baris gagal.',
-            'modal_description' => 'Unggah file CSV (Excel: Simpan sebagai CSV). Unduh contoh file untuk melihat kolom yang dibutuhkan. Hasil muncul di lonceng notifikasi, bisa 1-2 menit setelah unggah.',
+            'download_template' => 'Unduh template CSV',
+            'template_file_name' => 'template-import-santri.csv',
+            'modal_description' => 'Isi template CSV di Excel, lalu simpan sebagai CSV (pemisah koma atau titik koma). Kolom Jenjang diisi kode jenjang: :units. Hasil muncul di lonceng notifikasi, bisa 1-2 menit setelah unggah.',
             'columns' => [
                 'nis' => 'NIS',
                 'name' => 'Nama',

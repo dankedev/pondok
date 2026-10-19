@@ -13,6 +13,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -51,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureTrustedProxies();
         $this->forceHttpsInProduction();
+
+        // Data lembaga di production tidak boleh terhapus oleh migrate:fresh/refresh/reset atau db:wipe (F064).
+        DB::prohibitDestructiveCommands($this->app->isProduction());
 
         // Tidak dipaksakan (`enforceMorphMap`): Spatie Permission dan Activitylog menyimpan nama kelas.
         Relation::morphMap(Document::DOCUMENTABLE_TYPES);

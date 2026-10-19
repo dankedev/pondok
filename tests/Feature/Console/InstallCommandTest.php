@@ -5,6 +5,7 @@ use App\Models\AcademicYear;
 use App\Models\Setting;
 use App\Models\Unit;
 use App\Models\User;
+use App\Providers\AppServiceProvider;
 use App\Services\SystemProbe;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -12,6 +13,7 @@ use Database\Seeders\UnitSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Tests\Fixtures\FakeSystemProbe;
 
@@ -229,4 +231,35 @@ it('remembers cpanel handler blocks from public/.htaccess during install', funct
     installRun(adminOptions());
 
     expect(file_get_contents(storage_path('framework/pondok-cpanel-htaccess')))->toContain('ea-php83');
+});
+
+it('F064: skips an existing installation so deleted default data stays deleted', function () {
+    installRun(adminOptions());
+    Unit::query()->where('code', 'SD')->delete();
+
+    [$exit, $output] = installRun(['--skip-if-installed' => true]);
+
+    expect($exit)->toBe(0)
+        ->and(Unit::query()->where('code', 'SD')->exists())->toBeFalse()
+        ->and($output)->toContain(__('pondok.install.already_installed'));
+});
+
+it('F064: still installs on a fresh database with --skip-if-installed', function () {
+    [$exit] = installRun(adminOptions(['--skip-if-installed' => true]));
+
+    expect($exit)->toBe(0)->and(User::role('super-admin')->exists())->toBeTrue();
+});
+
+it('F064: refuses destructive database commands in production', function () {
+    app()->detectEnvironment(fn () => 'production');
+    (new AppServiceProvider(app()))->boot();
+
+    try {
+        expect(Artisan::call('db:wipe', ['--force' => true]))->not->toBe(0)
+            ->and(Artisan::call('migrate:fresh', ['--force' => true]))->not->toBe(0)
+            ->and(Schema::hasTable('users'))->toBeTrue();
+    } finally {
+        // Flag larangan bersifat statis; jangan bocor ke test lain di proses yang sama.
+        DB::prohibitDestructiveCommands(false);
+    }
 });

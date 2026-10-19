@@ -25,7 +25,8 @@ use Throwable;
 #[Signature('pondok:install
     {--admin-name= : Nama super-admin}
     {--admin-email= : Email super-admin}
-    {--admin-password= : Password super-admin (minimal 8 karakter)}')]
+    {--admin-password= : Password super-admin (minimal 8 karakter)}
+    {--skip-if-installed : Berhenti tanpa mengubah apa pun bila super-admin sudah ada (entrypoint Docker)}')]
 #[Description('Memasang Pondok: cek server, APP_KEY, migrasi, data awal, super-admin, dan storage')]
 class InstallCommand extends Command
 {
@@ -41,6 +42,13 @@ class InstallCommand extends Command
 
         if (! $this->environmentFileExists()) {
             return self::FAILURE;
+        }
+
+        // Instalasi yang sudah berjalan tidak di-seed ulang: data bawaan yang dihapus admin tidak muncul lagi (F064).
+        if ($this->option('skip-if-installed') && $this->superAdminExists()) {
+            $this->info(__('pondok.install.already_installed'));
+
+            return self::SUCCESS;
         }
 
         $credentials = $this->credentials();

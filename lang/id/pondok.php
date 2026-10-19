@@ -2119,6 +2119,7 @@ return [
     ],
 
     'install' => [
+        'already_installed' => 'Pondok sudah terpasang; instalasi dilewati. Pembaruan memakai pondok:upgrade.',
         'ask_admin_name' => 'Nama super-admin',
         'ask_admin_email' => 'Email super-admin',
         'ask_admin_password' => 'Password super-admin (minimal 8 karakter)',

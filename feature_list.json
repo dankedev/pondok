@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F066",
+  "next_id": "F067",
   "features": [
     {
       "id": "F001",
@@ -1145,13 +1145,13 @@
       "name": "Penandatangan kuitansi terpisah dari petugas pencatat",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F007"],
       "description": "Penandatangan kuitansi tetap (staff) diatur di pengaturan keuangan, dibekukan saat pembayaran dicatat, dengan baris 'Dicatat oleh' dan activity log.",
       "acceptance": [],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit c1f4a3d..853e374. Suite penuh PHP 8.4 hijau 4334 test; RecordPaymentSignerTest, UpdateReceiptSignerTest, FinanceNumberingSignerTest, PaymentReceiptTest, RecordPaymentActionTest.",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #31 (sumber kebenaran). Permintaan user 19 Okt 2026."
     },
     {
@@ -1201,6 +1201,22 @@
       "handoff": null,
       "evidence": "Commit ae3e3cf..58090b0. PhotosRelationManagerTest 14 lulus (3 test F065); suite penuh 4187 lulus (PHP 8.4).",
       "notes": "jalur: cepat. Kriteria di issue #34. Permintaan user 19 Okt 2026."
+    },
+    {
+      "id": "F066",
+      "key": "inti-saklar-modul",
+      "issue": 35,
+      "name": "Modul fitur bisa diaktifkan/dimatikan dari admin tanpa merusak sistem",
+      "phase": 1,
+      "module": "Inti",
+      "status": "todo",
+      "depends_on": ["F001", "F018"],
+      "description": "Halaman Pengaturan Modul untuk super-admin, aturan ketergantungan antarmodul, kepatuhan semua fitur pada saklar modul (menu, route, widget, portal, jadwal), data tidak dihapus, activity log, dan test kepatuhan.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Kriteria di issue #35. Permintaan user 19 Okt 2026."
     }
   ]
 }

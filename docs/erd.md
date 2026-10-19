@@ -419,11 +419,11 @@ erDiagram
     smallint sequence_year "tahun kalender issued_on"
     int sequence "UK (type, sequence_year, sequence)"
     bigint student_id FK "restrict"
-    bigint signed_by_staff_id FK "staff, restrict"
+    bigint signed_by_staff_id FK "staff, restrict; penandatangan utama (slot 1), slot 2-3 hanya di snapshot"
     date issued_on "hari ini Asia/Jakarta"
     string purpose "keperluan, nullable; NULL untuk kartu_santri"
     string verification_code UK "12 karakter, untuk QR cek keaslian"
-    json snapshot "isi surat dibekukan saat terbit (data pribadi)"
+    json snapshot "santri, signers[] {label,name,position,nip}, profil lembaga; surat lama punya signer tunggal (data pribadi)"
     string file_path "nullable, dicadangkan untuk arsip PDF"
     enum status "terbit | batal"
     timestamp cancelled_at "nullable"
@@ -450,6 +450,7 @@ erDiagram
   - Nomor urut per (`type`, `sequence_year`), termasuk surat `batal`, sehingga nomor tidak dipakai ulang. Format lewat settings `letters.number_format` (bawaan `{seq}/{school_code}/{type_code}/{month_roman}/{year}`), `letters.school_code` (NULL = singkatan `school.name`), `letters.type_codes` (bawaan SKA/SKP/SRK/SYH/KTS), `letters.sequence_padding` (bawaan 3). Kode jenis terkunci bila jenis itu sudah punya surat di tahun berjalan.
   - Surat tidak diubah atau dihapus: koreksi lewat pembatalan (`status` `batal`) lalu terbit ulang. Semua FK `restrictOnDelete`. Index (`student_id`, `type`) dan (`status`, `issued_on`).
   - `snapshot` (santri, penandatangan, profil lembaga) membuat cetak ulang identik walau data sumber berubah; tidak masuk activity log.
+  - Penandatangan (F063): setting `letters.signers` (JSON per jenis surat, 1-3 slot `{label, source: staff|homeroom, staff_id?}`; jenis tanpa setting memakai satu slot manual "Penandatangan"). Saat terbit slot terisi otomatis (staff tertentu atau wali kelas rombel aktif santri), bisa diganti per surat, lalu label, nama, jabatan, dan NIP dibekukan di `snapshot.signers`; `signed_by_staff_id` = staff slot 1. Surat lama hanya punya `snapshot.signer` tunggal dan dibaca lewat `IssuedLetter::signerList()`. Perubahan setting dilog `signers_updated`.
 
 ## Prestasi Santri
 

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F064",
+  "next_id": "F065",
   "features": [
     {
       "id": "F001",
@@ -1169,6 +1169,22 @@
       "handoff": null,
       "evidence": "",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #32 (sumber kebenaran). Permintaan user 19 Okt 2026."
+    },
+    {
+      "id": "F064",
+      "key": "inti-pengaman-data-production",
+      "issue": 33,
+      "name": "Pengaman data production: tanpa migrate:fresh, tanpa seeder demo, install sekali",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F057"],
+      "description": "Larang perintah destruktif di production, DemoSeeder menolak jalan di production, dan entrypoint Docker hanya install sekali lalu upgrade.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 9212250..9460bc5. InstallCommandTest (21 lulus, termasuk 3 test F064), DemoSeederTest lulus; suite penuh 4184 lulus (PHP 8.4).",
+      "notes": "jalur: cepat. Kriteria di issue #33. Permintaan user 19 Okt 2026 (urgent): data hilang setiap build di platform Docker."
     }
   ]
 }

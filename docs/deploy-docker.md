@@ -64,3 +64,14 @@ docker compose up -d app
 4. Terapkan image baru: `docker compose up -d app`.
 
 Jangan menghapus named volumes saat upgrade. Perintah upgrade tidak menjalankan `migrate:fresh`.
+
+## Menjaga data saat build ulang
+
+Setiap container start, entrypoint menjalankan `pondok:install --skip-if-installed` (hanya memasang bila belum ada super-admin), lalu `pondok:upgrade --force` (migrasi baru dan data sistem). Data lembaga tidak pernah dihapus, dan data bawaan yang sudah dihapus admin tidak dibuat ulang.
+
+Pada platform seperti Coolify atau Dokploy:
+
+- Isi `APP_ENV=production`. Hanya di production, `migrate:fresh`, `migrate:refresh`, `migrate:reset`, `db:wipe`, dan seeder demo ditolak. Entrypoint menampilkan peringatan bila `APP_ENV` bukan `production`.
+- Jangan mengisi perintah *pre/post deployment* dengan `migrate:fresh`, `db:seed`, atau `DemoSeeder`. Entrypoint sudah menangani migrasi.
+- Pastikan database memakai volume persisten (mis. `mysql_data`) atau layanan database terpisah, bukan penyimpanan di dalam container aplikasi.
+- Data yang sudah terhapus hanya bisa dipulihkan dari backup.

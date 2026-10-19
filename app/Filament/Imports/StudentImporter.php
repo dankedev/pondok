@@ -6,16 +6,12 @@ use App\Actions\Akademik\ImportStudentRow;
 use App\Models\Student;
 use App\Models\Unit;
 use Filament\Actions\Imports\ImportColumn;
-use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
-use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 
-class StudentImporter extends Importer
+class StudentImporter extends CsvImporter
 {
     protected static ?string $model = Student::class;
-
-    protected static bool $shouldPreventFormulaInjection = true;
 
     /**
      * @return array<ImportColumn>
@@ -52,20 +48,9 @@ class StudentImporter extends Importer
         ];
     }
 
-    /**
-     * @param  list<string>  $rules
-     */
-    private static function column(string $name, bool $required = false, array $rules = []): ImportColumn
+    protected static function columnLangPrefix(): string
     {
-        $label = __("pondok.akademik.import.columns.{$name}");
-
-        return ImportColumn::make($name)
-            ->label($label)
-            ->exampleHeader($label)
-            ->guess([$label, mb_strtolower($label)])
-            ->requiredMapping($required)
-            ->rules([$required ? 'required' : 'nullable', ...$rules])
-            ->fillRecordUsing(fn () => null);
+        return 'pondok.akademik.import.columns';
     }
 
     public function resolveRecord(): ?Model
@@ -84,18 +69,5 @@ class StudentImporter extends Importer
             'success' => number_format($import->successful_rows),
             'failed' => number_format($import->getFailedRowsCount()),
         ]);
-    }
-
-    /**
-     * Antrean `sync` hanya mengirim notifikasi sesi (toast); simpan juga ke
-     * database supaya hasil impor tetap ada di lonceng notifikasi.
-     */
-    public static function modifyCompletedNotification(Notification $notification, Import $import): Notification
-    {
-        if (config('queue.default') === 'sync') {
-            $notification->sendToDatabase($import->user);
-        }
-
-        return $notification;
     }
 }

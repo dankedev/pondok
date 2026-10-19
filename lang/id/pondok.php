@@ -2,6 +2,10 @@
 
 return [
 
+    'import' => [
+        'download_template' => 'Unduh template CSV',
+    ],
+
     'navigation' => [
         'master' => 'Data Induk',
         'akademik' => 'Akademik',
@@ -314,6 +318,22 @@ return [
             'capacity_below_occupancy' => 'Kapasitas tidak boleh kurang dari jumlah penghuni sekarang. Pindahkan atau keluarkan penghuni terlebih dahulu.',
             'room_has_residents' => 'Kamar masih berpenghuni. Pindahkan atau keluarkan penghuni sebelum menonaktifkan kamar.',
         ],
+        'import' => [
+            'completed' => ':success penghuni ditempatkan, :failed baris gagal.',
+            'template_file_name' => 'template-import-penghuni.csv',
+            'modal_description' => 'Isi template CSV di Excel, lalu simpan sebagai CSV (pemisah koma atau titik koma). Nama asrama dan kamar harus persis seperti di sistem. Tanggal mulai boleh kosong (hari ini). Santri yang sudah punya kamar akan dipindahkan ke kamar di file. Hasil muncul di lonceng notifikasi, bisa 1-2 menit setelah unggah.',
+            'columns' => [
+                'nis' => 'NIS',
+                'dormitory' => 'Asrama',
+                'room' => 'Kamar',
+                'start_on' => 'Tanggal mulai (YYYY-MM-DD)',
+            ],
+            'errors' => [
+                'student_unknown' => 'Santri dengan NIS ini tidak ditemukan.',
+                'dormitory_unknown' => 'Asrama tidak ditemukan atau namanya sama dengan asrama lain.',
+                'room_unknown' => 'Kamar tidak ditemukan di asrama ini atau namanya sama dengan kamar lain.',
+            ],
+        ],
     ],
 
     'akademik' => [
@@ -330,7 +350,6 @@ return [
         ],
         'import' => [
             'completed' => ':success santri diimpor, :failed baris gagal.',
-            'download_template' => 'Unduh template CSV',
             'template_file_name' => 'template-import-santri.csv',
             'modal_description' => 'Isi template CSV di Excel, lalu simpan sebagai CSV (pemisah koma atau titik koma). Kolom Jenjang diisi kode jenjang: :units. Hasil muncul di lonceng notifikasi, bisa 1-2 menit setelah unggah.',
             'columns' => [

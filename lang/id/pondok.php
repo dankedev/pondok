@@ -99,6 +99,22 @@ return [
         'positions' => ['Ustadz', 'Musyrif', 'Wali kelas', 'TU'],
         'user' => 'Akun login',
         'user_helper' => 'Kosongkan jika staff tidak perlu login.',
+        'import' => [
+            'completed' => ':success pegawai tersimpan, :failed baris gagal.',
+            'template_file_name' => 'template-import-pegawai.csv',
+            'modal_description' => 'Isi template CSV di Excel, lalu simpan sebagai CSV (pemisah koma atau titik koma). Jenis kelamin diisi L atau P. Jabatan bebas, misalnya Ustadz atau TU. Kolom aktif diisi ya atau tidak. NIP yang sudah ada akan diperbarui; tanpa NIP, pegawai dicocokkan lewat nama dan telepon. Kolom opsional yang dikosongkan tidak menghapus data lama. Akun login tidak diubah. Hasil muncul di lonceng notifikasi, bisa 1-2 menit setelah unggah.',
+            'columns' => [
+                'nip' => 'NIP',
+                'name' => 'Nama',
+                'gender' => 'Jenis kelamin (L/P)',
+                'phone' => 'Telepon',
+                'position' => 'Jabatan',
+                'is_active' => 'Aktif (ya/tidak)',
+            ],
+            'errors' => [
+                'ambiguous' => 'Ada lebih dari satu pegawai dengan nama dan telepon yang sama. Tambahkan NIP di file atau perbaiki data ganda secara manual.',
+            ],
+        ],
     ],
 
     'user' => [

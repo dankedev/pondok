@@ -22,7 +22,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * Cakupan jenjang dibaca lewat tagihan, lalu santri (termasuk yang
  * diarsipkan) atau pendaftar (termasuk yang terhapus).
  */
-#[Fillable(['receipt_no', 'invoice_id', 'amount', 'paid_on', 'method', 'proof_path', 'gateway_ref', 'received_by', 'note', 'status', 'cancelled_at', 'cancelled_by', 'cancel_reason'])]
+#[Fillable(['receipt_no', 'invoice_id', 'amount', 'paid_on', 'method', 'proof_path', 'gateway_ref', 'received_by', 'signer_name', 'signer_title', 'note', 'status', 'cancelled_at', 'cancelled_by', 'cancel_reason'])]
 class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */

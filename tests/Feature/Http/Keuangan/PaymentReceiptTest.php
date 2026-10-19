@@ -6,6 +6,7 @@ use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Setting;
+use App\Models\Staff;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
@@ -264,4 +265,64 @@ it('AC-3 (F044): a receipt uses the current print contact phone', function () {
     $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
 
     expect($text)->toContain('081200002222')->not->toContain('081200001111');
+});
+
+it('AC-1 (F062): prints the old officer block without a signer', function () {
+    $payment = receiptPayment($this);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('Petugas')->toContain('Bu Bendahara')
+        ->not->toContain('Dicatat oleh')->not->toContain('Penandatangan');
+});
+
+it('AC-2 (F062): prints the signer with title and the recording officer', function () {
+    Setting::set('keuangan.receipt_signer_staff_id', Staff::factory()->create(['name' => 'Ustadz Yusuf', 'position' => 'Bendahara Pondok'])->id);
+    $payment = receiptPayment($this);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('Penandatangan')->toContain('Ustadz Yusuf')->toContain('Bendahara Pondok')
+        ->toContain('Dicatat oleh: Bu Bendahara');
+});
+
+it('AC-3 (F062): reprints the original signer after the staff changed and was deleted', function () {
+    $staff = Staff::factory()->create(['name' => 'Ustadz Yusuf', 'position' => 'Bendahara Pondok']);
+    Setting::set('keuangan.receipt_signer_staff_id', $staff->id);
+    $payment = receiptPayment($this);
+    $staff->update(['name' => 'Nama Baru', 'position' => 'Jabatan Baru']);
+    $staff->delete();
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('Ustadz Yusuf')->toContain('Bendahara Pondok')
+        ->not->toContain('Nama Baru')->not->toContain('Jabatan Baru');
+});
+
+it('AC-5 (F062): prints no title line for a signer without position', function () {
+    Setting::set('keuangan.receipt_signer_staff_id', Staff::factory()->create(['name' => 'Ustadz Yusuf', 'position' => '  '])->id);
+    $payment = receiptPayment($this);
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toMatch('/Penandatangan Ustadz Yusuf Dicatat oleh: Bu Bendahara/');
+});
+
+it('AC-6 (F062): a cancelled payment keeps its signer snapshot and the cancelled mark', function () {
+    Setting::set('keuangan.receipt_signer_staff_id', Staff::factory()->create(['name' => 'Ustadz Yusuf', 'position' => 'Bendahara Pondok'])->id);
+    $payment = receiptPayment($this);
+    app(CancelPayment::class)->handle($payment, $this->officer, 'Salah input nominal');
+
+    $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
+
+    expect($text)->toContain('DIBATALKAN')->toContain('Ustadz Yusuf')->toContain('Bendahara Pondok');
+});
+
+it('VERIFY F062: escapes the signer name and title on the receipt', function () {
+    Setting::set('keuangan.receipt_signer_staff_id', Staff::factory()->create(['name' => '<script>alert(3)</script>', 'position' => '<img src=x onerror=alert(4)>'])->id);
+    $payment = receiptPayment($this);
+
+    $html = $this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent();
+
+    expect($html)->not->toContain('<script>alert(3)')->not->toContain('<img src=x')->toContain('&lt;script&gt;');
 });

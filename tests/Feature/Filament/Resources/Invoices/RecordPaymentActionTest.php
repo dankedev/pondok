@@ -7,6 +7,8 @@ use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Resources\Invoices\RelationManagers\PaymentsRelationManager;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Setting;
+use App\Models\Staff;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Mockery\MockInterface;
+use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function () {
     $this->seed([RolePermissionSeeder::class, SettingSeeder::class]);
@@ -302,4 +305,24 @@ it('AC-47: has no raw lang keys', function () {
     foreach ([$detail, $modal, $manager, $cancel] as $component) {
         expect(tagihanPlainText($component))->not->toContain('pondok.payment.')->not->toContain('pondok.receipt.')->not->toContain('pondok.invoice.');
     }
+});
+
+it('AC-11 (F062): the recording officer differs from the configured signer', function () {
+    Setting::set('keuangan.receipt_signer_staff_id', Staff::factory()->create(['name' => 'Ustadz Yusuf', 'position' => 'Bendahara Pondok'])->id);
+    $officer = keuanganUser('bendahara');
+    $this->actingAs($officer);
+    Activity::query()->delete();
+
+    Livewire::test(ViewInvoice::class, ['record' => $this->invoice->id])
+        ->callAction('recordPayment', ['amount' => 500000, 'paid_on' => '2026-10-15', 'method' => 'tunai'])
+        ->assertHasNoFormErrors();
+
+    $payment = Payment::query()->sole();
+    $activity = Activity::query()->where('event', 'created')->where('subject_type', $payment->getMorphClass())->sole();
+
+    expect($payment->received_by)->toBe($officer->id)
+        ->and($payment->signer_name)->toBe('Ustadz Yusuf')
+        ->and($payment->signer_title)->toBe('Bendahara Pondok')
+        ->and($activity->properties['signer_name'])->toBe('Ustadz Yusuf')
+        ->and($activity->properties['signer_title'])->toBe('Bendahara Pondok');
 });

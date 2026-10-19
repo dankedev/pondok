@@ -62,7 +62,12 @@
                     <dt>{{ __('pondok.letter_verification.student') }}</dt>
                     <dd>{{ $letter->maskedStudentName() }}</dd>
                     <dt>{{ __('pondok.letter_verification.signer') }}</dt>
-                    <dd>{{ collect([$snapshot['signer']['name'] ?? null, $snapshot['signer']['position'] ?? null])->filter()->implode(', ') }}</dd>
+                    <dd>
+                        @foreach ($letter->signerList() as $signer)
+                            @php($line = collect([$signer['name'] ?? null, $signer['position'] ?? null])->filter()->implode(', '))
+                            <span style="display: block">{{ filled($signer['label'] ?? null) ? $signer['label'].': '.$line : $line }}</span>
+                        @endforeach
+                    </dd>
                     @if ($letter->type === \App\Models\IssuedLetter::TYPE_STUDENT_CARD)
                         <dt>{{ __('pondok.letter_verification.student_status') }}</dt>
                         <dd>{{ $letter->student && ! $letter->student->trashed() && $letter->student->isActive() ? __('pondok.letter_verification.student_active') : __('pondok.letter_verification.student_inactive') }}</dd>

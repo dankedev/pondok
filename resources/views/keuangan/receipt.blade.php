@@ -131,9 +131,19 @@
         <footer class="footer">
             <p class="printed">{{ __('pondok.receipt.printed_at', ['datetime' => $printedAt->locale('id')->translatedFormat('j M Y, H.i')]) }}</p>
             <div class="signature">
-                <div>{{ __('pondok.receipt.officer') }}</div>
-                <div class="space"></div>
-                <div><strong>{{ $payment->receiver?->name ?? '-' }}</strong></div>
+                @if (filled($payment->signer_name))
+                    <div>{{ __('pondok.receipt.signer') }}</div>
+                    <div class="space"></div>
+                    <div><strong>{{ $payment->signer_name }}</strong></div>
+                    @if (filled($payment->signer_title))
+                        <div>{{ $payment->signer_title }}</div>
+                    @endif
+                    <div class="printed">{{ __('pondok.receipt.recorded_by', ['name' => $payment->receiver?->name ?? '-']) }}</div>
+                @else
+                    <div>{{ __('pondok.receipt.officer') }}</div>
+                    <div class="space"></div>
+                    <div><strong>{{ $payment->receiver?->name ?? '-' }}</strong></div>
+                @endif
             </div>
         </footer>
     </main>

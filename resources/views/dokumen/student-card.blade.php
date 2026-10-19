@@ -1,6 +1,5 @@
 @php
     $student = $snapshot['student'] ?? [];
-    $signer = $snapshot['signer'] ?? [];
     $school = $snapshot['school'] ?? [];
 @endphp
 <!DOCTYPE html>
@@ -71,7 +70,7 @@
                     <p>{{ $student['unit_name'] }}</p>
                 @endif
                 <p class="number">{{ $letter->letter_no }}</p>
-                <p>{{ $signer['name'] ?? '' }}</p>
+                <p>{{ $letter->signerNames() }}</p>
             </div>
             <div class="qr">
                 @if ($qr)

@@ -1,6 +1,6 @@
 @php
     $student = $snapshot['student'] ?? [];
-    $signer = $snapshot['signer'] ?? [];
+    $signers = $letter->signerList();
     $school = $snapshot['school'] ?? [];
     $birthDate = filled($student['birth_date'] ?? null) ? \Carbon\CarbonImmutable::parse($student['birth_date'])->locale('id')->translatedFormat('j F Y') : null;
     $birth = collect([$student['birth_place'] ?? null, $birthDate])->filter(fn ($value) => filled($value))->implode(', ');
@@ -30,14 +30,18 @@
         dl { display: grid; grid-template-columns: 38% 1fr; gap: 2px 12px; margin: 12px 0 12px 24px; }
         dt { font-weight: 600; }
         dd { margin: 0; }
-        .closing { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 24px; }
+        .closing { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 24px; }
         .verify { display: flex; gap: 12px; align-items: center; max-width: 60%; font-size: 11px; }
         .verify svg { width: 28mm; height: 28mm; flex: none; }
         .verify p { margin: 0; overflow-wrap: anywhere; }
         .code { font-variant-numeric: tabular-nums; letter-spacing: 0.08em; font-weight: 600; }
-        .signature { text-align: center; min-width: 35%; }
+        .signature { text-align: center; min-width: 35%; flex: 1 1 35%; }
         .signature .space { height: 64px; }
         .signature p { margin: 0; }
+        .signature-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px 24px; }
+        .signature-col { text-align: center; min-width: 40%; flex: 1 1 40%; max-width: 100%; }
+        .signature-col p { margin: 0; }
+        .signature-col .space { height: 64px; }
         .footer { margin-top: 24px; padding-top: 6px; border-top: 1px solid currentColor; font-size: 10px; display: flex; justify-content: space-between; gap: 12px; }
         .actions { margin: 0 auto 12px; max-width: 170mm; text-align: right; }
         .actions button { font: inherit; min-height: 44px; padding: 6px 16px; border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
@@ -90,12 +94,21 @@
             </div>
             <div class="signature">
                 <p>{{ __('pondok.letter.place_date', ['date' => $letter->issued_on->locale('id')->translatedFormat('j F Y')]) }}</p>
-                <p>{{ $signer['position'] ?? '' }}</p>
-                <div class="space" aria-label="{{ __('pondok.letter.signature_space') }}"></div>
-                <p><strong>{{ $signer['name'] ?? '' }}</strong></p>
-                @if (filled($signer['nip'] ?? null))
-                    <p>{{ __('pondok.letter.nip', ['nip' => $signer['nip']]) }}</p>
-                @endif
+                <div class="signature-row">
+                    @foreach ($signers as $signer)
+                        <div class="signature-col">
+                            <p>{{ filled($signer['label'] ?? null) ? $signer['label'] : ($signer['position'] ?? '') }}</p>
+                            <div class="space" aria-label="{{ __('pondok.letter.signature_space') }}"></div>
+                            <p><strong>{{ $signer['name'] ?? '' }}</strong></p>
+                            @if (filled($signer['label'] ?? null) && filled($signer['position'] ?? null))
+                                <p>{{ $signer['position'] }}</p>
+                            @endif
+                            @if (filled($signer['nip'] ?? null))
+                                <p>{{ __('pondok.letter.nip', ['nip' => $signer['nip']]) }}</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </section>
 

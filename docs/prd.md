@@ -70,6 +70,7 @@ Akses diatur dua lapis:
 - Beasiswa dan keringanan per santri dan per jenis biaya, dengan masa berlaku. Mode: nominal, potongan rupiah, atau persen. Program beasiswa dan donaturnya tercatat.
 - Tagihan bisa digabung atau dipisah per kelompok biaya, diatur dari panel admin.
 - Generator tagihan bulanan otomatis dan aman dijalankan ulang.
+- Bendahara bisa mengimpor saldo tunggakan awal dari CSV (satu baris per santri dan jenis biaya) sebelum generator bulanan pertama; hasilnya tagihan kelompok `SALDO_AWAL`.
 - Pembayaran tunai, transfer, atau payment gateway, termasuk cicilan yang dialokasikan ke item sesuai prioritas. Setiap pembayaran mendapat kuitansi bernomor.
 - Laporan: tagihan bulan berjalan, terbayar vs menunggak, rasio koleksi, santri menunggak teratas, dan total subsidi beasiswa per program.
 

@@ -1113,13 +1113,13 @@
       "name": "Import tagihan awal dengan template",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F006", "F007", "F058"],
-      "description": "Import tunggakan/tagihan awal sebagai snapshot invoice_items beserta pembayaran yang sudah ada.",
+      "description": "Import saldo tunggakan awal per santri per jenis biaya sebagai snapshot invoice_items (kelompok SALDO_AWAL), tanpa riwayat pembayaran.",
       "acceptance": [],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "db885fe (+f122128, b0154a0); suite penuh PHP 8.4 hijau 4277 test; ImportOpeningBalanceRowTest, OpeningBalanceInteractionTest, OpeningBalanceVerifyTest, tests/Feature/Filament/Invoices",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #29 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
     },
     {

@@ -1097,13 +1097,13 @@
       "name": "Import penghuni asrama dengan template",
       "phase": 1,
       "module": "Asrama",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F003", "F058"],
       "description": "Import penempatan santri ke asrama/kamar sebagai room_assignments baru.",
       "acceptance": [],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "d84c69b (+7cd4dbe, 9a7f9ef); suite penuh PHP 8.4 hijau 4240 test; ImportRoomAssignmentRowTest, tests/Feature/Filament/RoomAssignments",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #28 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
     },
     {

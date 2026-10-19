@@ -3,6 +3,7 @@
 namespace App\Actions\Keuangan;
 
 use App\Models\FeeType;
+use App\Models\Invoice;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -38,6 +39,10 @@ class SaveFeeType
 
         if (preg_match(self::CODE_PATTERN, $billingGroup) !== 1) {
             $this->fail('billing_group', 'billing_group_format');
+        }
+
+        if ($billingGroup === Invoice::GROUP_OPENING_BALANCE) {
+            $this->fail('billing_group', 'billing_group_reserved');
         }
 
         $codeTaken = FeeType::query()

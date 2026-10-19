@@ -39,6 +39,9 @@ class Invoice extends Model
 
     public const STATUS_CANCELLED = 'batal';
 
+    /** Kelompok tagihan khusus saldo tunggakan awal (F060); dicadangkan, bukan milik jenis biaya. */
+    public const GROUP_OPENING_BALANCE = 'SALDO_AWAL';
+
     public const STATUSES = [
         self::STATUS_UNPAID,
         self::STATUS_PARTIAL,

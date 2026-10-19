@@ -501,6 +501,26 @@ return [
     ],
 
     'invoice' => [
+        'opening_balance_item' => 'Saldo awal :fee_type',
+        'import' => [
+            'completed' => ':success saldo awal diimpor, :failed baris gagal.',
+            'template_file_name' => 'template-saldo-awal.csv',
+            'modal_description' => 'Isi template CSV di Excel, lalu simpan sebagai CSV (pemisah koma atau titik koma). Satu baris untuk satu santri dan satu jenis biaya. Nominal adalah sisa yang belum dibayar, ditulis sebagai angka rupiah tanpa titik atau koma, misalnya 1500000. Pakai fitur ini hanya untuk tunggakan sebelum generator tagihan bulanan pertama; SPP bulan berjalan tetap ditagih oleh generator, jangan diimpor lagi. Santri dan jenis biaya yang sudah pernah diimpor ditolak; untuk mengoreksi, batalkan tagihannya lalu impor ulang. Tagihan hasil impor bertanda kelompok SALDO_AWAL dan langsung berstatus terlambat. Hasil muncul di lonceng notifikasi, bisa 1-2 menit setelah unggah.',
+            'columns' => [
+                'nis' => 'NIS',
+                'fee_type' => 'Kode jenis biaya',
+                'amount' => 'Nominal tunggakan (rupiah)',
+            ],
+            'errors' => [
+                'student_unknown' => 'Santri dengan NIS ini tidak ditemukan.',
+                'fee_type_unknown' => 'Kode jenis biaya tidak ditemukan atau jenis biaya tidak aktif.',
+                'amount_invalid' => 'Nominal harus berupa angka rupiah tanpa titik, koma, spasi, atau "Rp", lebih dari 0 dan maksimal 12 digit. Contoh: 1500000.',
+                'no_active_year' => 'Belum ada tahun ajaran aktif. Aktifkan tahun ajaran lebih dulu.',
+                'already_imported' => 'Saldo awal jenis biaya ini untuk santri ini sudah pernah diimpor.',
+                'invoice_paid' => 'Tagihan saldo awal santri ini bulan ini sudah ada pembayaran. Impor jenis biaya ini bulan depan.',
+                'number_conflict' => 'Nomor tagihan bentrok berulang kali. Coba impor ulang baris ini.',
+            ],
+        ],
         'label' => 'Tagihan',
         'plural' => 'Tagihan',
         'invoice_no' => 'No. tagihan',
@@ -1165,6 +1185,7 @@ return [
         'errors' => [
             'code_format' => 'Kode hanya boleh berisi huruf besar, angka, dan garis bawah, maksimal 30 karakter. Contoh: SPP atau UANG_PANGKAL.',
             'billing_group_format' => 'Kelompok tagihan wajib diisi dengan huruf, angka, dan garis bawah, maksimal 30 karakter. Contoh: BULANAN.',
+            'billing_group_reserved' => 'Kelompok tagihan SALDO_AWAL dicadangkan untuk impor saldo awal. Pilih kelompok lain.',
             'code_taken' => 'Kode ini sudah dipakai jenis biaya lain. Pilih kode lain.',
             'invalid_frequency' => 'Frekuensi tidak dikenal. Pilih bulanan, tahunan, saat daftar, saat diterima, atau manual.',
             'invalid_applies_to' => 'Pilihan "berlaku untuk" tidak dikenal. Pilih semua santri, mukim, atau nonmukim.',

@@ -152,6 +152,7 @@ class GenerateMonthlyInvoices
             ->whereIn('student_id', $studentIds)
             ->whereDate('period', $this->period->toDateString())
             ->where('status', '<>', Invoice::STATUS_CANCELLED)
+            ->where('billing_group', '<>', Invoice::GROUP_OPENING_BALANCE)
             ->with('items:id,invoice_id,fee_type_id')
             ->get()
             ->groupBy('student_id');

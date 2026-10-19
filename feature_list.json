@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F062",
+  "next_id": "F064",
   "features": [
     {
       "id": "F001",
@@ -1137,6 +1137,38 @@
       "handoff": null,
       "evidence": "",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #30 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
+    },
+    {
+      "id": "F062",
+      "key": "keuangan-penandatangan-kuitansi",
+      "issue": 31,
+      "name": "Penandatangan kuitansi terpisah dari petugas pencatat",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "todo",
+      "depends_on": ["F007"],
+      "description": "Penandatangan kuitansi tetap (staff) diatur di pengaturan keuangan, dibekukan saat pembayaran dicatat, dengan baris 'Dicatat oleh' dan activity log.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Kriteria penerimaan di issue #31 (sumber kebenaran). Permintaan user 19 Okt 2026."
+    },
+    {
+      "id": "F063",
+      "key": "dokumen-tanda-tangan-surat",
+      "issue": 32,
+      "name": "Tanda tangan surat 1–3 orang per jenis surat",
+      "phase": 1,
+      "module": "Dokumen",
+      "status": "todo",
+      "depends_on": ["F014"],
+      "description": "Slot tanda tangan 1–3 per jenis surat (staff tertentu atau wali kelas santri), bisa diganti per surat, dibekukan di snapshot, plus activity log surat dan pengaturan.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "",
+      "notes": "jalur: penuh. Kriteria penerimaan di issue #32 (sumber kebenaran). Permintaan user 19 Okt 2026."
     }
   ]
 }

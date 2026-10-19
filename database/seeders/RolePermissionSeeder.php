@@ -57,7 +57,7 @@ class RolePermissionSeeder extends Seeder
         'Student' => ['restore', 'restoreAny', 'import'],
         'RoomAssignment' => ['import'],
         // Tagihan hanya dibuat generator dan dibatalkan, tidak dibuat manual atau dihapus.
-        'Invoice' => ['generate', 'cancel'],
+        'Invoice' => ['generate', 'cancel', 'import'],
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.
         'Payment' => ['cancel'],
         // Pendaftar dibuat lewat form publik; panitia memverifikasi berkas, mengatur ulang token, dan menagih formulir.
@@ -173,7 +173,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('FeeRate', $withoutDelete),
                 ...self::resourcePermissions('Scholarship', $withoutDelete),
                 ...self::resourcePermissions('FeeOverride', $withoutDelete),
-                ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel']),
+                ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel', 'import']),
                 ...self::resourcePermissions('Payment', ['viewAny', 'view', 'create', 'cancel']),
                 'view:finance-report',
                 'view:finance-numbering',

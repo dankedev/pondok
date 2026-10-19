@@ -67,7 +67,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:fee-rate', 'view:fee-rate', 'create:fee-rate', 'update:fee-rate',
         'view-any:scholarship', 'view:scholarship', 'create:scholarship', 'update:scholarship',
         'view-any:fee-override', 'view:fee-override', 'create:fee-override', 'update:fee-override',
-        'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice',
+        'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice', 'import:invoice',
         'view-any:payment', 'view:payment', 'create:payment', 'cancel:payment',
         'view:finance-report',
         'view:finance-numbering',
@@ -146,7 +146,7 @@ it('forbids a role from abilities outside its permissions', function () {
 it('AC-52: creates the invoice resource and action permissions', function () {
     expect(Permission::query()->pluck('name')->all())->toContain(
         'view-any:invoice', 'view:invoice', 'create:invoice', 'update:invoice', 'delete:invoice', 'delete-any:invoice',
-        'generate:invoice', 'cancel:invoice',
+        'generate:invoice', 'cancel:invoice', 'import:invoice',
     );
 });
 

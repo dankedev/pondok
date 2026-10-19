@@ -51,6 +51,14 @@ class InvoicePolicy
     }
 
     /**
+     * Mengimpor saldo tunggakan awal dari CSV.
+     */
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('import:invoice');
+    }
+
+    /**
      * Membatalkan tagihan (status `batal`); syarat data dicek `CancelInvoice`.
      */
     public function cancel(AuthUser $authUser, Invoice $invoice): bool

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F065",
+  "next_id": "F066",
   "features": [
     {
       "id": "F001",
@@ -1185,6 +1185,22 @@
       "handoff": null,
       "evidence": "Commit 9212250..9460bc5. InstallCommandTest (21 lulus, termasuk 3 test F064), DemoSeederTest lulus; suite penuh 4184 lulus (PHP 8.4).",
       "notes": "jalur: cepat. Kriteria di issue #33. Permintaan user 19 Okt 2026 (urgent): data hilang setiap build di platform Docker."
+    },
+    {
+      "id": "F065",
+      "key": "konten-foto-ganti-hapus",
+      "issue": 34,
+      "name": "Ganti dan hapus gambar foto di Galeri",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F016"],
+      "description": "Form ubah foto bisa mengganti gambar (berkas lama dihapus setelah commit), plus hapus beberapa foto sekaligus.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit ae3e3cf..58090b0. PhotosRelationManagerTest 14 lulus (3 test F065); suite penuh 4187 lulus (PHP 8.4).",
+      "notes": "jalur: cepat. Kriteria di issue #34. Permintaan user 19 Okt 2026."
     }
   ]
 }

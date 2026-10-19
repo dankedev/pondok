@@ -100,16 +100,21 @@ Cara menjalankan test (mesin pengembang hanya 8GB RAM):
 - Selama bekerja, jalankan file test yang terdampak saja (`php artisan test --compact <path>`).
 - Suite penuh dijalankan **sekali** di akhir fitur, di PHP 8.4, oleh sesi utama dan bukan oleh subagent. Cek `memory_pressure` dulu, dan jangan jalankan dua suite bersamaan, termasuk dari sesi lain (`Storage::fake` bisa bentrok).
 - Suite penuh: `php artisan test --compact --parallel --processes=3`, sekitar 2 menit di PHP 8.4 (17 Okt 2026, ±4000 test). Bila tiba-tiba jauh lebih lambat, cari biaya setup yang berulang di setiap test (seeder, fixture di `beforeEach`), bukan test satu per satu. Contohnya `RolePermissionSeeder` yang dipanggil di setup sebagian besar test: dulu ±1 detik per panggilan (`findOrCreate` per permission) dan membuat suite ±18 menit.
-- PHP 8.3 (target cPanel) dijalankan GitHub Actions (`.github/workflows/tests.yml`) setiap push ke `main`, atau manual lewat tab Actions. Push satu kali saat fitur selesai, supaya `Closes #n` menutup issue bersama hasil CI-nya. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
+- PHP 8.3 (target cPanel) dijalankan GitHub Actions (`.github/workflows/tests.yml`) di setiap pull request ke `main` (syarat auto-merge), setiap push ke `main`, atau manual lewat tab Actions. Suite PHP 8.3 tidak perlu dijalankan di laptop, kecuali CI gagal khusus di 8.3 (di Herd: `php83 artisan test --compact`).
 - Test baru ditulis untuk perilaku yang berubah dan risiko nyata. Jangan menambah test hanya untuk menaikkan jumlah. Verifikasi adversarial (mode VERIFY) menambah paling banyak ±15 test, dan hanya untuk celah yang benar-benar dicurigai.
 
 ## Alur kerja agent
 
-### 1. Commit
+### 1. Branch, commit, dan pull request
 
-Setiap commit mengikuti skill **git-commit** (`~/.claude/skills/git-commit/SKILL.md`): micro-commits (satu perubahan logis per commit) dengan format Conventional Commits `type(scope): deskripsi`. Scope memakai `key` modul, misalnya `feat(asrama): ...`, `fix(keuangan): ...`. Commit hanya bila user meminta.
+Pondok sudah dirilis dan dipakai, jadi `main` harus selalu stabil. Tidak ada pekerjaan langsung di `main`.
 
-Commit yang menyelesaikan issue (biasanya commit terakhir fitur, `docs(features): tandai <ID> selesai`) memuat `Closes #<n>` di body. Commit lain yang terkait cukup menyebut `Refs #<n>`. Bila kerja lewat PR, `Closes #<n>` ditulis di deskripsi PR.
+1. **Satu issue = satu branch** dari `main` terbaru, dibuat saat issue diklaim sebelum file apa pun diubah: `<type>/<id-kecil>-<topik>`, misalnya `feat/f062-penandatangan-kuitansi` atau `fix/f065-foto-galeri`. Sesi yang bekerja paralel di repo yang sama memakai worktree terpisah agar perubahan tidak tercampur.
+2. **Commit** mengikuti skill **git-commit** (`~/.claude/skills/git-commit/SKILL.md`): micro-commits (satu perubahan logis per commit) dengan format Conventional Commits `type(scope): deskripsi`. Scope memakai `key` modul, misalnya `feat(asrama): ...`, `fix(keuangan): ...`. Setiap commit menyebut `Refs #<n>`; commit terakhir biasanya `docs(features): tandai <ID> selesai`.
+3. **Pull request** dibuat setelah test terdampak, Pint, dan suite penuh lulus: push branch, lalu `gh pr create` dengan judul Conventional Commits dan deskripsi berisi ringkasan, hasil test, dan `Closes #<n>`.
+4. **Auto-merge rebase:** `gh pr merge <nomor> --auto --rebase --delete-branch`. PR masuk ke `main` setelah CI `Pest (PHP 8.3)` lulus, dan issue tertutup otomatis. Bila CI gagal, perbaiki dengan commit baru di branch yang sama; jangan force push tanpa izin user.
+
+Keputusan user (20 Okt 2026): issue yang selesai dan lulus test langsung di-commit, dibuatkan PR, dan di-auto-merge tanpa menunggu permintaan lagi; hasilnya tetap dilaporkan. Commit di luar alur issue ini (atau saat ada keraguan) tetap ditanyakan dulu.
 
 ### 2. Issue GitHub dan daftar fitur
 
@@ -118,7 +123,7 @@ Commit yang menyelesaikan issue (biasanya commit terakhir fitur, `docs(features)
 - **Memilih pekerjaan:** dari issue terbuka (`gh issue list`), bukan dari ingatan atau dokumen lain. Label: `modul: <nama>`, `fase <n>`, `ditunda`, `sedang dikerjakan`, `audit iso`, `audit ui/ux`. Issue berlabel `ditunda` tidak dikerjakan tanpa persetujuan user.
 - **Pekerjaan baru:** buat issue dulu (`gh issue create`, judul diawali ID fitur, mis. `F058 Nama fitur`), lalu entri di `feature_list.json`. Jangan kerjakan diam-diam.
 - **Mulai:** pasang label `sedang dikerjakan` pada issue, dan status `in-progress` di `feature_list.json`.
-- **Selesai:** issue tertutup otomatis oleh `Closes #<n>` saat push ke `main` (lihat bagian 1). Bila ruang lingkup berubah di tengah jalan, perbarui body issue atau tulis komentar.
+- **Selesai:** issue tertutup otomatis oleh `Closes #<n>` di PR saat PR di-merge ke `main` (lihat bagian 1). Bila ruang lingkup berubah di tengah jalan, perbarui body issue atau tulis komentar.
 - **Batal:** tutup issue sebagai *not planned* dengan alasan, dan jadikan entri `deferred`.
 - Bila issue dan `feature_list.json` berbeda, ruang lingkup mengikuti issue; perbarui `feature_list.json`.
 
@@ -160,7 +165,7 @@ Setiap fitur ditetapkan ke satu jalur saat diklaim, dan jalurnya ditulis di `not
 4. `green-coder`: implementasi sampai hijau, refactor, Pint. Tidak boleh mengubah test. Fitur besar dipecah menjadi beberapa pemanggilan per kelompok test (mis. migration + Action, lalu Filament, lalu portal), masing-masing dengan laporan.
 5. `red-tester` mode VERIFY: cari celah yang berisiko nyata. `FAIL` → kembali ke langkah 4.
 
-Untuk kedua jalur, rencana `docs/plans/<ID>-plan.md` menautkan issue-nya (`Issue: #<n>`). Setelah selesai, orkestrator melaporkan ke user. Commit dan status `done` hanya atas permintaan user (lihat bagian 1 dan 2). Satu sesi pelaksana melapor langsung ke orkestrator; jangan menyisipkan sesi perantara.
+Untuk kedua jalur, rencana `docs/plans/<ID>-plan.md` menautkan issue-nya (`Issue: #<n>`). Setelah selesai, fitur di-commit di branch issue, dibuatkan PR dengan auto-merge rebase (lihat bagian 1), lalu orkestrator melaporkan ke user. Satu sesi pelaksana melapor langsung ke orkestrator; jangan menyisipkan sesi perantara.
 
 ## Urutan pengembangan
 

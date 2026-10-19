@@ -701,6 +701,8 @@ erDiagram
     string proof_path "bukti transfer, nullable"
     string gateway_ref "id transaksi Midtrans/Xendit, nullable"
     bigint received_by FK "users, nullable untuk callback gateway"
+    string signer_name "snapshot penandatangan kuitansi, nullable (F062)"
+    string signer_title "snapshot jabatan penandatangan, nullable (F062)"
     text note "nullable"
     enum status "diterima | batal (keputusan F007)"
     timestamp cancelled_at "nullable"
@@ -741,6 +743,7 @@ erDiagram
 - `scholarships` mengelompokkan program beasiswa, sehingga bendahara bisa melaporkan total subsidi per program atau per donatur. Keringanan yang bukan beasiswa (misalnya kesepakatan dengan wali) cukup tanpa `scholarship_id`.
 - `invoice_items` menyimpan tarif normal, potongan, dan nominal akhir, jadi besarnya beasiswa yang diberikan tiap bulan bisa dihitung langsung dari tagihan.
 - Pembayaran cicilan pada tagihan gabungan dialokasikan ke item sesuai `fee_types.priority` (misalnya makan dulu, lalu asrama, lalu SPP) dan dicatat di `payment_allocations`. Laporan bendahara per jenis biaya jadi akurat.
+- Penandatangan kuitansi (F062): setting `keuangan.receipt_signer_staff_id` (id staff aktif, atau tidak ada = petugas pencatat yang menandatangani). Saat `RecordPayment` mencatat, nama dan jabatan staff itu dibekukan ke `payments.signer_name` dan `signer_title` (null bila setting kosong, staff tidak ada/nonaktif, atau jabatan kosong); kuitansi lama dan yang batal memakai snapshot barisnya sendiri. Perubahan setting dilog `receipt_signer_updated`.
 - Pembayaran tidak dihapus. Pembayaran salah input dibatalkan (`payments.status = batal`, beserta `cancelled_at`, `cancelled_by`, `cancel_reason`); baris, nomor kuitansi, alokasi, dan bukti transfer tetap ada, sedangkan `paid_amount` item dan `paid_total` tagihan dikurangi kembali. Alokasi berlaku selama pembayarannya `diterima`; pembayaran lain tidak dialokasikan ulang (keputusan F007).
 - Nomor kuitansi `KW-YYYYMM-NNNNN`, urut per bulan pencatatan untuk semua jenjang; pembayaran `batal` tetap memakai nomornya. Bukti transfer disimpan di disk `private`.
 - Biaya `saat_daftar` dan `saat_diterima` (formulir, uang pangkal, seragam, kitab) tidak dibuat oleh generator bulanan, tetapi oleh alur PSB. Lihat bagian [PSB](#psb).

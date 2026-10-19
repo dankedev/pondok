@@ -4469,3 +4469,47 @@ function ftrLegacy(array $overrides = []): void
         }
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Helper import saldo awal (F060)
+|--------------------------------------------------------------------------
+|
+| Berawalan `saldo`. Waktu uji: 2026-10-15 10:00 Asia/Jakarta, santri NIS 2026001
+| di SLTP, jenis biaya SPP/ASRAMA/MAKAN dari `tagihanFixture`.
+|
+*/
+
+/**
+ * @return object{f: object, student: Student}
+ */
+function saldoFixture(bool $withRates = false): object
+{
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    $f = tagihanFixture($withRates);
+
+    return (object) ['f' => $f, 'student' => tagihanStudent($f, attributes: ['nis' => '2026001'])];
+}
+
+/**
+ * @param  array<string, string>  $overrides
+ * @return array{nis: string, fee_type: string, amount: string}
+ */
+function saldoRow(array $overrides = []): array
+{
+    return ['nis' => '2026001', 'fee_type' => 'SPP', 'amount' => '1500000', ...$overrides];
+}
+
+/**
+ * Tagihan saldo awal aktif milik santri (tanpa cakupan jenjang).
+ *
+ * @return Collection<int, Invoice>
+ */
+function saldoInvoices(?Student $student = null): Collection
+{
+    return Invoice::withoutUnitScope()
+        ->where('billing_group', 'SALDO_AWAL')
+        ->when($student, fn ($query) => $query->where('student_id', $student->id))
+        ->orderBy('id')
+        ->get();
+}

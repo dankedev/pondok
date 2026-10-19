@@ -52,7 +52,8 @@ it('AC-10: issues a letter with a snapshot', function () {
             'academic_year_name' => '2026/2027',
             'status' => 'aktif',
         ])
-        ->and($stored->snapshot['signer'])->toEqual(['name' => 'Ust. Hasan', 'position' => 'Kepala Sekolah', 'nip' => '1987'])
+        ->and($stored->snapshot['signers'])->toEqual([['label' => 'Penandatangan', 'name' => 'Ust. Hasan', 'position' => 'Kepala Sekolah', 'nip' => '1987']])
+        ->and($stored->snapshot)->not->toHaveKey('signer')
         ->and($stored->snapshot['school']['name'])->toBe("Ma'had Al-Khair");
 });
 
@@ -211,8 +212,8 @@ it('AC-13: rejects invalid letters', function (string $case, string $reason, str
 
                 return suratIssue($f, ['type' => 'syahadah']);
             })(),
-            'inactive signer' => suratIssue($f, ['signed_by_staff_id' => $f->t2->id]),
-            'unknown signer' => suratIssue($f, ['signed_by_staff_id' => 999999]),
+            'inactive signer' => suratIssue($f, ['signers' => [$f->t2->id]]),
+            'unknown signer' => suratIssue($f, ['signers' => [999999]]),
             'purpose too long' => suratIssue($f, ['purpose' => str_repeat('a', 256)]),
         };
     }, $reason, $field);
@@ -229,8 +230,8 @@ it('AC-13: rejects invalid letters', function (string $case, string $reason, str
     'graduated, pindah' => ['graduated, pindah', 'student_status_not_allowed', 'student'],
     'left, rekomendasi' => ['left, rekomendasi', 'student_status_not_allowed', 'student'],
     'moved, syahadah' => ['moved, syahadah', 'student_status_not_allowed', 'student'],
-    'inactive signer' => ['inactive signer', 'signer_invalid', 'signed_by_staff_id'],
-    'unknown signer' => ['unknown signer', 'signer_invalid', 'signed_by_staff_id'],
+    'inactive signer' => ['inactive signer', 'signer_invalid', 'signers.0.staff_id'],
+    'unknown signer' => ['unknown signer', 'signer_invalid', 'signers.0.staff_id'],
     'purpose too long' => ['purpose too long', 'purpose_too_long', 'purpose'],
 ]);
 
@@ -246,7 +247,7 @@ it('AC-13: requires a purpose except for the student card', function (string $ty
 it('AC-13: requires a purpose when the key is missing', function () {
     $f = $this->f;
 
-    suratAssertRejected(fn () => app(IssueLetter::class)->handle($f->s1, ['type' => 'pindah', 'signed_by_staff_id' => $f->t1->id], $f->admin), 'purpose_required', 'purpose');
+    suratAssertRejected(fn () => app(IssueLetter::class)->handle($f->s1, ['type' => 'pindah', 'signers' => [$f->t1->id]], $f->admin), 'purpose_required', 'purpose');
 });
 
 it('AC-13: issues recommendations for graduates and transfer letters for students who moved', function () {
@@ -278,7 +279,7 @@ it('AC-14: issues a student card without purpose', function () {
 
 it('AC-14: issues a student card when no purpose is given at all', function () {
     $f = $this->f;
-    $letter = app(IssueLetter::class)->handle($f->s1, ['type' => 'kartu_santri', 'signed_by_staff_id' => $f->t1->id], $f->admin);
+    $letter = app(IssueLetter::class)->handle($f->s1, ['type' => 'kartu_santri', 'signers' => [$f->t1->id]], $f->admin);
 
     expect($letter->letter_no)->toBe('001/MAK/KTS/X/2026')->and($letter->purpose)->toBeNull();
 });

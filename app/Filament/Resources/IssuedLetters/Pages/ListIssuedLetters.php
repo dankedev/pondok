@@ -14,6 +14,7 @@ class ListIssuedLetters extends ListRecords
         return [
             IssuedLetterResource::issueAction(),
             IssuedLetterResource::configureNumberingAction(),
+            IssuedLetterResource::configureSignersAction(),
         ];
     }
 }

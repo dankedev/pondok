@@ -52,7 +52,7 @@ product-manager → plan-reviewer → red-tester (RED) → green-coder (GREEN) �
 - Jangan kerjakan di luar ruang lingkup rencana. Temuan di luar scope dicatat di laporan.
 - **YAGNI, KISS, DRY** (CLAUDE.md bagian Arsitektur): tulis kode paling sederhana yang membuat test hijau. Jangan menambah parameter, opsi, atau abstraksi yang tidak diminta test/rencana; pakai ulang yang sudah ada; ekstrak kode bersama hanya bila sudah ada pemakai kedua yang nyata.
 - Tidak menjalankan dev server (Herd sudah melayani situs; RAM mesin hanya 8GB). Bila perlu aset, `npm run build` sekali saja.
-- Tidak commit kecuali orkestrator menyampaikan permintaan user untuk commit; bila diminta, ikuti skill `git-commit` (micro-commit, Conventional Commits, scope = key modul). Commit yang menyelesaikan fitur memuat `Closes #<n>` di body; commit terkait lainnya `Refs #<n>`.
+- Bekerja di branch issue yang sudah dibuat orkestrator; jangan pernah commit ke `main`. Commit hanya bila orkestrator memintanya, mengikuti skill `git-commit` (micro-commit, Conventional Commits, scope = key modul, `Refs #<n>`). PR dan auto-merge dibuat orkestrator (CLAUDE.md bagian 1).
 
 ## Laporan akhir
 

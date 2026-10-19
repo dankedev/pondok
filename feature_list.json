@@ -1161,11 +1161,11 @@
       "name": "Tanda tangan surat 1–3 orang per jenis surat",
       "phase": 1,
       "module": "Dokumen",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F014"],
       "description": "Slot tanda tangan 1–3 per jenis surat (staff tertentu atau wali kelas santri), bisa diganti per surat, dibekukan di snapshot, plus activity log surat dan pengaturan.",
       "acceptance": [],
-      "owner": null,
+      "owner": "sesi-f063",
       "handoff": null,
       "evidence": "",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #32 (sumber kebenaran). Permintaan user 19 Okt 2026."

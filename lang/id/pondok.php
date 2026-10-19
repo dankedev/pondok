@@ -2114,6 +2114,16 @@ return [
         ],
     ],
 
+    'http_errors' => [
+        'reload' => 'Muat ulang halaman',
+        '403' => ['title' => 'Akses ditolak', 'body' => 'Akun Anda tidak punya izin untuk membuka halaman ini. Hubungi admin lembaga bila Anda membutuhkannya.'],
+        '419' => ['title' => 'Sesi telah berakhir', 'body' => 'Halaman ini terlalu lama dibiarkan terbuka. Muat ulang halaman, lalu ulangi langkah Anda.'],
+        '429' => ['title' => 'Terlalu banyak permintaan', 'body' => 'Tunggu sebentar sebelum mencoba lagi.'],
+        '503' => ['title' => 'Sedang dalam pemeliharaan', 'body' => 'Situs sedang diperbarui. Silakan kembali beberapa menit lagi.'],
+        '4xx' => ['title' => 'Permintaan tidak dapat diproses', 'body' => 'Periksa kembali alamat atau isian Anda, lalu coba lagi.'],
+        '5xx' => ['title' => 'Terjadi gangguan', 'body' => 'Ada masalah di server kami. Silakan coba lagi beberapa saat lagi. Bila terus terjadi, hubungi admin lembaga.'],
+    ],
+
     'portal' => [
         'breadcrumb_label' => 'Navigasi halaman',
         'nav' => [
@@ -2202,6 +2212,7 @@ return [
             'not_found_body' => 'Alamat yang Anda buka tidak ada atau sudah tidak tersedia.',
             'back_home' => 'Kembali ke beranda',
             'read_news' => 'Baca berita terbaru',
+            'code_label' => 'Kode kesalahan :code',
         ],
         'pagination_label' => 'Halaman',
         'pagination_page' => 'Halaman :page',

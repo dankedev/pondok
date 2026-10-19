@@ -5,6 +5,8 @@ namespace App\Actions\Keuangan;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
+use App\Models\Setting;
+use App\Models\Staff;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -135,10 +137,12 @@ class RecordPayment
             $this->generateReceiptNumber->lastSequence($recordedAt) + 1,
         );
         $oldStatus = $current->status;
+        $signer = $this->signer();
 
-        $payment = activity()->withoutLogs(function () use ($current, $user, $attributes, $items, $allocations, $receiptNo): Payment {
+        $payment = activity()->withoutLogs(function () use ($current, $user, $attributes, $items, $allocations, $receiptNo, $signer): Payment {
             $payment = Payment::query()->create([
                 ...$attributes,
+                ...$signer,
                 'receipt_no' => $receiptNo,
                 'invoice_id' => $current->getKey(),
                 'received_by' => $user->getKey(),
@@ -175,6 +179,7 @@ class RecordPayment
                 'amount' => $attributes['amount'],
                 'method' => $attributes['method'],
                 'paid_on' => $attributes['paid_on'],
+                ...$signer,
                 'allocations' => array_map(fn (array $allocation): array => [
                     'invoice_item_id' => $allocation['invoice_item_id'],
                     'fee_type_id' => $feeTypeIds[$allocation['invoice_item_id']],
@@ -187,6 +192,23 @@ class RecordPayment
         $invoice->setRawAttributes($current->getAttributes(), sync: true);
 
         return $payment;
+    }
+
+    /**
+     * Penandatangan kuitansi dibekukan saat dicatat; kosong bila belum diatur
+     * atau staff-nya sudah tidak ada/aktif.
+     *
+     * @return array{signer_name: string|null, signer_title: string|null}
+     */
+    private function signer(): array
+    {
+        $staffId = Setting::get(UpdateReceiptSigner::SETTING_KEY);
+        $staff = $staffId === null ? null : Staff::query()->where('is_active', true)->find($staffId);
+
+        return [
+            'signer_name' => $staff?->name,
+            'signer_title' => $staff === null ? null : (trim((string) $staff->position) ?: null),
+        ];
     }
 
     private function amount(mixed $value): int

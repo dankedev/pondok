@@ -1513,6 +1513,9 @@ return [
         'uploaded' => ':count foto diunggah.',
         'empty' => 'Album ini belum punya foto.',
         'delete_description' => 'Foto dihapus permanen dari album.',
+        'current_image' => 'Foto saat ini',
+        'replace_image' => 'Ganti foto',
+        'replace_image_helper' => 'Kosongkan bila foto tidak diganti. JPG atau PNG, maksimal 2 MB.',
     ],
 
     'video' => [

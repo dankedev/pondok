@@ -67,6 +67,51 @@ it('AC-28: edits caption and sort order of a photo', function () {
     expect($photo->fresh())->caption->toBe('Baru')->sort_order->toBe(4);
 });
 
+it('F065: replaces the image of a photo and removes the old file', function () {
+    $photo = kontenPhoto($this->album, ['caption' => 'Lama']);
+    $oldPath = $photo->path;
+
+    kontenPhotos($this->album)
+        ->callAction(TestAction::make('edit')->table($photo), ['image' => kontenImage('baru.jpg'), 'caption' => 'Lama', 'sort_order' => 1])
+        ->assertHasNoFormErrors();
+
+    $photo->refresh();
+
+    expect($photo->path)->not->toBe($oldPath)
+        ->and(Storage::disk('public')->exists($photo->path))->toBeTrue()
+        ->and(Storage::disk('public')->exists($oldPath))->toBeFalse();
+});
+
+it('F065: keeps the image when only the caption changes and rejects a non-image', function () {
+    $photo = kontenPhoto($this->album);
+    $path = $photo->path;
+
+    kontenPhotos($this->album)
+        ->callAction(TestAction::make('edit')->table($photo), ['image' => kontenPdf(), 'caption' => 'Baru', 'sort_order' => 1])
+        ->assertHasFormErrors(['image']);
+
+    kontenPhotos($this->album)
+        ->callAction(TestAction::make('edit')->table($photo), ['caption' => 'Baru', 'sort_order' => 1])
+        ->assertHasNoFormErrors();
+
+    expect($photo->fresh()->path)->toBe($path)->and(Storage::disk('public')->exists($path))->toBeTrue();
+});
+
+it('F065: deletes several photos at once with their files', function () {
+    $photos = collect([kontenPhoto($this->album), kontenPhoto($this->album)]);
+    $kept = kontenPhoto($this->album);
+
+    kontenPhotos($this->album)
+        ->selectTableRecords($photos->pluck('id')->all())
+        ->callAction(TestAction::make('delete')->table()->bulk());
+
+    expect(Photo::query()->pluck('id')->all())->toBe([$kept->id]);
+
+    foreach ($photos as $photo) {
+        expect(Storage::disk('public')->exists($photo->path))->toBeFalse();
+    }
+});
+
 it('AC-28: lists only the photos of this album in sort order', function () {
     $second = kontenPhoto($this->album, ['sort_order' => 2]);
     $first = kontenPhoto($this->album, ['sort_order' => 1]);

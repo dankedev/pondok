@@ -11,10 +11,13 @@ use App\Filament\Resources\Albums\AlbumResource;
 use App\Models\Album;
 use App\Models\Photo;
 use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -22,12 +25,13 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 
 /**
- * Foto album. Unggah lewat `AddAlbumPhotos`, ubah lewat `UpdatePhoto`, hapus lewat
- * `DeletePhoto`. Mengikuti izin ubah album.
+ * Foto album. Unggah lewat `AddAlbumPhotos`, ubah keterangan, urutan, atau gambar lewat
+ * `UpdatePhoto`, hapus (satu atau beberapa) lewat `DeletePhoto`. Mengikuti izin ubah album.
  */
 class PhotosRelationManager extends RelationManager
 {
@@ -49,6 +53,20 @@ class PhotosRelationManager extends RelationManager
     {
         return $schema
             ->components([
+                ImageEntry::make('path')
+                    ->label(__('pondok.photo.current_image'))
+                    ->disk(StorePublicImage::DISK)
+                    ->imageHeight(160),
+                FileUpload::make('image')
+                    ->label(__('pondok.photo.replace_image'))
+                    ->helperText(__('pondok.photo.replace_image_helper'))
+                    ->image()
+                    ->storeFiles(false)
+                    ->acceptedFileTypes(StorePublicImage::MIME_TYPES)
+                    ->maxSize(StorePublicImage::MAX_KILOBYTES)
+                    ->imageResizeTargetWidth('1600')
+                    ->imageResizeMode('contain')
+                    ->imageResizeUpscale(false),
                 TextInput::make('caption')
                     ->label(__('pondok.photo.caption'))
                     ->maxLength(AddAlbumPhotos::CAPTION_MAX_LENGTH),
@@ -97,6 +115,14 @@ class PhotosRelationManager extends RelationManager
                     ->authorize(fn (): bool => $this->canEditAlbum())
                     ->modalDescription(__('pondok.photo.delete_description'))
                     ->using(fn (Photo $record, DeletePhoto $deletePhoto): bool => tap(true, fn () => $deletePhoto->handle($record))),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->authorize(fn (): bool => $this->canEditAlbum())
+                        ->modalDescription(__('pondok.photo.delete_description'))
+                        ->using(fn (Collection $records, DeletePhoto $deletePhoto) => $records->each(fn (Photo $photo) => $deletePhoto->handle($photo))),
+                ]),
             ]);
     }
 

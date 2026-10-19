@@ -1,8 +1,10 @@
 name: tests
 
 # Suite PHP 8.4 dijalankan di mesin pengembang per fitur; CI memeriksa PHP 8.3 (target cPanel)
-# saat push ke main atau dijalankan manual.
+# di setiap pull request ke main (syarat auto-merge), saat push ke main, atau dijalankan manual.
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:

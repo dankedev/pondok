@@ -1129,13 +1129,13 @@
       "name": "Import data staff dengan template",
       "phase": 1,
       "module": "Inti",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F001", "F058"],
       "description": "Import data staff (ustadz, musyrif, TU) dari file template.",
       "acceptance": [],
       "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "suite penuh PHP 8.4 hijau 4306 test; ImportStaffRowTest, ImportStaffRowVerifyTest, tests/Feature/Filament/Staff/ImportStaffTest, RolePermissionSeederTest",
       "notes": "jalur: penuh. Kriteria penerimaan di issue #30 (sumber kebenaran). Permintaan user 19 Okt 2026 (urgent): data awal lewat import dengan template."
     },
     {

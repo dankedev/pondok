@@ -56,6 +56,7 @@ class RolePermissionSeeder extends Seeder
     public const EXTRA_RESOURCE_ACTIONS = [
         'Student' => ['restore', 'restoreAny', 'import'],
         'RoomAssignment' => ['import'],
+        'Staff' => ['import'],
         // Tagihan hanya dibuat generator dan dibatalkan, tidak dibuat manual atau dihapus.
         'Invoice' => ['generate', 'cancel', 'import'],
         // Pembayaran yang salah dibatalkan (status `batal`), tidak diubah atau dihapus.

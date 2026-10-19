@@ -3,6 +3,7 @@
 use App\Models\Applicant;
 use App\Models\IssuedLetter;
 use App\Models\Post;
+use App\Models\Staff;
 use App\Models\User;
 use App\Policies\ApplicantPolicy;
 use App\Policies\DocumentPolicy;
@@ -110,7 +111,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
     'wali' => ['wali', []],
     'admin-sekolah' => ['admin-sekolah', [
         'view-dashboard', 'view-student-metrics', 'view-settings-metrics',
-        'view-any:staff', 'view:staff', 'create:staff', 'update:staff', 'delete:staff', 'delete-any:staff',
+        'view-any:staff', 'view:staff', 'create:staff', 'update:staff', 'delete:staff', 'delete-any:staff', 'import:staff',
         'view-any:unit', 'view:unit',
         'view-any:academic-year', 'view:academic-year',
         'view-any:cohort', 'view:cohort', 'create:cohort', 'update:cohort', 'delete:cohort', 'delete-any:cohort',
@@ -126,6 +127,12 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view:student-numbering',
     ]],
 ]);
+
+it('creates import:staff for admin-sekolah and super-admin', function () {
+    expect(Permission::query()->where('name', 'import:staff')->exists())->toBeTrue()
+        ->and(User::factory()->create()->assignRole('super-admin')->can('import', Staff::class))->toBeTrue()
+        ->and(User::factory()->create()->assignRole('admin-sekolah')->can('import', Staff::class))->toBeTrue();
+});
 
 it('lets super-admin pass any gate check', function () {
     $user = User::factory()->create()->assignRole('super-admin');

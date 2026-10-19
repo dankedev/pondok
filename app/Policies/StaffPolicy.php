@@ -41,4 +41,9 @@ class StaffPolicy
     {
         return $authUser->can('delete-any:staff');
     }
+
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('import:staff');
+    }
 }

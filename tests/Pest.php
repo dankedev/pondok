@@ -2676,7 +2676,7 @@ function suratSigner(array $attributes = []): Staff
 
 /**
  * Terbitkan surat lewat Action sebagai `$by` (bawaan admin). Bawaan: `keterangan_aktif`, santri `s1`, penandatangan
- * `t1`, keperluan "Persyaratan beasiswa". Status login sebelumnya dipulihkan.
+ * `t1` (override `signers` satu slot), keperluan "Persyaratan beasiswa". Status login sebelumnya dipulihkan.
  *
  * @param  array<string, mixed>  $overrides
  */
@@ -2689,7 +2689,7 @@ function suratIssue(object $f, array $overrides = [], ?Student $student = null, 
     try {
         return app(IssueLetter::class)->handle($student ?? $f->s1, [
             'type' => 'keterangan_aktif',
-            'signed_by_staff_id' => $f->t1->id,
+            'signers' => [$f->t1->id],
             'purpose' => 'Persyaratan beasiswa',
             ...$overrides,
         ], $by);

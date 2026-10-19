@@ -27,7 +27,7 @@ function suratIssueFormData(object $f, array $overrides = []): array
     return [
         'student_id' => $f->s1->id,
         'type' => 'keterangan_aktif',
-        'signed_by_staff_id' => $f->t1->id,
+        'signers' => [['staff_id' => $f->t1->id]],
         'purpose' => 'Persyaratan beasiswa',
         ...$overrides,
     ];
@@ -124,7 +124,7 @@ it('AC-34: hides the purpose for a student card and issues it without one', func
 
     Livewire::test(ListIssuedLetters::class)
         ->assertActionVisible('issue')
-        ->callAction('issue', ['student_id' => $f->s1->id, 'type' => 'kartu_santri', 'signed_by_staff_id' => $f->t1->id])
+        ->callAction('issue', ['student_id' => $f->s1->id, 'type' => 'kartu_santri', 'signers' => [['staff_id' => $f->t1->id]]])
         ->assertHasNoFormErrors();
 
     $letter = IssuedLetter::query()->sole();
@@ -132,13 +132,14 @@ it('AC-34: hides the purpose for a student card and issues it without one', func
     expect($letter->letter_no)->toBe('001/MAK/KTS/X/2026')->and($letter->purpose)->toBeNull();
 });
 
-it('AC-34: offers only active staff as signers', function () {
+it('AC-34: refuses an inactive staff member as signer', function () {
     $f = $this->f;
     $this->actingAs($f->admin);
 
-    $ids = suratModalOptions(Livewire::test(ListIssuedLetters::class)->mountAction('issue'), 'signed_by_staff_id', 'Ust');
+    Livewire::test(ListIssuedLetters::class)
+        ->callAction('issue', suratIssueFormData($f, ['signers' => [['staff_id' => $f->t2->id]]]));
 
-    expect($ids)->toContain($f->t1->id)->not->toContain($f->t2->id);
+    expect(IssuedLetter::query()->count())->toBe(0);
 });
 
 it('AC-34: offers students by name and hides archived ones', function () {

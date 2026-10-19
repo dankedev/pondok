@@ -197,6 +197,31 @@ class IssuedLetter extends Model
     }
 
     /**
+     * Penandatangan beku berurutan `[{label, name, position, nip}]`. Surat lama hanya punya
+     * `snapshot.signer` tunggal (tanpa label); tanpa keduanya hasilnya kosong.
+     *
+     * @return list<array{label?: string|null, name?: string|null, position?: string|null, nip?: string|null}>
+     */
+    public function signerList(): array
+    {
+        $snapshot = (array) $this->snapshot;
+
+        if (is_array($snapshot['signers'] ?? null)) {
+            return array_values($snapshot['signers']);
+        }
+
+        return is_array($snapshot['signer'] ?? null) ? [['label' => null, ...$snapshot['signer']]] : [];
+    }
+
+    /**
+     * Nama-nama penandatangan digabung koma.
+     */
+    public function signerNames(): ?string
+    {
+        return collect($this->signerList())->pluck('name')->filter()->implode(', ') ?: null;
+    }
+
+    /**
      * Nama santri dari snapshot dengan kata kedua dan seterusnya dijadikan inisial.
      */
     public function maskedStudentName(): string

@@ -142,7 +142,7 @@ final class DemoRecords
 
             $letter = app(IssueLetter::class)->handle($student, [
                 'type' => $type,
-                'signed_by_staff_id' => $this->context->mudir()->id,
+                'signers' => [$this->context->mudir()->id],
                 'purpose' => $purpose,
             ], $issuer);
 

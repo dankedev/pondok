@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F067",
+  "next_id": "F068",
   "features": [
     {
       "id": "F001",
@@ -1217,6 +1217,22 @@
       "handoff": null,
       "evidence": "",
       "notes": "jalur: penuh. Kriteria di issue #35. Permintaan user 19 Okt 2026."
+    },
+    {
+      "id": "F067",
+      "key": "portal-halaman-error",
+      "issue": 39,
+      "name": "Redesign halaman 404 dan error global",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F017", "F035"],
+      "description": "404 mengikuti identitas visual portal; error 4xx/5xx global berbahasa Indonesia, 5xx tanpa ketergantungan database.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 248982b..0aebab4. ErrorPagesTest + PortalRoutingTest 63 lulus; suite lokal 4348 lulus (16 gagal hanya karena Vite dev server aktif, public/hot); CI PHP 8.3 di PR.",
+      "notes": "jalur: cepat. Kriteria di issue #39. Permintaan user 20 Okt 2026."
     }
   ]
 }

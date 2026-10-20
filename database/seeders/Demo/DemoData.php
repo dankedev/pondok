@@ -115,6 +115,9 @@ final class DemoData
     /** Nama jenjang demo; diganti hanya bila nama unit masih bawaan `UnitSeeder`. */
     public const UNIT_NAMES = ['SLTP' => 'MTW/SMP', 'SLTA' => 'TSN/SMA'];
 
+    /** Nominal minimal pembayaran tagihan penerimaan sebelum daftar ulang (F040). */
+    public const RE_REGISTRATION_MINIMUMS = ['SLTP' => 5000000, 'SLTA' => 5000000];
+
     /**
      * Istilah perayaan dan amalan yang tidak dipakai di konten demo (manhaj
      * pondok: hanya Idul Fitri dan Idul Adha). Dicari tanpa membedakan huruf besar.

@@ -90,7 +90,7 @@ Pesan penolakan menampilkan nominal syarat dan jumlah terbayar dalam format `Rp 
 5. Permission `view:re-registration-payment` untuk admin-psb.
 6. Halaman `ReRegistrationPayment` + lang.
 7. Infolist `ApplicantResource` + lang.
-8. `DemoAdmissions`/`DemoData`: isi nominal jenjang demo (mis. SLTP dan SLTA Rp 2.000.000) agar alur demo 60% tetap lolos dan 30% tetap belum.
+8. `DemoAdmissions`/`DemoData`: isi nominal jenjang demo (mis. SLTP dan SLTA Rp 5.000.000) agar alur demo 60% tetap lolos dan 30% tetap belum.
 
 **Paket 3 — dokumen**
 9. `docs/erd.md`: kolom di diagram `units`, baris ~579 dan ~612 (nominal per jenjang, null = lunas, 0 = tanpa syarat, cukup lunas bila total lebih kecil); `docs/ERD Pondok.html` baris ~631; `docs/pertanyaan-mahad-al-khair.md` no. 5 "Sudah: nominal per jenjang (F040)". PRD tidak perlu diubah (tidak menyebut persen).

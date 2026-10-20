@@ -28,8 +28,12 @@ class BuildSitemap
     {
         $entries = [['loc' => route('portal.home'), 'lastmod' => null]];
 
-        if (Setting::moduleEnabled('psb') && Route::has('psb.register')) {
-            $entries[] = ['loc' => route('psb.register'), 'lastmod' => null];
+        if (Setting::moduleEnabled('psb')) {
+            $entries[] = ['loc' => route('psb.info'), 'lastmod' => null];
+
+            if (Route::has('psb.register')) {
+                $entries[] = ['loc' => route('psb.register'), 'lastmod' => null];
+            }
         }
 
         if (! Setting::moduleEnabled('konten')) {
@@ -41,10 +45,12 @@ class BuildSitemap
         }
 
         // Halaman terbit berisi; halaman `contact` hanya bila profil punya data kontak (aturan Kontak F037).
+        // Halaman `psb-info` sudah tercakup entri `psb.info` di atas (F038).
         $hasContact = GetSchoolProfile::hasContactData($this->schoolProfile->handle());
 
         StaticPage::query()->published()->orderBy('id')->get()
-            ->reject(fn (StaticPage $page): bool => ($page->isContact() && ! $hasContact)
+            ->reject(fn (StaticPage $page): bool => $page->isPsbInfo()
+                || ($page->isContact() && ! $hasContact)
                 || $this->sanitize->isBlank($this->sanitize->handle($page->body)))
             ->each(function (StaticPage $page) use (&$entries): void {
                 $entries[] = ['loc' => route('portal.pages.show', $page->slug), 'lastmod' => $page->updated_at?->toAtomString()];

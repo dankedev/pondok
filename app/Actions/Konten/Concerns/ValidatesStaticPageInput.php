@@ -9,6 +9,7 @@ use App\Models\StaticPage;
  * Bersama `CreateStaticPage` dan `UpdateStaticPage`: isi HTML disanitasi (isi kosong
  * disimpan `''`), media non-http(s) dan sematan non-YouTube ditolak, status harus
  * `draft` atau `terbit`, dan template harus salah satu `StaticPage::TEMPLATES`.
+ * Halaman bertemplate `psb-info` selalu berslug `StaticPage::PSB_INFO_SLUG` (F038).
  */
 trait ValidatesStaticPageInput
 {
@@ -42,6 +43,24 @@ trait ValidatesStaticPageInput
         }
 
         return $value;
+    }
+
+    /**
+     * Slug tetap halaman `psb-info`, tanpa `ResolveStaticPageSlug` (yang mencadangkan
+     * slug ini); hanya satu halaman yang boleh memakainya.
+     */
+    protected function psbInfoSlug(?StaticPage $ignore = null): string
+    {
+        $taken = StaticPage::query()
+            ->where('slug', StaticPage::PSB_INFO_SLUG)
+            ->when($ignore !== null, fn ($query) => $query->whereKeyNot($ignore->getKey()))
+            ->exists();
+
+        if ($taken) {
+            $this->fail('slug', 'slug_taken');
+        }
+
+        return StaticPage::PSB_INFO_SLUG;
     }
 
     protected function pageStatus(mixed $value): string

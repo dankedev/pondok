@@ -24,6 +24,7 @@ use App\Models\ApplicantDocument;
 use App\Models\DocumentType;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Unit;
 use RuntimeException;
 
 /**
@@ -43,9 +44,20 @@ final class DemoAdmissions
     {
         $this->seedWave();
         $this->seedRequirements();
+        $this->seedReRegistrationMinimums();
 
         foreach (DemoData::APPLICANTS as $row) {
             $this->seedApplicant($row);
+        }
+    }
+
+    /**
+     * Nominal syarat daftar ulang jenjang demo, hanya bila belum diatur dari panel.
+     */
+    private function seedReRegistrationMinimums(): void
+    {
+        foreach (DemoData::RE_REGISTRATION_MINIMUMS as $code => $amount) {
+            Unit::query()->where('code', $code)->whereNull('min_reregistration_amount')->update(['min_reregistration_amount' => $amount]);
         }
     }
 

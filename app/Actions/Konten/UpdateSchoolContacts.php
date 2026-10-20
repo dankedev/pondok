@@ -13,7 +13,8 @@ use Illuminate\Support\Str;
  * daftar kosong disimpan null.
  *
  * Paling banyak satu kontak bertanda `is_print`: nomornya dicetak di kop surat dan
- * kuitansi (`GetPrintIdentity`).
+ * kuitansi (`GetPrintIdentity`). Kontak bertanda `is_psb` (boleh lebih dari satu) tampil
+ * di halaman Info PSB (F038).
  *
  * Key kontak (8 karakter `[a-z0-9]`) dibuat untuk item baru dan dipertahankan untuk
  * item lama yang dikirim ulang; menjadi rujukan stabil kontak PSB. Nomor telepon
@@ -48,7 +49,7 @@ class UpdateSchoolContacts
     }
 
     /**
-     * @return list<array{key: string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool}>
+     * @return list<array{key: string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool, is_psb: bool}>
      */
     private function contacts(mixed $value): array
     {
@@ -89,6 +90,7 @@ class UpdateSchoolContacts
                 'phone' => $phone,
                 'is_whatsapp' => filter_var($item['is_whatsapp'] ?? true, FILTER_VALIDATE_BOOLEAN),
                 'is_print' => filter_var($item['is_print'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'is_psb' => filter_var($item['is_psb'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
         }
 

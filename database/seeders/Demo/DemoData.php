@@ -38,9 +38,9 @@ final class DemoData
         'short_name' => 'Al-Khair',
         'arabic_name' => 'معهد الخير',
         'contacts' => [
-            ['label' => 'Kantor', 'name' => null, 'phone' => '07350000170', 'is_whatsapp' => false, 'is_print' => true],
-            ['label' => 'Panitia PSB', 'name' => null, 'phone' => '081200000171', 'is_whatsapp' => true, 'is_print' => false],
-            ['label' => 'Sekretariat', 'name' => null, 'phone' => '081200000170', 'is_whatsapp' => true, 'is_print' => false],
+            ['label' => 'Kantor', 'name' => null, 'phone' => '07350000170', 'is_whatsapp' => false, 'is_print' => true, 'is_psb' => false],
+            ['label' => 'Panitia PSB', 'name' => null, 'phone' => '081200000171', 'is_whatsapp' => true, 'is_print' => false, 'is_psb' => true],
+            ['label' => 'Sekretariat', 'name' => null, 'phone' => '081200000170', 'is_whatsapp' => true, 'is_print' => false, 'is_psb' => false],
         ],
         'social_links' => [
             ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.contoh.test/alkhair.belitang'],

@@ -131,6 +131,7 @@ erDiagram
     string code UK "SD | SLTP | SLTA"
     string name
     tinyint sort_order
+    bigint min_reregistration_amount "nullable, rupiah syarat daftar ulang (F040)"
   }
   academic_years {
     bigint id PK
@@ -628,7 +629,7 @@ erDiagram
     <li><strong>Jalur pendaftaran:</strong> <code>admission_tracks</code> seperti Tahfidz atau Yatim bisa dihubungkan ke program beasiswa. Saat pendaftar jalur itu diterima, keringanannya dibuat otomatis, misalnya uang pangkal gratis atau SPP potong 50%.</li>
     <li><strong>Keringanan khusus:</strong> panitia bisa memberi potongan per pendaftar (misalnya diskon saudara kandung) lewat <code>fee_overrides.applicant_id</code>, termasuk potongan SPP yang mulai berlaku setelah jadi santri.</li>
     <li><strong>Pindah ke santri:</strong> saat santri dibuat, <code>student_id</code> diisi pada tagihan dan keringanan milik pendaftar. <code>applicant_id</code> tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.</li>
-    <li>Syarat minimal pembayaran untuk daftar ulang (misalnya lunas atau minimal 50%) diatur di <code>settings</code> sebagai <code>psb.min_paid_percent</code>.</li>
+    <li>Syarat minimal pembayaran untuk daftar ulang adalah nominal rupiah per jenjang di <code>units.min_reregistration_amount</code> (F040): kosong berarti wajib lunas, 0 berarti tanpa syarat, dan bila tagihan penerimaan lebih kecil dari nominal cukup lunas.</li>
   </ul>
 </section>
 

@@ -14,7 +14,7 @@ Prinsip umum: aplikasi dipakai banyak lembaga, jadi nilai-nilai ini **diatur ole
 | 2 | Format nomor kuitansi | Bisa diatur admin | Masih tetap `KW-{Ym}-NNNNN` di kode |
 | 3 | Format nomor tagihan | Bisa diatur admin | Masih tetap `INV-{Ym}-NNNNN` di kode |
 | 4 | Format nomor surat | Bisa diatur admin | Sudah bisa diatur di panel (surat keluar) |
-| 5 | Syarat bayar daftar ulang | Admin mengisi **nominal** minimal, bukan persen | Masih persen (`psb.min_paid_percent`, bawaan 50) |
+| 5 | Syarat bayar daftar ulang | Admin mengisi **nominal** minimal, bukan persen | Sudah: nominal per jenjang di halaman "Syarat daftar ulang" (F040) |
 | 6 | Tagihan digabung/dipisah | (tidak dijawab) | Sudah bisa diatur lewat `billing_group` jenis biaya |
 | 6a | Biaya daftar ulang tahunan | Diisi admin | Bisa dibuat sebagai jenis biaya tahunan + tarif; pembuatan tagihannya perlu dicek |
 | 7 | Masa simpan data surat | Nanti lewat fitur backup dan pembersihan data lama per periode | Belum ada |
@@ -53,7 +53,7 @@ Prinsip umum: aplikasi dipakai banyak lembaga, jadi nilai-nilai ini **diatur ole
 
 ### 5. Syarat pembayaran untuk daftar ulang PSB
 
-- **Sekarang:** minimal 50% dari tagihan saat diterima (setting `psb.min_paid_percent`).
+- **Sudah (F040):** admin-psb mengisi nominal minimal per jenjang di halaman "Syarat daftar ulang". Kosong berarti wajib lunas, 0 berarti tanpa syarat, dan bila tagihan pendaftar lebih kecil dari nominal cukup lunas.
 - **Pertanyaan:** berapa persen minimal yang harus dibayar sebelum pendaftar resmi menjadi santri? Apakah harus lunas?
 
 ### 6. Tagihan digabung atau dipisah

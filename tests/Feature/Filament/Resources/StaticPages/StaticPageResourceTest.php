@@ -219,3 +219,58 @@ it('AC-10 (F048): the policy lets anyone with delete permission delete any page 
         ->and($policy->create(kontenUser('bendahara')))->toBeFalse()
         ->and($policy->deleteAny(kontenUser('admin-konten')))->toBeFalse();
 });
+
+/*
+| F038 VERIFY: slug halaman `psb-info` lewat form Filament.
+*/
+
+it('VERIFY F038: ignores the typed slug when saving a psb-info page from the edit form', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    $psbInfo = StaticPage::factory()->create(['slug' => 'info-psb', 'title' => 'Info PSB', 'template' => 'psb-info']);
+
+    Livewire::test(EditStaticPage::class, ['record' => $psbInfo->getRouteKey()])
+        ->fillForm(['title' => 'Info PSB Baru', 'slug' => 'ganti-saja'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($psbInfo->fresh())->slug->toBe('info-psb')->title->toBe('Info PSB Baru');
+});
+
+it('VERIFY F038: shows a slug error instead of an exception when leaving psb-info without a new slug', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    $psbInfo = StaticPage::factory()->create(['slug' => 'info-psb', 'title' => 'Info PSB', 'template' => 'psb-info']);
+
+    Livewire::test(EditStaticPage::class, ['record' => $psbInfo->getRouteKey()])
+        ->fillForm(['template' => 'default'])
+        ->call('save')
+        ->assertHasFormErrors(['slug']);
+
+    expect($psbInfo->fresh())->slug->toBe('info-psb')->template->toBe('psb-info');
+
+    Livewire::test(EditStaticPage::class, ['record' => $psbInfo->getRouteKey()])
+        ->fillForm(['template' => 'default', 'slug' => 'brosur-psb'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($psbInfo->fresh())->slug->toBe('brosur-psb')->template->toBe('default');
+});
+
+it('VERIFY F038: refuses a second psb-info page from the create form with an error on slug', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    StaticPage::factory()->create(['slug' => 'info-psb', 'title' => 'Info PSB', 'template' => 'psb-info']);
+
+    Livewire::test(CreateStaticPage::class)
+        ->fillForm(['title' => 'Info PSB Kedua', 'template' => 'psb-info'])
+        ->call('create')
+        ->assertHasFormErrors(['slug']);
+
+    expect(StaticPage::query()->where('template', 'psb-info')->count())->toBe(1);
+});
+
+it('VERIFY F038: rejects an unknown template even when the slug is also invalid', function () {
+    kontenAssertRejected(fn () => app(App\Actions\Konten\CreateStaticPage::class)->handle([
+        'title' => 'Halaman', 'slug' => 'admin', 'template' => 'psb_info', 'status' => 'terbit',
+    ]), 'template_invalid', 'template');
+
+    expect(StaticPage::query()->where('title', 'Halaman')->exists())->toBeFalse();
+});

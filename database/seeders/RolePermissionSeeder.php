@@ -36,6 +36,8 @@ class RolePermissionSeeder extends Seeder
         // Penomoran dokumen (F039): format kuitansi/tagihan (bendahara) dan NIS (admin-sekolah).
         'view:finance-numbering',
         'view:student-numbering',
+        // Syarat daftar ulang (F040): nominal minimal pembayaran per jenjang (admin-psb).
+        'view:re-registration-payment',
     ];
 
     /** Model yang punya resource Filament, beserta aksi policy-nya. */
@@ -226,6 +228,7 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('AdmissionTrack', $withoutDelete),
                 ...self::resourcePermissions('AdmissionRequirement'),
                 ...self::resourcePermissions('Applicant', ['viewAny', 'view', 'delete', 'verifyDocument', 'resetToken', 'generateInvoices', 'decide', 'reRegister']),
+                'view:re-registration-payment',
             ],
             // Santri dan wali lihat-saja; mengelola asrama, kamar, penghuni, dan musyrif.
             'kesantrian' => [

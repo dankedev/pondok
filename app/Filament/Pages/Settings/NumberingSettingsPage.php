@@ -41,6 +41,11 @@ abstract class NumberingSettingsPage extends Page
 
     abstract public function form(Schema $schema): Schema;
 
+    protected function savedMessage(): string
+    {
+        return __('pondok.numbering.saved');
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -65,10 +70,7 @@ abstract class NumberingSettingsPage extends Page
      */
     public static function getNavigationItems(): array
     {
-        return array_map(
-            fn (NavigationItem $item): NavigationItem => $item->visible(fn (): bool => static::canAccess()),
-            parent::getNavigationItems(),
-        );
+        return static::canAccess() ? parent::getNavigationItems() : [];
     }
 
     public function mount(): void
@@ -115,7 +117,7 @@ abstract class NumberingSettingsPage extends Page
         $this->form->fill($this->fillData());
 
         Notification::make()
-            ->title(__('pondok.numbering.saved'))
+            ->title($this->savedMessage())
             ->success()
             ->send();
     }

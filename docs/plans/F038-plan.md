@@ -1,7 +1,7 @@
 # F038 psb-info-publik — Halaman Info PSB publik (halaman bertemplate `psb-info`)
 
 Issue: #14
-Status rencana: REVISED
+Status rencana: APPROVED
 Jalur: penuh (data PSB dan tarif publik, kontak, template halaman). Sumber: `docs/audits/ui-ux-portal-konten.md` §6; revisi ruang lingkup disetujui user 20 Okt 2026.
 
 ## Ringkasan & tujuan
@@ -114,3 +114,16 @@ Verdict: CHANGES_REQUESTED
 | 6 | minor | Keputusan 3 / AC-4 | Isi halaman diambil dari slug `info-psb` bertemplate `psb-info`. Halaman `psb-info` bila terbit dengan body kosong tetap mengubah `h1` ke judul. | Tentukan: judul memakai halaman terbit meski body kosong (sudah implisit), cukup ditulis. |
 | 7 | minor | AC-10 | "mengabaikan nilai non-bool menjadi false" perlu mengikuti cara `is_print`/`is_whatsapp` di `UpdateSchoolContacts` agar konsisten. | Salin pola validasi yang ada. |
 | 8 | minor | Ukuran | Rencana ±90 baris isi, 13 AC (batas 8-15); AC-12 (akses peran) cukup satu assert di test yang ada. Rencana test AC-8 "tidak ada query ke fee_rates saat keuangan mati" butuh `DB::listen`; pastikan pola itu sudah dipakai di repo. | Catatan saja. |
+
+## Review #2 — 2026-10-20
+
+Verdict: APPROVED
+
+| # Review #1 | Status | Catatan |
+|---|---|---|
+| 1 blocker route | tertutup | `psb.info` berdiri sendiri sebelum grup `Route::name('portal.')` yang memuat `{page}`; middleware stateless disalin; AC-2 meng-assert URL, header, menu. |
+| 2 major slug | tertutup | `psb-info` tidak lewat `ResolveStaticPageSlug`, cek unik langsung; keluar dari `psb-info` wajib slug baru. |
+| 3 major query | tertutup | Batas tertulis di Keputusan 8/AC-13, diuji dengan helper `dashboardQueryCount`. |
+| 4 major sitemap/navigasi | tertutup | Konten mati, body kosong, dan item `page:` ditolak tercakup di AC-11. |
+
+Catatan implementasi (minor): `info-psb` tetap di `RESERVED_SLUGS`; pastikan parameter `,404` pada `EnsureModuleIsEnabled` didukung; route `info-psb` didaftarkan sebelum grup `{page}`.

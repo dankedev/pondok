@@ -10,12 +10,12 @@ use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\RoomAssignment;
-use App\Models\Setting;
 use App\Models\Student;
 use Filament\Facades\Filament;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function () {
@@ -33,18 +33,34 @@ it('VERIFY: does not count a cancelled payment toward the minimum', function () 
     expect(daftarUlangSnapshot())->toBe($before);
 });
 
-it('VERIFY: compares the percent with integer arithmetic at the boundary', function (int $total, int $paid, int $required, bool $meets) {
-    Setting::set('psb.min_paid_percent', $required);
+it('AC-2: compares the nominal minimum with integer arithmetic at the boundary', function (?int $minimum, int $total, int $paid, bool $meets) {
+    daftarUlangMinimum('SLTP', $minimum);
     $applicant = daftarUlangApplicant($this->f, paid: 0);
     Invoice::withoutUnitScope()->whereKey(seleksiInvoices($applicant, group: 'PSB_TERIMA')->sole()->id)->update(['total' => $total, 'paid_total' => $paid]);
 
     expect(app(CheckReRegistrationPayment::class)->handle($applicant)['meets'])->toBe($meets);
 })->with([
-    'exactly the percent' => [3, 1, 33, true],
-    'one rupiah short' => [10000001, 5000000, 50, false],
-    'exactly half of an odd total' => [10000002, 5000001, 50, true],
-    'rounds down for display but fails' => [200, 99, 50, false],
+    'exactly the minimum' => [3000000, 8000000, 3000000, true],
+    'one rupiah short' => [3000000, 8000000, 2999999, false],
+    'null needs the whole total' => [null, 10000001, 10000000, false],
+    'minimum above total, paid total' => [10000000, 2000000, 2000000, true],
 ]);
+
+it('AC-7: shows rupiah amounts and no percent in the rejection message', function () {
+    daftarUlangMinimum('SLTP', 3000000);
+    $applicant = daftarUlangApplicant($this->f, paid: 2999999);
+    $before = daftarUlangSnapshot();
+
+    try {
+        daftarUlangRun($applicant);
+        $this->fail('ValidationException diharapkan.');
+    } catch (ValidationException $exception) {
+        $message = collect($exception->errors()['payment'])->implode(' ');
+        expect($message)->toContain('Rp 2.999.999')->toContain('Rp 3.000.000')->not->toContain('%');
+    }
+
+    expect(daftarUlangSnapshot())->toBe($before);
+});
 
 it('VERIFY: converts two siblings onto one guardian and keeps both as billing contact', function () {
     $first = daftarUlangRun(daftarUlangApplicant($this->f));

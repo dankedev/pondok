@@ -2188,6 +2188,22 @@ return [
         'pages' => [
             'empty' => 'Halaman ini belum diisi.',
         ],
+        'psb_info' => [
+            'empty' => 'Informasi pendaftaran belum tersedia. Silakan kembali lagi nanti.',
+            'waves_title' => 'Gelombang pendaftaran',
+            'wave_open' => 'Dibuka',
+            'wave_upcoming' => 'Akan dibuka',
+            'wave_period' => ':opens sampai :closes',
+            'wave_academic_year' => 'Tahun ajaran :year',
+            'register' => 'Daftar sekarang',
+            'requirements_title' => 'Syarat berkas',
+            'all_units' => 'Semua jenjang',
+            'required' => 'Wajib',
+            'optional' => 'Opsional',
+            'fees_title' => 'Rincian biaya',
+            'fees_note' => 'Untuk gelombang :wave tahun ajaran :year.',
+            'contacts_title' => 'Kontak panitia PSB',
+        ],
         'contact' => [
             'title' => 'Informasi kontak',
             'address' => 'Alamat',

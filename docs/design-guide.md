@@ -166,6 +166,8 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Daftar ulang | belum memenuhi syarat | `warning` |
 | PSB | cadangan | `warning` |
 | PSB | ditolak, mengundurkan diri | `danger` |
+| Gelombang PSB (portal Info PSB) | dibuka | `success` |
+| Gelombang PSB (portal Info PSB) | akan dibuka | `info` |
 | Berkas PSB | menunggu | `warning` |
 | Berkas PSB | valid | `success` |
 | Berkas PSB | ditolak | `danger` |

@@ -36,7 +36,6 @@ class GetPsbInfo
     public function __construct(
         private readonly SanitizeContentHtml $sanitize,
         private readonly GetSchoolProfile $schoolProfile,
-        private readonly FormatPhoneForDisplay $phones,
         private readonly ResolveFeeRate $feeRates,
     ) {}
 
@@ -47,7 +46,7 @@ class GetPsbInfo
      *     waves: list<array{name: string, academic_year: string, opens_on: CarbonInterface, closes_on: CarbonInterface, status: string}>,
      *     requirements: list<array{unit: ?string, items: list<array{name: string, is_required: bool}>}>,
      *     fees: list<array{unit: string, items: list<array{name: string, frequency: string, amount: int}>}>,
-     *     contacts: list<array{label: string, name: ?string, phone: string, whatsapp_url: ?string}>,
+     *     contacts: list<array{key: ?string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool, is_psb: bool}>,
      * }
      */
     public function handle(): array
@@ -174,17 +173,12 @@ class GetPsbInfo
     }
 
     /**
-     * @return list<array{label: string, name: ?string, phone: string, whatsapp_url: ?string}>
+     * Kontak profil apa adanya (nomor belum diformat) agar view memakai partial `contact-list`.
+     *
+     * @return list<array{key: ?string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool, is_psb: bool}>
      */
     private function contacts(): array
     {
-        $contacts = array_filter($this->schoolProfile->handle()['contacts'], fn (array $contact): bool => $contact['is_psb']);
-
-        return array_values(array_map(fn (array $contact): array => [
-            'label' => $contact['label'],
-            'name' => $contact['name'],
-            'phone' => $this->phones->handle($contact['phone']),
-            'whatsapp_url' => $contact['is_whatsapp'] ? $this->phones->whatsappUrl($contact['phone']) : null,
-        ], $contacts));
+        return array_values(array_filter($this->schoolProfile->handle()['contacts'], fn (array $contact): bool => $contact['is_psb']));
     }
 }

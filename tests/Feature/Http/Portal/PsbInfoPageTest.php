@@ -186,7 +186,7 @@ it('AC-9: shows only psb flagged contacts with formatted phone and a WhatsApp li
     $html = psbInfoHtml();
     $text = strip_tags($html);
 
-    expect($text)->toContain('Panitia PSB')->toContain('Ust. Ahmad')->toContain('0812 0000 0001')->toContain('Bagian Telepon')->toContain('0812 0000 0002')
+    expect($text)->toContain('Panitia PSB')->toContain('Ust. Ahmad')->toContain('0812-0000-0001')->toContain('Bagian Telepon')->toContain('0812-0000-0002')
         ->not->toContain('Sekretariat Umum')->not->toContain('Kontak Lama')
         ->and($html)->toContain('href="https://wa.me/6281200000001"')->not->toContain('wa.me/6281200000002');
 

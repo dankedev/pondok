@@ -72,6 +72,7 @@ erDiagram
     string code UK "SD | SLTP | SLTA"
     string name
     tinyint sort_order
+    bigint min_reregistration_amount "nullable, rupiah syarat daftar ulang (F040)"
   }
   academic_years {
     bigint id PK
@@ -576,7 +577,7 @@ erDiagram
 - Pendaftar tidak perlu akun di tabel `users`. Mereka cek status dan unggah ulang berkas dengan nomor pendaftaran + token (disimpan dalam bentuk hash).
 - Status *diterima* tidak langsung membuat `students`. Baris `students` dibuat saat daftar ulang (F012, `ReRegisterApplicant`, permission `re-register:applicant`), sesuai PRD 3.4. Status pendaftar tetap `diterima`; "sudah daftar ulang" diturunkan dari adanya santri ber-`applicant_id` itu (termasuk santri terhapus). Satu santri per pendaftar (unique `students.applicant_id`).
 - **Daftar ulang (F012)** dalam satu transaksi:
-  - Syarat: modul keuangan aktif → persen terbayar tagihan **penerimaan** aktif (bukan `batal`, memuat biaya `saat_diterima`; formulir tidak dihitung; total 0 = 100%) minimal `psb.min_paid_percent`. Tanpa tagihan penerimaan padahal ada biaya `saat_diterima` bertarif → ditolak.
+  - Syarat: modul keuangan aktif → jumlah terbayar tagihan **penerimaan** aktif (bukan `batal`, memuat biaya `saat_diterima`; formulir tidak dihitung) minimal `units.min_reregistration_amount` jenjang pendaftar (F040). Tanpa tagihan penerimaan padahal ada biaya `saat_diterima` bertarif → ditolak.
   - Santri: data disalin dari pendaftar (snapshot), status `aktif`. Angkatan = (`unit_id`, tahun awal tahun ajaran gelombang), dibuat otomatis ("Angkatan 2027") bila belum ada. NIS manual atau otomatis dari `students.nis_format`. NISN yang sudah dipakai santri lain ditolak.
   - `entered_on` = bulan pertama santri ditagih bulanan: bawaan `max(awal bulan depan, awal tahun ajaran gelombang)`, paling cepat awal bulan depan.
   - Wali: dipakai ulang hanya bila nomor HP cocok (varian `08`/`62`/`+62`) **dan** nama sama (tanpa beda huruf besar/spasi), datanya tidak diubah; selain itu wali baru. Wali dihubungkan sebagai kontak tagihan dengan hubungan pilihan panitia (bawaan `wali`).
@@ -609,7 +610,7 @@ Biaya PSB memakai mekanisme yang sama dengan SPP: jenis biaya, tarif yang berlak
 - **Pindah ke santri:** saat santri dibuat, `student_id` diisi pada semua tagihan (termasuk `lunas` dan `batal`) dan keringanan (termasuk yang sudah berakhir) milik pendaftar; nominal, item, dan pembayaran tidak berubah. `applicant_id` tetap disimpan, jadi tunggakan uang pangkal terlihat di profil santri dan asalnya tetap terlacak.
 - **Pemisahan `billing_group`:** satu kelompok tagihan hanya boleh berisi jenis biaya dari kelas frekuensi yang sama: `saat_daftar`, `saat_diterima`, atau lainnya (`bulanan`, `tahunan`, `manual`). Tagihan formulir tidak menghalangi tagihan saat diterima, dan setelah konversi tidak bertabrakan dengan generator bulanan.
 - **Tagihan saldo awal (F060):** impor CSV bendahara (`nis`, `fee_type`, `amount`) membuat tagihan berkelompok `SALDO_AWAL` (`Invoice::GROUP_OPENING_BALANCE`, dicadangkan: `SaveFeeType` menolaknya), status `belum`, `period` awal bulan import (Asia/Jakarta), `due_on` akhir bulan sebelumnya (langsung terlambat), tahun ajaran aktif. Satu tagihan per santri per bulan import; item `rate_source = manual`, `discount_amount` 0, tanpa tarif/keringanan. Pasangan santri + jenis biaya yang sudah punya tagihan `SALDO_AWAL` aktif ditolak (periode mana pun); tagihan `batal` tidak dihitung. Generator bulanan mengecualikan kelompok ini dari pemeriksaan tagihan yang sudah ada. Pakai hanya untuk tunggakan sebelum generator bulanan pertama; SPP bulan berjalan tetap ditagih generator. Unique (`student_id`, `period`, `billing_group`, `active_marker`) tidak berubah; tanpa migration.
-- Syarat minimal pembayaran untuk daftar ulang diatur di `settings` sebagai `psb.min_paid_percent` (bilangan bulat 0–100, bawaan 50; nilai tidak valid memakai 50). Basisnya tagihan penerimaan aktif saja.
+- Syarat minimal pembayaran untuk daftar ulang (F040) adalah nominal rupiah per jenjang di `units.min_reregistration_amount`, diisi admin-psb di halaman "Syarat daftar ulang": `null` = wajib lunas, `0` = tanpa syarat; bila total tagihan penerimaan lebih kecil dari nominal (mis. beasiswa), cukup lunas (`required = min(nominal ?? total, total)`). Basisnya tagihan penerimaan aktif saja. Setting persen lama `psb.min_paid_percent` dihapus lewat migrasi tanpa konversi.
 - Format NIS otomatis diatur di `settings` sebagai `students.nis_format` (bawaan `{YYYY}{NNNN}`, mis. `20270001`). Token `{YYYY}`, `{YY}`, `{UNIT}`, dan satu token urut `{NNN}`–`{NNNNNN}` di akhir; literal huruf, angka, `.`, `-`, `/`; maksimal 30 karakter. Urutan melanjutkan nomor terbesar yang cocok (santri terhapus ikut dihitung). Format tidak valid memakai bawaan. Kedua setting belum punya halaman pengaturan.
 
 ## Keuangan & Tagihan

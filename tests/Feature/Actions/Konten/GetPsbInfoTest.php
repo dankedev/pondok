@@ -126,7 +126,7 @@ it('AC-13: query count does not grow with waves, requirements, and contacts', fu
 });
 
 it('AC-13: the fee section costs at most 2 + 2 queries per unit and fee type pair', function () {
-    psbInfoWave('Gelombang 1');
+    psbInfoWave('Gelombang Awal');
     Setting::set('modules.keuangan.enabled', false);
     $without = dashboardQueryCount(fn () => psbInfoGet());
 

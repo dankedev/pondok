@@ -36,12 +36,12 @@ it('AC-3: the default menu only contains existing published pages and skips cont
     navSeedPublicContent();
     StaticPage::query()->where('slug', 'profil')->update(['status' => 'draft']);
 
-    expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Berita', 'Galeri', 'Video']);
+    expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Berita', 'Galeri', 'Video', 'Info PSB']);
 
     portalContactData();
     StaticPage::query()->where('slug', 'kontak')->delete();
 
-    expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Berita', 'Galeri', 'Video']);
+    expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Berita', 'Galeri', 'Video', 'Info PSB']);
 });
 
 it('AC-8 (F046): the navigation has no footer, even when an old footer key is still stored', function () {

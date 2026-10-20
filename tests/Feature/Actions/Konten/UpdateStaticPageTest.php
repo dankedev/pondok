@@ -167,7 +167,7 @@ it('AC-1 (F038): moves a page to the info-psb slug when it becomes psb-info, onc
     $other = StaticPage::query()->where('slug', 'kontak')->firstOrFail();
     kontenAssertRejected(fn () => kontenUpdatePage($other, ['template' => 'psb-info']), 'slug_taken', 'slug');
 
-    expect($other->fresh())->slug->toBe('kontak')->template->toBe('default');
+    expect($other->fresh())->slug->toBe('kontak')->template->toBe('contact');
 });
 
 it('AC-1 (F038): requires a new slug when leaving psb-info', function () {

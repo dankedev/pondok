@@ -24,7 +24,7 @@ it('AC-3: the default menu matches the previous header when the keys are missing
     navSeedPublicContent();
 
     expect(portalNavTexts($this->get('/')->assertOk()->getContent()))
-        ->toBe(['Beranda', 'Profil', 'Berita', 'Galeri', 'Video', 'Kontak', 'Masuk', 'Daftar']);
+        ->toBe(['Beranda', 'Profil', 'Berita', 'Galeri', 'Video', 'Info PSB', 'Kontak', 'Masuk', 'Daftar']);
 });
 
 it('AC-3: an empty menu leaves only Masuk, and the register button follows header_button', function (?array $primary, array|false|null $button, array $expected) {

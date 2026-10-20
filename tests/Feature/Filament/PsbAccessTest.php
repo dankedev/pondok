@@ -342,6 +342,10 @@ it('AC-31 (F011): translates every acceptance text key', function () {
             yield "psb.errors.{$name}" => ["pondok.psb.errors.{$name}"];
         }
 
+        foreach (['title', 'heading', 'description', 'helper', 'unit_not_allowed'] as $name) {
+            yield "psb.re_registration_settings.{$name}" => ["pondok.psb.re_registration_settings.{$name}"];
+        }
+
         foreach (['heading_year', 'total', 'total_description', 'no_waves', 'list_link'] as $name) {
             yield "dashboard.psb.{$name}" => ["pondok.dashboard.psb.{$name}"];
         }
@@ -379,7 +383,8 @@ it('AC-37 (F012): translates every re-registration text key', function () {
         $applicant = [
             're_register', 're_register_heading', 're_register_description', 'entered_on', 'entered_on_helper', 'nis', 'nis_helper',
             'guardian_relation', 'address', 're_registered', 're_registered_next_step', 'copy_skipped', 'section_re_registration',
-            'acceptance_payment', 'acceptance_payment_value', 'no_acceptance_invoices', 'finance_disabled', 'min_paid_percent',
+            'acceptance_payment', 'acceptance_payment_value', 'no_acceptance_invoices', 'finance_disabled', 're_registration_required',
+            're_registration_minimum_unset', 're_registration_minimum_capped',
             're_registration_ready', 're_registration_not_ready', 'acceptance_invoices_not_created', 'converted', 'converted_student',
             'converted_at', 'filter_re_registered', 'activity_converted',
         ];
@@ -413,5 +418,5 @@ it('AC-37 (F012): words the key texts the plan fixes', function () {
     expect(__('pondok.cohort.default_name', ['year' => 2027]))->toBe('Angkatan 2027')
         ->and(__('pondok.applicant.re_register'))->toBe('Catat daftar ulang')
         ->and(__('pondok.psb.errors.acceptance_invoices_missing'))->toBe('Tagihan penerimaan belum dibuat. Gunakan Buat tagihan penerimaan lebih dulu.')
-        ->and(__('pondok.psb.errors.min_payment_not_met', ['paid' => 49, 'required' => 50]))->toBe('Pembayaran tagihan penerimaan baru 49%. Daftar ulang membutuhkan minimal 50%.');
+        ->and(__('pondok.psb.errors.min_payment_not_met', ['paid' => 'Rp 2.999.999', 'required' => 'Rp 3.000.000']))->toBe('Pembayaran tagihan penerimaan baru Rp 2.999.999. Daftar ulang membutuhkan minimal Rp 3.000.000.');
 });

@@ -197,6 +197,8 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $yearP = demoYearId('2025/2026');
     $yearA = demoYearId('2026/2027');
     $yearN = demoYearId('2027/2028');
+    demoCheck(DB::table('units')->whereIn('id', [$sltp, $slta])->pluck('min_reregistration_amount')->every(fn ($amount) => (int) $amount === 2000000), 'AC-13 F040 nominal daftar ulang demo SLTP dan SLTA');
+    demoCheck(DB::table('settings')->where('key', 'psb.min_paid_percent')->doesntExist(), 'AC-13 F040 tanpa setting persen');
 
     // AC-3
     expect(Unit::query()->pluck('code')->sort()->values()->all())->toBe(['SD', 'SLTA', 'SLTP']);

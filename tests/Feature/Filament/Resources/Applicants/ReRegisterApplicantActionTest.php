@@ -2,6 +2,7 @@
 
 use App\Filament\Resources\Applicants\Pages\ListApplicants;
 use App\Models\Applicant;
+use App\Models\Invoice;
 use App\Models\Student;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
@@ -143,6 +144,32 @@ it('AC-33: shows the payment status in the re-registration section before the co
     $unpaidText = tagihanPlainText(seleksiView($unpaid, $this->f->user));
 
     expect($unpaidText)->toContain('Belum memenuhi')->not->toContain('Memenuhi syarat');
+});
+
+it('AC-12: shows the required minimum in rupiah with a note when it is unset or capped', function (?int $minimum, int $total, string $required, ?string $note) {
+    daftarUlangMinimum('SLTP', $minimum);
+    $applicant = daftarUlangApplicant($this->f, paid: 0);
+    Invoice::withoutUnitScope()->whereKey(seleksiInvoices($applicant, group: 'PSB_TERIMA')->sole()->id)->update(['total' => $total]);
+
+    $text = tagihanPlainText(seleksiView($applicant, $this->f->user));
+
+    expect($text)->toContain('Syarat minimal')->toContain($required)
+        ->and($text)->not->toContain('% dari')
+        ->and(str_contains($text, 'belum diatur, jadi wajib lunas'))->toBe($note === 'belum diatur')
+        ->and(str_contains($text, 'cukup lunas'))->toBe($note === 'cukup lunas');
+})->with([
+    'nominal set' => [3000000, 8000000, 'Rp 3.000.000', null],
+    'nominal unset' => [null, 8000000, 'Rp 8.000.000', 'belum diatur'],
+    'total below nominal' => [10000000, 2000000, 'Rp 2.000.000', 'cukup lunas'],
+]);
+
+it('AC-7: names the rupiah amounts in the notification when the payment is too low', function () {
+    daftarUlangMinimum('SLTP', 3000000);
+    $applicant = daftarUlangApplicant($this->f, paid: 1000000);
+
+    seleksiView($applicant, $this->f->user)->callAction('reRegister');
+
+    expect(seleksiNotificationText())->toContain('Rp 1.000.000')->toContain('Rp 3.000.000');
 });
 
 it('AC-33: explains that the acceptance invoices are not created yet', function () {

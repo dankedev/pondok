@@ -93,6 +93,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:applicant', 'view:applicant', 'delete:applicant',
         'verify-document:applicant', 'reset-token:applicant', 'generate-invoices:applicant',
         'decide:applicant', 're-register:applicant',
+        'view:re-registration-payment',
     ]],
     'kesantrian' => ['kesantrian', [
         'view-dashboard', 'view-student-metrics',
@@ -419,4 +420,13 @@ it('AC-31: lets the applicant policy check the re-register permission', function
 
     expect((new ApplicantPolicy)->reRegister($allowed, $applicant))->toBeTrue()
         ->and((new ApplicantPolicy)->reRegister($denied, $applicant))->toBeFalse();
+});
+
+it('AC-13: gives the re-registration payment page to a role that already exists when the seeder runs again', function () {
+    Role::findByName('admin-psb')->revokePermissionTo('view:re-registration-payment');
+
+    $this->seed(RolePermissionSeeder::class);
+
+    expect(Role::findByName('admin-psb')->hasPermissionTo('view:re-registration-payment'))->toBeTrue()
+        ->and(Role::findByName('super-admin')->hasPermissionTo('view:re-registration-payment'))->toBeTrue();
 });

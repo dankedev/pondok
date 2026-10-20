@@ -3226,8 +3226,17 @@ function daftarUlangExtend(object $f): object
     $f->rates['SPP']->update(['amount' => 500000]);
     $f->rates['KITAB']->delete();
     unset($f->rates['KITAB']);
+    Unit::query()->update(['min_reregistration_amount' => 4000000]);
 
     return $f;
+}
+
+/**
+ * Atur nominal minimal daftar ulang jenjang `$unitCode` (F040): `null` wajib lunas, `0` tanpa syarat.
+ */
+function daftarUlangMinimum(string $unitCode, ?int $amount): void
+{
+    Unit::query()->where('code', $unitCode)->update(['min_reregistration_amount' => $amount]);
 }
 
 /**

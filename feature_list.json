@@ -697,7 +697,7 @@
       "name": "Syarat bayar daftar ulang dalam nominal rupiah",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F036", "F012"],
       "description": "Ganti psb.min_paid_percent dengan nominal minimal pembayaran (rupiah) yang diisi admin untuk daftar ulang. Kata user: \"jangan kita tentukan persen, user isi saja nominalnya\".",
       "acceptance": [
@@ -705,10 +705,10 @@
         "Perilaku saat nominal kosong dan migrasi nilai persen lama ditentukan di rencana lalu dikonfirmasi user sebelum implementasi",
         "Pesan alasan tidak memenuhi syarat menampilkan nominal minimal dan jumlah terbayar"
       ],
-      "owner": null,
+      "owner": "f040-daftar-ulang-nominal",
       "handoff": null,
       "evidence": "",
-      "notes": "Keputusan user 16 Okt 2026 (Jawaban user no. 5). Dikerjakan setelah F036."
+      "notes": "Keputusan user 16 Okt 2026 (Jawaban user no. 5). Dikerjakan setelah F036. Jalur penuh (PSB + uang + migration). Keputusan user 20 Okt 2026: nominal kosong = wajib lunas; persen lama dihapus lewat migrasi; nominal per jenjang."
     },
     {
       "id": "F041",

@@ -244,3 +244,14 @@ it('AC-35: filters the list by re-registration', function () {
         ->assertCanSeeTableRecords([$waiting])
         ->assertCanNotSeeTableRecords([$converted, $trashed, $submitted]);
 });
+
+it('VERIFY F040: infolist shows Rp 0 for a zero minimum and hides the row while acceptance invoices are missing', function () {
+    daftarUlangMinimum('SLTP', 0);
+    $applicant = daftarUlangApplicant($this->f, paid: 0);
+
+    expect(tagihanPlainText(seleksiView($applicant, $this->f->user)))->toContain('Syarat minimal')->toContain('Rp 0');
+
+    $missing = daftarUlangApplicant($this->f, invoices: false);
+
+    expect(tagihanPlainText(seleksiView($missing, $this->f->user)))->not->toContain('Syarat minimal');
+});

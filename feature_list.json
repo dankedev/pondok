@@ -717,7 +717,7 @@
       "name": "Generator tagihan tahunan",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F036", "F006"],
       "description": "Generator untuk jenis biaya berfrekuensi tahunan (mis. daftar ulang tahunan, nominal diisi admin lewat tarif), dijalankan pada bulan yang dipilih admin. Saat ini GenerateMonthlyInvoices hanya memproses frekuensi bulanan.",
       "acceptance": [
@@ -725,10 +725,10 @@
         "Berjalan otomatis lewat scheduler pada bulan yang dipilih admin dan bisa dijalankan manual",
         "Mengikuti resolusi tarif, keringanan, applies_to mukim/nonmukim, dan gabungan/terpisah seperti tagihan bulanan; santri tanpa tarif dicatat dan dilewati"
       ],
-      "owner": null,
+      "owner": "f041-tagihan-tahunan",
       "handoff": null,
       "evidence": "",
-      "notes": "Keputusan user 16 Okt 2026 (Jawaban user no. 6a). Dikerjakan setelah F036."
+      "notes": "jalur: penuh. Keputusan user 16 Okt 2026 (Jawaban user no. 6a). Dikerjakan setelah F036."
     },
     {
       "id": "F042",

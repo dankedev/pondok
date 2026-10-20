@@ -4513,3 +4513,82 @@ function saldoInvoices(?Student $student = null): Collection
         ->orderBy('id')
         ->get();
 }
+
+/*
+|--------------------------------------------------------------------------
+| Helper Info PSB publik (F038)
+|--------------------------------------------------------------------------
+|
+| Berawalan `psbInfo`. Kontrak: `App\Actions\Konten\GetPsbInfo::handle(): array` dengan kunci
+| page, bodyHtml, waves, requirements, fees, contacts. Route `psb.info` = `/info-psb`.
+|
+*/
+
+/**
+ * Portal siap uji dengan modul psb aktif, tanpa menu dan tombol header lain (agar tautan Daftar hanya dari halaman).
+ *
+ * @return object{sd: Unit, sltp: Unit, slta: Unit}
+ */
+function psbInfoBoot(): object
+{
+    $f = portalBoot();
+    Setting::set('modules.psb.enabled', true);
+    navSet([navItem('home')], false);
+
+    return $f;
+}
+
+/**
+ * Halaman Info PSB lewat factory (tanpa Action).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function psbInfoPage(array $attributes = []): StaticPage
+{
+    return StaticPage::factory()->create([
+        'slug' => 'info-psb',
+        'title' => 'Informasi Pendaftaran',
+        'template' => 'psb-info',
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Gelombang yang sedang berlangsung pada tanggal uji (2026-10-15) di tahun ajaran aktif, dibuat bila belum ada.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function psbInfoWave(string $name = 'Gelombang 1', string $opens = '2026-10-01', string $closes = '2026-12-31', array $attributes = []): AdmissionWave
+{
+    $year = AcademicYear::query()->first()
+        ?? AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']);
+
+    return psbWave($year, $name, $opens, $closes, $attributes);
+}
+
+/**
+ * Kontak lembaga dengan tanda PSB (disimpan langsung ke settings).
+ *
+ * @param  list<array<string, mixed>>  $contacts
+ */
+function psbInfoSetContacts(array $contacts): void
+{
+    Setting::set('school.contacts', $contacts);
+    app()->forgetScopedInstances();
+}
+
+/**
+ * Jumlah elemen `<$tag` pada HTML.
+ */
+function psbInfoCountTag(string $html, string $tag): int
+{
+    return preg_match_all('/<'.$tag.'\b/i', $html);
+}
+
+/**
+ * Posisi pertama `$needle` pada teks tampilan (tag dibuang), untuk memeriksa urutan.
+ */
+function psbInfoPosition(string $html, string $needle): int|false
+{
+    return strpos(preg_replace('/\s+/u', ' ', strip_tags(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'))), $needle);
+}

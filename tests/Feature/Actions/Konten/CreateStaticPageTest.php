@@ -131,3 +131,20 @@ it('AC-3 (F048): rejects an unknown template and creates nothing', function (mix
 
     expect(StaticPage::query()->count())->toBe(3);
 })->with(['wide' => ['wide'], 'empty string' => [''], 'array' => [['contact']], 'wrong case' => ['Contact']]);
+
+/*
+| F038 AC-1. Template `psb-info` selalu berslug `info-psb` (input slug diabaikan), satu halaman saja; template lain tetap
+| tidak boleh memakai `info-psb`.
+*/
+
+it('AC-1 (F038): forces the info-psb slug for the psb-info template and allows only one such page', function () {
+    $page = kontenCreatePage(['title' => 'Info Pendaftaran', 'slug' => 'apa-saja', 'template' => 'psb-info']);
+
+    expect($page->slug)->toBe('info-psb')->and($page->template)->toBe('psb-info');
+
+    kontenAssertRejected(fn () => kontenCreatePage(['title' => 'Info Kedua', 'template' => 'psb-info']), 'slug_taken', 'slug');
+    kontenAssertRejected(fn () => kontenCreatePage(['title' => 'Info Ketiga', 'slug' => 'lain', 'template' => 'psb-info']), 'slug_taken', 'slug');
+    kontenAssertRejected(fn () => kontenCreatePage(['title' => 'Biasa', 'slug' => 'info-psb', 'template' => 'default']), 'slug_reserved', 'slug');
+
+    expect(StaticPage::query()->count())->toBe(4);
+});

@@ -4,7 +4,6 @@ use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
 use App\Models\Setting;
 use App\Models\StaticPage;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 /*
@@ -27,8 +26,8 @@ it('AC-3: uses the F037 default menu and register button when the keys are missi
     portalPsbOpen();
     $nav = navResolve();
 
-    expect(navLabels($nav['primary']))->toBe(['Beranda', 'Profil', 'Berita', 'Galeri', 'Video', 'Kontak'])
-        ->and(array_column($nav['primary'], 'url'))->toBe([route('portal.home'), route('portal.pages.show', 'profil'), route('portal.posts.index'), route('portal.albums.index'), route('portal.videos.index'), route('portal.pages.show', 'kontak')])
+    expect(navLabels($nav['primary']))->toBe(['Beranda', 'Profil', 'Berita', 'Galeri', 'Video', 'Info PSB', 'Kontak'])
+        ->and(array_column($nav['primary'], 'url'))->toBe([route('portal.home'), route('portal.pages.show', 'profil'), route('portal.posts.index'), route('portal.albums.index'), route('portal.videos.index'), route('psb.info'), route('portal.pages.show', 'kontak')])
         ->and($nav['headerButton'])->toMatchArray(['label' => 'Daftar', 'url' => route('psb.register')])
         ->and($nav)->not->toHaveKey('footer');
 });
@@ -74,8 +73,6 @@ it('AC-6: renders the target of every available type with its url', function () 
     $page = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus']);
     $category = kontenCategory('post', 'Pengumuman');
     portalPost(['title' => 'Kabar', 'category_id' => $category->id]);
-    Route::get('info-psb', fn () => 'ok')->name('psb.info');
-    app('router')->getRoutes()->refreshNameLookups();
     navSet([
         navItem('home'), navPage($page), navItem('posts'), navItem('category', null, ['category_id' => $category->id]), navItem('albums'), navItem('videos'),
         navItem('psb.info'), navItem('psb.register'), navItem('psb.status'), navItem('letters.verify'),
@@ -140,7 +137,11 @@ it('AC-6: hides an unavailable target', function (Closure $arrange) {
 
         return navItem('category', null, ['category_id' => $category->id]);
     }],
-    'psb.info without the route' => [fn () => navItem('psb.info')],
+    'psb.info while psb is off' => [function () {
+        Setting::set('modules.psb.enabled', false);
+
+        return navItem('psb.info');
+    }],
     'psb.register while psb is off' => [function () {
         Setting::set('modules.psb.enabled', false);
 
@@ -165,15 +166,17 @@ it('AC-6: hides an unavailable target', function (Closure $arrange) {
     'group with only unavailable children' => [fn () => navGroup('Profil', [navPage(staticPage(['status' => 'draft'])), navItem('posts')])],
 ]);
 
-it('AC-6: shows psb.info once the route exists and psb is on', function () {
+it('AC-6: shows psb.info while psb is on, also when konten is off (F038: the route always exists)', function () {
     navSet([navItem('home'), navItem('psb.info')]);
 
-    expect(navLabels(navResolve()['primary']))->toBe(['Beranda']);
-
-    Route::get('info-psb', fn () => 'ok')->name('psb.info');
-    app('router')->getRoutes()->refreshNameLookups();
-
     expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Info PSB']);
+
+    Setting::set('modules.konten.enabled', false);
+
+    expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Info PSB'])
+        ->and(navResolve()['primary'][1]['url'])->toBe(route('psb.info'));
+
+    Setting::set('modules.konten.enabled', true);
 
     Setting::set('modules.psb.enabled', false);
 
@@ -258,4 +261,15 @@ it('AC-8: composes list checks for posts, albums and videos without per-item que
     Setting::moduleEnabled('dokumen');
 
     expect(recordedQueries(fn () => app(GetPortalNavigation::class)->handle($profile)))->toBe([]);
+});
+
+it('AC-11 (F038): rejects a page item that points to the psb-info page, whether psb is on or off', function () {
+    $page = staticPage(['slug' => 'info-psb', 'title' => 'Informasi PSB', 'template' => 'psb-info']);
+    navSet([navItem('home'), navPage($page), navItem('psb.info')]);
+
+    expect(navLabels(navResolve()['primary']))->toBe(['Beranda', 'Info PSB']);
+
+    Setting::set('modules.psb.enabled', false);
+
+    expect(navLabels(navResolve()['primary']))->toBe(['Beranda']);
 });

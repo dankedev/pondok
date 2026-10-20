@@ -88,6 +88,22 @@ it('AC-34/AC-7: saves address, email and contacts with the print flag through th
         ->and(Setting::get('school.social_links'))->toHaveCount(1);
 });
 
+it('AC-12 (F038): saves the psb flag of contacts through the repeater toggle', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(Contacts::class)
+        ->fillForm([
+            'contacts' => [
+                ['label' => 'Panitia PSB', 'phone' => '0812-0000-0001', 'is_whatsapp' => true, 'is_print' => false, 'is_psb' => true],
+                ['label' => 'Sekretariat', 'phone' => '081200000002', 'is_whatsapp' => false, 'is_print' => false, 'is_psb' => false],
+            ],
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(array_column(Setting::get('school.contacts'), 'is_psb'))->toBe([true, false]);
+});
+
 it('AC-34: shows an invalid contact phone on the right repeater field without an exception', function () {
     $this->actingAs(kontenUser('admin-konten'));
 

@@ -150,3 +150,32 @@ it('AC-5 (F048): rejects a bad, reserved or taken slug on a former system page',
 
     expect($this->page->fresh()->slug)->toBe('profil');
 });
+
+/*
+| F038 AC-1. Menjadi `psb-info`: slug berganti ke `info-psb`; hanya satu halaman. Keluar dari `psb-info`: slug baru wajib
+| karena `info-psb` dicadangkan.
+*/
+
+it('AC-1 (F038): moves a page to the info-psb slug when it becomes psb-info, once only', function () {
+    kontenUpdatePage($this->page, ['template' => 'psb-info']);
+
+    expect($this->page->fresh())->slug->toBe('info-psb')->template->toBe('psb-info');
+
+    kontenUpdatePage($this->page->fresh(), ['title' => 'Info PSB Baru', 'slug' => 'terserah']);
+    expect($this->page->fresh())->slug->toBe('info-psb')->title->toBe('Info PSB Baru');
+
+    $other = StaticPage::query()->where('slug', 'kontak')->firstOrFail();
+    kontenAssertRejected(fn () => kontenUpdatePage($other, ['template' => 'psb-info']), 'slug_taken', 'slug');
+
+    expect($other->fresh())->slug->toBe('kontak')->template->toBe('default');
+});
+
+it('AC-1 (F038): requires a new slug when leaving psb-info', function () {
+    kontenUpdatePage($this->page, ['template' => 'psb-info']);
+
+    kontenAssertRejected(fn () => kontenUpdatePage($this->page->fresh(), ['template' => 'default']), 'slug_reserved', 'slug');
+    expect($this->page->fresh())->slug->toBe('info-psb')->template->toBe('psb-info');
+
+    kontenUpdatePage($this->page->fresh(), ['template' => 'default', 'slug' => 'brosur']);
+    expect($this->page->fresh())->slug->toBe('brosur')->template->toBe('default');
+});

@@ -237,3 +237,31 @@ it('AC-4: reports two print contacts with the print_contact_multiple message', f
         ['label' => 'B', 'phone' => '081200000002', 'is_print' => true],
     ]]), 'print_contact_multiple', 'contacts');
 });
+
+it('AC-10 (F038): saves the psb flag for several contacts, parsed like the other flags, and logs only a change', function () {
+    $input = profilContactsInput();
+    $input['contacts'] = [
+        ['label' => 'A', 'phone' => '081200000001', 'is_psb' => true],
+        ['label' => 'B', 'phone' => '081200000002', 'is_psb' => '1'],
+        ['label' => 'C', 'phone' => '081200000003', 'is_psb' => 'false'],
+        ['label' => 'D', 'phone' => '081200000004', 'is_psb' => '0'],
+        ['label' => 'E', 'phone' => '081200000005', 'is_psb' => ''],
+        ['label' => 'F', 'phone' => '081200000006'],
+    ];
+    profilSaveContacts($input);
+    $contacts = Setting::get('school.contacts');
+
+    expect(array_column($contacts, 'is_psb'))->toBe([true, true, false, false, false, false]);
+
+    $again = $input;
+    foreach ($contacts as $i => $contact) {
+        $again['contacts'][$i]['key'] = $contact['key'];
+    }
+    profilSaveContacts($again);
+    expect(kontenActivities()->where('description', 'school_contacts_updated'))->toHaveCount(1);
+
+    $again['contacts'][2]['is_psb'] = true;
+    profilSaveContacts($again);
+    expect(kontenActivities()->where('description', 'school_contacts_updated'))->toHaveCount(2)
+        ->and(Setting::get('school.contacts')[2]['is_psb'])->toBeTrue();
+});

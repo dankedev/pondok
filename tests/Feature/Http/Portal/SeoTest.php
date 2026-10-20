@@ -116,7 +116,7 @@ it('AC-25: reduces the sitemap when konten is off and adds psb when on', functio
     $xml = simplexml_load_string($this->get('/sitemap.xml')->getContent());
     $locs = array_map(fn ($u) => (string) $u->loc, iterator_to_array($xml->url, false));
 
-    expect($locs)->toEqualCanonicalizing([route('portal.home'), route('psb.register')]);
+    expect($locs)->toEqualCanonicalizing([route('portal.home'), route('psb.info'), route('psb.register')]);
 });
 
 it('AC-25: builds sitemap and robots urls from APP_URL regardless of Host', function () {
@@ -164,4 +164,25 @@ it('AC-31 (F037): lists published free pages in the sitemap', function () {
     Setting::set('modules.konten.enabled', false);
 
     expect($this->get('/sitemap.xml')->getContent())->not->toContain('/pengurus')->not->toContain('/profil');
+});
+
+it('AC-11 (F038): lists psb info exactly once, not through the free page loop, and not when psb is off', function () {
+    portalSeedContent();
+    portalPsbOpen();
+    $locs = fn (): array => array_map(fn ($u) => (string) $u->loc, iterator_to_array(simplexml_load_string($this->get('/sitemap.xml')->getContent())->url, false));
+    $count = fn (array $all): int => count(array_filter($all, fn (string $loc): bool => $loc === route('psb.info')));
+
+    expect($count($locs()))->toBe(1);
+
+    $page = psbInfoPage(['body' => '<p>Isi</p>']);
+    expect($count($locs()))->toBe(1);
+
+    $page->update(['body' => '']);
+    expect($count($locs()))->toBe(1);
+
+    Setting::set('modules.konten.enabled', false);
+    expect($count($locs()))->toBe(1);
+
+    Setting::set('modules.psb.enabled', false);
+    expect($count($locs()))->toBe(0);
 });

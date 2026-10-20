@@ -681,10 +681,21 @@ class ApplicantResource extends Resource
                         };
                     })
                     ->extraAttributes(['class' => 'tabular-nums']),
-                TextEntry::make('min_paid_percent')
-                    ->label(__('pondok.applicant.min_paid_percent'))
-                    ->visible(fn (Applicant $record): bool => ! $converted($record) && $payment($record)['applies'])
-                    ->state(fn (Applicant $record): string => $payment($record)['required_percent'].'%')
+                TextEntry::make('re_registration_required')
+                    ->label(__('pondok.applicant.re_registration_required'))
+                    ->visible(fn (Applicant $record): bool => ! $converted($record)
+                        && $payment($record)['applies']
+                        && $payment($record)['reason'] !== CheckReRegistrationPayment::REASON_INVOICES_MISSING)
+                    ->state(fn (Applicant $record): string => Payment::formatRupiah($payment($record)['required']))
+                    ->belowContent(function (Applicant $record) use ($payment): ?string {
+                        $result = $payment($record);
+
+                        return match (true) {
+                            $result['minimum'] === null => __('pondok.applicant.re_registration_minimum_unset'),
+                            $result['minimum'] > $result['total'] => __('pondok.applicant.re_registration_minimum_capped'),
+                            default => null,
+                        };
+                    })
                     ->extraAttributes(['class' => 'tabular-nums']),
                 TextEntry::make('converted_student')
                     ->label(__('pondok.applicant.converted_student'))

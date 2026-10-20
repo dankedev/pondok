@@ -12,6 +12,7 @@ use App\Models\Document;
 use App\Models\FeeOverride;
 use App\Models\Guardian;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Unit;
 use App\Models\User;
@@ -268,8 +269,8 @@ class ReRegisterApplicant
 
         throw ValidationException::withMessages([
             'payment' => __("pondok.psb.errors.{$reason}", [
-                'paid' => $payment['paid_percent'],
-                'required' => $payment['required_percent'],
+                'paid' => Payment::formatRupiah($payment['paid']),
+                'required' => Payment::formatRupiah($payment['required']),
             ]),
         ]);
     }

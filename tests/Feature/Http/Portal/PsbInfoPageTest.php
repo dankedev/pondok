@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AcademicYear;
 use App\Models\AdmissionRequirement;
 use App\Models\AdmissionWave;
 use App\Models\FeeRate;
@@ -207,4 +208,59 @@ it('AC-13: renders one h1, one h2 per section, and no accent text color', functi
         ->and(psbInfoCountTag($html, 'h2'))->toBe(4)
         ->and($html)->not->toMatch('/text-accent-/')
         ->and($html)->not->toContain('border-dashed');
+});
+
+/*
+| F038 VERIFY.
+*/
+
+it('VERIFY F038: escapes wave, requirement, fee, contact and page title text', function () {
+    $x = '<img src=x onerror=alert(9)>';
+    psbInfoPage(['title' => "Judul {$x}", 'body' => '<p>ok</p>']);
+    psbInfoFeeSetup($this->f);
+    AdmissionWave::query()->update(['name' => "Gel {$x}"]);
+    FeeType::query()->where('name', 'SPP Bulanan')->update(['name' => "SPP {$x}"]);
+    AdmissionRequirement::factory()->create(['unit_id' => null, 'name' => "Berkas {$x}"]);
+    psbInfoSetContacts([profilContact(['label' => "Label {$x}", 'name' => "Nama {$x}", 'is_psb' => true])]);
+    $html = psbInfoHtml();
+
+    expect($html)->not->toContain('<img src=x onerror')->and($html)->toContain('&lt;img src=x onerror=alert(9)&gt;');
+});
+
+it('VERIFY F038: hides fees from rates that are future-dated, tied to another wave, or for another unit when none applies', function () {
+    Setting::set('modules.keuangan.enabled', true);
+    $wave = psbInfoWave();
+    $type = psbFeeType('saat_daftar', ['name' => 'Formulir Pendaftaran']);
+    $nextYear = AcademicYear::factory()->create(['name' => '2027/2028', 'starts_on' => '2027-07-01', 'ends_on' => '2028-06-30']);
+    $otherWave = psbInfoWave('Gelombang Lain', '2026-10-01', '2026-12-31');
+
+    keuanganRate($type, $nextYear, $this->f->sd, 777000);
+    keuanganRate($type, $wave->academicYear, $this->f->sd, 888000, waveId: $otherWave->id);
+
+    expect(strip_tags(psbInfoHtml()))->not->toContain('777.000')->not->toContain('Formulir Pendaftaran');
+});
+
+it('VERIFY F038: does not expose a published psb-info page under any other portal URL', function () {
+    psbInfoPage(['body' => '<p>Isi publik</p>']);
+
+    $this->get(route('portal.pages.show', 'info-psb'))->assertOk();
+    $this->get('/info-psb/')->assertOk();
+    $this->get('/halaman/info-psb')->assertNotFound();
+    Setting::set('modules.psb.enabled', false);
+    $this->get(route('portal.pages.show', 'info-psb'))->assertNotFound();
+});
+
+it('VERIFY F038: lists psb.info once in the sitemap when the psb-info page has a body and konten is on', function () {
+    psbInfoPage(['body' => '<p>Isi</p>']);
+    $xml = $this->get('/sitemap.xml')->assertOk()->getContent();
+
+    expect(substr_count($xml, '<loc>'.route('psb.info').'</loc>'))->toBe(1);
+});
+
+it('VERIFY F038: never puts a draft psb-info page body or title in the portal', function () {
+    psbInfoPage(['status' => 'draft', 'title' => 'Judul Draf Rahasia', 'body' => '<p>Isi draf</p>']);
+    $html = psbInfoHtml();
+
+    expect($html)->not->toContain('Judul Draf Rahasia')->not->toContain('Isi draf');
+    expect($this->get('/sitemap.xml')->getContent())->toContain(route('psb.info'));
 });

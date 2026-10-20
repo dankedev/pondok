@@ -78,6 +78,14 @@ it('AC-12 (F038): saves a page with the Info PSB template under the info-psb slu
     expect(StaticPage::query()->where('template', 'psb-info')->firstOrFail())->slug->toBe('info-psb');
 });
 
+it('AC-11 (F038): hides the add-to-menu action on the psb-info page only', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    $psbInfo = StaticPage::factory()->create(['slug' => 'info-psb', 'title' => 'Info PSB', 'template' => 'psb-info']);
+
+    Livewire::test(EditStaticPage::class, ['record' => $psbInfo->getRouteKey()])->assertActionHidden('addToPrimaryNavigation');
+    Livewire::test(EditStaticPage::class, ['record' => $this->page->getRouteKey()])->assertActionVisible('addToPrimaryNavigation');
+});
+
 it('AC-32: shows a rejected data image as an error on the body field', function () {
     $this->actingAs(kontenUser('admin-konten'));
 

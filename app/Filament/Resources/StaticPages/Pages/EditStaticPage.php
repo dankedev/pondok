@@ -31,7 +31,7 @@ class EditStaticPage extends EditRecord
 
     /**
      * "Tambahkan ke menu utama" (F043): hanya untuk pengelola profil lembaga
-     * (`view:school-profile`), karena menu diatur di halaman Navigasi.
+     * (`view:school-profile`), karena menu diatur di halaman Navigasi. Tidak untuk halaman `psb-info`.
      */
     private function addToPrimaryNavigationAction(): Action
     {
@@ -39,7 +39,8 @@ class EditStaticPage extends EditRecord
             ->label(__('pondok.static_page.add_to_navigation'))
             ->icon(Heroicon::OutlinedBars3)
             ->color('gray')
-            ->visible(fn (): bool => (bool) auth()->user()?->can('view:school-profile'))
+            // Halaman `psb-info` hanya tampil lewat item menu Info PSB; item `page:` untuknya selalu ditolak (F038).
+            ->visible(fn (): bool => (bool) auth()->user()?->can('view:school-profile') && ! $this->getRecord()->isPsbInfo())
             ->action(function (): void {
                 abort_unless((bool) auth()->user()?->can('view:school-profile'), 403);
 

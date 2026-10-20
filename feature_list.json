@@ -653,20 +653,22 @@
       "name": "Halaman Info PSB publik (hibrida)",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F036", "F009", "F010", "F004"],
       "description": "Halaman publik Info PSB yang menggabungkan data modul dan teks admin: syarat (admission_requirements per jenjang + syarat umum), timeline (admission_waves + agenda tambahan), cara mendaftar (langkah berurutan), biaya pendaftaran/uang masuk/SPP dari fee_rates per jenjang ditambah keterangan dan teks manual bila tarif kosong atau modul keuangan mati, fasilitas, kurikulum (program, mutu lulusan per jenjang, dokumen kelulusan), ekstrakurikuler, brosur PDF (disk public), dan kontak PSB dipilih dari daftar kontak F036.",
       "acceptance": [
-        "Halaman hanya tersedia saat modul psb aktif; setiap bagian kosong tidak dirender",
-        "Biaya diambil dari fee_rates yang berlaku untuk tahun ajaran gelombang terbuka; bila tidak ada tarif atau modul keuangan mati, tampil teks manual atau bagian disembunyikan",
-        "Brosur hanya PDF dengan batas ukuran, disimpan di disk public dengan nama acak",
-        "Kontak PSB merujuk kunci kontak F036; kontak yang dihapus tidak tampil",
-        "Tanpa teks konten bawaan: syarat umum, agenda, langkah, keterangan biaya, dan kalimat seperti \"dibuka sepanjang tahun\" adalah isian admin dengan nilai awal kosong; instalasi baru tidak menampilkan teks konten di Info PSB"
+        "Template halaman psb-info: slug dipaksa info-psb, hanya satu halaman, template lain tetap tidak boleh memakai slug itu",
+        "Route psb.info (/info-psb) tersedia saat modul psb aktif (404 bila mati), tanpa teks konten bawaan; instalasi baru menampilkan empty state",
+        "Isi halaman info-psb terbit (tersanitasi) tampil bersama bagian otomatis; bagian kosong tidak dirender",
+        "Status gelombang (dibuka dan akan dibuka) dan syarat berkas per jenjang tampil dari admission_waves dan admission_requirements",
+        "Biaya dari fee_rates per jenjang untuk tahun ajaran gelombang terbuka; disembunyikan bila tarif kosong atau modul keuangan mati",
+        "Kontak PSB dari kontak school.contacts bertanda is_psb; kontak yang dihapus tidak tampil; toggle ada di Kontak & sosial",
+        "Halaman psb-info tidak masuk navigasi atau sitemap saat modul psb mati; brosur PDF di luar lingkup"
       ],
-      "owner": null,
+      "owner": "sesi-f038-info-psb",
       "handoff": null,
       "evidence": "",
-      "notes": "Dipecah dari F036 (permintaan user 16 Okt 2026). Bergantung F036 karena kontak PSB merujuk key kontak F036 dan memakai prinsip tanpa teks konten bawaan; F009/F010/F004 untuk syarat, gelombang, dan tarif. Route publik memakai slug info-psb yang sudah dicadangkan F037. Kontrak F037: nama route psb.info, path /info-psb, didaftarkan di luar grup prefix psb dan sebelum route /{page}; item menu psb_info F037 hanya tampil bila route ini ada dan modul psb aktif. Rencana ditulis saat fitur diambil. DITAHAN (17 Okt 2026, permintaan user via audit docs/audits/ui-ux-portal-konten.md §6): ruang lingkup akan direvisi menjadi halaman Info PSB bertemplate (blok otomatis + blok generik) setelah paket audit (F043, F044, lalu beranda blok). Tujuan navigasi psb.info disiapkan F043 dan tampil otomatis begitu route psb.info ada. Status tidak diubah sampai revisi disetujui user."
+      "notes": "jalur: penuh. Dibangun sebagai halaman ber-template psb-info (F048) dengan bagian otomatis di Blade, bukan field teks khusus; mesin blok F045 tidak dipakai di halaman. Revisi ruang lingkup disetujui user 20 Okt 2026 (audit UI/UX §6). Rencana: docs/plans/F038-plan.md."
     },
     {
       "id": "F039",

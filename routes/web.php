@@ -7,6 +7,7 @@ use App\Http\Controllers\Portal\ListVideos;
 use App\Http\Controllers\Portal\ShowAlbum;
 use App\Http\Controllers\Portal\ShowHome;
 use App\Http\Controllers\Portal\ShowPost;
+use App\Http\Controllers\Portal\ShowPsbInfo;
 use App\Http\Controllers\Portal\ShowRobots;
 use App\Http\Controllers\Portal\ShowSitemap;
 use App\Http\Controllers\Portal\ShowStaticPage;
@@ -46,9 +47,19 @@ Route::middleware([AddPrivacyHeaders::class, EnsureModuleIsEnabled::class.':doku
 
 // Portal publik (F017): stateless (tanpa sesi, cookie, CSRF) agar aman di-cache publik.
 // Daftar `withoutMiddleware` mengikuti isi grup `web` Laravel 13. Route `/{page}` paling akhir.
+$statelessWeb = [EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class, ValidateCsrfToken::class];
+$portalHeaders = [ForcePortalRootUrl::class, SetPortalSecurityHeaders::class, SetPortalCacheHeaders::class];
+
+// Info PSB publik (F038): stateless seperti portal, tetapi bernama `psb.info` (di luar grup `portal.`) dan
+// mengikuti saklar psb, bukan konten. Didaftarkan sebelum route `/{page}`.
+Route::get('info-psb', ShowPsbInfo::class)
+    ->withoutMiddleware($statelessWeb)
+    ->middleware([...$portalHeaders, EnsureModuleIsEnabled::class.':psb,404'])
+    ->name('psb.info');
+
 Route::name('portal.')
-    ->withoutMiddleware([EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class, ValidateCsrfToken::class])
-    ->middleware([ForcePortalRootUrl::class, SetPortalSecurityHeaders::class, SetPortalCacheHeaders::class])
+    ->withoutMiddleware($statelessWeb)
+    ->middleware($portalHeaders)
     ->group(function (): void {
         Route::get('/', ShowHome::class)->name('home');
         Route::get('sitemap.xml', ShowSitemap::class)->name('sitemap');

@@ -697,7 +697,7 @@
       "name": "Syarat bayar daftar ulang dalam nominal rupiah",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F036", "F012"],
       "description": "Ganti psb.min_paid_percent dengan nominal minimal pembayaran (rupiah) yang diisi admin untuk daftar ulang. Kata user: \"jangan kita tentukan persen, user isi saja nominalnya\".",
       "acceptance": [
@@ -705,9 +705,9 @@
         "Perilaku saat nominal kosong dan migrasi nilai persen lama ditentukan di rencana lalu dikonfirmasi user sebelum implementasi",
         "Pesan alasan tidak memenuhi syarat menampilkan nominal minimal dan jumlah terbayar"
       ],
-      "owner": "f040-daftar-ulang-nominal",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 5f43a9c, 8f58195, 8b639ed, a07a6b0, 885eda4, 871ea83, ea4e23e. Test: CheckReRegistrationPaymentTest, ReRegisterVerifyTest, UpdateReRegistrationMinimumsTest, RemoveMinPaidPercentTest, ReRegistrationPaymentPageTest, ReRegistrationPaymentVerifyTest, ReRegisterApplicantActionTest, DemoReRegistrationMinimumTest, SettingSeederTest, RolePermissionSeederTest, DemoSeederTest, PsbAccessTest lulus; suite penuh PHP 8.4 4429 test lulus (20 Okt 2026); Pint bersih.",
       "notes": "Keputusan user 16 Okt 2026 (Jawaban user no. 5). Dikerjakan setelah F036. Jalur penuh (PSB + uang + migration). Keputusan user 20 Okt 2026: nominal kosong = wajib lunas; persen lama dihapus lewat migrasi; nominal per jenjang."
     },
     {

@@ -653,7 +653,7 @@
       "name": "Halaman Info PSB publik (hibrida)",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F036", "F009", "F010", "F004"],
       "description": "Halaman publik Info PSB yang menggabungkan data modul dan teks admin: syarat (admission_requirements per jenjang + syarat umum), timeline (admission_waves + agenda tambahan), cara mendaftar (langkah berurutan), biaya pendaftaran/uang masuk/SPP dari fee_rates per jenjang ditambah keterangan dan teks manual bila tarif kosong atau modul keuangan mati, fasilitas, kurikulum (program, mutu lulusan per jenjang, dokumen kelulusan), ekstrakurikuler, brosur PDF (disk public), dan kontak PSB dipilih dari daftar kontak F036.",
       "acceptance": [
@@ -665,9 +665,9 @@
         "Kontak PSB dari kontak school.contacts bertanda is_psb; kontak yang dihapus tidak tampil; toggle ada di Kontak & sosial",
         "Halaman psb-info tidak masuk navigasi atau sitemap saat modul psb mati; brosur PDF di luar lingkup"
       ],
-      "owner": "sesi-f038-info-psb",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit eb564ab..4eb9f91 di feat/f038-info-psb. Lulus: GetPsbInfoTest, PsbInfoPageTest, CreateStaticPageTest, UpdateStaticPageTest, UpdateSchoolContactsTest, GetPortalNavigationTest, PortalMenuTest, SeoTest, StaticPageResourceTest, InstitutionProfileTest; suite penuh PHP 8.4 4401 lulus. Pint lulus. VERIFY PASS (9 test).",
       "notes": "jalur: penuh. Dibangun sebagai halaman ber-template psb-info (F048) dengan bagian otomatis di Blade, bukan field teks khusus; mesin blok F045 tidak dipakai di halaman. Revisi ruang lingkup disetujui user 20 Okt 2026 (audit UI/UX §6). Rencana: docs/plans/F038-plan.md."
     },
     {

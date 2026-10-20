@@ -40,9 +40,9 @@ Akses diatur dua lapis:
 
 ### 3.1 Portal Publik & Konten
 - Berita, kegiatan, dan prestasi. Berita prestasi mengambil data dari modul Prestasi.
-- Galeri foto berkategori (fasilitas, kegiatan), video YouTube, dan halaman statis yang bisa dibuat dan dihapus admin dengan status draf/terbit (tiga halaman awal: profil, visi-misi, kontak; semua setara dan hanya dibedakan template Biasa atau Kontak), serta navigasi portal sebagai daftar tautan: menu utama dengan submenu satu tingkat dan tombol header opsional, plus footer berupa paling banyak 4 widget yang disusun admin (Teks dengan opsi logo, Tautan, Media sosial, Kontak; Media sosial dan Kontak menampilkan semua data Kontak & sosial) dengan baris hak cipta tetap.
+- Galeri foto berkategori (fasilitas, kegiatan), video YouTube, dan halaman statis yang bisa dibuat dan dihapus admin dengan status draf/terbit (tiga halaman awal: profil, visi-misi, kontak; semua setara dan hanya dibedakan template Biasa, Kontak, atau Info PSB), serta navigasi portal sebagai daftar tautan: menu utama dengan submenu satu tingkat dan tombol header opsional, plus footer berupa paling banyak 4 widget yang disusun admin (Teks dengan opsi logo, Tautan, Media sosial, Kontak; Media sosial dan Kontak menampilkan semua data Kontak & sosial) dengan baris hak cipta tetap.
 - Beranda disusun admin dari blok (Hero, Teks dan gambar, Keunggulan, Kutipan, Ajakan, Video, Konten terbaru): tambah, urutkan, sembunyikan, dan hapus blok tanpa ubah kode. Instalasi baru tidak membawa isi beranda bawaan; tanpa blok, beranda hanya menampilkan nama lembaga. Badge dan tombol pendaftaran PSB di beranda tampil otomatis saat gelombang dibuka.
-- Profil sekolah diatur dari panel (`settings`) tanpa ubah kode. Menu admin: grup **Situs** (Beranda, Navigasi, Footer, Halaman, Berita, Kategori, Galeri, Video) dan grup **Pengaturan** (Identitas, Kontak & sosial). *Kontak & sosial* menjadi satu-satunya sumber alamat, email, tautan peta, daftar kontak, dan media sosial; satu kontak bisa ditandai untuk dicetak di kop surat dan kuitansi.
+- Profil sekolah diatur dari panel (`settings`) tanpa ubah kode. Menu admin: grup **Situs** (Beranda, Navigasi, Footer, Halaman, Berita, Kategori, Galeri, Video) dan grup **Pengaturan** (Identitas, Kontak & sosial). *Kontak & sosial* menjadi satu-satunya sumber alamat, email, tautan peta, daftar kontak, dan media sosial; satu kontak bisa ditandai untuk dicetak di kop surat dan kuitansi, dan kontak mana pun bisa ditandai tampil di halaman Info PSB.
 
 ### 3.2 Akademik & Santri
 - Satu tabel santri untuk semua jenjang, dibedakan per jenjang dan angkatan.
@@ -59,6 +59,7 @@ Akses diatur dua lapis:
 
 ### 3.4 PSB
 - Gelombang per tahun ajaran, jalur pendaftaran (Reguler, Prestasi, Tahfidz, Yatim), dan syarat berkas per jenjang.
+- Halaman Info PSB publik di `/info-psb` (menu Info PSB, aktif bila modul PSB aktif): isi bebas dari halaman bertemplate Info PSB (opsional), lalu bagian otomatis gelombang yang dibuka dan akan dibuka, syarat berkas per jenjang, biaya per jenjang untuk gelombang yang dibuka (bila modul keuangan aktif), dan kontak bertanda PSB. Bagian tanpa data tidak tampil.
 - Pendaftaran online tanpa akun. Pendaftar cek status dan unggah berkas memakai nomor pendaftaran + token.
 - Status: draft, diajukan, diverifikasi, diterima, cadangan, ditolak.
 - Biaya formulir saat daftar, lalu uang pangkal/seragam/kitab saat diterima. Bisa dicicil, dan potongan jalur diterapkan otomatis.

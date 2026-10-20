@@ -253,7 +253,8 @@ class GetPortalNavigation
                 ->published()
                 ->where(fn ($query) => $query->whereIn('id', $pageIds)->orWhereIn('slug', $slugs))
                 ->get(['id', 'slug', 'title', 'template'])
-                ->reject(fn (StaticPage $page): bool => $page->isContact() && ! $hasContact)
+                // Halaman `psb-info` hanya lewat item `psb.info` (F038).
+                ->reject(fn (StaticPage $page): bool => ($page->isContact() && ! $hasContact) || $page->isPsbInfo())
                 ->keyBy('id');
         }
 

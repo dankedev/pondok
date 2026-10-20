@@ -120,7 +120,7 @@ class StaticPageResource extends Resource
                     ->formatStateUsing(fn (string $state): string => self::statusOptions()[$state] ?? $state),
                 TextColumn::make('template')
                     ->label(__('pondok.static_page.template'))
-                    ->state(fn (StaticPage $record): ?string => $record->isContact() ? self::templateOptions()[StaticPage::TEMPLATE_CONTACT] : null)
+                    ->state(fn (StaticPage $record): ?string => $record->template === StaticPage::TEMPLATE_DEFAULT ? null : self::templateOptions()[$record->template] ?? null)
                     ->badge()
                     ->color('gray'),
                 TextColumn::make('updated_at')
@@ -151,6 +151,7 @@ class StaticPageResource extends Resource
         return [
             StaticPage::TEMPLATE_DEFAULT => __('pondok.static_page.templates.default'),
             StaticPage::TEMPLATE_CONTACT => __('pondok.static_page.templates.contact'),
+            StaticPage::TEMPLATE_PSB_INFO => __('pondok.static_page.templates.psb-info'),
         ];
     }
 

@@ -38,11 +38,17 @@ class StaticPage extends Model
     /** Menampilkan kartu kontak lembaga di bawah isi halaman. */
     public const TEMPLATE_CONTACT = 'contact';
 
-    public const TEMPLATES = [self::TEMPLATE_DEFAULT, self::TEMPLATE_CONTACT];
+    /** Halaman Info PSB (F038): isi halaman ditambah bagian otomatis dari data PSB, di route `psb.info`. */
+    public const TEMPLATE_PSB_INFO = 'psb-info';
+
+    public const TEMPLATES = [self::TEMPLATE_DEFAULT, self::TEMPLATE_CONTACT, self::TEMPLATE_PSB_INFO];
+
+    /** Slug tetap halaman bertemplate `psb-info`; juga cadangan untuk template lain. */
+    public const PSB_INFO_SLUG = 'info-psb';
 
     /**
      * Slug yang tidak boleh dipakai halaman: route portal/panel, berkas umum, dan
-     * cadangan fitur berikutnya (`info-psb` untuk F038, `wali` untuk portal wali).
+     * cadangan fitur (`info-psb` hanya untuk template `psb-info`, `wali` untuk portal wali).
      */
     public const RESERVED_SLUGS = [
         'admin', 'berita', 'galeri', 'video', 'psb', 'info-psb', 'sitemap', 'robots', 'verifikasi-surat', 'storage',
@@ -67,6 +73,11 @@ class StaticPage extends Model
     public function isContact(): bool
     {
         return $this->template === self::TEMPLATE_CONTACT;
+    }
+
+    public function isPsbInfo(): bool
+    {
+        return $this->template === self::TEMPLATE_PSB_INFO;
     }
 
     public function isPublished(): bool

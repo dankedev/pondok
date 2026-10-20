@@ -8,7 +8,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
  * Buat halaman bebas (F037). Slug kosong dibuat dari judul; status bawaan `draft`,
- * template bawaan `default`. Satu instalasi maksimal `StaticPage::MAX_PAGES` halaman.
+ * template bawaan `default`; template `psb-info` memaksa slug `info-psb`. Satu instalasi maksimal `StaticPage::MAX_PAGES` halaman.
  */
 class CreateStaticPage
 {
@@ -29,11 +29,12 @@ class CreateStaticPage
         }
 
         $title = $this->requiredText($data['title'] ?? null, 'title', StaticPage::TITLE_MAX_LENGTH);
-        $slug = $this->slugs->handle($title, $data['slug'] ?? null);
+        $template = $this->pageTemplate($data['template'] ?? StaticPage::TEMPLATE_DEFAULT);
+        $slug = $template === StaticPage::TEMPLATE_PSB_INFO
+            ? $this->psbInfoSlug()
+            : $this->slugs->handle($title, $data['slug'] ?? null);
         $body = $this->pageBody($data['body'] ?? null, $this->sanitizer);
         $status = $this->pageStatus($data['status'] ?? StaticPage::STATUS_DRAFT);
-
-        $template = $this->pageTemplate($data['template'] ?? StaticPage::TEMPLATE_DEFAULT);
 
         $page = new StaticPage;
 

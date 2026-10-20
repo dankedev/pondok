@@ -16,6 +16,7 @@ class UnitFactory extends Factory
             'code' => strtoupper(fake()->unique()->lexify('U???')),
             'name' => fake()->words(2, true),
             'sort_order' => fake()->numberBetween(1, 9),
+            'min_reregistration_amount' => null,
         ];
     }
 }

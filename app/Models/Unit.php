@@ -11,11 +11,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 
-#[Fillable(['code', 'name', 'sort_order'])]
+#[Fillable(['code', 'name', 'sort_order', 'min_reregistration_amount'])]
 class Unit extends Model
 {
     /** @use HasFactory<UnitFactory> */
     use HasFactory;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            // Syarat bayar daftar ulang (F040): null = wajib lunas, 0 = tanpa syarat.
+            'min_reregistration_amount' => 'integer',
+        ];
+    }
 
     public function users(): BelongsToMany
     {

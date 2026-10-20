@@ -52,9 +52,9 @@ it('AC-11 (F048): the slug of a former system page is editable and can change', 
     expect($this->page->fresh()->slug)->toBe('tentang-kami');
 });
 
-it('AC-11 (F048): the template select has exactly two Indonesian options and saves the choice', function () {
+it('AC-11 (F048)/AC-12 (F038): the template select has exactly three Indonesian options and saves the choice', function () {
     $this->actingAs(kontenUser('admin-konten'));
-    $labels = ['default' => __('pondok.static_page.templates.default'), 'contact' => __('pondok.static_page.templates.contact')];
+    $labels = ['default' => __('pondok.static_page.templates.default'), 'contact' => __('pondok.static_page.templates.contact'), 'psb-info' => __('pondok.static_page.templates.psb-info')];
 
     Livewire::test(EditStaticPage::class, ['record' => $this->page->getRouteKey()])
         ->assertSchemaComponentExists('template', checkComponentUsing: fn ($component): bool => $component->getOptions() === $labels)
@@ -63,7 +63,19 @@ it('AC-11 (F048): the template select has exactly two Indonesian options and sav
         ->assertHasNoFormErrors();
 
     expect($labels)->not->toContain('pondok.static_page.templates.default')->not->toContain('pondok.static_page.templates.contact')
+        ->not->toContain('pondok.static_page.templates.psb-info')->and($labels['psb-info'])->toBe('Info PSB')
         ->and($this->page->fresh()->template)->toBe('contact');
+});
+
+it('AC-12 (F038): saves a page with the Info PSB template under the info-psb slug from the form', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(CreateStaticPage::class)
+        ->fillForm(['title' => 'Informasi Pendaftaran', 'template' => 'psb-info', 'body' => '<p>Syarat</p>'])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    expect(StaticPage::query()->where('template', 'psb-info')->firstOrFail())->slug->toBe('info-psb');
 });
 
 it('AC-32: shows a rejected data image as an error on the body field', function () {

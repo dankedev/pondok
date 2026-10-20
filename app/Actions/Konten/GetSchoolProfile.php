@@ -113,7 +113,7 @@ class GetSchoolProfile
     }
 
     /**
-     * @return list<array{key: ?string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool}>
+     * @return list<array{key: ?string, label: string, name: ?string, phone: string, is_whatsapp: bool, is_print: bool, is_psb: bool}>
      */
     private function contacts(mixed $value): array
     {
@@ -134,6 +134,7 @@ class GetSchoolProfile
                 'phone' => $phone,
                 'is_whatsapp' => (bool) ($item['is_whatsapp'] ?? true),
                 'is_print' => ($item['is_print'] ?? false) === true,
+                'is_psb' => ($item['is_psb'] ?? false) === true,
             ];
         }
 

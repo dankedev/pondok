@@ -96,6 +96,11 @@ class Contacts extends SettingsFormPage
                                     ->helperText(__('pondok.school_profile.contact_is_print_helper'))
                                     ->default(false)
                                     ->inline(false),
+                                Toggle::make('is_psb')
+                                    ->label(__('pondok.school_profile.contact_is_psb'))
+                                    ->helperText(__('pondok.school_profile.contact_is_psb_helper'))
+                                    ->default(false)
+                                    ->inline(false),
                             ]),
                     ]),
                 Section::make(__('pondok.school_profile.section_social'))

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Konten\StorePublicImage;
 use App\Filament\Pages\Site\Home;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -57,7 +58,8 @@ it('VERIFY: rejects a forged image path from the client on the field of the righ
         ->set('data.home_blocks', [
             'blok-a' => ['type' => 'hero', 'data' => ['visible' => true, 'title' => 'H', 'image' => ['x' => 'portal/blocks/palsu.jpg'], 'image_alt' => 'A', 'primary' => ['type' => 'none'], 'secondary' => ['type' => 'none']]],
         ])
-        ->call('save');
+        ->call('save')
+        ->assertHasErrors(['data.home_blocks.blok-a.data.image' => [__('pondok.konten.errors.image_invalid', ['max' => StorePublicImage::MAX_KILOBYTES])]]);
 
     expect(blkStored())->toBe([]);
 });

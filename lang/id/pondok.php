@@ -699,6 +699,7 @@ return [
         'filter_paid_from' => 'Dibayar dari',
         'filter_paid_until' => 'Dibayar sampai',
         'activity_recorded' => 'Pembayaran dicatat',
+        'proofs_pruned' => ':count berkas bukti transfer tanpa pembayaran dihapus.',
         'activity_cancelled' => 'Pembayaran dibatalkan',
         'errors' => [
             'amount_invalid' => 'Nominal harus bilangan bulat rupiah tanpa titik atau koma, minimal 1.',

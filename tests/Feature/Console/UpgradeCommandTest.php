@@ -20,7 +20,7 @@ beforeEach(function () {
     config(['app.url' => 'https://pondok.sch.id']);
     $this->seed(InstallSeeder::class);
     Permission::query()->where('name', 'view-dashboard')->delete();
-    Setting::query()->whereKey('modules.tahfidz.enabled')->delete();
+    Setting::query()->whereKey('modules.akademik.enabled')->delete();
     Setting::set('modules.konten.enabled', true);
 });
 
@@ -56,7 +56,7 @@ it('AC-43: upgrades and restores system data without overwriting settings', func
 
     expect($exit)->toBe(0)
         ->and(seededAgain())->toBeTrue()
-        ->and(Setting::query()->whereKey('modules.tahfidz.enabled')->exists())->toBeTrue()
+        ->and(Setting::query()->whereKey('modules.akademik.enabled')->exists())->toBeTrue()
         ->and(Role::findByName('super-admin')->hasPermissionTo('view-dashboard'))->toBeTrue()
         ->and(Setting::get('modules.konten.enabled'))->toBeTrue()
         ->and(app()->isDownForMaintenance())->toBeFalse()

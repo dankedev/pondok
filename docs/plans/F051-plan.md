@@ -23,7 +23,7 @@ Ikon yang memakai ikon konsep lain (satu konsep satu ikon):
 | `FeeOverrideResource::endAction`, `RoomAssignmentResource::vacateAction` | `ArrowRightStartOnRectangle` (Perizinan) | `StopCircle` |
 | `UserResource` navigasi | `Users` (Angkatan) | `UserCircle` |
 | `Settings/Identity` navigasi | `Identification` (Staff) | `BuildingOffice2` |
-| `AdmissionTrackResource` navigasi | `ArrowsRightLeft` (Pindah) | `Map` |
+| `AdmissionTrackResource` navigasi | `ArrowsRightLeft` (Pindah) | `Flag` (`Map` sudah dipakai peta lokasi portal) |
 | `IssuedLetterResource` navigasi + empty state | `Envelope` (Email) | `EnvelopeOpen` |
 | `ClassroomResource` navigasi | `BuildingLibrary` (sama dengan Jenjang) | `RectangleGroup` |
 

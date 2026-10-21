@@ -1296,14 +1296,20 @@
       "name": "Warna merek pilihan admin terlihat di tombol dan judul portal",
       "phase": 1,
       "module": "Konten",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F070"],
       "description": "Tindak lanjut F070: tombol, judul, dan elemen aktif portal memakai langkah skala yang dekat dengan warna pilihan admin, tetap kontras 4.5:1, bukan langkah 900/950 secara tetap.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "Tombol utama, chip/paginasi aktif, langkah PSB, dan input PSB memakai token --color-brand; judul hero/beranda dan nama sekolah header memakai --color-brand-text",
+        "BuildColorScale::brandColors memetakan warna utama admin ke isi tombol, teks di atasnya, hover, dan teks merek dengan kontras >= 4,5:1; bila tidak lolos digeser ke langkah skala terdekat (seri -> lebih gelap) dan ditandai",
+        "GetPortalTheme menulis keempat token hanya bila warna utama kustom; setelan bawaan css tetap null dan token app.css merujuk primary-900/800/950",
+        "Halaman Situs > Tampilan menampilkan pratinjau dan keterangan warna yang dipakai serta penyesuaiannya; panel Filament tidak berubah",
+        "Dicek di 360px, 1024px, dan desktop dengan warna terang, sedang, dan gelap"
+      ],
+      "owner": "f071-warna-merek",
       "handoff": null,
       "evidence": null,
-      "notes": "Kriteria di issue #52. Permintaan user 21 Okt 2026."
+      "notes": "Kriteria di issue #52. Permintaan user 21 Okt 2026. Jalur penuh. Rencana: docs/plans/F071-plan.md."
     },
     {
       "id": "F072",

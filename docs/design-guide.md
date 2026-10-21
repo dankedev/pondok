@@ -236,6 +236,8 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |
+| Saklar modul (Pengaturan → Modul) | aktif | `success` |
+| Saklar modul (Pengaturan → Modul) | nonaktif | `gray` |
 
 Pemetaan warna ditaruh di satu tempat (method `color()` pada enum atau konstanta model), tidak ditulis ulang di setiap tabel.
 

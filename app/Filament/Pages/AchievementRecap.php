@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Actions\Prestasi\SummarizeAchievements;
 use App\Actions\Prestasi\SummarizeStudentAchievements;
+use App\Enums\Module;
 use App\Filament\Resources\Achievements\AchievementResource;
 use App\Models\AcademicYear;
 use App\Models\Achievement;
@@ -52,9 +53,14 @@ class AchievementRecap extends Page implements HasTable
      */
     public ?array $data = [];
 
+    public static function getModule(): string
+    {
+        return Module::Prestasi->value;
+    }
+
     public static function canAccess(): bool
     {
-        return Setting::moduleEnabled('prestasi') && Gate::allows('viewAny', Achievement::class);
+        return Setting::moduleEnabled(static::getModule()) && Gate::allows('viewAny', Achievement::class);
     }
 
     /**

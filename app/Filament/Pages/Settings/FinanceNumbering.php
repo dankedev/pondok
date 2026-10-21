@@ -6,6 +6,7 @@ use App\Actions\Keuangan\GenerateAnnualInvoices;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateReceiptNumber;
 use App\Actions\Keuangan\UpdateReceiptSigner;
+use App\Enums\Module;
 use App\Models\Setting;
 use App\Models\Staff;
 use App\Models\User;
@@ -53,9 +54,9 @@ class FinanceNumbering extends NumberingSettingsPage
         return 'view:finance-numbering';
     }
 
-    protected static function moduleKey(): ?string
+    public static function getModule(): string
     {
-        return 'keuangan';
+        return Module::Keuangan->value;
     }
 
     public function form(Schema $schema): Schema

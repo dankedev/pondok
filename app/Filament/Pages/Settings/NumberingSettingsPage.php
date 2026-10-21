@@ -34,7 +34,7 @@ abstract class NumberingSettingsPage extends Page
     /**
      * Saklar modul yang harus aktif agar halaman tampil, atau null bila tidak terikat modul.
      */
-    protected static function moduleKey(): ?string
+    public static function getModule(): ?string
     {
         return null;
     }
@@ -58,7 +58,7 @@ abstract class NumberingSettingsPage extends Page
 
     public static function canAccess(): bool
     {
-        if (static::moduleKey() !== null && ! Setting::moduleEnabled((string) static::moduleKey())) {
+        if (static::getModule() !== null && ! Setting::moduleEnabled((string) static::getModule())) {
             return false;
         }
 

@@ -41,6 +41,7 @@ Target utama adalah **shared hosting cPanel** atau VPS kecil, karena sekolah pen
 - **Service class** hanya untuk integrasi eksternal (payment gateway, WhatsApp, PDF).
 - Struktur modular: Akademik, Asrama, Tahfidz, Perizinan, Dokumen, Prestasi, PSB, Keuangan, Konten. Setiap modul selain inti bisa diaktifkan atau dimatikan lewat `settings` (key `modules.<nama>.enabled`). Navigasi Filament dan route mengikuti status ini.
 - Dashboard bersifat role-aware. Setiap widget dicek permission-nya dan tetap tampil aman ("Modul belum tersedia") jika tabel atau modulnya belum aktif.
+- **Fitur baru wajib dibangun sebagai modul** (F066). Daftar modul dan ketergantungannya hanya di enum `App\Enums\Module`; saklar diubah super-admin di Pengaturan → Modul lewat `SetModuleEnabled`. Daftarkan setiap bagian ke modulnya: resource `BelongsToModule`, page `getModule()`, widget `getDashboardModule()`, route middleware `EnsureModuleIsEnabled:<modul>`, jadwal `->when(fn () => Module::X->isEnabled())`, tautan portal disaring di Action portal. `tests/Feature/ModuleComplianceTest.php` gagal bila ada yang lupa; bagian inti ditambahkan ke daftar inti di test itu secara eksplisit. Mematikan modul tidak pernah menghapus data.
 
 ### Prinsip: YAGNI, KISS, DRY
 

@@ -2132,6 +2132,75 @@ return [
         ],
     ],
 
+    'modules' => [
+        'akademik' => [
+            'label' => 'Akademik',
+            'description' => 'Data santri dan wali, angkatan, rombel, mutasi, serta penomoran NIS.',
+        ],
+        'asrama' => [
+            'label' => 'Asrama',
+            'description' => 'Asrama, kamar, musyrif, dan penempatan santri mukim.',
+        ],
+        'keuangan' => [
+            'label' => 'Keuangan',
+            'description' => 'Jenis biaya, tarif, beasiswa, tagihan, pembayaran, kuitansi, dan laporan keuangan.',
+        ],
+        'psb' => [
+            'label' => 'PSB',
+            'description' => 'Penerimaan santri baru: gelombang, jalur, formulir daring, seleksi, dan daftar ulang.',
+        ],
+        'dokumen' => [
+            'label' => 'Dokumen',
+            'description' => 'Arsip dokumen santri dan staff, surat keluar, dan verifikasi surat di portal.',
+        ],
+        'konten' => [
+            'label' => 'Konten',
+            'description' => 'Berita, galeri foto, video, dan halaman statis di portal publik.',
+        ],
+        'prestasi' => [
+            'label' => 'Prestasi',
+            'description' => 'Pencatatan dan verifikasi prestasi santri beserta rekapnya.',
+        ],
+    ],
+
+    'module_settings' => [
+        'title' => 'Modul',
+        'status' => [
+            'enabled' => 'Aktif',
+            'disabled' => 'Nonaktif',
+        ],
+        'requires' => 'Membutuhkan: :modules',
+        'requires_none' => 'Tidak membutuhkan modul lain.',
+        'required_by' => 'Dibutuhkan oleh: :modules',
+        'requirement_off' => 'Membutuhkan :modules yang belum aktif. Aktifkan modul tersebut atau matikan modul ini.',
+        'enable' => 'Aktifkan modul',
+        'disable' => 'Matikan modul',
+        'confirm_enable_heading' => 'Aktifkan modul :module?',
+        'confirm_disable_heading' => 'Matikan modul :module?',
+        'confirm_enable' => 'Menu, halaman, dan jadwal :module ditampilkan kembali untuk peran yang berhak.',
+        'confirm_disable' => 'Menu, halaman, dan jadwal :module disembunyikan. Data tetap tersimpan dan kembali saat modul diaktifkan.',
+        'enabled' => 'Modul :module sekarang aktif.',
+        'disabled' => 'Modul :module sekarang nonaktif.',
+        'activity_enabled' => 'Modul :module diaktifkan',
+        'activity_disabled' => 'Modul :module dimatikan',
+        'core_heading' => 'Modul inti (selalu aktif)',
+        'core_description' => 'Bagian ini dipakai semua modul sehingga tidak bisa dimatikan.',
+        'core' => [
+            'Dashboard',
+            'Pengguna dan peran',
+            'Jenjang',
+            'Tahun ajaran',
+            'Staff',
+            'Identitas lembaga, kontak, dan sosial',
+            'Situs: beranda, navigasi, footer, dan tampilan',
+        ],
+        'errors' => [
+            'forbidden' => 'Hanya super-admin yang bisa mengubah modul.',
+            'requires_disabled' => 'Aktifkan dulu modul :modules karena dibutuhkan :module.',
+            'dependents_enabled' => 'Matikan dulu modul :modules karena membutuhkan :module.',
+        ],
+    ],
+
     'dashboard' => [
         'module_unavailable' => 'Modul belum tersedia.',
         'finance' => [

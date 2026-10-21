@@ -8,6 +8,7 @@ use App\Actions\Keuangan\ListTopArrears;
 use App\Actions\Keuangan\SummarizeCashReceipts;
 use App\Actions\Keuangan\SummarizeInvoices;
 use App\Actions\Keuangan\SummarizeScholarshipSubsidies;
+use App\Enums\Module;
 use App\Filament\Resources\Students\StudentResource;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -76,9 +77,14 @@ class FinanceReport extends Page
 
     public bool $hasInvalidFilter = false;
 
+    public static function getModule(): string
+    {
+        return Module::Keuangan->value;
+    }
+
     public static function canAccess(): bool
     {
-        return Setting::moduleEnabled('keuangan')
+        return Setting::moduleEnabled(static::getModule())
             && (bool) auth()->user()?->can('view:finance-report');
     }
 

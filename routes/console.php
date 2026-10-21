@@ -2,6 +2,7 @@
 
 use App\Actions\Core\RecordSchedulerHeartbeat;
 use App\Enums\Module;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -61,3 +62,13 @@ Schedule::command('keuangan:prune-finance-exports')
     ->when(fn (): bool => Module::Keuangan->isEnabled())
     ->hourly()
     ->withoutOverlapping();
+
+/*
+| Backup harian inti (F042) pukul 01:30 WIB, hanya bila diaktifkan di
+| Pengaturan karena kuota shared hosting kecil. Manual: `pondok:backup`.
+*/
+Schedule::command('pondok:backup')
+    ->when(fn (): bool => (bool) Setting::get('backup.enabled', false))
+    ->dailyAt('01:30')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping(120);

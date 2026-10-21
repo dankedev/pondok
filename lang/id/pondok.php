@@ -2586,6 +2586,17 @@ return [
         'size' => 'Ukuran',
     ],
 
+    'backup' => [
+        'pgsql_unsupported' => 'Backup bawaan belum mendukung PostgreSQL. Gunakan pg_dump atau fitur backup di panel hosting.',
+        'driver_unsupported' => 'Backup bawaan tidak mendukung database ":driver".',
+        'zip_unavailable' => 'Ekstensi PHP zip tidak aktif, backup tidak bisa dibuat.',
+        'zip_failed' => 'Berkas zip backup gagal ditulis.',
+        'write_failed' => 'Berkas :path gagal ditulis. Periksa sisa kuota dan izin folder storage.',
+        'activity_created' => 'Backup dibuat',
+        'done' => 'Backup selesai: :file (:size).',
+        'failed' => 'Backup gagal: :error',
+    ],
+
     'demo' => [
         'refused_production' => 'Data demo tidak boleh dijalankan di lingkungan production.',
         'default_password_warning' => 'DEMO_PASSWORD kosong: akun demo memakai password bawaan yang tertulis di docs/demo.md. Isi DEMO_PASSWORD di .env bila instance ini bisa diakses orang lain.',

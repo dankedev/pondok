@@ -3,6 +3,7 @@
 namespace App\Actions\Core;
 
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -125,14 +126,25 @@ class CreateBackup
     }
 
     /**
-     * Sisakan `KEEP` arsip terbaru; nama arsip memuat waktu sehingga urutan
-     * nama sama dengan urutan waktu. Berkas lain di folder tidak disentuh.
+     * Arsip backup di disk `private`, terbaru dulu. Nama arsip memuat waktu
+     * sehingga urutan nama sama dengan urutan waktu; berkas lain diabaikan.
+     *
+     * @return Collection<int, string>
+     */
+    public static function archives(): Collection
+    {
+        return collect(Storage::disk(self::DISK)->files(self::DIRECTORY))
+            ->filter(fn (string $file): bool => (bool) preg_match('#^'.self::DIRECTORY.'/pondok-\d{8}-\d{6}\.zip$#', $file))
+            ->sortDesc()
+            ->values();
+    }
+
+    /**
+     * Sisakan `KEEP` arsip terbaru. Berkas lain di folder tidak disentuh.
      */
     private function rotate(Filesystem $disk): void
     {
-        collect($disk->files(self::DIRECTORY))
-            ->filter(fn (string $file): bool => (bool) preg_match('#^'.self::DIRECTORY.'/pondok-\d{8}-\d{6}\.zip$#', $file))
-            ->sortDesc()
+        self::archives()
             ->slice(self::KEEP)
             ->each(fn (string $file): bool => $disk->delete($file));
     }

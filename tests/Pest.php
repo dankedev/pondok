@@ -4,6 +4,7 @@ use App\Actions\Dokumen\IssueLetter;
 use App\Actions\Dokumen\LetterNumbering;
 use App\Actions\Keuangan\CancelPayment;
 use App\Actions\Keuangan\FinanceReportFilter;
+use App\Actions\Keuangan\GenerateAnnualInvoices;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
@@ -4600,4 +4601,53 @@ function psbInfoCountTag(string $html, string $tag): int
 function psbInfoPosition(string $html, string $needle): int|false
 {
     return strpos(preg_replace('/\s+/u', ' ', strip_tags(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'))), $needle);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper tagihan tahunan (F041)
+|--------------------------------------------------------------------------
+|
+| Berawalan `tahunan`. Memakai `tagihanFixture` dan `tagihanStudent`.
+|
+*/
+
+/**
+ * Jenis biaya tahunan (DAFTAR_ULANG, semua santri) dengan tarif jenjang SLTP, dan bulan tagihan tahunan di setting.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function tahunanFeeType(object $f, int $amount = 750000, array $attributes = [], ?int $month = 7): FeeType
+{
+    $type = FeeType::factory()->create([
+        'code' => 'DAFTAR_ULANG',
+        'name' => 'Daftar ulang',
+        'frequency' => FeeType::FREQUENCY_YEARLY,
+        'billing_group' => 'DAFTAR_ULANG',
+        'priority' => 4,
+        ...$attributes,
+    ]);
+
+    keuanganRate($type, $f->year, $f->sltp, $amount);
+    Setting::set('keuangan.annual_billing_month', $month);
+
+    return $type;
+}
+
+/**
+ * Jalankan generator tahunan dari container.
+ *
+ * @return array{period: string, created_invoices: int, added_items: int, existing_invoices: int, skipped: list<array{student_id: int, fee_type_id: int, reason: string}>}
+ */
+function tahunanGenerate(AcademicYear $year, ?User $by = null): array
+{
+    return app(GenerateAnnualInvoices::class)->handle($year, $by);
+}
+
+/**
+ * Tagihan aktif (bukan batal) santri untuk periode dan grup tahunan, tanpa cakupan jenjang.
+ */
+function tahunanInvoiceFor(Student $student, string $group = 'DAFTAR_ULANG', string $period = '2026-07-01'): ?Invoice
+{
+    return tagihanInvoiceFor($student, $group, $period);
 }

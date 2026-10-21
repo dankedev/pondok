@@ -368,7 +368,7 @@ class DocumentResource extends Resource
     {
         return Action::make('replace')
             ->label(__('pondok.document.replace_action'))
-            ->icon(Heroicon::OutlinedArrowPath)
+            ->icon(Heroicon::OutlinedArrowUpTray)
             ->color('gray')
             ->authorize(fn (Document $record): bool => static::canReplace($record))
             ->modalHeading(fn (Document $record): string => __('pondok.document.replace_action').': '.$record->documentType?->name)

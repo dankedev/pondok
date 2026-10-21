@@ -737,16 +737,16 @@
       "name": "Backup dan pembersihan data lama per periode",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F019"],
       "description": "Backup data dan pembersihan data lama per periode yang bisa diatur admin, termasuk masa simpan snapshot surat keluar sesuai UU PDP.",
       "acceptance": [
         "Backup bisa dijalankan di shared hosting tanpa proses yang berjalan terus",
         "Pembersihan per periode tidak menghapus data keuangan (pembatalan memakai status batal)"
       ],
-      "owner": "night-batch-e5e331",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 5461955 (test RED) + f40c743, 731f09c, 489d773, 238165e (feat/docs) + VERIFY. File F042 ±50 test lulus; suite penuh PHP 8.4 4797 test lulus (5 skipped MySQL). Jalur dump MySQL belum diuji otomatis/manual (MySQL lokal mati 22 Okt 2026).",
       "notes": "Ditunda atas keputusan user 16 Okt 2026 (Jawaban user no. 7): termasuk masa simpan snapshot surat keluar (UU PDP). Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F042-plan.md (lingkup minimum: backup terjadwal default mati + redaksi snapshot surat; pembersihan activity log di luar lingkup)."
     },
     {

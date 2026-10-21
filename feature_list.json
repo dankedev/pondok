@@ -1259,14 +1259,26 @@
       "name": "Cegah wali ganda saat konversi PSB bersamaan",
       "phase": 1,
       "module": "PSB",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F053"],
       "description": "Temuan F053: ResolveApplicantGuardian cari-lalu-simpan tanpa kunci/unique, sehingga dua konversi saudara bersamaan dengan wali sama bisa membuat dua baris wali.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "AC-1 MySQL dua proses: saudara beda jenjang, wali nama sama, HP 08/628 -> keduanya ok, satu guardians, kedua santri terkait",
+        "AC-2 MySQL: proses kedua menunggu kunci (>= 2400 ms), tanpa deadlock/lock wait timeout",
+        "AC-3 MySQL: test F053 lama tetap lulus; f053Race wajib CACHE_STORE=database",
+        "AC-4 aturan pencocokan wali (varian HP + nama, id terkecil) tidak berubah; test lama lulus tanpa diubah",
+        "AC-5/AC-6 kunci psb:guardian:<HP kanonik> dilepas setelah sukses maupun gagal",
+        "AC-7 kunci dipegang -> ValidationException applicant guardian_busy, tanpa data baru",
+        "AC-8 varian 08/628/+628 memakai kunci yang sama",
+        "AC-9 HP wali berbeda tidak saling menunggu",
+        "AC-10 validasi masukan terjadi sebelum kunci",
+        "AC-11 HP kunci dibaca segar dari DB, bukan dari instance basi",
+        "AC-12 HP berubah antara baca dan kunci baris -> guardian_busy, tanpa data baru, kunci dilepas"
+      ],
+      "owner": "night-batch-e5e331",
       "handoff": null,
       "evidence": null,
-      "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026."
+      "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026. Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F069-plan.md."
     },
     {
       "id": "F070",

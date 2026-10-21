@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F068",
+  "next_id": "F069",
   "features": [
     {
       "id": "F001",
@@ -1235,6 +1235,22 @@
       "handoff": null,
       "evidence": "Commit 248982b..0aebab4. ErrorPagesTest + PortalRoutingTest 63 lulus; suite lokal 4348 lulus (16 gagal hanya karena Vite dev server aktif, public/hot); CI PHP 8.3 di PR.",
       "notes": "jalur: cepat. Kriteria di issue #39. Permintaan user 20 Okt 2026."
+    },
+    {
+      "id": "F068",
+      "key": "keuangan-ekspor-csv-antrean",
+      "issue": 46,
+      "name": "Ekspor CSV keuangan lewat antrean",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "deferred",
+      "depends_on": ["F052"],
+      "description": "Pecahan F052: ekspor CSV keuangan sebagai job antrean, berkas di disk private, unduh lewat route ber-permission, notifikasi ke pemicu, pembersihan berkala.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Ditunda (YAGNI) sampai ada bukti ekspor lambat/timeout. Kriteria di issue #46. Permintaan user 21 Okt 2026."
     }
   ]
 }

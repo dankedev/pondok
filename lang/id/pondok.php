@@ -1846,7 +1846,17 @@ return [
             ],
             'primary' => 'Warna utama',
             'accent' => 'Warna aksen',
-            'color_helper' => 'Dipakai sebagai dasar skala; tombol dan teks memakai langkah gelap skala ini agar tetap terbaca. Kosongkan untuk warna bawaan.',
+            'color_helper' => 'Dipakai sebagai dasar skala warna portal. Bila warna ini kurang terbaca, sistem memakai langkah skala terdekat yang terbaca. Kosongkan untuk warna bawaan.',
+            'brand_preview' => [
+                'heading' => 'Pratinjau tombol dan judul portal',
+                'button_sample' => 'Contoh tombol',
+                'title_sample' => 'Contoh judul halaman',
+                'button_uses' => 'Warna tombol: :color',
+                'title_uses' => 'Warna judul: :color',
+                'adjusted_button' => 'Warna tombol disesuaikan agar teks tetap terbaca (kontras minimal 4,5:1).',
+                'adjusted_title' => 'Warna judul disesuaikan agar tetap terbaca di latar putih (kontras minimal 4,5:1).',
+                'rejected' => 'Warna ini tidak memenuhi kontras; tombol dan judul tetap memakai warna bawaan.',
+            ],
             'font' => 'Huruf',
             'fonts' => [
                 'jakarta' => 'Plus Jakarta Sans (bawaan)',

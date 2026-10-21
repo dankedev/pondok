@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Pages\FinanceReport;
+use App\Jobs\Keuangan\ExportFinanceReportJob;
 use App\Models\Invoice;
 use App\Models\Setting;
 use Carbon\CarbonImmutable;
@@ -9,6 +10,8 @@ use Database\Seeders\SettingSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
@@ -125,7 +128,9 @@ it('AC-22: limits the report to the user units', function () {
         ->and($text)->not->toContain('Rp 777.000');
 });
 
-it('AC-25: downloads the report as CSV and logs it', function () {
+it('AC-1: queues the CSV export and shows a processing notice', function () {
+    Queue::fake();
+    Storage::fake('private');
     laporanPageData($this->f);
     $user = keuanganUser('bendahara');
     $this->actingAs($user);
@@ -133,16 +138,20 @@ it('AC-25: downloads the report as CSV and logs it', function () {
     Livewire::test(FinanceReport::class)
         ->assertActionVisible('export')
         ->callAction('export', ['section' => 'tunggakan'])
-        ->assertFileDownloaded('laporan-keuangan-tunggakan-2026-10-2026-10.csv');
+        ->assertNoFileDownloaded()
+        ->assertNotified(__('pondok.finance_report.export.queued'));
 
-    $activity = Activity::query()->where('log_name', 'keuangan')->where('event', 'exported')->sole();
+    Queue::assertPushed(ExportFinanceReportJob::class, 1);
+    Queue::assertPushed(ExportFinanceReportJob::class, fn (ExportFinanceReportJob $job): bool => $job->user->is($user)
+        && $job->section === 'tunggakan'
+        && $job->filter === ['period_from' => '2026-10', 'period_to' => '2026-10', 'unit_id' => null, 'billing_group' => null]);
 
-    expect($activity->causer->is($user))->toBeTrue()
-        ->and($activity->properties['section'])->toBe('tunggakan')
-        ->and($activity->properties['filter']['period_from'])->toBe('2026-10');
+    expect(Storage::disk('private')->allFiles())->toBe([])
+        ->and(Activity::query()->where('event', 'exported')->count())->toBe(0);
 });
 
-it('AC-25: refuses the CSV download after the permission is revoked', function () {
+it('AC-2: does not queue the export after the permission is revoked', function () {
+    Queue::fake();
     laporanPageData($this->f);
     $user = keuanganUser('bendahara');
     $this->actingAs($user);
@@ -158,12 +167,13 @@ it('AC-25: refuses the CSV download after the permission is revoked', function (
         // Aksi ditolak boleh berupa pengecualian; yang diperiksa adalah akibatnya.
     }
 
-    $component->assertNoFileDownloaded();
+    Queue::assertNothingPushed();
 
     expect(Activity::query()->where('event', 'exported')->count())->toBe(0);
 });
 
-it('AC-25: refuses the CSV download after the keuangan module is disabled', function () {
+it('AC-2: does not queue the export after the keuangan module is disabled', function () {
+    Queue::fake();
     laporanPageData($this->f);
     $this->actingAs(keuanganUser('bendahara'));
 
@@ -177,7 +187,7 @@ it('AC-25: refuses the CSV download after the keuangan module is disabled', func
         // Aksi ditolak boleh berupa pengecualian; yang diperiksa adalah akibatnya.
     }
 
-    $component->assertNoFileDownloaded();
+    Queue::assertNothingPushed();
 
     expect(Activity::query()->where('event', 'exported')->count())->toBe(0);
 });

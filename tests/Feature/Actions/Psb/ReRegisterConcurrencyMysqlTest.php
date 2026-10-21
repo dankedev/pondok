@@ -5,6 +5,7 @@ use App\Models\ApplicantDocument;
 use App\Models\Cohort;
 use App\Models\Document;
 use App\Models\FeeOverride;
+use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Student;
 use Illuminate\Support\Facades\Artisan;
@@ -84,6 +85,8 @@ function f053Race(array $applicants, int $holdMs): array
         'APP_ENV' => 'testing',
         'APP_KEY' => config('app.key'),
         'LOG_CHANNEL' => 'stderr',
+        // Kunci wali (F069) hanya terbagi antarproses bila store-nya `database`; phpunit memaksa `array`.
+        'CACHE_STORE' => 'database',
         'F053_PRIVATE_ROOT' => Storage::disk('private')->path(''),
     ];
 
@@ -207,3 +210,24 @@ it('AC-6: converts two applicants of the same unit and year with distinct number
     'angkatan belum ada' => false,
     'angkatan sudah ada (balapan NIS otomatis)' => true,
 ]);
+
+it('F069 AC-1/AC-2: creates one guardian when siblings in different units convert at once', function () {
+    $sltp = daftarUlangApplicant($this->f, ['name' => 'Ahmad Fauzan', 'guardian_phone' => '081234567890']);
+    $sd = daftarUlangApplicant($this->f, ['name' => 'Umar Fauzan', 'guardian_phone' => '6281234567890'], unit: 'SD');
+
+    expect($sd->unit_id)->not->toBe($sltp->unit_id)
+        ->and($sd->guardian_name)->toBe($sltp->guardian_name);
+
+    $results = f053Race([$sltp, $sd], holdMs: 1500);
+
+    expect(array_column($results, 'ok'))->toBe([true, true], json_encode($results))
+        // AC-2: proses kedua menunggu kunci wali, lalu menahan sendiri: ≈ 2 × hold, tanpa deadlock/lock wait timeout.
+        ->and(max(array_column($results, 'elapsed_ms')))->toBeGreaterThanOrEqual(2400);
+
+    $students = collect([f053AssertConvertedOnce($sltp, overrides: 0), f053AssertConvertedOnce($sd, overrides: 0)]);
+    $guardians = Guardian::query()->whereIn('phone', ['081234567890', '6281234567890', '+6281234567890'])->get();
+
+    expect($guardians)->toHaveCount(1)
+        ->and(DB::table('student_guardian')->whereIn('student_id', $students->pluck('id'))->pluck('guardian_id')->unique()->all())->toBe([$guardians->first()->id])
+        ->and(Activity::query()->where('log_name', 'psb')->where('event', 'converted')->get()->pluck('properties.guardian_reused')->sort()->values()->all())->toBe([false, true]);
+});

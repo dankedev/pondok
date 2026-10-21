@@ -973,7 +973,7 @@
       "name": "Performa & keandalan keuangan (audit Grup 2)",
       "phase": 1,
       "module": "Keuangan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002", "F006", "F007"],
       "description": "Tindak lanjut audit Grup 2: (1) indeks invoices(status,due_on)/(period,status) dan students(entered_on), (2) antrekan generate tagihan manual & ekspor CSV, (3) pembersih berkas bukti yatim, (4) pertimbangkan cache agregat dashboard.",
       "acceptance": [
@@ -981,10 +981,10 @@
         "Operasi berat berjalan lewat antrean + notifikasi",
         "Berkas bukti tanpa Payment dibersihkan berkala"
       ],
-      "owner": "perf-f052-keuangan",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Jalur penuh. Poin (4) pertimbangkan. Sumber: docs/audits/iso-25010-23026-audit.md."
+      "evidence": "Commit 89a9dd3 (indeks), 51a0296, f63e1fa (antrean generate), df1fb1e (pembersih bukti), 1df1497 (test). Suite penuh PHP 8.4 lulus 4522 test; test F052: InvoiceReportIndexesTest, GenerateInvoicesJobTest, GenerateInvoicesJobQueueVerifyTest, InvoiceGenerateQueueTest, PruneOrphanPaymentProofsTest, PruneOrphanPaymentProofsVerifyTest, PrunePaymentProofsCommandTest.",
+      "notes": "Jalur penuh. Keputusan YAGNI (rencana F052): ekspor CSV tetap sinkron (hanya agregat), tanpa indeks students(entered_on) (query memakai whereDate + OR whereNull), tanpa cache dashboard. Sumber: docs/audits/iso-25010-23026-audit.md."
     },
     {
       "id": "F053",

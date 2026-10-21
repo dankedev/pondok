@@ -215,7 +215,7 @@ class Home extends SettingsFormPage
                 ]),
             Block::make('video')
                 ->label($label('video'))
-                ->icon(Heroicon::OutlinedPlayCircle)
+                ->icon(Heroicon::OutlinedFilm)
                 ->schema([
                     $this->visibleToggle(),
                     $this->headingField(),

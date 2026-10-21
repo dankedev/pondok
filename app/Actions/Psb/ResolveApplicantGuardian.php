@@ -10,7 +10,10 @@ use App\Models\Guardian;
  * bila nomor HP cocok dalam varian `08…`/`628…`/`+628…` **dan** nama sama
  * (tanpa beda huruf besar dan spasi); kandidat ber-id terkecil menang. Selain
  * itu dibuat wali baru: wali ganda lebih aman daripada salah menggabungkan
- * keluarga. Dipanggil di dalam transaksi `ReRegisterApplicant`.
+ * keluarga. Dipanggil di dalam transaksi `ReRegisterApplicant`; pemanggil wajib
+ * memegang kunci `lockKey()` agar dua daftar ulang dengan HP wali sama tidak
+ * membuat wali ganda. Kunci hanya efektif bila store cache terbagi antarproses
+ * (`database` atau `file` di satu server), bukan `array`.
  */
 class ResolveApplicantGuardian
 {
@@ -36,6 +39,14 @@ class ResolveApplicantGuardian
             'guardian' => Guardian::query()->create(['name' => $applicant->guardian_name, 'phone' => $phone]),
             'reused' => false,
         ];
+    }
+
+    /**
+     * Nama kunci per HP kanonik (`+62…`/`62…` → `0…`), sama untuk semua varian.
+     */
+    public static function lockKey(?string $phone): string
+    {
+        return 'psb:guardian:'.preg_replace('/^\+?62/', '0', trim((string) $phone));
     }
 
     /**

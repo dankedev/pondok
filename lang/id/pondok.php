@@ -1211,6 +1211,7 @@ return [
             'track_fee_type_not_found' => 'Jenis biaya tidak ditemukan. Pilih jenis biaya dari daftar.',
             'track_fee_type_invalid' => 'Beasiswa jalur hanya untuk biaya saat diterima, bulanan, atau tahunan. Hapus centang biaya saat daftar atau manual.',
             'already_converted' => 'Pendaftar ini sudah didaftarulangkan menjadi santri. Muat ulang halaman.',
+            'guardian_busy' => 'Daftar ulang lain dengan nomor HP wali yang sama sedang diproses. Coba lagi sebentar lagi.',
             'min_payment_not_met' => 'Pembayaran tagihan penerimaan baru :paid. Daftar ulang membutuhkan minimal :required.',
             'acceptance_invoices_missing' => 'Tagihan penerimaan belum dibuat. Gunakan Buat tagihan penerimaan lebih dulu.',
             'nisn_taken' => 'NISN pendaftar sudah dipakai santri lain. Bila santri ini lanjut dari jenjang sebelumnya, gunakan perpindahan jenjang di data santri.',

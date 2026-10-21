@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Konten\BuildColorScale;
+use App\Actions\Konten\GetPortalTheme;
 use App\Filament\Pages\Site\Theme;
 use App\Models\Setting;
 use Livewire\Livewire;
@@ -120,4 +122,50 @@ it('F072 AC-12: rejects a template outside the options with an error on the fiel
         ->assertHasErrors(['data.template']);
 
     expect(Setting::get('theme.template'))->toBeNull();
+});
+
+/*
+| F071 AC-12, AC-13 (halaman). Pratinjau di bawah pemilih warna, terlihat dari state form (tanpa simpan), memakai
+| `GetPortalTheme::brandTokens()`. Teks dari `pondok.school_profile.theme.brand_preview.{heading, button_sample, adjusted_button,
+| adjusted_title, rejected}`; contoh tombol bertuliskan `button_sample` ("Contoh tombol").
+*/
+
+it('F071 AC-12: previews the button and title colours live from the form state', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+    $heading = __('pondok.school_profile.theme.brand_preview.heading');
+    $component = Livewire::test(Theme::class)->assertDontSee($heading);
+
+    $component->fillForm(['primary' => '#15803d'])
+        ->assertSee($heading)->assertSee('Contoh tombol')->assertSee('#15803d')
+        ->assertDontSee(__('pondok.school_profile.theme.brand_preview.adjusted_button'))
+        ->assertDontSee(__('pondok.school_profile.theme.brand_preview.adjusted_title'));
+
+    $light = GetPortalTheme::brandTokens('#facc15');
+
+    $component->fillForm(['primary' => '#facc15'])
+        ->assertSee(__('pondok.school_profile.theme.brand_preview.adjusted_title'))
+        ->assertSee($light['brand_text'])
+        ->assertDontSee(__('pondok.school_profile.theme.brand_preview.adjusted_button'));
+
+    $component->fillForm(['primary' => '#777777'])
+        ->assertSee(__('pondok.school_profile.theme.brand_preview.adjusted_button'));
+
+    $component->fillForm(['primary' => 'red'])
+        ->assertDontSee($heading)->assertDontSee('Contoh tombol')->assertHasNoErrors();
+});
+
+it('F071 AC-13: shows the rejected message instead of a sample when the portal would refuse the colour', function () {
+    app()->bind(BuildColorScale::class, fn () => new class extends BuildColorScale
+    {
+        public function handle(string $hex, string $role): array
+        {
+            return [...THEME_DEFAULT_PRIMARY, 900 => '#777777'];
+        }
+    });
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(Theme::class)
+        ->fillForm(['primary' => '#15803d'])
+        ->assertSee(__('pondok.school_profile.theme.brand_preview.rejected'))
+        ->assertDontSee('Contoh tombol');
 });

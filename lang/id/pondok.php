@@ -54,6 +54,12 @@ return [
             'signer_placeholder' => 'Petugas pencatat',
             'signer_helper' => 'Kosong: petugas pencatat yang menandatangani. Berlaku untuk pembayaran yang dicatat setelah disimpan; kuitansi lama tidak berubah.',
             'signer_invalid' => 'Pilih staff yang masih aktif.',
+            'annual_heading' => 'Tagihan tahunan',
+            'annual_description' => 'Bulan penagihan biaya tahunan, misalnya daftar ulang, untuk semua santri aktif.',
+            'annual_month_label' => 'Bulan tagihan',
+            'annual_month_placeholder' => 'Tidak terjadwal',
+            'annual_month_helper' => 'Tagihan biaya tahunan dibuat otomatis tanggal 1 bulan ini. Kosongkan untuk membuatnya manual saja.',
+            'annual_month_invalid' => 'Pilih salah satu bulan, atau kosongkan.',
         ],
     ],
 

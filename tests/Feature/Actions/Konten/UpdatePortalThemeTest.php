@@ -135,3 +135,53 @@ it('AC-6: accepts colours that looked risky before, because the rule judges the 
     expect(Setting::get('theme.primary'))->toBe('#ffff00')
         ->and(Setting::get('theme.accent'))->toBe('#7a5700');
 });
+
+/*
+| F072 AC-2, AC-3. Input baru `template` (kunci `GetPortalTheme::TEMPLATES`); key `theme.template`, bawaan `default` disimpan null.
+*/
+
+it('F072 AC-2: saves the template, logs once, and logs nothing when saved again', function () {
+    themeSave(['template' => 'centered']);
+
+    expect(Setting::get('theme.template'))->toBe('centered');
+
+    $logs = kontenActivities()->where('description', 'portal_theme_updated');
+
+    expect($logs)->toHaveCount(1)
+        ->and($logs->first()->properties['changed']['theme.template']['new'])->toBe('centered');
+
+    themeSave(['template' => 'centered']);
+
+    expect(kontenActivities()->where('description', 'portal_theme_updated'))->toHaveCount(1);
+});
+
+it('F072 AC-2: stores the default template as null without logging, and returns to null from centered', function () {
+    foreach (['default', '', null] as $value) {
+        themeSave(['template' => $value]);
+
+        expect(Setting::get('theme.template'))->toBeNull()
+            ->and(kontenActivities())->toHaveCount(0);
+    }
+
+    themeSave(['template' => 'centered']);
+    themeSave(['template' => 'default']);
+
+    expect(Setting::get('theme.template'))->toBeNull()
+        ->and(kontenActivities()->where('description', 'portal_theme_updated'))->toHaveCount(2);
+});
+
+it('F072 AC-3: rejects an invalid template and saves nothing, including other keys sent together', function (mixed $value) {
+    kontenAssertRejected(fn () => themeSave(['template' => $value, 'primary' => '#1f2a5e', 'font' => 'nunito']), 'theme_option_invalid', 'template');
+
+    expect(themeStoredCount())->toBe(0)
+        ->and(Setting::get('theme.template'))->toBeNull()
+        ->and(kontenActivities())->toHaveCount(0);
+})->with([
+    'path traversal' => '../portal/home',
+    'wrong case' => 'Default',
+    'dotted view name' => 'themes.centered',
+    'trailing space' => 'centered ',
+    'unknown key' => 'tidak-ada',
+    'array' => [['centered']],
+    'integer' => 1,
+]);

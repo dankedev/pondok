@@ -77,3 +77,47 @@ it('AC-15: shows the action error on the colour field and saves nothing', functi
     expect(Setting::get('theme.primary'))->toBeNull()
         ->and(kontenActivities())->toHaveCount(0);
 });
+
+/*
+| F072 AC-12. State `data.template` (bawaan `default`), Radio opsi `default`/`centered` dengan label dan deskripsi dari
+| `pondok.school_profile.theme.templates.<kunci>`. Simpan tidak menyentuh `portal.home_blocks`.
+*/
+
+it('F072 AC-12: shows the default template and both options with their descriptions', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(Theme::class)
+        ->assertSet('data.template', 'default')
+        ->assertSee('Standar (bawaan)')
+        ->assertSee('Terpusat')
+        ->assertSee(__('pondok.school_profile.theme.templates.default.description'))
+        ->assertSee(__('pondok.school_profile.theme.templates.centered.description'));
+});
+
+it('F072 AC-12: saves the chosen template, notifies, and leaves the home blocks untouched', function () {
+    blkSet([blk('hero', ['title' => 'Judul hero uji'])]);
+    $blocks = blkStored();
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(Theme::class)
+        ->fillForm(['template' => 'centered'])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertNotified(__('pondok.school_profile.saved.theme'));
+
+    expect(Setting::get('theme.template'))->toBe('centered')
+        ->and(blkStored())->toBe($blocks);
+
+    Livewire::test(Theme::class)->assertSet('data.template', 'centered');
+});
+
+it('F072 AC-12: rejects a template outside the options with an error on the field', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Livewire::test(Theme::class)
+        ->fillForm(['template' => 'tidak-ada'])
+        ->call('save')
+        ->assertHasErrors(['data.template']);
+
+    expect(Setting::get('theme.template'))->toBeNull();
+});

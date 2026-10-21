@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F074",
+  "next_id": "F075",
   "features": [
     {
       "id": "F001",
@@ -1351,6 +1351,26 @@
       "handoff": null,
       "evidence": "commit 9d691d2 (rencana), 84fba0e (galat form di blok yang tepat + assert path palsu), a0328ff (album hero saat modul konten mati), 0ef16a7 (baris sisa grid rata tengah); test HomeBuilderVerifyTest, HomeBlocksTest, PortalVisualIdentityTest dan halaman Situs/portal (527 test) lulus; suite penuh PHP 8.4 4663 test: 4657 lulus, 4 skip, 2 gagal karena .env worktree (APP_URL, kredensial seeder) lalu lulus setelah env diperbaiki; Pint lulus; grid dicek di 360px, 1024px, 1280px (default 3/4 kolom dan Terpusat)",
       "notes": "jalur: cepat (tampilan, form, test; tanpa migration, uang, atau hak akses). Rencana: docs/plans/F073-plan.md."
+    },
+    {
+      "id": "F074",
+      "key": "konten-blok-beranda-modul",
+      "issue": 58,
+      "name": "Kunci blok konten di Builder Beranda saat modul Konten mati",
+      "phase": 1,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F045"],
+      "description": "Tindak lanjut F066: pemilih blok Beranda tidak menawarkan blok Video dan Konten terbaru saat modul Konten mati, tanpa membuang blok yang sudah tersimpan.",
+      "acceptance": [
+        "Modul Konten mati: pemilih blok tidak memuat video dan feed, blok lain tetap ada",
+        "Modul Konten mati: blok video/feed tersimpan tetap muncul di form dan tetap ada setelah disimpan",
+        "Modul Konten hidup: pemilih blok memuat video dan feed"
+      ],
+      "owner": "hopeful-aryabhata-673bbe",
+      "handoff": null,
+      "evidence": null,
+      "notes": "jalur: cepat (form admin dan test; tanpa migration, uang, atau hak akses). Rencana: docs/plans/F074-plan.md."
     }
   ]
 }

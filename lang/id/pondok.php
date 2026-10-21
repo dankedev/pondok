@@ -601,6 +601,7 @@ return [
         'empty' => 'Belum ada tagihan untuk periode ini.',
         'empty_description' => 'Tagihan bulanan dibuat otomatis setiap tanggal 1. Anda juga bisa membuatnya sekarang.',
         'activity_generated' => 'Generator tagihan bulanan dijalankan',
+        'activity_generated_annual' => 'Generator tagihan tahunan dijalankan',
         'activity_cancelled' => 'Tagihan dibatalkan',
         // Tanpa placeholder: pesan ini tampil sebagai error field.
         'errors' => [
@@ -610,6 +611,8 @@ return [
             'has_payments' => 'Tagihan ini sudah ada pembayarannya, jadi tidak bisa dibatalkan. Batalkan pembayarannya terlebih dahulu.',
             'reason_invalid' => 'Alasan pembatalan wajib diisi, maksimal 255 karakter.',
             'number_conflict' => 'Nomor tagihan bentrok dengan tagihan lain berulang kali. Tagihan yang sudah dibuat tetap tersimpan; jalankan generator lagi.',
+            'annual_month_not_set' => 'Bulan tagihan tahunan belum diatur. Atur bulannya di halaman Penomoran Kuitansi & Tagihan terlebih dahulu.',
+            'annual_month_outside_year' => 'Bulan tagihan tahunan tidak ada dalam rentang tahun ajaran ini. Pilih tahun ajaran lain atau ubah bulannya.',
         ],
         'command' => [
             'module_disabled' => 'Modul keuangan tidak aktif. Tidak ada tagihan yang dibuat.',

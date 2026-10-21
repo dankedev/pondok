@@ -43,14 +43,26 @@ class GenerateAnnualInvoices
      */
     public function handle(AcademicYear $academicYear, ?User $generatedBy = null): array
     {
-        $month = self::billingMonth() ?? $this->fail(__('pondok.invoice.errors.annual_month_not_set'));
-        $period = $this->periodFor($academicYear, $month) ?? $this->fail(__('pondok.invoice.errors.annual_month_outside_year'));
+        $period = $this->billingPeriod($academicYear);
 
         try {
             return $this->generator->generateFor($period, $academicYear, FeeType::FREQUENCY_YEARLY, $generatedBy);
         } catch (ValidationException $exception) {
             $this->fail(...$exception->validator->errors()->all());
         }
+    }
+
+    /**
+     * Periode tagihan tahunan (tanggal 1 bulan tagihan) di dalam tahun ajaran.
+     * Dipakai juga panel sebagai prasyarat sinkron sebelum Job diantrekan.
+     *
+     * @throws ValidationException kunci `academic_year_id`, bila bulan belum diatur atau di luar tahun ajaran
+     */
+    public function billingPeriod(AcademicYear $academicYear): CarbonImmutable
+    {
+        $month = self::billingMonth() ?? $this->fail(__('pondok.invoice.errors.annual_month_not_set'));
+
+        return $this->periodFor($academicYear, $month) ?? $this->fail(__('pondok.invoice.errors.annual_month_outside_year'));
     }
 
     /**

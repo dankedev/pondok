@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F073",
+  "next_id": "F074",
   "features": [
     {
       "id": "F001",
@@ -1331,6 +1331,26 @@
       "handoff": null,
       "evidence": "commit d6f51be..860be89 (GetPortalTheme template/blockView, UpdatePortalTheme, GetPortalHomeData, themes/default dan themes/centered, halaman Situs > Tampilan, design guide); test Pest UpdatePortalThemeTest, GetPortalThemeTest, ThemePageTest, PortalTemplateTest, F072PortalTemplateVerifyGapsTest, HomeBlocksTest lulus; suite penuh PHP 8.4 4626 test (4620 lulus, 4 skip, 2 gagal karena public/css tidak ada di worktree, lulus setelah filament:assets); cek tampilan preset Terpusat 360/1024/1440px",
       "notes": "Jalur penuh (Action yang menyimpan setting dan nilai yang menentukan nama view). Halaman admin Tampilan belum dicek visual di browser (tanpa kredensial login di worktree); dicakup ThemePageTest."
+    },
+    {
+      "id": "F073",
+      "key": "konten-blok-beranda-rapi",
+      "issue": 26,
+      "name": "Rapikan sisa catatan kecil blok beranda",
+      "phase": 1,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F045"],
+      "description": "Sisa catatan minor F045: baris sisa grid Keunggulan rata tengah, form blok tidak menawarkan album saat modul Konten mati, test VERIFY path gambar palsu memakai assert yang lebih ketat.",
+      "acceptance": [
+        "Baris sisa grid blok Keunggulan rata tengah bila jumlah item tidak habis dibagi kolom",
+        "Form blok tidak menawarkan pilihan gambar/album bila modul Konten mati",
+        "Test VERIFY untuk path gambar palsu memakai assert yang lebih ketat"
+      ],
+      "owner": "fix-f073-blok-beranda",
+      "handoff": null,
+      "evidence": null,
+      "notes": "jalur: cepat (tampilan, form, test; tanpa migration, uang, atau hak akses). Rencana: docs/plans/F073-plan.md."
     }
   ]
 }

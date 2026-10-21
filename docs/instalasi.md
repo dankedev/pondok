@@ -139,7 +139,45 @@ Catatan: pembaruan mengembalikan permission **peran bawaan** (super-admin, admin
 
 Bila situs error 500 setelah pembaruan, pilih ulang PHP 8.3 di **MultiPHP Manager** untuk menulis ulang blok handler di `.htaccess`.
 
-## 11. Masalah umum
+## 11. Backup dan pemulihan
+
+Pondok bisa membuat arsip backup sendiri tanpa `mysqldump`, cukup dari cron `schedule:run` (langkah 8). Fitur ini mendukung MySQL, MariaDB, dan SQLite. Untuk PostgreSQL, pakai `pg_dump` atau fitur backup panel hosting.
+
+**Mengaktifkan backup terjadwal.** Masuk sebagai super-admin, buka **Pengaturan → Backup & masa simpan**, nyalakan **Backup terjadwal harian**, lalu simpan. Backup berjalan setiap hari pukul 01.30 WIB dan hanya 3 arsip terbaru yang disimpan, karena kuota hosting biasanya kecil. Backup manual kapan saja:
+
+```
+php artisan pondok:backup
+```
+
+**Isi dan lokasi arsip.** Arsip `pondok-YYYYmmdd-His.zip` tersimpan di `storage/app/private/backups` dan berisi:
+
+- `database.sql`: data semua tabel (perintah `DELETE FROM` lalu `INSERT`), tanpa struktur tabel;
+- `manifest.json`: waktu backup, jenis database, migration terakhir, dan jumlah baris per tabel;
+- `private/`: berkas disk private (dokumen santri, berkas PSB), tanpa folder `backups`, `finance-exports`, dan `livewire-tmp`;
+- `public/`: berkas disk public (foto, gambar portal, logo).
+
+Arsip memuat seluruh data pribadi santri dan wali. Jangan memindahkan atau mengekstrak arsip ke `public_html` (termasuk pada cara B di langkah 4), karena berkas di sana bisa diunduh siapa saja. Unduh arsip lewat **File Manager** dan simpan di luar hosting (komputer kantor, penyimpanan awan lembaga). Panel admin sengaja tidak menyediakan tombol unduh.
+
+Berkas `.env` **tidak** ikut arsip. Simpan salinannya terpisah di tempat aman: tanpa `APP_KEY` yang sama, kolom terenkripsi (NIK, nomor KK) tidak bisa dibaca setelah pemulihan.
+
+**Memulihkan dari arsip.**
+
+1. Siapkan database kosong (langkah 2) dan pasang `.env` lama dengan `APP_KEY` yang sama.
+2. Pasang kode Pondok **versi yang sama** dengan saat backup dibuat. Migration terakhir tercatat di `manifest.json` (`last_migration`).
+3. Buat tabel tanpa data awal:
+   ```
+   php artisan migrate --force
+   ```
+   Jangan menjalankan seeder atau `pondok:install`, karena datanya akan dihapus dan diganti isi backup.
+4. Impor `database.sql` lewat phpMyAdmin (menu **Import**) atau Terminal (`mysql -u user -p nama_database < database.sql`). Pakai mode SQL bawaan server; jangan aktifkan `NO_BACKSLASH_ESCAPES`. Bila berkas terlalu besar untuk batas unggah phpMyAdmin, unggah dalam bentuk zip atau pakai Terminal.
+5. Ekstrak isi folder `private/` dari arsip ke `storage/app/private`, dan isi `public/` ke folder disk public (`storage/app/public`, atau `PUBLIC_STORAGE_ROOT` bila diisi).
+6. Jalankan `php artisan optimize:clear`, lalu `php artisan pondok:doctor`.
+
+Yang tidak ikut dipulihkan: antrean tugas yang belum selesai dan riwayat tugas gagal (`jobs`, `failed_jobs`), sesi login (pengguna cukup login ulang), dan cache.
+
+**Masa simpan surat.** Di halaman yang sama, isi **Masa simpan data pribadi surat** (1 sampai 100 tahun). Setiap hari pukul 03.00 WIB, surat keluar yang tanggal terbitnya sudah melewati masa simpan dihapus data pribadinya (nama lengkap, NIS, NISN, jenis kelamin, tempat dan tanggal lahir, jenjang, dan kelas). Surat tetap ada, nomor dan kode verifikasinya tetap berlaku, dan nama santri tampil termasker. Kosongkan isian bila data surat tidak perlu dihapus. Manual: `php artisan pondok:redact-letter-snapshots`. Batasan: isian bebas **keperluan** dan **alasan pembatalan** surat tidak ikut dihapus, jadi jangan menulis data pribadi di sana. Data keuangan tidak pernah dihapus.
+
+## 12. Masalah umum
 
 | Gejala | Penyebab dan solusi |
 |---|---|
@@ -152,6 +190,6 @@ Bila situs error 500 setelah pembaruan, pilih ulang PHP 8.3 di **MultiPHP Manage
 | Semua halaman 403 | Aplikasi terekstrak di dalam folder web (`public_html`). Pindahkan ke luar dan atur document root (langkah 3 dan 4). |
 | `pondok:doctor` memberi peringatan cron | Cron `schedule:run` belum ditambahkan atau path PHP salah (langkah 8). |
 
-## 12. Opsional: mempercepat aplikasi
+## 13. Opsional: mempercepat aplikasi
 
 Setelah semua pengaturan final, Anda bisa menjalankan `php artisan optimize` untuk menyimpan cache konfigurasi dan route. Konsekuensinya: setiap kali `.env` diubah, jalankan `php artisan optimize:clear` (lalu `optimize` lagi), karena perubahan `.env` tidak terbaca selama konfigurasi ter-cache. Bila ragu, lewati langkah ini.

@@ -71,6 +71,8 @@ docker compose exec -T app tar -czf - -C /var/www/html/storage . \
 
 Simpan juga `.env` (terutama APP_KEY) di tempat aman yang terpisah.
 
+Alternatif tanpa `mysqldump`: `docker compose exec -u www-data app php artisan pondok:backup` membuat satu arsip zip berisi data dan berkas di `storage/app/private/backups`; cara memulihkannya ada di [instalasi.md bagian Backup dan pemulihan](instalasi.md#11-backup-dan-pemulihan).
+
 ## Restore
 
 Hentikan app, pulihkan database dan storage, lalu nyalakan lagi:

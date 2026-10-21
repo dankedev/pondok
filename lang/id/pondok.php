@@ -618,6 +618,9 @@ return [
             'module_disabled' => 'Modul keuangan tidak aktif. Tidak ada tagihan yang dibuat.',
             'invalid_period' => 'Format periode harus YYYY-MM, misalnya 2026-10.',
             'summary' => 'Tagihan :period: :created dibuat, :added item ditambahkan, :existing sudah ada, :skipped dilewati.',
+            'annual_not_scheduled' => 'Bulan tagihan tahunan belum diatur. Tidak ada tagihan yang dibuat.',
+            'annual_not_this_month' => 'Bulan ini bukan bulan tagihan tahunan. Tidak ada tagihan yang dibuat.',
+            'annual_no_academic_year' => 'Tahun ajaran tidak ditemukan. Tambahkan tahun ajaran atau periksa namanya.',
         ],
     ],
 

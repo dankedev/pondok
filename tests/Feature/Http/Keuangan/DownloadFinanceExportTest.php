@@ -60,3 +60,16 @@ it('AC-11: forbids a trigger without the permission and a disabled keuangan modu
 
     expect(Activity::query()->where('event', 'downloaded')->count())->toBe(0);
 });
+
+it('VERIFY: malformed export identifiers never resolve to a file', function (string $id) {
+    $this->actingAs($this->owner)->get('/admin/finance-exports/'.$id)->assertNotFound();
+})->with(['traversal' => ['..%2F..%2Fpayment-proofs'], 'titik' => ['..'], 'bukan uuid' => ['abc'], 'user id' => ['1']]);
+
+it('VERIFY: a folder without a csv file is not found and not logged', function () {
+    $uuid = (string) Str::uuid();
+    Storage::disk('private')->put("finance-exports/{$this->owner->id}/{$uuid}/rahasia.txt", 'x');
+
+    $this->actingAs($this->owner)->get(exportUrl($uuid))->assertNotFound();
+
+    expect(Activity::query()->where('event', 'downloaded')->count())->toBe(0);
+});

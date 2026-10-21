@@ -62,3 +62,15 @@ it('AC-13: schedules the command hourly and skips it while the keuangan module i
 
     expect($event->filtersPass(app()))->toBeFalse();
 });
+
+it('VERIFY: never touches other private files, even look-alike folders', function () {
+    $others = [
+        exportFile('finance-exports-old/1/aaaa/laporan.csv', 100),
+        exportFile('documents/ktp.pdf', 100),
+        exportFile('finance-exports.csv', 100),
+    ];
+
+    expect(app(PruneFinanceExports::class)->handle())->toBe(0);
+
+    Storage::disk('private')->assertExists($others);
+});

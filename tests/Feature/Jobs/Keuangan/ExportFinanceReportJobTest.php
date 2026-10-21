@@ -8,10 +8,13 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
     $this->seed([RolePermissionSeeder::class, SettingSeeder::class]);
@@ -167,4 +170,60 @@ it('AC-8: does nothing when the keuangan module is disabled before the job runs'
     expect(exportFiles())->toBe([])
         ->and(Activity::query()->where('event', 'exported')->count())->toBe(0)
         ->and($this->user->notifications()->count())->toBe(0);
+});
+
+it('VERIFY: a scoped job does not leak its scope into the next job of the same worker', function () {
+    $f = $this->f;
+    laporanInvoice($f, laporanStudent($f, attributes: ['name' => 'Santri SLTP']), '2026-10-01', 100000, 0, null, '2026-10-10');
+    laporanInvoice($f, laporanStudent($f, 'slta', ['name' => 'Santri SLTA']), '2026-10-01', 200000, 0, null, '2026-10-10');
+
+    dispatch_sync(exportJob(keuanganUser('bendahara', ['SLTP'])));
+    dispatch_sync(exportJob($this->user));
+
+    $contents = collect(exportFiles())->map(fn (string $file): string => Storage::disk('private')->get($file));
+    $full = $contents->first(fn (string $csv): bool => str_contains($csv, 'Santri SLTA'));
+
+    expect($contents)->toHaveCount(2)
+        ->and($full)->not->toBeNull()->toContain('Santri SLTP')
+        ->and($contents->filter(fn (string $csv): bool => str_contains($csv, 'Santri SLTA'))->count())->toBe(1)
+        ->and(Auth::user())->toBeNull();
+});
+
+it('VERIFY: restores the guard when the export throws an unexpected exception', function () {
+    $this->mock(ExportFinanceReportCsv::class)->shouldReceive('handle')->andThrow(new RuntimeException('boom'));
+    $this->actingAs($this->other);
+
+    expect(fn () => app()->call([exportJob($this->user), 'handle']))->toThrow(RuntimeException::class)
+        ->and(Auth::id())->toBe($this->other->id);
+});
+
+it('VERIFY: the queued payload does not carry the password hash of the trigger', function () {
+    $payload = serialize(exportJob($this->user));
+
+    expect($payload)->not->toContain($this->user->password)
+        ->and($payload)->not->toContain((string) $this->user->remember_token);
+});
+
+it('VERIFY: a job serialized before the permission was revoked does nothing when it runs', function () {
+    $payload = serialize(exportJob($this->user));
+    $this->user->syncRoles([]);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    app()->call([unserialize($payload), 'handle']);
+
+    expect(exportFiles())->toBe([])
+        ->and($this->user->notifications()->count())->toBe(0);
+});
+
+it('VERIFY: a job whose trigger was deleted is dropped by the worker without a file or error', function () {
+    config(['queue.default' => 'database']);
+    laporanInvoice($this->f, laporanStudent($this->f), '2026-10-01', 100000, 0, null, '2026-10-10');
+
+    dispatch(exportJob($this->user));
+    $this->user->delete();
+
+    Artisan::call('queue:work', ['--once' => true]);
+
+    expect(exportFiles())->toBe([])
+        ->and(DB::table('jobs')->count())->toBe(0);
 });

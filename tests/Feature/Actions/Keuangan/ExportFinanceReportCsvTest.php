@@ -4,8 +4,8 @@ use App\Actions\Keuangan\ExportFinanceReportCsv;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
@@ -120,26 +120,74 @@ it('AC-24: builds the cash rows per day, method, fee type, and a total row', fun
 
 it('AC-24: rejects an unknown section', function () {
     laporanAssertRejected(fn () => laporanCsvRows('rahasia'), 'section_invalid', 'section');
-    laporanAssertRejected(fn () => app(ExportFinanceReportCsv::class)->handle(laporanFilter(), 'rahasia', User::factory()->create()), 'section_invalid', 'section');
 });
 
-it('AC-24: streams a named, BOM-prefixed, semicolon-separated CSV and logs the export once', function () {
+/**
+ * Byte yang diharapkan: BOM UTF-8 lalu tiap baris lewat `fputcsv` dengan pemisah `;`.
+ *
+ * @param  list<list<string|int|null>>  $rows
+ */
+function laporanCsvBytes(array $rows): string
+{
+    $stream = fopen('php://memory', 'w+');
+
+    foreach ($rows as $row) {
+        fputcsv($stream, $row, ';', '"', '');
+    }
+
+    rewind($stream);
+    $content = stream_get_contents($stream);
+    fclose($stream);
+
+    return "\xEF\xBB\xBF".$content;
+}
+
+it('AC-3: stores a CSV identical to rows() for every section', function () {
+    Storage::fake('private');
+    laporanCsvArrears($this->f);
+    laporanSubsidyFixture($this->f);
+    laporanCashFixture($this->f);
+    $user = keuanganUser('bendahara');
+
+    foreach (ExportFinanceReportCsv::SECTIONS as $section) {
+        $path = app(ExportFinanceReportCsv::class)->handle(laporanFilter(), $section, $user);
+
+        expect($path)->toMatch("#^finance-exports/{$user->id}/[0-9a-f-]{36}/laporan-keuangan-{$section}-2026-10-2026-10\\.csv$#");
+        Storage::disk('private')->assertExists($path);
+        expect(Storage::disk('private')->get($path))->toBe(laporanCsvBytes(laporanCsvRows($section)), "section {$section}");
+    }
+
+    expect(ExportFinanceReportCsv::DISK)->toBe('private')
+        ->and(ExportFinanceReportCsv::DIRECTORY)->toBe('finance-exports')
+        ->and(app(ExportFinanceReportCsv::class)->filename(laporanFilter('2026-08', '2026-10'), 'kas'))->toBe('laporan-keuangan-kas-2026-08-2026-10.csv');
+});
+
+it('AC-3: puts every export in its own folder and never returns a response', function () {
+    Storage::fake('private');
+    $user = keuanganUser('bendahara');
+
+    $first = app(ExportFinanceReportCsv::class)->handle(laporanFilter(), 'ringkasan', $user);
+    $second = app(ExportFinanceReportCsv::class)->handle(laporanFilter(), 'ringkasan', $user);
+
+    expect($first)->toBeString()->not->toBe($second)
+        ->and(dirname($first))->not->toBe(dirname($second));
+});
+
+it('AC-3: writes no file and no log for an unknown section', function () {
+    Storage::fake('private');
+
+    laporanAssertRejected(fn () => app(ExportFinanceReportCsv::class)->handle(laporanFilter(), 'rahasia', User::factory()->create()), 'section_invalid', 'section');
+
+    expect(Storage::disk('private')->allFiles())->toBe([])
+        ->and(Activity::query()->where('event', 'exported')->count())->toBe(0);
+});
+
+it('AC-5: logs the export once when the file is created', function () {
+    Storage::fake('private');
     laporanCsvArrears($this->f);
     $user = keuanganUser('bendahara');
 
-    $response = app(ExportFinanceReportCsv::class)->handle(laporanFilter(), 'tunggakan', $user);
-
-    expect($response)->toBeInstanceOf(StreamedResponse::class)
-        ->and($response->headers->get('Content-Disposition'))->toContain('laporan-keuangan-tunggakan-2026-10-2026-10.csv');
-
-    ob_start();
-    $response->sendContent();
-    $content = (string) ob_get_clean();
-
-    expect(str_starts_with($content, "\xEF\xBB\xBF"))->toBeTrue()
-        ->and($content)->toContain(';')
-        ->and($content)->toContain('1200000')
-        ->and($content)->not->toContain('Rp 1.200.000');
+    app(ExportFinanceReportCsv::class)->handle(laporanFilter(), 'tunggakan', $user);
 
     $activity = Activity::query()->where('log_name', 'keuangan')->where('event', 'exported')->sole();
 

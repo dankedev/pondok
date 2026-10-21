@@ -1,12 +1,15 @@
 <?php
 
 use App\Filament\Pages\FinanceReport;
+use App\Jobs\Keuangan\ExportFinanceReportJob;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 
@@ -18,6 +21,7 @@ beforeEach(function () {
 });
 
 it('VERIFY: a unit-scoped user cannot export another unit by tampering with the public report property', function () {
+    Queue::fake();
     $f = $this->f;
     laporanInvoice($f, laporanStudent($f, attributes: ['name' => 'Santri Sltp']), '2026-10-01', 100000, 0, null, '2026-10-10');
     laporanInvoice($f, laporanStudent($f, 'slta', ['name' => 'Santri Slta']), '2026-10-01', 200000, 0, null, '2026-10-10');
@@ -31,23 +35,33 @@ it('VERIFY: a unit-scoped user cannot export another unit by tampering with the 
         // Penolakan berupa pengecualian diterima.
     }
 
-    $component->assertNoFileDownloaded();
+    Queue::assertNothingPushed();
 
     expect(Activity::query()->where('event', 'exported')->count())->toBe(0);
 });
 
 it('VERIFY: a scoped export never contains rows of another unit even with a tampered filter array', function () {
+    Queue::fake();
+    Storage::fake('private');
     $f = $this->f;
     laporanInvoice($f, laporanStudent($f, attributes: ['name' => 'Santri Sltp']), '2026-10-01', 100000, 0, null, '2026-10-10');
     laporanInvoice($f, laporanStudent($f, 'slta', ['name' => 'Santri Slta']), '2026-10-01', 200000, 0, null, '2026-10-10');
-    $this->actingAs(keuanganUser('bendahara', ['SLTP']));
+    $user = keuanganUser('bendahara', ['SLTP']);
+    $this->actingAs($user);
 
-    $component = Livewire::test(FinanceReport::class)->set('report.filter', ['period_from' => '2026-10', 'period_to' => '2026-10', 'unit_id' => null, 'billing_group' => null]);
+    Livewire::test(FinanceReport::class)
+        ->set('report.filter', ['period_from' => '2026-10', 'period_to' => '2026-10', 'unit_id' => null, 'billing_group' => null])
+        ->callAction('export', ['section' => 'tunggakan']);
 
-    $component->callAction('export', ['section' => 'tunggakan'])->assertFileDownloaded('laporan-keuangan-tunggakan-2026-10-2026-10.csv');
+    Queue::assertPushed(ExportFinanceReportJob::class, 1);
 
-    $activity = Activity::query()->where('event', 'exported')->sole();
-    expect($activity->properties['rows'])->toBe(1);
+    $job = Queue::pushed(ExportFinanceReportJob::class)->first();
+    dispatch_sync($job);
+
+    $content = Storage::disk('private')->get(Storage::disk('private')->allFiles()[0]);
+
+    expect($content)->toContain('Santri Sltp')->not->toContain('Santri Slta')
+        ->and(Activity::query()->where('event', 'exported')->sole()->properties['rows'])->toBe(1);
 });
 
 it('VERIFY: hides the export action while the filter is invalid', function () {

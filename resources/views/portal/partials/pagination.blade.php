@@ -18,7 +18,7 @@
             @if (is_array($element))
                 @foreach ($element as $page => $url)
                     @if ($page == $paginator->currentPage())
-                        <span aria-current="page" class="{{ $base }} bg-primary-900 text-white shadow-button">
+                        <span aria-current="page" class="{{ $base }} bg-brand text-on-brand shadow-button">
                             <span class="sr-only">{{ __('pondok.portal.pagination_page', ['page' => '']) }}</span>{{ $page }}
                         </span>
                     @else

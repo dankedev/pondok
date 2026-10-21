@@ -26,6 +26,12 @@
     --color-primary-900: #061247;
     --color-primary-950: #000a3c;
 
+    /* merek (F071): isi tombol/elemen aktif, hover, teks di atasnya, judul di atas putih; tema kustom menimpa keempatnya (design guide §2) */
+    --color-brand: var(--color-primary-900);
+    --color-brand-hover: var(--color-primary-800);
+    --color-on-brand: var(--color-white);
+    --color-brand-text: var(--color-primary-950);
+
     /* accent → emas logo Al-Khair, 500 = warna logo; tidak pernah jadi warna teks (docs/design-guide.md §2) */
     --color-accent-50: #fff9e5;
     --color-accent-100: #fff0bf;

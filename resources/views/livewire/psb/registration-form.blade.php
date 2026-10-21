@@ -115,7 +115,7 @@
                                 <legend class="mb-1 text-sm font-semibold text-gray-900">{{ __('pondok.applicant.wave') }}</legend>
                                 @foreach ($this->waves as $wave)
                                     <label class="flex min-h-11 items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-2 text-base has-[:checked]:border-primary-900 has-[:checked]:bg-primary-50">
-                                        <input type="radio" name="admission_wave_id" value="{{ $wave->id }}" wire:model="admission_wave_id" class="size-4 accent-primary-900">
+                                        <input type="radio" name="admission_wave_id" value="{{ $wave->id }}" wire:model="admission_wave_id" class="size-4 accent-brand">
                                         <span>{{ $this->waveLabel($wave) }}</span>
                                     </label>
                                 @endforeach
@@ -134,7 +134,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach (['L', 'P'] as $value)
                                     <label class="flex min-h-11 items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 text-base has-[:checked]:border-primary-900 has-[:checked]:bg-primary-50">
-                                        <input type="radio" name="gender" value="{{ $value }}" wire:model="gender" class="size-4 accent-primary-900">
+                                        <input type="radio" name="gender" value="{{ $value }}" wire:model="gender" class="size-4 accent-brand">
                                         <span>{{ __('pondok.common.genders.'.$value) }}</span>
                                     </label>
                                 @endforeach
@@ -210,7 +210,7 @@
 
                         <div class="flex flex-col gap-1">
                             <label class="flex items-start gap-3 text-sm text-gray-900">
-                                <input type="checkbox" id="consent" wire:model="consent" class="mt-0.5 size-5 shrink-0 accent-primary-900">
+                                <input type="checkbox" id="consent" wire:model="consent" class="mt-0.5 size-5 shrink-0 accent-brand">
                                 <span>{{ __('pondok.psb_public.consent') }}</span>
                             </label>
                             @error('consent')

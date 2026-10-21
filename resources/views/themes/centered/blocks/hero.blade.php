@@ -9,7 +9,7 @@
                 @if ($data['eyebrow'])
                     <p class="text-base font-semibold text-primary-700 lg:text-lg">{{ $data['eyebrow'] }}</p>
                 @endif
-                <h1 id="{{ $headingId }}" class="text-balance break-words text-4xl font-bold tracking-tight text-primary-950 sm:text-5xl lg:text-6xl">{{ $data['title'] ?? $school['name'] }}</h1>
+                <h1 id="{{ $headingId }}" class="text-balance break-words text-4xl font-bold tracking-tight text-brand-text sm:text-5xl lg:text-6xl">{{ $data['title'] ?? $school['name'] }}</h1>
                 @if ($data['text'])
                     <p class="whitespace-pre-line text-lg leading-relaxed text-gray-600 lg:text-xl">{{ $data['text'] }}</p>
                 @endif

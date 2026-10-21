@@ -93,12 +93,12 @@
                     <span class="sr-only">{{ $school['name'] }}</span>
                 @elseif ($mobileLogo)
                     <span class="shrink-0 md:hidden"><img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain"></span>
-                    <span class="hidden truncate text-lg font-bold text-primary-950 md:inline">{{ $school['name'] }}</span>
+                    <span class="hidden truncate text-lg font-bold text-brand-text md:inline">{{ $school['name'] }}</span>
                 @elseif ($school['short_name'])
-                    <span class="hidden truncate text-lg font-bold text-primary-950 md:inline">{{ $school['name'] }}</span>
-                    <span class="truncate text-lg font-bold text-primary-950 md:hidden">{{ $school['short_name'] }}</span>
+                    <span class="hidden truncate text-lg font-bold text-brand-text md:inline">{{ $school['name'] }}</span>
+                    <span class="truncate text-lg font-bold text-brand-text md:hidden">{{ $school['short_name'] }}</span>
                 @else
-                    <span class="truncate text-lg font-bold text-primary-950">{{ $school['name'] }}</span>
+                    <span class="truncate text-lg font-bold text-brand-text">{{ $school['name'] }}</span>
                 @endif
             </a>
 

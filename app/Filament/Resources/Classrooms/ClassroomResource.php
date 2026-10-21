@@ -32,7 +32,7 @@ class ClassroomResource extends Resource
 
     protected static ?string $model = Classroom::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
 
     protected static ?string $recordTitleAttribute = 'name';
 

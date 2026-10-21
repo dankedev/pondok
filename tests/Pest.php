@@ -4671,3 +4671,69 @@ function invoiceDatabaseNotificationText(User $user): string
         ->map(fn ($notification): string => ($notification->data['status'] ?? '').'|'.($notification->data['title'] ?? '').' '.($notification->data['body'] ?? ''))
         ->implode("\n");
 }
+
+/*
+|--------------------------------------------------------------------------
+| Helper F070 (tema portal)
+|--------------------------------------------------------------------------
+|
+| Berawalan `theme`. `themeBuild` mengarahkan public path ke direktori sementara berisi
+| `build/manifest.json` dan `build/fonts-manifest.json` fiktif, sehingga hasil tidak
+| bergantung pada aset yang sudah di-build di mesin pengembang.
+|
+*/
+
+/** Skala bawaan `resources/css/app.css` (design guide §2) dan langkah skala. */
+const THEME_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+
+const THEME_DEFAULT_PRIMARY = [
+    50 => '#eef2fb', 100 => '#dde4f6', 200 => '#bbc8ec', 300 => '#8ea2db', 400 => '#5f78c4', 500 => '#3d56a8',
+    600 => '#273e8c', 700 => '#1a2c72', 800 => '#0f1d59', 900 => '#061247', 950 => '#000a3c',
+];
+
+const THEME_DEFAULT_ACCENT = [
+    50 => '#fff9e5', 100 => '#fff0bf', 200 => '#ffe28a', 300 => '#ffd452', 400 => '#ffc524', 500 => '#f8b800',
+    600 => '#d49a00', 700 => '#a67700', 800 => '#7a5700', 900 => '#523a00', 950 => '#2e2100',
+];
+
+/**
+ * Tulis key `theme.*` langsung (tanpa Action). Contoh: `themeSet(['primary' => '#1f2a5e'])`.
+ *
+ * @param  array<string, mixed>  $values
+ */
+function themeSet(array $values): void
+{
+    foreach ($values as $key => $value) {
+        Setting::set("theme.{$key}", $value);
+    }
+}
+
+/**
+ * Public path sementara dengan manifest font fiktif. `$fontAliases` = alias di `families`;
+ * string = isi mentah berkas (mis. JSON rusak); null = tanpa berkas manifest font.
+ *
+ * @param  list<string>|string|null  $fontAliases
+ */
+function themeBuild(array|string|null $fontAliases = ['plus-jakarta-sans', 'lora', 'nunito', 'noto-naskh-arabic']): string
+{
+    $dir = sys_get_temp_dir().'/pondok-theme-'.Str::random(12);
+    mkdir($dir.'/build', 0777, true);
+
+    file_put_contents($dir.'/build/manifest.json', json_encode([
+        'resources/css/app.css' => ['file' => 'assets/app-test.css', 'src' => 'resources/css/app.css', 'isEntry' => true],
+    ]));
+
+    if (is_array($fontAliases)) {
+        file_put_contents($dir.'/build/fonts-manifest.json', json_encode([
+            'version' => 1,
+            'families' => array_fill_keys($fontAliases, ['family' => 'Uji']),
+            'preloads' => [],
+        ]));
+    } elseif (is_string($fontAliases)) {
+        file_put_contents($dir.'/build/fonts-manifest.json', $fontAliases);
+    }
+
+    app()->usePublicPath($dir);
+
+    return $dir;
+}

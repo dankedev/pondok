@@ -1243,13 +1243,21 @@
       "name": "Ekspor CSV keuangan lewat antrean",
       "phase": 1,
       "module": "Keuangan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F052"],
       "description": "Pecahan F052: ekspor CSV keuangan sebagai job antrean, berkas di disk private, unduh lewat route ber-permission, notifikasi ke pemicu, pembersihan berkala.",
-      "acceptance": [],
-      "owner": "night-batch-e5e331",
+      "acceptance": [
+        "Klik ekspor me-push ExportFinanceReportJob dan menampilkan toast 'diproses', tanpa unduhan langsung",
+        "Tanpa permission/modul mati/jenjang di luar cakupan: tidak ada job",
+        "CSV di disk private finance-exports/{user}/{uuid}/ byte-identik dengan ekspor sinkron lama",
+        "Job menerapkan cakupan jenjang pemicu dan memulihkan guard",
+        "Notifikasi database Filament ke pemicu dengan tautan unduh relatif; timeout 300, tries 1",
+        "Unduh: pemicu 200 + activity downloaded; user lain/uuid asing 404; tanpa permission/modul mati 403",
+        "Berkas >24 jam dihapus per jam oleh keuangan:prune-finance-exports (saat modul keuangan aktif)"
+      ],
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit fa44e1a (test RED) + f8de9e6 (feat) + test VERIFY. File F068 81 test lulus; suite penuh PHP 8.4 4746 test lulus (5 skipped MySQL F053/F069).",
       "notes": "Ditunda (YAGNI) sampai ada bukti ekspor lambat/timeout. Kriteria di issue #46. Permintaan user 21 Okt 2026. Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F068-plan.md."
     },
     {

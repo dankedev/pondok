@@ -26,7 +26,7 @@ class Identity extends SettingsFormPage
 
     protected static ?string $slug = 'settings/identity';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
     public static function getNavigationGroup(): ?string
     {

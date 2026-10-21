@@ -138,6 +138,8 @@ class DumpDatabase
             $value === null => 'NULL',
             is_int($value) => (string) $value,
             is_bool($value) => $value ? '1' : '0',
+            // PDO SQLite memotong string di byte NUL; tulis sebagai literal hex.
+            str_contains((string) $value, "\0") && $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite' => "CAST(X'".bin2hex((string) $value)."' AS TEXT)",
             default => (string) $pdo->quote((string) $value),
         };
     }

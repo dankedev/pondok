@@ -486,7 +486,12 @@ class GenerateMonthlyInvoices
         return $this->frequency === FeeType::FREQUENCY_YEARLY;
     }
 
-    private function academicYearFor(CarbonImmutable $period): AcademicYear
+    /**
+     * Tahun ajaran yang memuat periode. Dipakai juga panel sebagai prasyarat sinkron sebelum Job diantrekan.
+     *
+     * @throws ValidationException kunci `period`, bila tidak ada tahun ajaran
+     */
+    public function academicYearFor(CarbonImmutable $period): AcademicYear
     {
         $year = AcademicYear::query()
             ->whereDate('starts_on', '<=', $period->toDateString())

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F070",
+  "next_id": "F071",
   "features": [
     {
       "id": "F001",
@@ -1267,6 +1267,27 @@
       "handoff": null,
       "evidence": null,
       "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026."
+    },
+    {
+      "id": "F070",
+      "key": "konten-tema-portal",
+      "issue": 24,
+      "name": "Tema portal dari admin: warna, font, dan radius",
+      "phase": 1,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": [],
+      "description": "Audit UI/UX S7 bagian pertama (docs/audits/ui-ux-portal-konten.md §5.8). Admin mengatur warna primer dan aksen (skala dihitung di PHP, kontras ≥4.5:1), pasangan font dari font yang dibundel saat build, dan radius. Token diterapkan lewat variabel CSS tanpa build ulang; panel Filament tidak berubah.",
+      "acceptance": [
+        "Warna primer dan aksen divalidasi kontras 4.5:1, skala warna dihitung otomatis",
+        "Font dipilih dari 3–4 font yang dibundel saat build",
+        "Token diterapkan lewat variabel CSS, tanpa build ulang",
+        "Panel admin Filament tidak berubah"
+      ],
+      "owner": "sesi feat-f070-tema-portal",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh (Action yang menyimpan setting tema dan nilai yang masuk ke CSS inline). Preset template (#25) menyusul terpisah."
     }
   ]
 }

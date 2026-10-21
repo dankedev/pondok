@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Settings;
 
 use App\Actions\Akademik\GenerateStudentNumber;
+use App\Enums\Module;
 use App\Models\Setting;
 use App\Models\Unit;
 use App\Models\User;
@@ -49,9 +50,9 @@ class StudentNumbering extends NumberingSettingsPage
         return 'view:student-numbering';
     }
 
-    protected static function moduleKey(): ?string
+    public static function getModule(): string
     {
-        return 'akademik';
+        return Module::Akademik->value;
     }
 
     public function form(Schema $schema): Schema

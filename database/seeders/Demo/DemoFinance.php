@@ -3,6 +3,7 @@
 namespace Database\Seeders\Demo;
 
 use App\Actions\Keuangan\CancelPayment;
+use App\Actions\Keuangan\GenerateAnnualInvoices;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
 use App\Actions\Keuangan\SaveFeeOverride;
@@ -18,11 +19,12 @@ use App\Models\FeeType;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Scholarship;
+use App\Models\Setting;
 use Carbon\CarbonImmutable;
 
 /**
- * Jenis biaya, tarif, beasiswa, keringanan, jalur PSB berbeasiswa, tagihan
- * bulanan, dan pola pembayaran demo.
+ * Jenis biaya, tarif, bulan tagihan tahunan, beasiswa, keringanan, jalur PSB
+ * berbeasiswa, tagihan bulanan, dan pola pembayaran demo.
  */
 final class DemoFinance
 {
@@ -42,6 +44,7 @@ final class DemoFinance
     {
         $this->seedFeeTypes();
         $this->seedRates();
+        $this->seedAnnualBillingMonth();
         $this->seedScholarships();
         $this->seedStudentOverrides();
         $this->seedTracks();
@@ -103,6 +106,17 @@ final class DemoFinance
             'cohort_id' => $cohort->id,
             'amount' => DemoData::COHORT_RATE['amount'],
         ]);
+    }
+
+    /**
+     * Bulan tagihan tahunan = bulan mulai tahun ajaran aktif, hanya bila belum pernah diatur
+     * (termasuk sengaja dikosongkan).
+     */
+    private function seedAnnualBillingMonth(): void
+    {
+        if (Setting::query()->whereKey(GenerateAnnualInvoices::MONTH_SETTING_KEY)->doesntExist()) {
+            Setting::set(GenerateAnnualInvoices::MONTH_SETTING_KEY, $this->context->activeYear->starts_on->month);
+        }
     }
 
     private function seedScholarships(): void

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F071",
+  "next_id": "F072",
   "features": [
     {
       "id": "F001",
@@ -1288,6 +1288,22 @@
       "handoff": null,
       "evidence": "commit a2e19d7..0fe80d8 (BuildColorScale, UpdatePortalTheme, GetPortalTheme, halaman Situs > Tampilan, layout publik); test Pest BuildColorScaleTest, UpdatePortalThemeTest, GetPortalThemeTest, PortalThemeAdversarialTest, PortalThemeTest, ThemePageTest, SiteNavigationGroupsTest, KontenAccessTest lulus; suite penuh PHP 8.4 4596 test (lulus kecuali 2 test yang bergantung .env lokal worktree, lulus dengan env benar); cek tampilan 360/1024/1440px tema bawaan dan kustom",
       "notes": "Jalur penuh (Action yang menyimpan setting tema dan nilai yang masuk ke CSS inline). Preset template (#25) menyusul terpisah."
+    },
+    {
+      "id": "F071",
+      "key": "portal-warna-merek-terlihat",
+      "issue": 52,
+      "name": "Warna merek pilihan admin terlihat di tombol dan judul portal",
+      "phase": 1,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F070"],
+      "description": "Tindak lanjut F070: tombol, judul, dan elemen aktif portal memakai langkah skala yang dekat dengan warna pilihan admin, tetap kontras 4.5:1, bukan langkah 900/950 secara tetap.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Kriteria di issue #52. Permintaan user 21 Okt 2026."
     }
   ]
 }

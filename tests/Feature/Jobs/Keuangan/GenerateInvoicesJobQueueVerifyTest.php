@@ -19,7 +19,7 @@ beforeEach(function () {
 
 function runQueueWorker(): void
 {
-    Artisan::call('queue:work', ['--stop-when-empty' => true, '--queue' => 'default', '--sleep' => 0]);
+    Artisan::call('queue:work', ['--stop-when-empty' => true, '--queue' => 'default', '--sleep' => 0, '--memory' => 4096]);
 }
 
 it('VERIFY: a monthly job survives database queue serialization and notifies the trigger', function () {

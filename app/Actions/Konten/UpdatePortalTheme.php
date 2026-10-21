@@ -8,8 +8,8 @@ use App\Models\User;
 
 /**
  * Simpan tema portal (F070): warna utama dan aksen (`#rrggbb` huruf kecil), pasangan font, dan
- * sudut kartu di `theme.*`. Nilai yang sama dengan bawaan disimpan null; key yang tidak dikirim
- * tidak diubah. Skala hasil `BuildColorScale` (dari warna masukan atau yang tersimpan) harus lolos
+ * sudut kartu di `theme.*`, serta preset template beranda (F072, `theme.template`). Nilai yang sama
+ * dengan bawaan disimpan null; key yang tidak dikirim tidak diubah. Skala hasil `BuildColorScale` (dari warna masukan atau yang tersimpan) harus lolos
  * aturan kontras 4,5:1. Semua galat dilempar sebelum simpan;
  * log `portal_theme_updated` hanya bila ada perubahan.
  */
@@ -20,7 +20,7 @@ class UpdatePortalTheme
     /**
      * Key yang tidak dikirim tidak diubah; null atau '' mengembalikan ke bawaan.
      *
-     * @param  array{primary?: mixed, accent?: mixed, font?: mixed, radius?: mixed}  $data
+     * @param  array{primary?: mixed, accent?: mixed, font?: mixed, radius?: mixed, template?: mixed}  $data
      */
     public function handle(array $data, User $actor): void
     {
@@ -38,6 +38,10 @@ class UpdatePortalTheme
 
         if (array_key_exists('radius', $data)) {
             $values['theme.radius'] = $this->option($data['radius'], 'radius', GetPortalTheme::RADII, GetPortalTheme::DEFAULT_RADIUS);
+        }
+
+        if (array_key_exists('template', $data)) {
+            $values['theme.template'] = $this->option($data['template'], 'template', GetPortalTheme::TEMPLATES, GetPortalTheme::DEFAULT_TEMPLATE);
         }
 
         $this->ensureReadable(

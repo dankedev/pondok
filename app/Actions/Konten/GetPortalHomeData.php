@@ -40,7 +40,7 @@ class GetPortalHomeData
     ) {}
 
     /**
-     * Tiap blok: `{type, data, buttons?, album?, psbOpen?, video?, items?, url?}`.
+     * Tiap blok: `{type, data, view, buttons?, album?, psbOpen?, video?, items?, url?}`.
      *
      * @return array{school: array<string, mixed>, blocks: list<array<string, mixed>>, hasHero: bool}
      */
@@ -58,11 +58,12 @@ class GetPortalHomeData
         $psbOpen = $this->psbOpen($blocks, $hasHero, $today);
         $buttons = $this->buttons($blocks, $psbOpen);
         $videos = $this->videos($blocks);
+        $template = app(GetPortalTheme::class)->template();
 
         $rendered = [];
 
         foreach ($blocks as $index => $block) {
-            $block = [...$block, 'buttons' => $buttons[$index] ?? []];
+            $block = [...$block, 'buttons' => $buttons[$index] ?? [], 'view' => GetPortalTheme::blockView($template, $block['type'])];
 
             $block = match ($block['type']) {
                 'hero' => [...$block, 'psbOpen' => $psbOpen, 'album' => $contentEnabled ? $this->heroAlbum($block['data']['album_id']) : null, 'image' => $this->imageUrl($block['data']['image'])],

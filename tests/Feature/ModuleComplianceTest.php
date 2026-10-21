@@ -61,10 +61,10 @@ it('AC-9: every panel resource, page and widget is core or declares a valid modu
         UserResource::class, UnitResource::class,
         AcademicYearResource::class, StaffResource::class,
         RoleResource::class,
-        Filament\Pages\Dashboard::class, Identity::class, Contacts::class,
+        \Filament\Pages\Dashboard::class, Identity::class, Contacts::class,
         Modules::class, Home::class, Navigation::class,
         Footer::class, Theme::class,
-        Filament\Widgets\AccountWidget::class, SystemOverviewWidget::class,
+        \Filament\Widgets\AccountWidget::class, SystemOverviewWidget::class,
     ];
 
     $panel = Filament::getPanel('admin');
@@ -108,7 +108,7 @@ it('AC-9: disabling one module closes only its resources, pages and widgets', fu
 
 it('AC-10: every app route is core or sits behind EnsureModuleIsEnabled for a valid module', function () {
     $core = ['portal.home', 'portal.sitemap', 'portal.robots'];
-    $pageBases = [Filament\Pages\Page::class, Filament\Resources\Pages\Page::class];
+    $pageBases = [\Filament\Pages\Page::class, \Filament\Resources\Pages\Page::class];
     $unguarded = [];
 
     foreach (Route::getRoutes() as $route) {

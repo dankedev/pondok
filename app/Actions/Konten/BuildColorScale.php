@@ -76,6 +76,67 @@ class BuildColorScale
     }
 
     /**
+     * Warna merek portal (F071) dari warna masukan dan skalanya (`handle($hex, 'primary')`).
+     *
+     * Isi tombol = warna masukan bila terbaca dengan teks putih atau gelap (`$scale[950]`), selain itu langkah
+     * terdekat yang terbaca (seri → lebih gelap). Hover satu langkah lebih gelap (teks putih) atau lebih terang
+     * (teks gelap) dari langkah isi, arah lain di ujung skala. Teks judul di atas putih = warna masukan bila
+     * terbaca, selain itu langkah lebih gelap pertama yang terbaca. Semua ambang `MIN_CONTRAST`.
+     *
+     * @param  string  $hex  `#rrggbb` huruf kecil, nilai salah satu langkah `$scale`
+     * @param  array<int, string>  $scale
+     * @return array{brand: string, brand_hover: string, on_brand: string, brand_text: string, fill_adjusted: bool, text_adjusted: bool}
+     */
+    public static function brandColors(string $hex, array $scale): array
+    {
+        $colors = array_values(self::byStep($scale));
+        $dark = $colors[10];
+        $anchor = array_search($hex, $colors, true);
+        $anchor = $anchor === false ? 0 : $anchor;
+        $passes = fn (string $a, string $b): bool => self::contrast($a, $b) >= self::MIN_CONTRAST;
+        $fillable = fn (int $index): bool => $passes($colors[$index], '#ffffff') || $passes($colors[$index], $dark);
+
+        $fill = $anchor;
+
+        for ($distance = 1; ! $fillable($fill) && $distance < count($colors); $distance++) {
+            foreach ([$anchor + $distance, $anchor - $distance] as $index) {
+                if (isset($colors[$index]) && $fillable($index)) {
+                    $fill = $index;
+
+                    break;
+                }
+            }
+        }
+
+        $onBrand = $passes($colors[$fill], '#ffffff') ? '#ffffff' : $dark;
+        $direction = $onBrand === '#ffffff' ? 1 : -1;
+        $hover = $colors[$fill];
+
+        foreach ([$fill + $direction, $fill - $direction] as $index) {
+            if (isset($colors[$index]) && $passes($colors[$index], $onBrand)) {
+                $hover = $colors[$index];
+
+                break;
+            }
+        }
+
+        $text = $anchor;
+
+        while (! $passes($colors[$text], '#ffffff') && $text < count($colors) - 1) {
+            $text++;
+        }
+
+        return [
+            'brand' => $colors[$fill],
+            'brand_hover' => $hover,
+            'on_brand' => $onBrand,
+            'brand_text' => $colors[$text],
+            'fill_adjusted' => $fill !== $anchor,
+            'text_adjusted' => $text !== $anchor,
+        ];
+    }
+
+    /**
      * Rasio kontras WCAG 2.x antara dua warna `#rrggbb`.
      */
     public static function contrast(string $a, string $b): float

@@ -36,7 +36,8 @@ use Filament\Support\Icons\Heroicon;
  * `{type, data: {visible, ...}}`; saat simpan `visible` dipindah ke tingkat blok dan seluruh
  * validasi dipegang `UpdatePortalHome`. Form diisi lewat `ParseContentBlocks` (blok tersembunyi
  * ikut), album/video yang sudah dihapus dikosongkan. Pilihan album hero hanya tampil saat modul
- * konten hidup, tetapi nilainya tetap ikut disimpan.
+ * konten hidup, tetapi nilainya tetap ikut disimpan. Begitu pula blok video dan feed: saat modul mati
+ * tidak bisa ditambah, tetapi yang sudah tersimpan tetap tampil dan ikut disimpan.
  */
 class Home extends SettingsFormPage
 {
@@ -220,6 +221,7 @@ class Home extends SettingsFormPage
             Block::make('video')
                 ->label($label('video'))
                 ->icon(Heroicon::OutlinedFilm)
+                ->maxItems($this->kontenBlockLimit())
                 ->schema([
                     $this->visibleToggle(),
                     $this->headingField(),
@@ -234,6 +236,7 @@ class Home extends SettingsFormPage
             Block::make('feed')
                 ->label($label('feed'))
                 ->icon(Heroicon::OutlinedNewspaper)
+                ->maxItems($this->kontenBlockLimit())
                 ->schema([
                     $this->visibleToggle(),
                     Select::make('source')
@@ -249,6 +252,15 @@ class Home extends SettingsFormPage
                         ->maxLength(100),
                 ]),
         ];
+    }
+
+    /**
+     * Batas `0` hanya menyaring pemilih blok (`Builder::getBlockPickerBlocks`). `Block::hidden()` tidak dipakai
+     * karena Builder lalu membuang blok tersimpan bertipe itu dari form.
+     */
+    private function kontenBlockLimit(): Closure
+    {
+        return fn (): ?int => Setting::moduleEnabled('konten') ? null : 0;
     }
 
     private function visibleToggle(): Toggle

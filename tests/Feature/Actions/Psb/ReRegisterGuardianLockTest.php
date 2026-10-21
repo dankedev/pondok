@@ -153,3 +153,13 @@ it('AC-12: rejects when the guardian phone changes between reading and locking',
 it('has a translated guardian_busy message', function () {
     expectTranslatedKeys(['pondok.psb.errors.guardian_busy']);
 });
+
+it('VERIFY: rejects a soft-deleted applicant with applicant_not_found and releases the lock', function () {
+    $applicant = daftarUlangApplicant($this->f);
+    $applicant->delete();
+
+    daftarUlangAssertRejected(fn () => guardianLockRun($applicant), 'applicant_not_found', 'applicant');
+
+    expect(Cache::lock(ResolveApplicantGuardian::lockKey('081234567890'), 1)->get())->toBeTrue()
+        ->and(Cache::lock(ResolveApplicantGuardian::lockKey(null), 1)->get())->toBeTrue();
+});

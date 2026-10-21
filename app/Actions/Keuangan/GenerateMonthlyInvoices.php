@@ -16,6 +16,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -41,6 +42,11 @@ use RuntimeException;
  * tetap ada dan sisanya dibuat pada eksekusi berikutnya. Lock per periode
  * kedaluwarsa sendiri bila proses mati sebelum melepasnya.
  *
+ * Inti yang sama dipakai generator tahunan (`GenerateAnnualInvoices`) lewat
+ * `generateFor()` dengan frekuensi `tahunan`: jenis biaya tahunan dianggap
+ * sudah ditagih bila ada di tagihan aktif santri pada tahun ajaran yang sama,
+ * periode apa pun.
+ *
  * Saklar modul tidak dicek di sini (dicek command dan panel).
  */
 class GenerateMonthlyInvoices
@@ -60,6 +66,8 @@ class GenerateMonthlyInvoices
     private CarbonImmutable $period;
 
     private AcademicYear $academicYear;
+
+    private string $frequency;
 
     private ?User $generatedBy;
 
@@ -90,9 +98,26 @@ class GenerateMonthlyInvoices
      */
     public function handle(CarbonInterface $period, ?User $generatedBy = null): array
     {
-        $this->period = CarbonImmutable::parse($period->format('Y-m-d'), 'Asia/Jakarta')->startOfMonth();
+        $period = CarbonImmutable::parse($period->format('Y-m-d'), 'Asia/Jakarta')->startOfMonth();
+
+        return $this->generateFor($period, $this->academicYearFor($period), FeeType::FREQUENCY_MONTHLY, $generatedBy);
+    }
+
+    /**
+     * Inti generator untuk satu periode (tanggal 1 bulan tagihan), tahun ajaran, dan frekuensi jenis biaya.
+     *
+     * @param  string  $frequency  `FeeType::FREQUENCY_MONTHLY` atau `FeeType::FREQUENCY_YEARLY`
+     * @return array{period: string, created_invoices: int, added_items: int, existing_invoices: int, skipped: list<array{student_id: int, fee_type_id: int, reason: string}>}
+     *
+     * @throws ValidationException periode sedang diproses
+     * @throws RuntimeException nomor tagihan terus bentrok setelah beberapa percobaan
+     */
+    public function generateFor(CarbonImmutable $period, AcademicYear $academicYear, string $frequency, ?User $generatedBy = null): array
+    {
+        $this->period = $period;
+        $this->academicYear = $academicYear;
+        $this->frequency = $frequency;
         $this->generatedBy = $generatedBy;
-        $this->academicYear = $this->academicYearFor($this->period);
 
         $lock = Cache::lock('keuangan:generate-invoices:'.$this->period->format('Y-m'), self::LOCK_SECONDS);
 
@@ -116,11 +141,11 @@ class GenerateMonthlyInvoices
         $this->result = ['created_invoices' => 0, 'added_items' => 0, 'existing_invoices' => 0, 'skipped' => []];
         $this->rates = [];
         $this->dueOn = $this->period->setDay($this->dueDay());
-        $this->periodLabel = $this->period->translatedFormat('F Y');
+        $this->periodLabel = $this->isYearly() ? $this->academicYear->name : $this->period->translatedFormat('F Y');
 
         $feeTypes = FeeType::query()
             ->active()
-            ->where('frequency', FeeType::FREQUENCY_MONTHLY)
+            ->where('frequency', $this->frequency)
             ->orderBy('priority')
             ->orderBy('id')
             ->get();
@@ -157,6 +182,8 @@ class GenerateMonthlyInvoices
             ->get()
             ->groupBy('student_id');
 
+        $billedThisYear = $this->isYearly() ? $this->billedThisYear($studentIds, $feeTypes->modelKeys()) : new SupportCollection;
+
         $overridePairs = FeeOverride::query()
             ->whereIn('student_id', $studentIds)
             ->whereIn('fee_type_id', $feeTypes->modelKeys())
@@ -166,21 +193,49 @@ class GenerateMonthlyInvoices
             ->all();
 
         foreach ($students as $student) {
-            $this->processStudent($student, $feeTypes, $existing->get($student->id, new Collection), $overridePairs);
+            $this->processStudent(
+                $student,
+                $feeTypes,
+                $existing->get($student->id, new Collection),
+                $billedThisYear->get($student->id, new Collection),
+                $overridePairs,
+            );
         }
+    }
+
+    /**
+     * Tagihan aktif (periode apa pun) pada tahun ajaran ini yang sudah memuat jenis biaya tahunan,
+     * hanya dengan item jenis biaya tersebut.
+     *
+     * @param  list<int>  $studentIds
+     * @param  list<int>  $feeTypeIds
+     * @return SupportCollection<int, Collection<int, Invoice>>
+     */
+    private function billedThisYear(array $studentIds, array $feeTypeIds): SupportCollection
+    {
+        return Invoice::withoutUnitScope()
+            ->whereIn('student_id', $studentIds)
+            ->where('academic_year_id', $this->academicYear->id)
+            ->where('status', '<>', Invoice::STATUS_CANCELLED)
+            ->where('billing_group', '<>', Invoice::GROUP_OPENING_BALANCE)
+            ->whereHas('items', fn (Builder $query) => $query->whereIn('fee_type_id', $feeTypeIds))
+            ->with(['items' => fn ($query) => $query->whereIn('fee_type_id', $feeTypeIds)->select('id', 'invoice_id', 'fee_type_id')])
+            ->get(['id', 'student_id'])
+            ->groupBy('student_id');
     }
 
     /**
      * @param  Collection<int, FeeType>  $feeTypes
      * @param  Collection<int, Invoice>  $invoices  tagihan aktif santri pada periode ini
+     * @param  Collection<int, Invoice>  $billedThisYear  tagihan aktif tahun ajaran ini yang memuat biaya tahunan (hanya jalur tahunan)
      * @param  array<string, true>  $overridePairs
      */
-    private function processStudent(Student $student, Collection $feeTypes, Collection $invoices, array $overridePairs): void
+    private function processStudent(Student $student, Collection $feeTypes, Collection $invoices, Collection $billedThisYear, array $overridePairs): void
     {
         $byGroup = $invoices->keyBy('billing_group');
         $billedIn = [];
 
-        foreach ($invoices as $invoice) {
+        foreach ($invoices->concat($billedThisYear) as $invoice) {
             foreach ($invoice->items as $item) {
                 $billedIn[$item->fee_type_id] = $invoice->id;
             }
@@ -199,8 +254,8 @@ class GenerateMonthlyInvoices
                 continue;
             }
 
-            // Satu jenis biaya hanya sekali per santri per periode di antara tagihan aktif,
-            // meskipun kelompok tagihannya sudah diubah. Item lama tidak disentuh.
+            // Satu jenis biaya hanya sekali per santri per periode (tahunan: per tahun ajaran)
+            // di antara tagihan aktif, meskipun kelompok tagihannya sudah diubah. Item lama tidak disentuh.
             if (isset($billedIn[$feeType->id])) {
                 $relevant[$billedIn[$feeType->id]] = true;
 
@@ -399,15 +454,21 @@ class GenerateMonthlyInvoices
         $logger = activity('keuangan')->event('generated');
         $logger = $this->generatedBy !== null ? $logger->causedBy($this->generatedBy) : $logger->causedByAnonymous();
 
+        $properties = [
+            'period' => $this->period->toDateString(),
+            'created_invoices' => $this->result['created_invoices'],
+            'added_items' => $this->result['added_items'],
+            'existing_invoices' => $this->result['existing_invoices'],
+            'skipped_count' => count($this->result['skipped']),
+        ];
+
+        if ($this->isYearly()) {
+            $properties += ['frequency' => $this->frequency, 'academic_year_id' => $this->academicYear->id];
+        }
+
         $logger
-            ->withProperties([
-                'period' => $this->period->toDateString(),
-                'created_invoices' => $this->result['created_invoices'],
-                'added_items' => $this->result['added_items'],
-                'existing_invoices' => $this->result['existing_invoices'],
-                'skipped_count' => count($this->result['skipped']),
-            ])
-            ->log(__('pondok.invoice.activity_generated'));
+            ->withProperties($properties)
+            ->log(__($this->isYearly() ? 'pondok.invoice.activity_generated_annual' : 'pondok.invoice.activity_generated'));
     }
 
     /**
@@ -418,6 +479,11 @@ class GenerateMonthlyInvoices
         $day = Setting::get('keuangan.due_day', self::DEFAULT_DUE_DAY);
 
         return is_numeric($day) && (int) $day == $day && $day >= 1 && $day <= 28 ? (int) $day : self::DEFAULT_DUE_DAY;
+    }
+
+    private function isYearly(): bool
+    {
+        return $this->frequency === FeeType::FREQUENCY_YEARLY;
     }
 
     private function academicYearFor(CarbonImmutable $period): AcademicYear

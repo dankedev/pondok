@@ -87,6 +87,37 @@ it('hides the hero album picker while the konten module is off and keeps the sto
     $component->assertSchemaComponentVisible("home_blocks.{$heroKey}.data.album_id");
 });
 
+it('offers the video and feed blocks only while the konten module is on and keeps stored ones on save', function () {
+    $video = kontenVideo();
+    blkSet([blk('video', ['heading' => 'V', 'video_id' => $video->id]), blk('feed', ['source' => 'posts', 'heading' => 'F'])]);
+    $this->actingAs(kontenUser('admin-konten'));
+    $pickerBlocks = fn ($component): array => array_map(
+        fn ($block): string => $block->getName(),
+        array_values($component->instance()->form->getComponent('home_blocks')->getBlockPickerBlocks()),
+    );
+
+    Setting::set('modules.konten.enabled', false);
+    $component = Livewire::test(Home::class);
+    [$videoKey, $feedKey] = array_keys($component->get('data.home_blocks'));
+
+    expect($pickerBlocks($component))->toBe(['hero', 'text_image', 'features', 'quote', 'cta']);
+
+    $component->assertSchemaComponentVisible("home_blocks.{$videoKey}.data.video_id")
+        ->assertSchemaComponentVisible("home_blocks.{$feedKey}.data.source")
+        ->set("data.home_blocks.{$videoKey}.data.heading", 'Video baru')
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(blkStored())->sequence(
+        fn ($block) => $block->type->toBe('video')->data->toMatchArray(['heading' => 'Video baru', 'video_id' => $video->id]),
+        fn ($block) => $block->type->toBe('feed')->data->toMatchArray(['source' => 'posts', 'heading' => 'F']),
+    );
+
+    Setting::set('modules.konten.enabled', true);
+
+    expect($pickerBlocks(Livewire::test(Home::class)))->toContain('video', 'feed');
+});
+
 it('VERIFY: reads the profile settings in one query and survives wrongly typed stored fields', function () {
     blkSet([
         blk('hero', ['title' => ['x'], 'eyebrow' => 5, 'primary' => ['type' => 'url', 'label' => 'A', 'url' => 7]]),

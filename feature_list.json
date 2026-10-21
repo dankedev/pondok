@@ -1211,13 +1211,13 @@
       "name": "Modul fitur bisa diaktifkan/dimatikan dari admin tanpa merusak sistem",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001", "F018"],
       "description": "Halaman Pengaturan Modul untuk super-admin, aturan ketergantungan antarmodul, kepatuhan semua fitur pada saklar modul (menu, route, widget, portal, jadwal), data tidak dihapus, activity log, dan test kepatuhan.",
       "acceptance": [],
-      "owner": "feat-f066-saklar-modul",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 014ccd0..d395a14 (di atas F073). Test: ModuleTest, SetModuleEnabledTest, ModuleSettingsPageTest, ModuleComplianceTest, ModulesDisabledSmokeTest, ModuleSwitchVerifyTest lulus; suite penuh PHP 8.4 4695 lulus, 4 skip. Pint lulus. Tampilan Pengaturan > Modul dicek statis di 360px dan 1024px.",
       "notes": "jalur: penuh. Kriteria di issue #35. Permintaan user 19 Okt 2026."
     },
     {

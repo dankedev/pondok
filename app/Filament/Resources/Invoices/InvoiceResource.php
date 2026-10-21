@@ -12,6 +12,7 @@ use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Resources\Invoices\RelationManagers\PaymentsRelationManager;
 use App\Filament\Resources\Payments\PaymentResource;
+use App\Jobs\Keuangan\GenerateInvoicesJob;
 use App\Models\AcademicYear;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -270,7 +271,7 @@ class InvoiceResource extends Resource
     }
 
     /**
-     * Menjalankan generator untuk satu bulan dalam tahun ajaran aktif, untuk semua jenjang.
+     * Mengantrekan generator untuk satu bulan dalam tahun ajaran aktif, untuk semua jenjang (`GenerateInvoicesJob`).
      */
     public static function generateAction(): Action
     {
@@ -293,36 +294,16 @@ class InvoiceResource extends Resource
             ->action(function (array $data, GenerateMonthlyInvoices $generate, Action $action): void {
                 $period = CarbonImmutable::parse($data['period'], 'Asia/Jakarta');
 
-                try {
-                    $result = static::runShowingFormErrors($action, fn (): array => $generate->handle($period, auth()->user()));
-                } catch (RuntimeException $exception) {
-                    if ($exception->getMessage() !== __('pondok.invoice.errors.number_conflict')) {
-                        throw $exception;
-                    }
+                static::runShowingFormErrors($action, fn () => $generate->academicYearFor($period));
 
-                    Notification::make()->title($exception->getMessage())->danger()->send();
-                    $action->halt();
+                dispatch(GenerateInvoicesJob::monthly(auth()->user(), $period));
 
-                    return;
-                }
-
-                $skipped = count($result['skipped']);
-
-                Notification::make()
-                    ->title(__('pondok.invoice.generated', [
-                        'period' => static::periodLabel($period),
-                        'created' => $result['created_invoices'],
-                        'existing' => $result['existing_invoices'],
-                        'skipped' => $skipped,
-                    ]))
-                    ->body($skipped > 0 ? __('pondok.invoice.generated_skipped_hint') : null)
-                    ->success()
-                    ->send();
+                static::notifyGenerateQueued(static::periodLabel($period));
             });
     }
 
     /**
-     * Menjalankan generator tagihan tahunan untuk satu tahun ajaran, untuk semua jenjang.
+     * Mengantrekan generator tagihan tahunan untuk satu tahun ajaran, untuk semua jenjang (`GenerateInvoicesJob`).
      */
     public static function generateAnnualAction(): Action
     {
@@ -347,32 +328,24 @@ class InvoiceResource extends Resource
             ->action(function (array $data, GenerateAnnualInvoices $generate, Action $action): void {
                 $year = AcademicYear::query()->findOrFail($data['academic_year_id']);
 
-                try {
-                    $result = static::runShowingFormErrors($action, fn (): array => $generate->handle($year, auth()->user()));
-                } catch (RuntimeException $exception) {
-                    if ($exception->getMessage() !== __('pondok.invoice.errors.number_conflict')) {
-                        throw $exception;
-                    }
+                static::runShowingFormErrors($action, fn () => $generate->billingPeriod($year));
 
-                    Notification::make()->title($exception->getMessage())->danger()->send();
-                    $action->halt();
+                dispatch(GenerateInvoicesJob::annual(auth()->user(), $year));
 
-                    return;
-                }
-
-                $skipped = count($result['skipped']);
-
-                Notification::make()
-                    ->title(__('pondok.invoice.generated', [
-                        'period' => $year->name,
-                        'created' => $result['created_invoices'],
-                        'existing' => $result['existing_invoices'],
-                        'skipped' => $skipped,
-                    ]))
-                    ->body($skipped > 0 ? __('pondok.invoice.generated_skipped_hint') : null)
-                    ->success()
-                    ->send();
+                static::notifyGenerateQueued($year->name);
             });
+    }
+
+    /**
+     * Prasyarat generate sudah lolos dan Job diantrekan; hasilnya dikirim Job sebagai notifikasi database.
+     */
+    private static function notifyGenerateQueued(string $period): void
+    {
+        Notification::make()
+            ->title(__('pondok.invoice.generate_queued', ['period' => $period]))
+            ->body(__('pondok.invoice.generate_queued_body'))
+            ->success()
+            ->send();
     }
 
     /**

@@ -4651,3 +4651,23 @@ function tahunanInvoiceFor(Student $student, string $group = 'DAFTAR_ULANG', str
 {
     return tagihanInvoiceFor($student, $group, $period);
 }
+
+/*
+|--------------------------------------------------------------------------
+| Helper F052 (performa dan keandalan keuangan)
+|--------------------------------------------------------------------------
+|
+| Berawalan `invoiceDatabase`. Hasil generate manual kini dikirim sebagai
+| notifikasi database oleh `GenerateInvoicesJob`, bukan toast.
+|
+*/
+
+/**
+ * Notifikasi database user sebagai teks `status|judul isi`, satu baris per notifikasi.
+ */
+function invoiceDatabaseNotificationText(User $user): string
+{
+    return $user->notifications()->get()
+        ->map(fn ($notification): string => ($notification->data['status'] ?? '').'|'.($notification->data['title'] ?? '').' '.($notification->data['body'] ?? ''))
+        ->implode("\n");
+}

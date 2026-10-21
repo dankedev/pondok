@@ -20,16 +20,6 @@ beforeEach(function () {
 });
 
 /**
- * Teks notifikasi Filament pada request terakhir.
- */
-function invoiceNotificationText(): string
-{
-    return asramaNotifications()
-        ->map(fn (array $notification): string => ($notification['status'] ?? '').'|'.($notification['title'] ?? '').' '.($notification['body'] ?? ''))
-        ->implode("\n");
-}
-
-/**
  * Tagihan Oktober 2026 dengan dua item (SPP dan Makan) untuk santri baru.
  *
  * @param  array<string, mixed>  $attributes
@@ -103,7 +93,7 @@ it('AC-47: generates invoices from the panel', function () {
 
     expect(Invoice::withoutUnitScope()->count())->toBe(1)
         ->and(Invoice::withoutUnitScope()->sole()->generated_by)->toBe($user->id)
-        ->and(invoiceNotificationText())->toContain('success|')->toContain($expected);
+        ->and(invoiceDatabaseNotificationText($user))->toContain('success|')->toContain($expected);
 
     Livewire::test(ListInvoices::class)->callAction('generate', ['period' => '2026-10-01']);
 
@@ -127,11 +117,12 @@ it('AC-47: mentions skipped students in the notification', function () {
     $f = $this->f;
     tagihanStudent($f);
     tagihanStudent($f, attributes: ['unit_id' => $f->slta->id], cohort: $f->cohortSlta);
-    $this->actingAs(keuanganUser('bendahara'));
+    $user = keuanganUser('bendahara');
+    $this->actingAs($user);
 
     Livewire::test(ListInvoices::class)->callAction('generate', ['period' => '2026-10-01']);
 
-    expect(invoiceNotificationText())->toContain(__('pondok.invoice.generated', ['period' => 'Oktober 2026', 'created' => 1, 'existing' => 0, 'skipped' => 1]));
+    expect(invoiceDatabaseNotificationText($user))->toContain(__('pondok.invoice.generated', ['period' => 'Oktober 2026', 'created' => 1, 'existing' => 0, 'skipped' => 1]));
 });
 
 it('AC-48: hides generate without the generate permission', function () {

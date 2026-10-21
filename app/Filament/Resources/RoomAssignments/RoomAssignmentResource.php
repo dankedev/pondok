@@ -218,7 +218,7 @@ class RoomAssignmentResource extends Resource
     {
         return Action::make('vacate')
             ->label(__('pondok.room_assignment.vacate'))
-            ->icon(Heroicon::OutlinedArrowRightStartOnRectangle)
+            ->icon(Heroicon::OutlinedStopCircle)
             ->color('danger')
             ->requiresConfirmation()
             ->modalDescription(__('pondok.room_assignment.vacate_description'))

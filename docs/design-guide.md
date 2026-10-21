@@ -144,6 +144,36 @@ Aturan:
 | Email | `Envelope` |
 | WhatsApp | `ChatBubbleLeftRight` |
 | Menu (portal seluler) | `Bars3` |
+| Jenjang | `BuildingLibrary` |
+| Rombel | `RectangleGroup` |
+| Naik kelas | `ArrowUpCircle` |
+| Periode (tahun ajaran, gelombang PSB, tagihan tahunan) | `CalendarDays` |
+| Jalur PSB | `Flag` |
+| Jenis dokumen | `RectangleStack` |
+| Pengguna panel | `UserCircle` |
+| Identitas lembaga | `BuildingOffice2` |
+| Penomoran (NIS) | `Hashtag` |
+| Surat | `EnvelopeOpen` |
+| Penandatangan | `PencilSquare` |
+| Akhiri (keringanan, penempatan kamar) | `StopCircle` |
+| Ganti berkas | `ArrowUpTray` (sama dengan unggah) |
+| Subsidi / beasiswa (kosong di laporan) | `Gift` |
+| Buat tagihan / berkas baru | `DocumentPlus` |
+| Kategori | `Tag` |
+| Halaman statis | `Document` |
+| Beranda situs | `Home` |
+| Kaki situs | `Window` |
+| Blok situs: hero, teks, kutipan, ajakan, tautan, media sosial | `Star`, `Bars3BottomLeft`, `ChatBubbleBottomCenterText`, `Megaphone`, `Link`, `Share` |
+| Tautkan (wali ↔ santri) | `Link` |
+| Token akses PSB | `Key` |
+| Salin | `DocumentDuplicate` (Filament), `ClipboardDocument` (salin ke papan klip) |
+| Tambah | `Plus` |
+| Lihat | `Eye` |
+| Cetak | `Printer` |
+| Hapus | `Trash` |
+| Buka / kembali | `ArrowRight` / `ArrowLeft` |
+| Kosong (umum) | `Inbox` |
+| Peta lokasi | `Map` |
 
 ## 4. Status & badge
 

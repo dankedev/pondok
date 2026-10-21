@@ -79,7 +79,7 @@ class Footer extends SettingsFormPage
         return [
             Block::make('text')
                 ->label($label('text'))
-                ->icon(Heroicon::OutlinedDocumentText)
+                ->icon(Heroicon::OutlinedBars3BottomLeft)
                 ->schema([
                     $this->visibleToggle(),
                     $this->headingField(),

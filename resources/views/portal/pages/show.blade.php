@@ -24,7 +24,7 @@
         @endif
 
         @if (! $bodyHtml && ! $isContact)
-            <x-ui.empty-state icon="heroicon-o-document-text" class="mt-8">{{ __('pondok.portal.pages.empty') }}</x-ui.empty-state>
+            <x-ui.empty-state icon="heroicon-o-document" class="mt-8">{{ __('pondok.portal.pages.empty') }}</x-ui.empty-state>
         @endif
     </div>
 </x-layouts::public>

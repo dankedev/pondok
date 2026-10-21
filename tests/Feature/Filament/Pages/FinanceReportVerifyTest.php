@@ -7,6 +7,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -56,13 +57,26 @@ it('VERIFY: a scoped export never contains rows of another unit even with a tamp
     Queue::assertPushed(ExportFinanceReportJob::class, 1);
 
     $job = Queue::pushed(ExportFinanceReportJob::class)->first();
-    dispatch_sync($job);
+    Bus::dispatchNow($job);
 
     $content = Storage::disk('private')->get(Storage::disk('private')->allFiles()[0]);
 
     expect($content)->toContain('Santri Sltp')->not->toContain('Santri Slta')
         ->and(Activity::query()->where('event', 'exported')->sole()->properties['rows'])->toBe(1);
 });
+
+it('VERIFY: a tampered export section never reaches the queue', function (string $section) {
+    Queue::fake();
+    $this->actingAs(keuanganUser('bendahara'));
+
+    try {
+        Livewire::test(FinanceReport::class)->callAction('export', ['section' => $section]);
+    } catch (Throwable) {
+        // Penolakan berupa pengecualian diterima.
+    }
+
+    Queue::assertNothingPushed();
+})->with(['path traversal' => ['../../etc/passwd'], 'tak dikenal' => ['gaji'], 'kosong' => ['']]);
 
 it('VERIFY: hides the export action while the filter is invalid', function () {
     $this->actingAs(keuanganUser('bendahara'));

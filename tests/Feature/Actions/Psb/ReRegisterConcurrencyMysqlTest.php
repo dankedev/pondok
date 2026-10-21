@@ -213,7 +213,8 @@ it('AC-6: converts two applicants of the same unit and year with distinct number
 
 it('F069 AC-1/AC-2: creates one guardian when siblings in different units convert at once', function () {
     $sltp = daftarUlangApplicant($this->f, ['name' => 'Ahmad Fauzan', 'guardian_phone' => '081234567890']);
-    $sd = daftarUlangApplicant($this->f, ['name' => 'Umar Fauzan', 'guardian_phone' => '6281234567890'], unit: 'SD');
+    // HP pendaftar selalu tersimpan `08…` (dinormalkan `SubmitApplication`); kesamaan kunci antarvarian diuji di ReRegisterGuardianLockTest.
+    $sd = daftarUlangApplicant($this->f, ['name' => 'Umar Fauzan', 'guardian_phone' => '081234567890'], unit: 'SD');
 
     expect($sd->unit_id)->not->toBe($sltp->unit_id)
         ->and($sd->guardian_name)->toBe($sltp->guardian_name);
@@ -224,7 +225,11 @@ it('F069 AC-1/AC-2: creates one guardian when siblings in different units conver
         // AC-2: proses kedua menunggu kunci wali, lalu menahan sendiri: ≈ 2 × hold, tanpa deadlock/lock wait timeout.
         ->and(max(array_column($results, 'elapsed_ms')))->toBeGreaterThanOrEqual(2400);
 
-    $students = collect([f053AssertConvertedOnce($sltp, overrides: 0), f053AssertConvertedOnce($sd, overrides: 0)]);
+    // Fixture SD tidak punya tagihan pendaftaran, jadi hanya SLTP yang diperiksa lengkap.
+    $students = collect([
+        f053AssertConvertedOnce($sltp, overrides: 0),
+        Student::withoutGlobalScopes()->withTrashed()->where('applicant_id', $sd->id)->sole(),
+    ]);
     $guardians = Guardian::query()->whereIn('phone', ['081234567890', '6281234567890', '+6281234567890'])->get();
 
     expect($guardians)->toHaveCount(1)

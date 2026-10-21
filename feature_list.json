@@ -1285,7 +1285,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "commit 3c61c50 (test RED) + 5836830 (fix) + test VERIFY. ReRegisterGuardianLockTest 10 lulus; tests/Feature/Actions/Psb 515 lulus; suite penuh PHP 8.4 4711 test (2 gagal karena env lokal APP_URL/SUPER_ADMIN_*, lulus saat env benar). Test MySQL dua proses (AC-1..AC-3) ditulis tapi BELUM dijalankan: MySQL lokal mati dan kredensial ~/.config/pondok-f053.env kosong (22 Okt 2026); jalankan dengan env F053_MYSQL_*.",
+      "evidence": "commit 3c61c50 (test RED) + 5836830 (fix) + test VERIFY. ReRegisterGuardianLockTest 10 lulus; tests/Feature/Actions/Psb 515 lulus; suite penuh PHP 8.4 4711 test (2 gagal karena env lokal APP_URL/SUPER_ADMIN_*, lulus saat env benar). Test MySQL dua proses (ReRegisterConcurrencyMysqlTest, 5 test) lulus di MySQL 9.0.1 lokal 22 Okt 2026 setelah perbaikan data uji AC-1 (HP 08… seperti hasil normalisasi SubmitApplication; fixture SD tanpa tagihan). Uji mutasi: tanpa kunci terbagi test AC-1 tetap lulus karena fixture sudah terserialkan kunci lain, jadi bukan bukti RED; perlindungan kunci dibuktikan test SQLite AC-5..AC-12.",
       "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026. Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F069-plan.md."
     },
     {

@@ -4,6 +4,7 @@ namespace App\Actions\Konten;
 
 use App\Models\Setting;
 use Illuminate\Foundation\Vite;
+use Illuminate\Support\Facades\View;
 
 /**
  * Token tema portal (F070) untuk `<style data-portal-theme>` di layout publik.
@@ -15,10 +16,18 @@ use Illuminate\Foundation\Vite;
  *
  * Font non-bawaan hanya dipakai bila semua aliasnya ada di manifest font build aktif, agar
  * `@fonts($aliases)` tidak pernah melempar `ViteException` di portal.
+ *
+ * Preset template beranda (F072): `theme.template` memilih set view `themes.<preset>.blocks.<tipe>`;
+ * blok yang tidak dioverride preset jatuh ke `themes.default`. Template tidak memengaruhi `css`.
  */
 class GetPortalTheme
 {
-    public const KEYS = ['theme.primary', 'theme.accent', 'theme.font', 'theme.radius'];
+    public const KEYS = ['theme.primary', 'theme.accent', 'theme.font', 'theme.radius', 'theme.template'];
+
+    public const DEFAULT_TEMPLATE = 'default';
+
+    /** Preset template beranda; label dan deskripsi di `pondok.school_profile.theme.templates`. */
+    public const TEMPLATES = ['default' => [], 'centered' => []];
 
     public const DEFAULT_FONT = 'jakarta';
 
@@ -53,7 +62,26 @@ class GetPortalTheme
     }
 
     /**
-     * @return array{css: ?string, font_aliases: ?list<string>}
+     * Kunci preset tersimpan; nilai kosong atau rusak → bawaan.
+     */
+    public function template(): string
+    {
+        return self::option(Setting::get('theme.template'), self::TEMPLATES) ?? self::DEFAULT_TEMPLATE;
+    }
+
+    /**
+     * View blok untuk preset; jatuh ke preset bawaan bila preset tidak mengoverride tipe ini.
+     * `$template` harus kunci `TEMPLATES` dan `$type` tipe blok tervalidasi (bukan string DB mentah).
+     */
+    public static function blockView(string $template, string $type): string
+    {
+        $view = "themes.{$template}.blocks.{$type}";
+
+        return View::exists($view) ? $view : 'themes.'.self::DEFAULT_TEMPLATE.".blocks.{$type}";
+    }
+
+    /**
+     * @return array{css: ?string, font_aliases: ?list<string>, template: string}
      */
     public function handle(): array
     {
@@ -100,6 +128,7 @@ class GetPortalTheme
         return [
             'css' => $css === '' ? null : ':root{'.$css.'}',
             'font_aliases' => $font === null ? null : self::FONTS[$font]['aliases'],
+            'template' => self::option($values['theme.template'], self::TEMPLATES) ?? self::DEFAULT_TEMPLATE,
         ];
     }
 

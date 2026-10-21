@@ -25,6 +25,6 @@
     @endunless
 
     @foreach ($blocks as $block)
-        @include('portal.blocks.'.$block['type'], ['block' => $block, 'data' => $block['data'], 'headingId' => 'blok-'.$loop->iteration])
+        @include($block['view'], ['block' => $block, 'data' => $block['data'], 'headingId' => 'blok-'.$loop->iteration])
     @endforeach
 </x-layouts::public>

@@ -953,7 +953,7 @@
       "name": "Penyempurnaan risiko rendah (audit ISO 25010/23026 Grup 1)",
       "phase": 1,
       "module": "Inti",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F001", "F017"],
       "description": "Tindak lanjut audit kualitas (docs/audits/iso-25010-23026-audit.md) Grup 1: (1) langkah vendor/bin/pint --test di CI, (2) breadcrumb + alt bermakna di portal, (3) samakan ikon Filament dengan design-guide, (4) opsional pecah lang/id per domain.",
       "acceptance": [
@@ -961,10 +961,10 @@
         "Breadcrumb muncul di berita/galeri/halaman statis; sampul kartu memakai alt judul",
         "Ikon Filament sesuai tabel docs/design-guide.md §3"
       ],
-      "owner": null,
+      "owner": "f051-penyempurnaan-aman",
       "handoff": null,
       "evidence": "",
-      "notes": "Poin (4) opsional/menunggu keputusan user. Sumber: docs/audits/iso-25010-23026-audit.md."
+      "notes": "Jalur cepat. Poin (4) opsional/menunggu keputusan user. Sumber: docs/audits/iso-25010-23026-audit.md."
     },
     {
       "id": "F052",

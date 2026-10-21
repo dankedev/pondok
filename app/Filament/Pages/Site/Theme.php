@@ -15,7 +15,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Tampilan portal (F070): warna utama dan aksen, pasangan font, dan sudut kartu situs publik.
+ * Tampilan portal (F070): warna utama dan aksen, pasangan font, dan sudut kartu situs publik,
+ * serta preset template beranda (F072).
  * Disimpan lewat `UpdatePortalTheme` (validasi hex, opsi, dan kontras skala); panel admin tidak
  * ikut berubah. Form diisi dari key `theme.*` mentah; kosong berarti bawaan.
  */
@@ -44,6 +45,11 @@ class Theme extends SettingsFormPage
             array_map(fn (string $key): string => __("pondok.school_profile.theme.{$group}.{$key}"), $keys),
         );
 
+        $template = fn (string $field): array => array_combine(
+            array_keys(GetPortalTheme::TEMPLATES),
+            array_map(fn (string $key): string => __("pondok.school_profile.theme.templates.{$key}.{$field}"), array_keys(GetPortalTheme::TEMPLATES)),
+        );
+
         return $schema
             ->statePath('data')
             ->components([
@@ -51,6 +57,12 @@ class Theme extends SettingsFormPage
                     ->description(__('pondok.school_profile.theme.section_description'))
                     ->columns(2)
                     ->schema([
+                        Radio::make('template')
+                            ->label(__('pondok.school_profile.theme.template'))
+                            ->helperText(__('pondok.school_profile.theme.template_helper'))
+                            ->options($template('label'))
+                            ->descriptions($template('description'))
+                            ->columnSpanFull(),
                         ColorPicker::make('primary')
                             ->label(__('pondok.school_profile.theme.primary'))
                             ->helperText(__('pondok.school_profile.theme.color_helper'))
@@ -79,6 +91,7 @@ class Theme extends SettingsFormPage
             'accent' => GetPortalTheme::isHex($values['theme.accent']) ? $values['theme.accent'] : null,
             'font' => $option($values['theme.font'], GetPortalTheme::FONTS, GetPortalTheme::DEFAULT_FONT),
             'radius' => $option($values['theme.radius'], GetPortalTheme::RADII, GetPortalTheme::DEFAULT_RADIUS),
+            'template' => $option($values['theme.template'], GetPortalTheme::TEMPLATES, GetPortalTheme::DEFAULT_TEMPLATE),
         ];
     }
 
@@ -89,6 +102,7 @@ class Theme extends SettingsFormPage
             'accent' => $data['accent'] ?? null,
             'font' => $data['font'] ?? null,
             'radius' => $data['radius'] ?? null,
+            'template' => $data['template'] ?? null,
         ], $user);
     }
 }

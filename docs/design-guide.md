@@ -13,7 +13,7 @@ Bila ada aturan yang tidak bisa diikuti, jangan improvisasi gaya baru. Ikuti pol
 - [ ] Halaman sudah dilihat di desktop dan 360px, atau user diberi tahu bahwa belum dicek visual (§13).
 - [ ] Semua teks UI lewat `__('pondok.…')` di `lang/id/pondok.php`. Tidak ada string Indonesia/Inggris yang di-hardcode di PHP atau Blade.
 - [ ] Warna hanya dari token (§2). Tidak ada hex, `rgb()`, atau kelas Tailwind warna mentah seperti `bg-green-600` di Blade.
-- [ ] Portal/PSB: navy dari logo untuk aksi, emas hanya latar/garis/hiasan (tidak pernah `text-accent-*`), teks isi `gray-600`/`gray-700` (§2).
+- [ ] Portal/PSB: token merek (`bg-brand text-on-brand`, `text-brand-text`) untuk aksi dan judul utama, emas hanya latar/garis/hiasan (tidak pernah `text-accent-*`), teks isi `gray-600`/`gray-700` (§2).
 - [ ] Bayangan hanya token `shadow-card`/`shadow-card-lg`/`shadow-button`; tanpa nilai arbitrer `shadow-[…]` (§6).
 - [ ] Uang tampil `Rp 1.250.000` (§5). Tanggal tampil `15 Okt 2026` (§5).
 - [ ] Status tampil sebagai badge dengan warna sesuai tabel status (§4).
@@ -65,9 +65,25 @@ Skala portal (hex literal di `@theme`, kontras WCAG 2.x):
 | 900 | `#061247` | 17.72 | `#523A00` | 10.69 / 1.77 |
 | 950 | `#000A3C` | 18.94 | `#2E2100` | 15.75 / 1.20 |
 
-Tabel di atas adalah **skala bawaan**. Admin dapat mengganti warna utama dan aksen portal lewat Situs > Tampilan (F070): `BuildColorScale` menyusun skala 50–950 di PHP (OKLCH, tangga lightness dan chroma tetap per peran yang diambil dari tabel ini, warna masukan ditaruh di langkah dengan lightness terdekat, chroma diturunkan sampai masuk gamut sRGB), lalu `GetPortalTheme` menulisnya sebagai `--color-primary-*`/`--color-accent-*` di `<style data-portal-theme>` layout publik. Pemakaian langkah dan aturan emas di bawah tetap berlaku untuk skala apa pun; skala ditolak bila putih vs `primary-700`–`950`, `primary-100`/`200` vs `primary-950`, atau `accent-400`/`500` vs `primary-950` di bawah 4,5:1. Karena itu warna masukan terang tidak muncul di tombol (tombol memakai langkah 900). Panel admin, halaman galat global (`errors/layout.blade.php`), dan bayangan `--shadow-*` tidak ikut tema. Template beranda (F072) dipilih di halaman yang sama tetapi tidak mengubah token warna, font, atau sudut (lihat §6). Tema yang sama juga mengatur sudut kartu: `--radius-lg`/`--radius-xl` kecil `.25rem`/`.375rem`, sedang (bawaan) `.5rem`/`.75rem`, besar `.75rem`/`1.25rem`; `rounded-full` tetap. Jangan mengubah `@theme` di `app.css` menjadi `@theme inline` atau memakai `theme()` di utilitas portal, karena tema bergantung pada utilitas yang membaca `var()`.
+Tabel di atas adalah **skala bawaan**. Admin dapat mengganti warna utama dan aksen portal lewat Situs > Tampilan (F070): `BuildColorScale` menyusun skala 50–950 di PHP (OKLCH, tangga lightness dan chroma tetap per peran yang diambil dari tabel ini, warna masukan ditaruh di langkah dengan lightness terdekat, chroma diturunkan sampai masuk gamut sRGB), lalu `GetPortalTheme` menulisnya sebagai `--color-primary-*`/`--color-accent-*` di `<style data-portal-theme>` layout publik. Pemakaian langkah dan aturan emas di bawah tetap berlaku untuk skala apa pun; skala ditolak bila putih vs `primary-700`–`950`, `primary-100`/`200` vs `primary-950`, atau `accent-400`/`500` vs `primary-950` di bawah 4,5:1. Warna masukan sampai ke tombol dan judul lewat token merek (F071, di bawah). Panel admin, halaman galat global (`errors/layout.blade.php`), dan bayangan `--shadow-*` tidak ikut tema. Template beranda (F072) dipilih di halaman yang sama tetapi tidak mengubah token warna, font, atau sudut (lihat §6). Tema yang sama juga mengatur sudut kartu: `--radius-lg`/`--radius-xl` kecil `.25rem`/`.375rem`, sedang (bawaan) `.5rem`/`.75rem`, besar `.75rem`/`1.25rem`; `rounded-full` tetap. Jangan mengubah `@theme` di `app.css` menjadi `@theme inline` atau memakai `theme()` di utilitas portal, karena tema bergantung pada utilitas yang membaca `var()`.
 
-Pemakaian navy: tautan `primary-700`, tombol utama/chip aktif/halaman aktif/batang langkah PSB `primary-900` (hover `primary-800`), judul hero dan footer `primary-950`, cincin fokus `primary-500` (dengan `ring-offset-2` pada tombol navy).
+Token merek (F071) di `@theme`, dipakai untuk aksi dan judul utama portal/PSB:
+
+| Token | Bawaan | Utilitas | Dipakai di |
+|---|---|---|---|
+| `--color-brand` | `var(--color-primary-900)` | `bg-brand`, `accent-brand` | Tombol utama (`<x-ui.button>` bawaan, tombol Daftar di header), chip filter aktif, halaman paginasi aktif, batang langkah PSB, radio/checkbox PSB |
+| `--color-brand-hover` | `var(--color-primary-800)` | `hover:bg-brand-hover` | Hover tombol utama |
+| `--color-on-brand` | `var(--color-white)` | `text-on-brand` | Teks di atas `bg-brand` (selalu dipasangkan) |
+| `--color-brand-text` | `var(--color-primary-950)` | `text-brand-text` | `h1` hero (semua preset), `h1` beranda tanpa hero, nama sekolah di header (latar putih) |
+
+Bawaan identik dengan tampilan navy sebelumnya. Bila warna utama kustom diterima, `GetPortalTheme` menulis keempat token sebagai hex dari `BuildColorScale::brandColors()` (satu titik `GetPortalTheme::brandTokens()`, juga dipakai pratinjau Situs > Tampilan); warna ditolak/rusak/bawaan → token tidak ditulis. Aturan pemetaan (ambang 4,5:1, teks gelap = langkah 950 skala):
+- Isi (`brand`): warna masukan bila terbaca dengan teks putih atau gelap; selain itu langkah skala terdekat yang terbaca (seri → lebih gelap).
+- Teks di atas isi (`on-brand`): putih bila terbaca, selain itu langkah 950.
+- Hover: satu langkah dari langkah isi, lebih gelap bila teks putih, lebih terang bila teks gelap; arah lain di ujung skala.
+- Judul (`brand-text`): warna masukan bila terbaca di putih; selain itu langkah lebih gelap pertama yang terbaca.
+Akibatnya warna terang (mis. kuning) menjadi tombol terang bertuliskan gelap, sedangkan judulnya digeser lebih gelap. Jangan memakai `bg-brand` tanpa `text-on-brand`, dan jangan memakai `text-brand-text` di latar gelap.
+
+Tetap memakai skala F070 (bukan token merek): aksen emas, tautan `text-primary-700`, footer dan CTA `navy` (`bg-primary-950` teks putih), CTA `gold`, eyebrow, badge, nav aktif (`bg-primary-50 text-primary-900`), border/teks hover chip dan paginasi (`hover:border-primary-900 hover:text-primary-950`), cincin fokus `primary-500` (dengan `ring-offset-2` pada tombol), `shadow-button`, kutipan Arab, dan `errors/layout.blade.php`.
 
 Aturan emas (portal/PSB):
 - `text-accent-*` **dilarang** di Blade (emas di putih hanya 1.77:1). Dijaga test sumber.
@@ -99,7 +115,7 @@ Aturan:
 
   | Elemen | Kelas |
   |---|---|
-  | `h1` hero beranda | `text-4xl font-bold tracking-tight text-primary-950 sm:text-5xl lg:text-6xl text-balance` |
+  | `h1` hero beranda | `text-4xl font-bold tracking-tight text-brand-text sm:text-5xl lg:text-6xl text-balance` |
   | `h2` section beranda | `text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl` |
   | `h1` halaman dalam dan PSB | `text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl` |
   | Subjudul hero | `text-lg text-gray-600 lg:text-xl` |

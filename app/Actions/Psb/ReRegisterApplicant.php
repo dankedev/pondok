@@ -19,7 +19,9 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use DateTimeImmutable;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -41,6 +43,12 @@ use Throwable;
  * NIS manual → `nis_taken`, selain itu (NIS otomatis atau angkatan dibuat
  * bersamaan) dicoba ulang sampai `MAX_ATTEMPTS`.
  *
+ * Semua percobaan berjalan di bawah kunci per HP wali
+ * (`ResolveApplicantGuardian::lockKey()`) yang dilepas setelah commit/rollback,
+ * agar daftar ulang saudara bersamaan tidak membuat wali ganda; kunci butuh
+ * store cache terbagi antarproses (`database`/`file`). Kunci sibuk lebih dari
+ * `LOCK_WAIT_SECONDS` → `guardian_busy`.
+ *
  * Jangan dipanggil di dalam transaksi pemanggil: loop percobaan dan
  * penanganan unique violation hanya benar bila transaksinya milik Action ini.
  */
@@ -53,6 +61,10 @@ class ReRegisterApplicant
     public const ADDRESS_MAX_LENGTH = 1000;
 
     public const NIS_PATTERN = '/^[A-Za-z0-9.\-\/]{1,30}$/';
+
+    public const LOCK_SECONDS = 60;
+
+    public const LOCK_WAIT_SECONDS = 10;
 
     public function __construct(
         private CheckReRegistrationPayment $checkPayment,
@@ -75,12 +87,31 @@ class ReRegisterApplicant
     {
         $input = $this->normalize($data);
 
+        $phone = Applicant::withoutGlobalScopes()->withTrashed()->whereKey($applicant->id)->value('guardian_phone');
+        $lockKey = ResolveApplicantGuardian::lockKey($phone);
+
+        try {
+            return Cache::lock($lockKey, static::LOCK_SECONDS)
+                ->block(static::LOCK_WAIT_SECONDS, fn (): array => $this->attempt($applicant, $by, $input, $lockKey));
+        } catch (LockTimeoutException) {
+            $this->fail('applicant', 'guardian_busy');
+        }
+    }
+
+    /**
+     * Loop percobaan; tiap percobaan memakai transaksinya sendiri.
+     *
+     * @param  array{nis: string|null, entered_on: CarbonImmutable|null, relation: string, address: string|null}  $input
+     * @return array{student: Student, guardian: Guardian, guardian_reused: bool, invoices: int, fee_overrides: int, documents_copied: int, documents_skipped: list<array{applicant_document_id: int, reason: string}>}
+     */
+    private function attempt(Applicant $applicant, User $by, array $input, string $lockKey): array
+    {
         for ($attempt = 1; ; $attempt++) {
             $copiedPaths = [];
 
             try {
-                return DB::transaction(function () use ($applicant, $by, $input, &$copiedPaths): array {
-                    return $this->convert($applicant->id, $by, $input, $copiedPaths);
+                return DB::transaction(function () use ($applicant, $by, $input, $lockKey, &$copiedPaths): array {
+                    return $this->convert($applicant->id, $by, $input, $lockKey, $copiedPaths);
                 });
             } catch (Throwable $exception) {
                 $this->removeCopiedFiles($copiedPaths);
@@ -139,7 +170,7 @@ class ReRegisterApplicant
      * @param  list<string>  $copiedPaths
      * @return array{student: Student, guardian: Guardian, guardian_reused: bool, invoices: int, fee_overrides: int, documents_copied: int, documents_skipped: list<array{applicant_document_id: int, reason: string}>}
      */
-    private function convert(int $applicantId, User $by, array $input, array &$copiedPaths): array
+    private function convert(int $applicantId, User $by, array $input, string $lockKey, array &$copiedPaths): array
     {
         $locked = Applicant::withoutGlobalScopes()->withTrashed()->lockForUpdate()->find($applicantId);
 
@@ -153,6 +184,10 @@ class ReRegisterApplicant
 
         if ($locked->isConverted()) {
             $this->fail('applicant', 'already_converted');
+        }
+
+        if (ResolveApplicantGuardian::lockKey($locked->guardian_phone) !== $lockKey) {
+            $this->fail('applicant', 'guardian_busy');
         }
 
         $invoiceIds = Invoice::withoutUnitScope()

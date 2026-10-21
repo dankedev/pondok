@@ -64,7 +64,7 @@ class IssuedLetterResource extends Resource
     // Design guide §3: kapital hanya di awal kalimat.
     protected static bool $hasTitleCaseModelLabel = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelopeOpen;
 
     protected static ?int $navigationSort = 3;
 
@@ -169,7 +169,7 @@ class IssuedLetterResource extends Resource
                     ->options(fn (): array => IssuedLetter::query()->distinct()->orderByDesc('sequence_year')->pluck('sequence_year', 'sequence_year')->all())
                     ->query(fn (Builder $query, array $data): Builder => blank($data['value'] ?? null) ? $query : $query->where('sequence_year', (int) $data['value'])),
             ])
-            ->emptyStateIcon(Heroicon::OutlinedEnvelope)
+            ->emptyStateIcon(Heroicon::OutlinedEnvelopeOpen)
             ->emptyStateHeading(__('pondok.issued_letter.empty'))
             ->emptyStateDescription(__('pondok.issued_letter.empty_description'))
             ->recordActions([

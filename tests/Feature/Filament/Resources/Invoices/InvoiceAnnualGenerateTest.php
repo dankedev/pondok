@@ -16,16 +16,6 @@ beforeEach(function () {
     $this->f = tagihanFixture();
 });
 
-/**
- * Teks notifikasi Filament pada request terakhir.
- */
-function tahunanNotificationText(): string
-{
-    return asramaNotifications()
-        ->map(fn (array $notification): string => ($notification['status'] ?? '').'|'.($notification['title'] ?? '').' '.($notification['body'] ?? ''))
-        ->implode("\n");
-}
-
 it('AC-14: a treasurer generates annual invoices for the chosen academic year from the invoice list', function () {
     $f = $this->f;
     tahunanFeeType($f);
@@ -43,7 +33,7 @@ it('AC-14: a treasurer generates annual invoices for the chosen academic year fr
     expect(Invoice::withoutUnitScope()->count())->toBe(1)
         ->and(Invoice::withoutUnitScope()->sole()->period->toDateString())->toBe('2026-07-01')
         ->and(Invoice::withoutUnitScope()->sole()->generated_by)->toBe($user->id)
-        ->and(tahunanNotificationText())->toContain('success|')->toContain($expected);
+        ->and(invoiceDatabaseNotificationText($user))->toContain('success|')->toContain($expected);
 });
 
 it('AC-14: hides the annual generate action without the generate permission', function () {
@@ -71,11 +61,12 @@ it('AC-14: mentions skipped students in the success notification', function () {
     tahunanFeeType($f);
     tagihanStudent($f);
     tagihanStudent($f, attributes: ['unit_id' => $f->slta->id], cohort: $f->cohortSlta);
-    $this->actingAs(keuanganUser('bendahara'));
+    $user = keuanganUser('bendahara');
+    $this->actingAs($user);
 
     Livewire::test(ListInvoices::class)->callAction('generateAnnual', ['academic_year_id' => $f->year->id]);
 
-    expect(tahunanNotificationText())
+    expect(invoiceDatabaseNotificationText($user))
         ->toContain('success|')
         ->toContain(__('pondok.invoice.generated', ['period' => '2026/2027', 'created' => 1, 'existing' => 0, 'skipped' => 1]))
         ->toContain(__('pondok.invoice.generated_skipped_hint'));

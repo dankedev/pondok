@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F069",
+  "next_id": "F070",
   "features": [
     {
       "id": "F001",
@@ -1251,6 +1251,22 @@
       "handoff": null,
       "evidence": null,
       "notes": "Ditunda (YAGNI) sampai ada bukti ekspor lambat/timeout. Kriteria di issue #46. Permintaan user 21 Okt 2026."
+    },
+    {
+      "id": "F069",
+      "key": "psb-wali-ganda-konkurensi",
+      "issue": 49,
+      "name": "Cegah wali ganda saat konversi PSB bersamaan",
+      "phase": 1,
+      "module": "PSB",
+      "status": "deferred",
+      "depends_on": ["F053"],
+      "description": "Temuan F053: ResolveApplicantGuardian cari-lalu-simpan tanpa kunci/unique, sehingga dua konversi saudara bersamaan dengan wali sama bisa membuat dua baris wali.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026."
     }
   ]
 }

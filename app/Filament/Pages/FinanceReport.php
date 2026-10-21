@@ -312,7 +312,7 @@ class FinanceReport extends Page
                         ])),
                     $this->stat('not_yet_due', __('pondok.finance_report.stats.not_yet_due'), self::rupiah($totals['not_yet_due'])),
                 ]),
-                $this->emptyState(__('pondok.finance_report.empty_invoices'), Heroicon::OutlinedDocumentText)
+                $this->emptyState(__('pondok.finance_report.empty_invoices'), Heroicon::OutlinedBanknotes)
                     ->visible($isEmpty),
                 $this->table(
                     'by_status',

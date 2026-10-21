@@ -253,7 +253,7 @@ class FeeOverrideResource extends Resource
     {
         return Action::make('end')
             ->label(__('pondok.fee_override.end_action'))
-            ->icon(Heroicon::OutlinedArrowRightStartOnRectangle)
+            ->icon(Heroicon::OutlinedStopCircle)
             ->color('danger')
             ->requiresConfirmation()
             ->modalDescription(__('pondok.fee_override.end_description'))

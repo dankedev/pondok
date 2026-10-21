@@ -254,7 +254,7 @@ class InvoiceResource extends Resource
                         ->pluck('billing_group', 'billing_group')
                         ->all()),
             ])
-            ->emptyStateIcon(Heroicon::OutlinedDocumentText)
+            ->emptyStateIcon(Heroicon::OutlinedBanknotes)
             ->emptyStateHeading(__('pondok.invoice.empty'))
             ->emptyStateDescription(__('pondok.invoice.empty_description'))
             ->emptyStateActions([
@@ -383,7 +383,7 @@ class InvoiceResource extends Resource
     {
         return Action::make('recordPayment')
             ->label(__('pondok.payment.record_action'))
-            ->icon(Heroicon::OutlinedBanknotes)
+            ->icon(Heroicon::OutlinedReceiptPercent)
             ->color('primary')
             ->modalHeading(__('pondok.payment.record_heading'))
             ->modalDescription(__('pondok.payment.record_description'))

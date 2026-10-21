@@ -56,5 +56,5 @@
 @if ($button)
     <a href="{{ $button['url'] }}"
        @if ($button['active']) aria-current="page" @endif
-       class="{{ $linkClass }} justify-center bg-primary-900 px-5 text-white shadow-button hover:bg-primary-800 {{ $focusClass }} focus-visible:ring-offset-2 {{ $isMobile ? 'mt-1' : 'ml-2' }}">{{ $button['label'] }}</a>
+       class="{{ $linkClass }} justify-center bg-brand px-5 text-on-brand shadow-button hover:bg-brand-hover {{ $focusClass }} focus-visible:ring-offset-2 {{ $isMobile ? 'mt-1' : 'ml-2' }}">{{ $button['label'] }}</a>
 @endif

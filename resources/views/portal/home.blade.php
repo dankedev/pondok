@@ -15,7 +15,7 @@
         <section class="bg-white">
             <div class="mx-auto max-w-6xl px-4 pb-12 pt-16 sm:px-6 lg:pb-16 lg:pt-24">
                 <hgroup class="max-w-3xl space-y-4">
-                    <h1 class="text-balance break-words text-3xl font-bold tracking-tight text-primary-950 sm:text-4xl">{{ $school['name'] }}</h1>
+                    <h1 class="text-balance break-words text-3xl font-bold tracking-tight text-brand-text sm:text-4xl">{{ $school['name'] }}</h1>
                     @if ($school['tagline'])
                         <p class="whitespace-pre-line text-lg leading-relaxed text-gray-600 lg:text-xl">{{ $school['tagline'] }}</p>
                     @endif

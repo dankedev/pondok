@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F072",
+  "next_id": "F073",
   "features": [
     {
       "id": "F001",
@@ -1304,6 +1304,27 @@
       "handoff": null,
       "evidence": null,
       "notes": "Kriteria di issue #52. Permintaan user 21 Okt 2026."
+    },
+    {
+      "id": "F072",
+      "key": "konten-preset-template",
+      "issue": 25,
+      "name": "Pilihan preset template beranda portal",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F070"],
+      "description": "Audit UI/UX S7 bagian kedua (docs/audits/ui-ux-portal-konten.md §5.8). Admin memilih preset template beranda di Situs > Tampilan (setting theme.template). Preset ada di repo (resources/views/themes/<preset>/blocks/*.blade.php): default (tampilan sebelumnya) dan centered (Terpusat). Blok yang tidak dioverride preset jatuh ke default.",
+      "acceptance": [
+        "Semua preset merender blok beranda dan navigasi yang sama",
+        "Berganti template tidak menghilangkan isian",
+        "Nilai preset divalidasi terhadap daftar di server (tanpa nama view dari database)",
+        "Preset default tanpa perubahan visual"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit d6f51be..860be89 (GetPortalTheme template/blockView, UpdatePortalTheme, GetPortalHomeData, themes/default dan themes/centered, halaman Situs > Tampilan, design guide); test Pest UpdatePortalThemeTest, GetPortalThemeTest, ThemePageTest, PortalTemplateTest, F072PortalTemplateVerifyGapsTest, HomeBlocksTest lulus; suite penuh PHP 8.4 4626 test (4620 lulus, 4 skip, 2 gagal karena public/css tidak ada di worktree, lulus setelah filament:assets); cek tampilan preset Terpusat 360/1024/1440px",
+      "notes": "Jalur penuh (Action yang menyimpan setting dan nilai yang menentukan nama view). Halaman admin Tampilan belum dicek visual di browser (tanpa kredensial login di worktree); dicakup ThemePageTest."
     }
   ]
 }

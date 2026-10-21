@@ -24,6 +24,7 @@ class ListInvoices extends ListRecords
                 fn (): bool => auth()->user()?->can('import', Invoice::class) ?? false,
             ),
             InvoiceResource::generateAction(),
+            InvoiceResource::generateAnnualAction(),
         ];
     }
 }

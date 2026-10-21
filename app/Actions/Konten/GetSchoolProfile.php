@@ -35,6 +35,8 @@ class GetSchoolProfile
         'portal.footer_widgets',
         // Dibaca bersama agar `GetPortalNavigation` memakai cache tanpa query tambahan (F043).
         ...GetPortalNavigation::SETTING_KEYS,
+        // Tema portal (F070), dibaca `GetPortalTheme` dari cache yang sama.
+        ...GetPortalTheme::KEYS,
     ];
 
     /** Field profil yang dihitung sebagai data kontak (aturan Kontak F037). */

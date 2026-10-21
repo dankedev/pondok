@@ -1712,6 +1712,7 @@ return [
             'home' => 'Beranda',
             'footer' => 'Footer',
             'navigation' => 'Navigasi',
+            'theme' => 'Tampilan',
         ],
         'save' => 'Simpan',
         'saved' => [
@@ -1720,6 +1721,7 @@ return [
             'home' => 'Isi beranda disimpan.',
             'footer' => 'Footer portal disimpan.',
             'navigation' => 'Navigasi portal disimpan.',
+            'theme' => 'Tampilan portal disimpan.',
         ],
         'section_identity' => 'Identitas',
         'section_logos' => 'Logo & favicon',
@@ -1827,6 +1829,25 @@ return [
             ],
             'feed_heading_helper' => 'Kosong berarti memakai judul bawaan, misalnya Kabar terbaru.',
         ],
+        'theme' => [
+            'section' => 'Tampilan portal',
+            'section_description' => 'Warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan.',
+            'primary' => 'Warna utama',
+            'accent' => 'Warna aksen',
+            'color_helper' => 'Dipakai sebagai dasar skala; tombol dan teks memakai langkah gelap skala ini agar tetap terbaca. Kosongkan untuk warna bawaan.',
+            'font' => 'Huruf',
+            'fonts' => [
+                'jakarta' => 'Plus Jakarta Sans (bawaan)',
+                'lora' => 'Lora untuk judul, Plus Jakarta Sans untuk isi',
+                'nunito' => 'Nunito untuk judul dan isi',
+            ],
+            'radius' => 'Sudut kartu',
+            'radii' => [
+                'small' => 'Kecil',
+                'medium' => 'Sedang (bawaan)',
+                'large' => 'Besar',
+            ],
+        ],
         'widgets' => [
             'builder' => 'Widget footer',
             'builder_helper' => 'Footer tampil sesuai urutan widget di sini. Seret untuk mengubah urutan. Maksimal :max widget, termasuk yang disembunyikan. Baris hak cipta selalu tampil di bawahnya.',
@@ -1883,6 +1904,10 @@ return [
 
     'konten' => [
         'errors' => [
+            'theme_hex_invalid' => 'Tulis warna dalam format #RRGGBB, misalnya #1A2C72.',
+            'theme_option_invalid' => 'Pilih salah satu opsi yang tersedia.',
+            'theme_primary_contrast' => 'Skala warna utama menghasilkan teks dengan kontras hanya :ratio; minimal 4,5:1. Pilih warna lain.',
+            'theme_accent_contrast' => 'Teks di atas skala warna aksen hanya berkontras :ratio; minimal 4,5:1. Pilih warna lain.',
             'invalid_type' => 'Pilih jenis dari daftar yang tersedia.',
             'title_required' => 'Isi judul terlebih dahulu.',
             'too_long' => 'Teks terlalu panjang. Persingkat menjadi maksimal :max karakter.',

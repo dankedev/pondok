@@ -973,7 +973,7 @@
       "name": "Performa & keandalan keuangan (audit Grup 2)",
       "phase": 1,
       "module": "Keuangan",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F002", "F006", "F007"],
       "description": "Tindak lanjut audit Grup 2: (1) indeks invoices(status,due_on)/(period,status) dan students(entered_on), (2) antrekan generate tagihan manual & ekspor CSV, (3) pembersih berkas bukti yatim, (4) pertimbangkan cache agregat dashboard.",
       "acceptance": [
@@ -981,10 +981,10 @@
         "Operasi berat berjalan lewat antrean + notifikasi",
         "Berkas bukti tanpa Payment dibersihkan berkala"
       ],
-      "owner": null,
+      "owner": "perf-f052-keuangan",
       "handoff": null,
       "evidence": "",
-      "notes": "Poin (4) pertimbangkan. Sumber: docs/audits/iso-25010-23026-audit.md."
+      "notes": "Jalur penuh. Poin (4) pertimbangkan. Sumber: docs/audits/iso-25010-23026-audit.md."
     },
     {
       "id": "F053",

@@ -114,7 +114,7 @@ abstract class SettingsFormPage extends Page
         } catch (ValidationException $exception) {
             throw ValidationException::withMessages(
                 collect($exception->errors())
-                    ->mapWithKeys(fn (array $messages, string $field): array => ['data.'.$this->stateField($field, $state) => $messages])
+                    ->mapWithKeys(fn (array $messages, string $field): array => ['data.'.$this->stateField($field, $this->form->getRawState()) => $messages])
                     ->all(),
             );
         }
@@ -147,6 +147,8 @@ abstract class SettingsFormPage extends Page
     }
 
     /**
+     * Dipetakan dari state mentah karena `getState()` Builder sudah berupa daftar berindeks.
+     *
      * `contacts.1.phone` → `contacts.<kunci baris ke-1>.phone`, juga untuk repeater
      * bersarang (`primary.0.children.1.url` → `primary.<uuid>.children.<uuid>.url`).
      *

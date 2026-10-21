@@ -1063,7 +1063,7 @@
       "name": "Dukungan deploy Docker produksi",
       "phase": 1,
       "module": "Deploy",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [],
       "description": "Sediakan image produksi Pondok dengan PHP 8.4 + Apache dan aset frontend dari build stage, serta Docker Compose untuk layanan Laravel dan MySQL. Gunakan named volume untuk database dan storage, rahasia dari environment runtime, healthcheck/dependency DB, port HTTP yang dapat dikonfigurasi, serta alur operasional tanpa daemon worker/scheduler.",
       "acceptance": [
@@ -1071,10 +1071,10 @@
         "Compose menjalankan app + MySQL dengan health/dependency, port HTTP terkonfigurasi, serta named volume DB dan storage yang persisten",
         "Instruksi runtime secret, instalasi, upgrade, backup, dan trigger scheduler eksternal tersedia; tidak ada Redis atau daemon worker/scheduler"
       ],
-      "owner": "VS Code agent",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Rencana direview langsung karena plan-reviewer gagal dijalankan (model default tidak dikenali). Compose config dan pemeriksaan statis lulus; build/smoke Docker menunggu daemon aktif."
+      "evidence": "Commit 0d486c2..327ce02. Smoke test 22 Okt 2026 di OrbStack (Docker 29.8.2, Compose 5.5.0), project pondok-f057-smoke port 8091: build sukses, image 630 MB tanpa Node/node_modules; db dan app healthy; HTTP 200 di /, /up, /admin/login, /psb, aset build dan font Filament; super-admin terpasang otomatis dan kredensial valid; schedule:run sebagai www-data sukses (heartbeat + queue:work --stop-when-empty); down tanpa -v lalu up tanpa DB_ROOT_PASSWORD: instalasi dilewati, user dan berkas storage tetap ada; docker history/inspect image dan .env image tanpa rahasia, env container app tanpa root password, port MySQL tidak dipublikasikan. Tanpa perubahan PHP.",
+      "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Diambil alih 22 Okt 2026 dari VS Code agent (habis token). plan-reviewer: CHANGES_REQUESTED (1 major root password di .env), direvisi. Dockerfile dan entrypoint tidak diubah (kompatibel dengan deploy panel berbasis Dockerfile)."
     },
     {
       "id": "F058",

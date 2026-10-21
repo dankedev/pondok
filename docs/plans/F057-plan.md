@@ -1,6 +1,8 @@
 # F057 deployment-docker-production — Dukungan deploy Docker produksi
 
-Status rencana: APPROVED (review langsung; plan-reviewer tidak tersedia karena model agent default tidak dikenali)
+Issue: #23
+
+Status rencana: AC-1–AC-10 APPROVED (review langsung). Sisa pekerjaan (AC-11–AC-16, revisi 22 Okt 2026): `plan-reviewer` CHANGES_REQUESTED (1 major: root password di `.env`), direvisi di AC-15/AC-16; minor dicatat di dokumen deploy (ping hanya membuktikan server hidup, gejala init tanpa root password, backup memakai user aplikasi, cron perlu `cd`).
 
 ## Ringkasan & tujuan
 Sediakan deployment produksi Docker berbasis Apache yang dapat dibangun dan dijalankan bersama MySQL melalui Docker Compose. cPanel tetap mengikuti alur rilisnya. Acuan: `CLAUDE.md` §Batasan deployment, `docs/prd.md` §4–5, `docs/rilis.md`, dan `docs/instalasi.md`.
@@ -33,15 +35,17 @@ Tidak ada permission, `unit_user`, atau saklar modul yang berubah.
 - **AC-8:** MySQL menggunakan named volume. Setelah container DB dihentikan/dibuat ulang, data uji tetap tersedia; `docker compose down` tanpa `-v` tidak menghapus volume.
 - **AC-9:** Laravel `storage/` menggunakan named volume yang writable dan tetap berisi berkas uji setelah container aplikasi dibuat ulang. `bootstrap/cache` writable; `public/storage` mengarah ke storage publik lokal.
 - **AC-10:** MySQL memiliki healthcheck; layanan app menunggu MySQL berstatus healthy. App memiliki healthcheck HTTP terhadap endpoint Laravel `/up`; status sehat hanya setelah endpoint merespons sukses.
-- **AC-11:** Web server berjalan foreground. Instalasi baru mengikuti urutan konfigurasi runtime → start MySQL sampai healthy → `docker compose run --rm app php artisan pondok:install --no-interaction` → start app. Perintah install tidak dijalankan otomatis setiap startup.
-- **AC-12:** Upgrade mengikuti urutan backup eksternal untuk DB dan `storage/` → build/ganti image → `docker compose run --rm app php artisan pondok:upgrade --force` → start/recreate app. Upgrade mempertahankan named volumes dan tidak menjalankan `migrate:fresh`.
-- **AC-13:** Tidak ada container worker/scheduler persisten. Instruksi operator menjelaskan trigger eksternal per menit `docker compose exec -T app php artisan schedule:run`; cron host atau scheduler platform mengatur trigger. Tugas worker tetap memakai perilaku scheduler proyek, bukan daemon di container.
-- **AC-14:** Operator mendapat instruksi ringkas untuk mengisi environment rahasia hanya di host/runtime, mengatur `APP_PORT`, memeriksa status health, membuat backup/restore volume secara terpisah, serta menjalankan setup dan upgrade tanpa menghapus volume.
+- **AC-11:** Instalasi pertama: isi environment runtime → `docker compose up -d`. Entrypoint (F064) menjalankan `pondok:install --skip-if-installed` sekali (berhenti tanpa perubahan bila super-admin sudah ada), lalu `pondok:upgrade --force`, lalu Apache foreground. Tidak perlu `docker compose run` terpisah.
+- **AC-12:** Upgrade: backup DB dan `storage/` → ambil kode baru → `docker compose build app` → `docker compose up -d app`. Entrypoint menjalankan `pondok:upgrade --force`; named volumes dipertahankan dan tidak ada `migrate:fresh`.
+- **AC-13:** Tidak ada container worker/scheduler persisten. Cron host/platform memicu tiap menit `docker compose exec -T -u www-data app php artisan schedule:run` (sebagai `www-data` agar berkas cache/log tidak dimiliki root). Worker antrean berjalan dari scheduler (`queue:work --stop-when-empty`).
+- **AC-14:** Operator mendapat instruksi ringkas: secret hanya di runtime, `APP_PORT`, cek health, backup/restore DB dan storage terpisah, install dan upgrade tanpa menghapus volume.
+- **AC-15:** `.env.docker.example` dilacak Git berisi kunci yang wajib diisi tanpa nilai rahasia; `.env` asli diabaikan Git dan build context. `DB_ROOT_PASSWORD` dilarang di `.env` (yang juga dipasang ke app lewat `env_file`); diberikan lewat `export` di shell host saat inisialisasi pertama, hanya diteruskan ke layanan `db`, dan hanya wajib saat inisialisasi volume MySQL pertama; perintah Compose rutin (cron, backup) tidak gagal bila variabel itu tidak diekspor. Healthcheck MySQL tidak memakai password root.
+- **AC-16:** Smoke test terdokumentasi di `evidence`: build image, `up` sampai kedua layanan healthy, HTTP 200 di `/` dan `/admin/login`, `schedule:run` sekali sukses, `down` (tanpa `-v`) lalu `up` dan data (super-admin, berkas uji di storage) tetap ada, serta `docker history`/`inspect` image tanpa nilai rahasia dan `inspect` container app tanpa `MYSQL_ROOT_PASSWORD`/`DB_ROOT_PASSWORD`.
 
 ## Rencana test
 - Tidak menambah test Pest untuk konfigurasi infrastruktur statis.
 - Validasi `docker build` dan `docker compose config`; inspeksi image/build context untuk runtime Node, file rahasia, port DB, dan service terlarang.
-- Smoke test dengan Docker daemon: health DB lalu app `/up`, akses HTTP pada port terpilih, persistensi kedua volume setelah recreate, serta instalasi/upgrade menggunakan database disposable.
+- Smoke test dengan Docker daemon (AC-16) memakai project Compose khusus (`-p pondok-f057-smoke`), port tidak bentrok, dan kredensial sementara; setelah selesai `down -v`, hapus image uji, hentikan Docker.
 - Verifikasi urutan operasional dan perintah scheduler pada catatan serah-terima; jangan menjalankan scheduler sebagai daemon.
 
 ## Urutan implementasi
@@ -59,3 +63,4 @@ Tidak ada permission, `unit_user`, atau saklar modul yang berubah.
 - Pertahankan batas proyek: tanpa Redis, Node runtime, atau daemon worker/scheduler; trigger scheduler tetap eksternal.
 - Rencana sebelumnya direview langsung karena plan-reviewer tidak tersedia (model agent default tidak dikenali).
 - Review revisi dilakukan langsung karena plan-reviewer kembali tidak dapat dijalankan. Verifikasi installer memastikan `.env` template harus ada sebelum `pondok:install`, maka image menyediakan template non-rahasia dan APP_KEY diwajibkan saat runtime.
+- 22 Okt 2026 (pengambilalihan): AC-11/AC-12 disesuaikan dengan entrypoint F064 (install sekali otomatis); AC-13 menjalankan scheduler sebagai `www-data`; tambah AC-15 (contoh env tanpa rahasia, root password MySQL opsional setelah inisialisasi) dan AC-16 (smoke test).

@@ -65,6 +65,8 @@ Skala portal (hex literal di `@theme`, kontras WCAG 2.x):
 | 900 | `#061247` | 17.72 | `#523A00` | 10.69 / 1.77 |
 | 950 | `#000A3C` | 18.94 | `#2E2100` | 15.75 / 1.20 |
 
+Tabel di atas adalah **skala bawaan**. Admin dapat mengganti warna utama dan aksen portal lewat Situs > Tampilan (F070): `BuildColorScale` menyusun skala 50–950 di PHP (OKLCH, tangga lightness dan chroma tetap per peran yang diambil dari tabel ini, warna masukan ditaruh di langkah dengan lightness terdekat, chroma diturunkan sampai masuk gamut sRGB), lalu `GetPortalTheme` menulisnya sebagai `--color-primary-*`/`--color-accent-*` di `<style data-portal-theme>` layout publik. Pemakaian langkah dan aturan emas di bawah tetap berlaku untuk skala apa pun; skala ditolak bila putih vs `primary-700`–`950`, `primary-100`/`200` vs `primary-950`, atau `accent-400`/`500` vs `primary-950` di bawah 4,5:1. Karena itu warna masukan terang tidak muncul di tombol (tombol memakai langkah 900). Panel admin, halaman galat global (`errors/layout.blade.php`), dan bayangan `--shadow-*` tidak ikut tema. Tema yang sama juga mengatur sudut kartu: `--radius-lg`/`--radius-xl` kecil `.25rem`/`.375rem`, sedang (bawaan) `.5rem`/`.75rem`, besar `.75rem`/`1.25rem`; `rounded-full` tetap. Jangan mengubah `@theme` di `app.css` menjadi `@theme inline` atau memakai `theme()` di utilitas portal, karena tema bergantung pada utilitas yang membaca `var()`.
+
 Pemakaian navy: tautan `primary-700`, tombol utama/chip aktif/halaman aktif/batang langkah PSB `primary-900` (hover `primary-800`), judul hero dan footer `primary-950`, cincin fokus `primary-500` (dengan `ring-offset-2` pada tombol navy).
 
 Aturan emas (portal/PSB):
@@ -89,7 +91,8 @@ Aturan:
 
 ## 3. Tipografi & ikon
 
-- **Huruf Latin:** Plus Jakarta Sans 400/600/700 (bobot 500 tidak dipakai portal, jadi tidak dibundel), di-self-host lewat plugin font Vite (`bunny()` di `vite.config.js`, diunduh saat `npm run build` ke `public/build`) dan dimuat lewat `@fonts`. Jangan menambah font lain untuk teks Latin. Panel Filament tetap memakai font bawaannya.
+- **Huruf Latin:** Plus Jakarta Sans 400/600/700 (bobot 500 tidak dipakai portal, jadi tidak dibundel), di-self-host lewat plugin font Vite (`bunny()` di `vite.config.js`, diunduh saat `npm run build` ke `public/build`) dan dimuat lewat `@fonts`. Panel Filament tetap memakai font bawaannya.
+- **Font tema portal** (F070, Situs > Tampilan; semua OFL, self-host lewat `bunny()` dengan `preload: false`): `jakarta` (bawaan, Plus Jakarta Sans untuk judul dan isi), `lora` (Lora 600/700 untuk `h1`–`h3` lewat `--font-heading`, isi tetap Plus Jakarta Sans), `nunito` (Nunito 400/600/700 untuk judul dan isi lewat `--font-sans`). Judul membaca `var(--font-heading, var(--font-sans))` di `@layer base`. Font tema hanya dipakai bila aliasnya ada di `fonts-manifest.json` build aktif; selain itu portal jatuh ke bawaan. Jangan menambah font Latin lain di luar daftar ini; font judul kondensasi berhuruf kapital tidak dipakai (bertentangan dengan §9).
 - **Teks Arab** (nama surah, ayat, doa, kaligrafi nama lembaga): Noto Naskh Arabic (400/700, subset `arabic`, tanpa preload) yang di-self-host lewat plugin font Vite yang sama, dibungkus elemen dengan `lang="ar" dir="rtl"` dan kelas `font-arabic`. Ukuran minimal 1.25× teks sekitarnya. Jangan pernah render teks Arab dengan font Latin.
 - Skala yang dipakai (Tailwind): `text-sm` (keterangan, tabel), `text-base` (isi), `text-lg` (judul kartu), `text-2xl` (judul halaman panel). Jangan memakai ukuran lain tanpa alasan.
 - Skala judul portal/PSB:
@@ -163,6 +166,7 @@ Aturan:
 | Halaman statis | `Document` |
 | Beranda situs | `Home` |
 | Kaki situs | `Window` |
+| Tampilan situs (tema) | `Swatch` |
 | Blok situs: hero, teks, kutipan, ajakan, tautan, media sosial | `Star`, `Bars3BottomLeft`, `ChatBubbleBottomCenterText`, `Megaphone`, `Link`, `Share` |
 | Tautkan (wali ↔ santri) | `Link` |
 | Token akses PSB | `Key` |

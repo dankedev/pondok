@@ -28,3 +28,13 @@ Schedule::command('keuangan:generate-invoices')
     ->monthlyOn(1, '01:00')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping();
+
+/*
+| Generator tagihan tahunan, didaftarkan setelah bulanan agar item tahunan
+| bisa digabung ke tagihan bulanan yang baru dibuat. Command hanya membuat
+| tagihan pada bulan `keuangan.annual_billing_month`.
+*/
+Schedule::command('keuangan:generate-annual-invoices')
+    ->monthlyOn(1, '01:00')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping();

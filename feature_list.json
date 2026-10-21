@@ -1296,7 +1296,7 @@
       "name": "Warna merek pilihan admin terlihat di tombol dan judul portal",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F070"],
       "description": "Tindak lanjut F070: tombol, judul, dan elemen aktif portal memakai langkah skala yang dekat dengan warna pilihan admin, tetap kontras 4.5:1, bukan langkah 900/950 secara tetap.",
       "acceptance": [
@@ -1306,9 +1306,9 @@
         "Halaman Situs > Tampilan menampilkan pratinjau dan keterangan warna yang dipakai serta penyesuaiannya; panel Filament tidak berubah",
         "Dicek di 360px, 1024px, dan desktop dengan warna terang, sedang, dan gelap"
       ],
-      "owner": "f071-warna-merek",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 9962d34..b8961e7 (BuildColorScale::brandColors, GetPortalTheme::brandTokens + token --color-brand/-hover/on-brand/brand-text, Blade semua preset, pratinjau Situs > Tampilan, design guide §2); test Pest BuildColorScaleTest, GetPortalThemeTest, PortalBrandColorTest, ThemePageTest, F071BrandColorVerifyGapsTest lulus; suite penuh PHP 8.4 4662 test (4657 lulus, 4 skip, 1 gagal karena SUPER_ADMIN_PASSWORD kosong di .env lokal, lulus dengan env CI); cek tampilan #15803d, #facc15, #1a2c72, dan bawaan di 360/1024/desktop, kedua preset, halaman admin Tampilan",
       "notes": "Kriteria di issue #52. Permintaan user 21 Okt 2026. Jalur penuh. Rencana: docs/plans/F071-plan.md."
     },
     {

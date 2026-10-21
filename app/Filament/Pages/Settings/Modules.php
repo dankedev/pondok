@@ -103,7 +103,6 @@ class Modules extends Page
     {
         return Section::make($module->label())
             ->key("module-{$module->value}")
-            ->description($module->description())
             ->afterHeader(fn (): array => [
                 Text::make(__('pondok.module_settings.status.'.($module->isEnabled() ? 'enabled' : 'disabled')))
                     ->badge()
@@ -111,6 +110,8 @@ class Modules extends Page
                 $this->cachedActions["toggle-{$module->value}"],
             ])
             ->schema(fn (): array => array_values(array_filter([
+                // Deskripsi di isi, bukan di header, agar tidak terjepit badge dan tombol di layar 360px.
+                Text::make($module->description()),
                 $this->requirementWarning($module),
                 Text::make($module->requires() === []
                     ? __('pondok.module_settings.requires_none')

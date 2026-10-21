@@ -179,6 +179,18 @@
     }
 
     /*
+     * Grid adaptif beranda (F045, F073): flex-wrap agar baris sisa rata tengah; lebar anak sama dengan
+     * satu kolom grid bergap `gap-6`. Jumlah kolom per breakpoint lewat utilitas `adaptive-cols-<n>`.
+     */
+    .portal-adaptive-grid {
+        @apply flex flex-wrap justify-center gap-6;
+    }
+
+    .portal-adaptive-grid > * {
+        width: calc((100% - (var(--adaptive-cols, 1) - 1) * var(--spacing) * 6) / var(--adaptive-cols, 1));
+    }
+
+    /*
      * Hiasan portal (F035 K4): murni CSS, tanpa gambar. Dipasang sebagai <div aria-hidden="true"> kosong,
      * ukuran dan posisi lewat utilitas, dan tidak dirender di bawah `sm`.
      */
@@ -202,4 +214,9 @@
     &::-webkit-scrollbar {
         display: none;
     }
+}
+
+/* Jumlah kolom `.portal-adaptive-grid` (mis. `lg:adaptive-cols-3`). */
+@utility adaptive-cols-* {
+    --adaptive-cols: --value(integer);
 }

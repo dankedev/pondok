@@ -280,7 +280,7 @@ it('AC-11: the adaptive grid uses as many large screen columns as there are item
     // [jumlah item, maks. kolom, kolom lg yang diharapkan]
     foreach ([[2, 4, 2], [3, 3, 3], [4, 4, 4], [5, 4, 4], [6, 3, 3], [8, 4, 4]] as [$count, $max, $columns]) {
         $html = $render($count, $max);
-        preg_match_all('/lg:grid-cols-(\d)/', $html, $found);
+        preg_match_all('/lg:(?:grid|adaptive)-cols-(\d)/', $html, $found);
 
         expect(array_unique($found[1]))->toBe([(string) $columns], "{$count} item, maks. {$max}: kolom lg ".json_encode($found[1]));
         expect(substr_count($html, '<div>item</div>'))->toBe($count);

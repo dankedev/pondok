@@ -1,4 +1,5 @@
-{{-- Keunggulan preset Terpusat: daftar bergaris tanpa kartu; satu kolom di layar kecil, dua kolom di ≥1024px. --}}
+{{-- Keunggulan preset Terpusat: daftar bergaris tanpa kartu; satu kolom di layar kecil, dua kolom di ≥1024px;
+     butir terakhir dari jumlah ganjil berada di tengah selebar setengah daftar. --}}
 @php
     $twoColumns = count($data['items']) > 1;
 @endphp
@@ -13,7 +14,7 @@
             'lg:grid lg:grid-cols-2 lg:gap-x-12 lg:divide-y-0 lg:border-b-0' => $twoColumns,
         ])>
             @foreach ($data['items'] as $item)
-                <li @class(['py-6', 'lg:border-b lg:border-gray-200' => $twoColumns])>
+                <li @class(['py-6', 'lg:border-b lg:border-gray-200 lg:last:odd:col-span-2 lg:last:odd:mx-auto lg:last:odd:w-1/2' => $twoColumns])>
                     <p class="text-lg font-semibold text-gray-900">{{ $item['title'] }}</p>
                     @if ($item['text'])
                         <p class="mt-2 whitespace-pre-line text-base leading-relaxed text-gray-700">{{ $item['text'] }}</p>

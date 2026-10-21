@@ -937,7 +937,7 @@ foreach (students aktif as $s) {
 | `payments` | unique `receipt_no`; index (`invoice_id`, `status`), (`status`, `paid_on`); semua FK `restrictOnDelete` | Nomor kuitansi tidak ganda; daftar pembayaran per tagihan dan laporan kas harian (F008) |
 | `payment_allocations` | unique (`payment_id`, `invoice_item_id`); FK `restrictOnDelete` | Satu baris alokasi per item per pembayaran |
 | `fee_overrides` | index (`student_id`, `fee_type_id`, `valid_from`) | Cari override yang berlaku di bulan tagihan |
-| `invoices` | index (`status`, `period`) | Widget tunggakan dan rasio koleksi di dashboard |
+| `invoices` | index (`status`, `period`), (`status`, `due_on`), (`period`, `status`) | Widget tunggakan dan rasio koleksi di dashboard; tunggakan jatuh tempo dan laporan per rentang periode (F052) |
 | `fee_rates` | unique (`fee_type_id`, `effective_from_year_id`, `unit_id`, `cohort_key`, `dormitory_key`, `wave_key`) | Satu tarif per kombinasi. Lihat catatan NULL di bawah |
 | `enrollments` | unique (`student_id`, `academic_year_id`) | Satu kelas per santri per tahun ajaran |
 | `students` | unique `nis`; unique `nisn` (nullable); unique `applicant_id` (nullable); index (`unit_id`, `status`) | Hitungan santri aktif per jenjang; satu santri per pendaftar PSB (F012) |

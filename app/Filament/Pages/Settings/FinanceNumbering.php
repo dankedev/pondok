@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Settings;
 
+use App\Actions\Keuangan\GenerateAnnualInvoices;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateReceiptNumber;
 use App\Actions\Keuangan\UpdateReceiptSigner;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Pengaturan format kuitansi dan tagihan (F039). Akses lewat
+ * Pengaturan format kuitansi dan tagihan (F039) serta bulan tagihan tahunan (F041). Akses lewat
  * `view:finance-numbering` (bendahara dan super-admin).
  */
 class FinanceNumbering extends NumberingSettingsPage
@@ -100,6 +101,16 @@ class FinanceNumbering extends NumberingSettingsPage
                             ->searchable()
                             ->nullable(),
                     ]),
+                Section::make(__('pondok.numbering.finance.annual_heading'))
+                    ->description(__('pondok.numbering.finance.annual_description'))
+                    ->schema([
+                        Select::make('annual_billing_month')
+                            ->label(__('pondok.numbering.finance.annual_month_label'))
+                            ->helperText(__('pondok.numbering.finance.annual_month_helper'))
+                            ->placeholder(__('pondok.numbering.finance.annual_month_placeholder'))
+                            ->options(self::monthOptions())
+                            ->nullable(),
+                    ]),
             ]);
     }
 
@@ -116,6 +127,7 @@ class FinanceNumbering extends NumberingSettingsPage
             'receipt_signer_staff_id' => $signerId !== null && Staff::query()->where('is_active', true)->whereKey($signerId)->exists()
                 ? (int) $signerId
                 : null,
+            'annual_billing_month' => GenerateAnnualInvoices::billingMonth(),
         ];
     }
 
@@ -144,27 +156,60 @@ class FinanceNumbering extends NumberingSettingsPage
         }
 
         $signerId = filled($data['receipt_signer_staff_id'] ?? null) ? (int) $data['receipt_signer_staff_id'] : null;
+        $annualMonth = $this->annualMonth($data['annual_billing_month'] ?? null);
 
-        DB::transaction(function () use ($invoiceFormat, $receiptFormat, $signerId, $user): void {
+        DB::transaction(function () use ($invoiceFormat, $receiptFormat, $signerId, $annualMonth, $user): void {
             $old = [
                 'invoice_format' => Setting::query()->find(GenerateInvoiceNumber::SETTING_KEY)?->value,
                 'receipt_format' => Setting::query()->find(GenerateReceiptNumber::SETTING_KEY)?->value,
+                'annual_billing_month' => Setting::query()->find(GenerateAnnualInvoices::MONTH_SETTING_KEY)?->value,
             ];
 
             Setting::set(GenerateInvoiceNumber::SETTING_KEY, $invoiceFormat);
             Setting::set(GenerateReceiptNumber::SETTING_KEY, $receiptFormat);
+            Setting::set(GenerateAnnualInvoices::MONTH_SETTING_KEY, $annualMonth);
 
             activity('keuangan')
                 ->causedBy($user)
                 ->event('numbering_updated')
                 ->withProperties([
                     'old' => $old,
-                    'new' => ['invoice_format' => $invoiceFormat, 'receipt_format' => $receiptFormat],
+                    'new' => ['invoice_format' => $invoiceFormat, 'receipt_format' => $receiptFormat, 'annual_billing_month' => $annualMonth],
                 ])
                 ->log('numbering_updated');
 
             app(UpdateReceiptSigner::class)->handle($signerId, $user);
         });
+    }
+
+    /**
+     * Bulan 1-12, atau null untuk "tidak terjadwal".
+     */
+    private function annualMonth(mixed $value): ?int
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        $month = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 12]]);
+
+        if ($month === false) {
+            throw ValidationException::withMessages([
+                'annual_billing_month' => __('pondok.numbering.finance.annual_month_invalid'),
+            ]);
+        }
+
+        return $month;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function monthOptions(): array
+    {
+        return collect(range(1, 12))
+            ->mapWithKeys(fn (int $month): array => [$month => CarbonImmutable::create(2000, $month)->translatedFormat('F')])
+            ->all();
     }
 
     /**

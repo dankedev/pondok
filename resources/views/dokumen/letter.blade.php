@@ -27,6 +27,7 @@
         .cancelled { margin: 12px 0; padding: 8px 12px; border: 2px solid currentColor; }
         .cancelled strong { font-size: 18px; letter-spacing: 0.12em; }
         .cancelled p { margin: 0; }
+        .redacted { margin: 12px 0; padding: 8px 12px; border: 1px dashed currentColor; }
         dl { display: grid; grid-template-columns: 38% 1fr; gap: 2px 12px; margin: 12px 0 12px 24px; }
         dt { font-weight: 600; }
         dd { margin: 0; }
@@ -78,6 +79,10 @@
         </div>
 
         @include('dokumen.partials.letter-cancelled')
+
+        @if ($redactedAt)
+            <p class="redacted">{{ __('pondok.letter.redacted_note') }}</p>
+        @endif
 
         @include("dokumen.letters.{$letter->type}")
 

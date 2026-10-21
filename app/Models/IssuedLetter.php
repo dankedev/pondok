@@ -13,10 +13,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Surat keluar untuk santri (surat keterangan aktif, pindah, rekomendasi,
  * syahadah, kartu santri), diterbitkan lewat `IssueLetter` dan dibatalkan
- * lewat `CancelIssuedLetter`. Tidak pernah diubah isinya atau dihapus.
+ * lewat `CancelIssuedLetter`. Tidak pernah dihapus, dan isinya tidak diubah
+ * kecuali redaksi masa simpan.
  *
  * `snapshot` membekukan isi surat saat terbit dan berisi data pribadi: tidak
- * masuk activity log maupun halaman publik (kecuali nama termasker).
+ * masuk activity log maupun halaman publik (kecuali nama termasker). Setelah
+ * masa simpan (`retention.letter_snapshot_years`), `RedactExpiredLetterSnapshots`
+ * memangkas `snapshot.student` menjadi nama termasker dan mengisi
+ * `snapshot_redacted_at`; nomor, kode verifikasi, dan penandatangan tetap.
  *
  * Cakupan jenjang dibaca lewat santri (termasuk yang diarsipkan).
  */
@@ -96,6 +100,7 @@ class IssuedLetter extends Model
             'issued_on' => 'date',
             'snapshot' => 'array',
             'cancelled_at' => 'datetime',
+            'snapshot_redacted_at' => 'datetime',
             'sequence' => 'integer',
             'sequence_year' => 'integer',
         ];

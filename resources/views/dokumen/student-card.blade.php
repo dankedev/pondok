@@ -29,6 +29,7 @@
         .cancelled { padding: 1mm; border: 2px solid currentColor; text-align: center; }
         .cancelled strong { letter-spacing: 0.1em; }
         .cancelled p { margin: 0; font-size: 6pt; }
+        .redacted { margin: 0; padding: 1mm; border: 1px dashed currentColor; text-align: center; font-size: 6pt; }
         .actions { margin: 0 auto 12px; max-width: 85.6mm; text-align: right; }
         .actions button { font: inherit; font-size: 12px; min-height: 44px; padding: 6px 16px; border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
         @media print {
@@ -59,6 +60,10 @@
                 <strong>{{ __('pondok.letter.cancelled') }}</strong>
                 <p>{{ __('pondok.letter.cancelled_reason', ['reason' => $letter->cancel_reason]) }}</p>
             </section>
+        @endif
+
+        @if ($redactedAt)
+            <p class="redacted">{{ __('pondok.letter.redacted_note') }}</p>
         @endif
 
         <div class="body">

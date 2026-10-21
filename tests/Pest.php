@@ -17,6 +17,7 @@ use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
 use App\Actions\Psb\ReRegisterApplicant;
 use App\Actions\Psb\SubmitApplication;
+use App\Enums\Module;
 use App\Filament\Resources\Applicants\Pages\ViewApplicant;
 use App\Models\AcademicYear;
 use App\Models\Achievement;
@@ -1299,12 +1300,12 @@ function dashboardWidgetText(User $user, string $key): string
 }
 
 /**
- * Tepat tiga saklar modul aktif (akademik, keuangan, konten) dari sembilan.
+ * Tepat tiga saklar modul aktif (akademik, keuangan, konten) dari tujuh.
  */
 function dashboardEnableThreeModules(): void
 {
-    foreach (SettingSeeder::MODULES as $module) {
-        Setting::set("modules.{$module}.enabled", in_array($module, ['akademik', 'keuangan', 'konten'], true));
+    foreach (Module::cases() as $module) {
+        Setting::set("modules.{$module->value}.enabled", in_array($module->value, ['akademik', 'keuangan', 'konten'], true));
     }
 }
 

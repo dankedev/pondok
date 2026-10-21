@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Module;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Models\StaticPage;
@@ -52,7 +53,7 @@ it('AC-4: enables the konten module on a fresh install and keeps other defaults'
     $this->seed(SettingSeeder::class);
 
     expect(Setting::moduleEnabled('konten'))->toBeTrue()
-        ->and(SettingSeeder::ENABLED_BY_DEFAULT)->toContain('konten')
+        ->and(Module::Konten->isEnabled())->toBeTrue()
         ->and(Setting::moduleEnabled('akademik'))->toBeTrue()
         ->and(Setting::moduleEnabled('asrama'))->toBeTrue()
         ->and(Setting::moduleEnabled('psb'))->toBeTrue()

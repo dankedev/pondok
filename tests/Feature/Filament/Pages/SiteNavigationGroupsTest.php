@@ -17,7 +17,7 @@ use Livewire\Livewire;
 | F044 AC-9 dan AC-10. Kontrak: cluster Profil lembaga dihapus. Halaman `App\Filament\Pages\Site\{Home,Navigation,Footer}`
 | (slug `site/home|navigation|footer`, grup `pondok.navigation.situs` = "Situs") dan `App\Filament\Pages\Settings\{Identity,Contacts}`
 | (slug `settings/identity|contacts`, grup "Pengaturan", label "Identitas" dan "Kontak & sosial"). Urutan grup Situs:
-| Beranda, Navigasi, Footer, Halaman, Berita, Kategori, Galeri, Video. Kunci `pondok.navigation.konten` tidak dipakai lagi.
+| Beranda, Navigasi, Footer, Tampilan (F070), Halaman, Berita, Kategori, Galeri, Video. Kunci `pondok.navigation.konten` tidak dipakai lagi.
 */
 
 const FIVE_PAGES = ['/admin/site/home', '/admin/site/navigation', '/admin/site/footer', '/admin/settings/identity', '/admin/settings/contacts'];
@@ -28,7 +28,7 @@ beforeEach(function () {
 
 it('AC-9: groups the admin navigation into Situs in the planned order', function () {
     expect(situsNavigationLabels(kontenUser('super-admin')))->toBe([
-        'Beranda', 'Navigasi', 'Footer',
+        'Beranda', 'Navigasi', 'Footer', 'Tampilan',
         StaticPageResource::getNavigationLabel(), PostResource::getNavigationLabel(), CategoryResource::getNavigationLabel(),
         AlbumResource::getNavigationLabel(), VideoResource::getNavigationLabel(),
     ]);

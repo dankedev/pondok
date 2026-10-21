@@ -993,16 +993,16 @@
       "name": "Uji konversi PSB bersamaan di MySQL (audit Grup 3)",
       "phase": 1,
       "module": "PSB",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F012"],
       "description": "Tindak lanjut audit Grup 3: verifikasi lock/unique konversi daftar ulang pada MySQL produksi (baru diuji SQLite). Konsolidasi validasi ke FormRequest/DTO dicatat sebagai YAGNI.",
       "acceptance": [
         "Dua konversi bersamaan di MySQL tidak menghasilkan data ganda/rusak"
       ],
-      "owner": null,
+      "owner": "test-f053-psb-konkurensi",
       "handoff": null,
       "evidence": "",
-      "notes": "Konsolidasi validasi = YAGNI, tunda sampai ada pemakai kedua. Sumber: docs/audits/iso-25010-23026-audit.md."
+      "notes": "Jalur penuh (PSB). Konsolidasi validasi = YAGNI, tunda sampai ada pemakai kedua. Sumber: docs/audits/iso-25010-23026-audit.md."
     },
     {
       "id": "F054",

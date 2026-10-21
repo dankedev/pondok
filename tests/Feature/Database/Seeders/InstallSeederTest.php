@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Module;
 use App\Models\AcademicYear;
 use App\Models\Category;
 use App\Models\Setting;
@@ -32,7 +33,7 @@ it('AC-21: install seeder seeds system data without users', function () {
     expect($counts['users'])->toBe(0)
         ->and(Role::pluck('name')->sort()->values()->all())->toBe(collect(RolePermissionSeeder::ROLES)->sort()->values()->all())
         ->and(Unit::pluck('code')->sort()->values()->all())->toBe(collect(UnitSeeder::UNITS)->pluck('code')->sort()->values()->all())
-        ->and(collect(SettingSeeder::MODULES)->every(fn ($m) => Setting::query()->whereKey("modules.{$m}.enabled")->exists()))->toBeTrue()
+        ->and(collect(Module::cases())->every(fn (Module $m) => Setting::query()->whereKey("modules.{$m->value}.enabled")->exists()))->toBeTrue()
         ->and($counts['permissions'])->toBeGreaterThan(0)->and($counts['academic_years'])->toBeGreaterThan(0)
         ->and($counts['document_types'])->toBeGreaterThan(0)->and($counts['admission_tracks'])->toBeGreaterThan(0)
         ->and($counts['pages'])->toBeGreaterThan(0)->and($counts['categories'])->toBeGreaterThan(0)
@@ -60,12 +61,33 @@ it('AC-21: super admin seeder still throws without credentials', function () {
 it('AC-21: system seeder restores permissions and settings without overwriting', function () {
     $this->seed(InstallSeeder::class);
     Permission::query()->where('name', 'view-dashboard')->delete();
-    Setting::query()->whereKey('modules.tahfidz.enabled')->delete();
+    Setting::query()->whereKey('modules.akademik.enabled')->delete();
     Setting::set('modules.konten.enabled', false);
 
     $this->seed(SystemSeeder::class);
 
     expect(Permission::query()->where('name', 'view-dashboard')->exists())->toBeTrue()
-        ->and(Setting::query()->whereKey('modules.tahfidz.enabled')->exists())->toBeTrue()
+        ->and(Setting::query()->whereKey('modules.akademik.enabled')->exists())->toBeTrue()
         ->and(Setting::query()->find('modules.konten.enabled')->value)->toBeFalse();
+});
+
+it('AC-2: setting seeder creates the seven enum modules enabled and no tahfidz or perizinan row', function () {
+    $this->seed(SettingSeeder::class);
+
+    foreach (Module::cases() as $module) {
+        expect(Setting::query()->find("modules.{$module->value}.enabled")?->value)->toBeTrue("modul {$module->value}");
+    }
+
+    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(7)
+        ->and(Setting::query()->whereKey('modules.tahfidz.enabled')->exists())->toBeFalse()
+        ->and(Setting::query()->whereKey('modules.perizinan.enabled')->exists())->toBeFalse();
+});
+
+it('AC-2: seeding again keeps a module that was switched off', function () {
+    $this->seed(SettingSeeder::class);
+    Setting::set('modules.psb.enabled', false);
+
+    $this->seed(SettingSeeder::class);
+
+    expect(Module::Psb->isEnabled())->toBeFalse();
 });

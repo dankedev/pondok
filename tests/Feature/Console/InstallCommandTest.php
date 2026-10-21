@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Core\PublishPublicDirectory;
+use App\Enums\Module;
 use App\Models\AcademicYear;
 use App\Models\Setting;
 use App\Models\Unit;
@@ -8,7 +9,6 @@ use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Services\SystemProbe;
 use Database\Seeders\RolePermissionSeeder;
-use Database\Seeders\SettingSeeder;
 use Database\Seeders\UnitSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -92,7 +92,7 @@ it('AC-14: installs system data and creates the super admin', function () {
 
     expect($exit)->toBe(0)
         ->and(Role::pluck('name')->all())->toContain(...RolePermissionSeeder::ROLES)
-        ->and(collect(SettingSeeder::MODULES)->every(fn ($m) => Setting::query()->whereKey("modules.{$m}.enabled")->exists()))->toBeTrue()
+        ->and(collect(Module::cases())->every(fn (Module $m) => Setting::query()->whereKey("modules.{$m->value}.enabled")->exists()))->toBeTrue()
         ->and(Unit::pluck('code')->all())->toContain(...collect(UnitSeeder::UNITS)->pluck('code')->all())
         ->and(AcademicYear::query()->where('is_active', true)->exists())->toBeTrue()
         ->and($user->hasRole('super-admin'))->toBeTrue()

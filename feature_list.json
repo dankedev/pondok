@@ -1243,14 +1243,14 @@
       "name": "Ekspor CSV keuangan lewat antrean",
       "phase": 1,
       "module": "Keuangan",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F052"],
       "description": "Pecahan F052: ekspor CSV keuangan sebagai job antrean, berkas di disk private, unduh lewat route ber-permission, notifikasi ke pemicu, pembersihan berkala.",
       "acceptance": [],
-      "owner": null,
+      "owner": "night-batch-e5e331",
       "handoff": null,
       "evidence": null,
-      "notes": "Ditunda (YAGNI) sampai ada bukti ekspor lambat/timeout. Kriteria di issue #46. Permintaan user 21 Okt 2026."
+      "notes": "Ditunda (YAGNI) sampai ada bukti ekspor lambat/timeout. Kriteria di issue #46. Permintaan user 21 Okt 2026. Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F068-plan.md."
     },
     {
       "id": "F069",

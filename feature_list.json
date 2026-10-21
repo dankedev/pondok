@@ -1339,7 +1339,7 @@
       "name": "Rapikan sisa catatan kecil blok beranda",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F045"],
       "description": "Sisa catatan minor F045: baris sisa grid Keunggulan rata tengah, form blok tidak menawarkan album saat modul Konten mati, test VERIFY path gambar palsu memakai assert yang lebih ketat.",
       "acceptance": [
@@ -1347,9 +1347,9 @@
         "Form blok tidak menawarkan pilihan gambar/album bila modul Konten mati",
         "Test VERIFY untuk path gambar palsu memakai assert yang lebih ketat"
       ],
-      "owner": "fix-f073-blok-beranda",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 9d691d2 (rencana), 84fba0e (galat form di blok yang tepat + assert path palsu), a0328ff (album hero saat modul konten mati), 0ef16a7 (baris sisa grid rata tengah); test HomeBuilderVerifyTest, HomeBlocksTest, PortalVisualIdentityTest dan halaman Situs/portal (527 test) lulus; suite penuh PHP 8.4 4663 test: 4657 lulus, 4 skip, 2 gagal karena .env worktree (APP_URL, kredensial seeder) lalu lulus setelah env diperbaiki; Pint lulus; grid dicek di 360px, 1024px, 1280px (default 3/4 kolom dan Terpusat)",
       "notes": "jalur: cepat (tampilan, form, test; tanpa migration, uang, atau hak akses). Rencana: docs/plans/F073-plan.md."
     }
   ]

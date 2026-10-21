@@ -1518,6 +1518,7 @@ return [
     ],
 
     'letter' => [
+        'redacted_note' => 'Data pribadi surat ini telah dihapus sesuai masa simpan.',
         'titles' => [
             'keterangan_aktif' => 'Surat Keterangan Aktif',
             'pindah' => 'Surat Keterangan Pindah',
@@ -2595,6 +2596,27 @@ return [
         'activity_created' => 'Backup dibuat',
         'done' => 'Backup selesai: :file (:size).',
         'failed' => 'Backup gagal: :error',
+        'none_yet' => 'Belum ada backup.',
+        'latest' => 'Backup terakhir: :file (:size), dibuat :datetime WIB.',
+    ],
+
+    'data_retention' => [
+        'title' => 'Backup & masa simpan',
+        'saved' => 'Pengaturan backup dan masa simpan disimpan.',
+        'forbidden' => 'Hanya super-admin yang boleh mengubah pengaturan backup dan masa simpan.',
+        'backup_heading' => 'Backup',
+        'backup_description' => 'Arsip berisi database serta berkas unggahan (dokumen santri, foto, gambar portal).',
+        'backup_enabled' => 'Backup terjadwal harian',
+        'backup_enabled_helper' => 'Berjalan setiap hari pukul 01.30 WIB. Hanya :keep arsip terbaru yang disimpan.',
+        'backup_hint' => 'Arsip tersimpan di folder storage/app/private/backups. Unduh lewat File Manager hosting dan simpan di luar hosting. Berkas .env (berisi APP_KEY) tidak ikut arsip, jadi simpan salinannya terpisah. Backup manual: php artisan pondok:backup.',
+        'letter_heading' => 'Masa simpan surat',
+        'letter_description' => 'Setelah masa simpan lewat, data pribadi pada salinan surat keluar dihapus. Nomor surat, status, dan verifikasi tetap berlaku dengan nama santri termasker.',
+        'letter_snapshot_years' => 'Masa simpan data pribadi surat',
+        'letter_snapshot_years_helper' => 'Isi 1 sampai 100 tahun. Kosongkan bila data pribadi surat tidak perlu dihapus. Data keuangan tidak pernah dihapus.',
+        'years_suffix' => 'tahun',
+        'activity_updated' => 'Pengaturan backup dan masa simpan diubah',
+        'activity_redacted' => 'Data pribadi surat yang melewati masa simpan dihapus',
+        'redact_done' => 'Data pribadi :count surat dihapus sesuai masa simpan.',
     ],
 
     'demo' => [

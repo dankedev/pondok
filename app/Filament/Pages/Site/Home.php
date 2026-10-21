@@ -10,6 +10,7 @@ use App\Actions\Konten\UpdatePortalHome;
 use App\Filament\Pages\SettingsFormPage;
 use App\Filament\Pages\Site\Concerns\LinkTargetFields;
 use App\Models\Album;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Video;
 use BackedEnum;
@@ -34,7 +35,8 @@ use Filament\Support\Icons\Heroicon;
  * Beranda portal (F045): daftar blok yang disusun admin dengan Builder. State tiap blok
  * `{type, data: {visible, ...}}`; saat simpan `visible` dipindah ke tingkat blok dan seluruh
  * validasi dipegang `UpdatePortalHome`. Form diisi lewat `ParseContentBlocks` (blok tersembunyi
- * ikut), album/video yang sudah dihapus dikosongkan.
+ * ikut), album/video yang sudah dihapus dikosongkan. Pilihan album hero hanya tampil saat modul
+ * konten hidup, tetapi nilainya tetap ikut disimpan.
  */
 class Home extends SettingsFormPage
 {
@@ -116,7 +118,9 @@ class Home extends SettingsFormPage
                         ->helperText(__('pondok.school_profile.blocks.album_helper'))
                         ->options(fn (): array => Album::query()->orderBy('title')->pluck('title', 'id')->all())
                         ->stateCast(new NumberStateCast(isInteger: true))
-                        ->searchable(),
+                        ->searchable()
+                        ->visible(fn (): bool => Setting::moduleEnabled('konten'))
+                        ->dehydratedWhenHidden(),
                     $this->buttonField('primary', 'primary'),
                     $this->buttonField('secondary', 'secondary'),
                 ]),

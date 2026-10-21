@@ -2,6 +2,7 @@
 
 use App\Actions\Konten\StorePublicImage;
 use App\Filament\Pages\Site\Home;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -62,6 +63,28 @@ it('VERIFY: rejects a forged image path from the client on the field of the righ
         ->assertHasErrors(['data.home_blocks.blok-a.data.image' => [__('pondok.konten.errors.image_invalid', ['max' => StorePublicImage::MAX_KILOBYTES])]]);
 
     expect(blkStored())->toBe([]);
+});
+
+it('hides the hero album picker while the konten module is off and keeps the stored album on save', function () {
+    $album = kontenAlbum();
+    blkSet([blk('hero', ['title' => 'H', 'album_id' => $album->id]), blk('quote', ['text' => 'Lama'])]);
+    $this->actingAs(kontenUser('admin-konten'));
+
+    Setting::set('modules.konten.enabled', false);
+    $component = Livewire::test(Home::class);
+    [$heroKey, $quoteKey] = array_keys($component->get('data.home_blocks'));
+
+    $component->assertSchemaComponentHidden("home_blocks.{$heroKey}.data.album_id")
+        ->set("data.home_blocks.{$quoteKey}.data.text", 'Baru')
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(blkStored()[0]['data']['album_id'])->toBe($album->id);
+
+    Setting::set('modules.konten.enabled', true);
+    $component = Livewire::test(Home::class);
+    $heroKey = array_keys($component->get('data.home_blocks'))[0];
+    $component->assertSchemaComponentVisible("home_blocks.{$heroKey}.data.album_id");
 });
 
 it('VERIFY: reads the profile settings in one query and survives wrongly typed stored fields', function () {

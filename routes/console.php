@@ -52,3 +52,12 @@ Schedule::command('keuangan:prune-payment-proofs')
     ->dailyAt('02:30')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping();
+
+/*
+| Pembersih CSV laporan keuangan dari antrean ekspor (F068). Berkas berlaku
+| 24 jam; dijalankan setiap jam agar tidak tersimpan jauh melewati itu.
+*/
+Schedule::command('keuangan:prune-finance-exports')
+    ->when(fn (): bool => Module::Keuangan->isEnabled())
+    ->hourly()
+    ->withoutOverlapping();

@@ -3,19 +3,28 @@
 namespace App\Actions\Keuangan;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Ekspor satu bagian laporan keuangan (F008) sebagai CSV: UTF-8 dengan BOM,
  * pemisah `;` (Excel berlokal Indonesia), uang bilangan bulat polos, tanggal
  * `Y-m-d`, periode `Y-m`. Sel teks yang bisa dibaca sebagai rumus diberi
- * awalan `'`. Setiap unduhan dicatat di activity log `keuangan` karena berkas
- * memuat data pribadi santri.
+ * awalan `'`.
+ *
+ * Berkas disimpan di disk `private` pada `finance-exports/{user_id}/{uuid}/`
+ * (F068, dijalankan `ExportFinanceReportJob`) dan diunduh lewat
+ * `DownloadFinanceExport`. Activity `keuangan`/`exported` berarti berkas
+ * dibuat, karena berkas memuat data pribadi santri.
  */
 class ExportFinanceReportCsv
 {
     public const SECTIONS = ['ringkasan', 'tunggakan', 'subsidi', 'kas'];
+
+    public const DISK = 'private';
+
+    public const DIRECTORY = 'finance-exports';
 
     public function __construct(
         private readonly SummarizeInvoices $summarizeInvoices,
@@ -25,11 +34,25 @@ class ExportFinanceReportCsv
     ) {}
 
     /**
+     * @return string path berkas di disk `DISK`
+     *
      * @throws ValidationException
      */
-    public function handle(FinanceReportFilter $filter, string $section, User $user): StreamedResponse
+    public function handle(FinanceReportFilter $filter, string $section, User $user): string
     {
         ['rows' => $rows, 'data_rows' => $dataRows] = $this->build($filter, $section);
+
+        $stream = fopen('php://temp', 'w+');
+        fwrite($stream, "\xEF\xBB\xBF");
+
+        foreach ($rows as $row) {
+            fputcsv($stream, $row, ';', '"', '');
+        }
+
+        rewind($stream);
+        $path = sprintf('%s/%d/%s/%s', self::DIRECTORY, $user->id, Str::uuid(), $this->filename($filter, $section));
+        Storage::disk(self::DISK)->put($path, $stream);
+        fclose($stream);
 
         activity('keuangan')
             ->causedBy($user)
@@ -41,18 +64,12 @@ class ExportFinanceReportCsv
             ])
             ->log(__('pondok.finance_report.activity_exported'));
 
-        $filename = sprintf('laporan-keuangan-%s-%s-%s.csv', $section, $filter->periodFrom->format('Y-m'), $filter->periodTo->format('Y-m'));
+        return $path;
+    }
 
-        return response()->streamDownload(function () use ($rows): void {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-
-            foreach ($rows as $row) {
-                fputcsv($out, $row, ';', '"', '');
-            }
-
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    public function filename(FinanceReportFilter $filter, string $section): string
+    {
+        return sprintf('laporan-keuangan-%s-%s-%s.csv', $section, $filter->periodFrom->format('Y-m'), $filter->periodTo->format('Y-m'));
     }
 
     /**

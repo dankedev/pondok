@@ -10,12 +10,12 @@ use App\Actions\Keuangan\SummarizeInvoices;
 use App\Actions\Keuangan\SummarizeScholarshipSubsidies;
 use App\Enums\Module;
 use App\Filament\Resources\Students\StudentResource;
+use App\Jobs\Keuangan\ExportFinanceReportJob;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Unit;
-use App\Models\User;
 use BackedEnum;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
@@ -25,6 +25,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Navigation\NavigationItem;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\EmptyState;
@@ -36,7 +37,6 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\TextSize;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Laporan keuangan (F008): ringkasan tagihan, santri menunggak teratas,
@@ -46,7 +46,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * hanya saat filter valid; filter tidak valid menampilkan error di field dan
  * laporan terakhir tetap tampil tanpa dihitung ulang. Akses lewat permission
  * page Shield `view:finance-report` dan saklar modul keuangan, dicek juga saat
- * aksi unduh CSV dipanggil.
+ * aksi unduh CSV dipanggil (berkas disiapkan `ExportFinanceReportJob`).
  *
  * @property-read Schema $form
  */
@@ -228,12 +228,23 @@ class FinanceReport extends Page
                         ->default('ringkasan')
                         ->required(),
                 ])
-                ->action(function (array $data): StreamedResponse {
+                ->action(function (array $data): void {
                     $filter = $this->appliedFilter();
-                    /** @var User $user */
-                    $user = auth()->user();
+                    $section = (string) $data['section'];
 
-                    return app(ExportFinanceReportCsv::class)->handle($filter, (string) $data['section'], $user);
+                    if (! in_array($section, ExportFinanceReportCsv::SECTIONS, true)) {
+                        Notification::make()->title(__('pondok.finance_report.errors.section_invalid'))->danger()->send();
+
+                        return;
+                    }
+
+                    dispatch(new ExportFinanceReportJob(auth()->user(), $section, $filter->toArray()));
+
+                    Notification::make()
+                        ->title(__('pondok.finance_report.export.queued'))
+                        ->body(__('pondok.finance_report.export.queued_body'))
+                        ->success()
+                        ->send();
                 }),
         ];
     }

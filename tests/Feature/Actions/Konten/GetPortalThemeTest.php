@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Konten\BuildColorScale;
 use App\Actions\Konten\GetPortalHomeData;
 use App\Actions\Konten\GetPortalTheme;
 use Illuminate\Support\Facades\View;
@@ -166,4 +167,65 @@ it('F072 AC-5: resolves a block view from the template and falls back to default
     }
 
     expect(is_dir(resource_path('views/portal/blocks')))->toBeFalse();
+});
+
+/*
+| F071 AC-6, AC-7, AC-13 (Action). Kontrak: `static GetPortalTheme::brandTokens(mixed $hex, ?array $accentScale = null): ?array`
+| (hasil `BuildColorScale::brandColors`, null bila bukan hex atau skala gagal kontras); `handle()` menulis `--color-brand`,
+| `--color-brand-hover`, `--color-on-brand`, `--color-brand-text` hanya bila skala primary kustom bertahan.
+*/
+
+it('F071 AC-6: writes the four brand tokens next to the primary scale', function () {
+    themeSet(['primary' => '#15803d']);
+
+    $css = themeResolve()['css'];
+
+    expect($css)->toContain('--color-brand: #15803d;')
+        ->toContain('--color-on-brand: #ffffff;')
+        ->toContain('--color-brand-text: #15803d;')
+        ->toMatch('/--color-brand-hover: #[0-9a-f]{6};/')
+        ->toMatch('/^:root\{[^<>{}\\\\@]*\}$/');
+});
+
+it('F071 AC-7: writes no brand token for the default theme, without a primary, or with a corrupt or rejected primary', function () {
+    expect(themeResolve()['css'])->toBeNull();
+
+    themeSet(['accent' => '#ffd452', 'font' => 'nunito', 'radius' => 'large']);
+
+    expect(themeResolve()['css'])->not->toContain('--color-brand');
+
+    themeSet(['primary' => '#000000;}']);
+
+    expect(themeResolve()['css'])->not->toContain('--color-brand');
+
+    themeSet(['primary' => '#15803d']);
+    app()->bind(BuildColorScale::class, fn () => new class extends BuildColorScale
+    {
+        public function handle(string $hex, string $role): array
+        {
+            return $role === 'primary' ? [...THEME_DEFAULT_PRIMARY, 900 => '#777777'] : THEME_DEFAULT_ACCENT;
+        }
+    });
+
+    expect(themeResolve()['css'])->not->toContain('--color-brand')->not->toContain('--color-primary-');
+});
+
+it('F071 AC-13: brandTokens returns null for anything that is not a usable hex colour', function () {
+    foreach (['red', null, '#fff', "#15803d\n", ['#15803d']] as $value) {
+        expect(GetPortalTheme::brandTokens($value))->toBeNull(json_encode($value));
+    }
+
+    expect(GetPortalTheme::brandTokens('#15803D'))->toMatchArray(['brand' => '#15803d', 'on_brand' => '#ffffff']);
+});
+
+it('F071 AC-13: brandTokens returns null when the primary scale fails the contrast rule', function () {
+    app()->bind(BuildColorScale::class, fn () => new class extends BuildColorScale
+    {
+        public function handle(string $hex, string $role): array
+        {
+            return [...THEME_DEFAULT_PRIMARY, 900 => '#777777'];
+        }
+    });
+
+    expect(GetPortalTheme::brandTokens('#15803d'))->toBeNull();
 });

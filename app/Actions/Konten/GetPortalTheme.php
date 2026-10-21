@@ -62,6 +62,29 @@ class GetPortalTheme
     }
 
     /**
+     * Warna merek portal (F071) untuk warna utama, atau null bila bukan hex atau skalanya ditolak aturan kontras.
+     * Satu titik untuk token portal dan pratinjau di Situs > Tampilan.
+     *
+     * @param  array<int, string>|null  $accentScale  skala aksen kustom; null = aksen bawaan
+     * @return array{brand: string, brand_hover: string, on_brand: string, brand_text: string, fill_adjusted: bool, text_adjusted: bool}|null
+     */
+    public static function brandTokens(mixed $hex, ?array $accentScale = null): ?array
+    {
+        if (! self::isHex($hex)) {
+            return null;
+        }
+
+        $hex = strtolower($hex);
+        $scale = app(BuildColorScale::class)->handle($hex, 'primary');
+
+        if (BuildColorScale::contrastFailure($scale, $accentScale ?? BuildColorScale::DEFAULT_ACCENT) !== null) {
+            return null;
+        }
+
+        return BuildColorScale::brandColors($hex, $scale);
+    }
+
+    /**
      * Kunci preset tersimpan; nilai kosong atau rusak → bawaan.
      */
     public function template(): string
@@ -114,6 +137,17 @@ class GetPortalTheme
             foreach ($scale as $step => $hex) {
                 $declarations["--color-{$role}-{$step}"] = $hex;
             }
+        }
+
+        if (isset($scales['primary'])) {
+            $brand = self::brandTokens($values['theme.primary'], $scales['accent'] ?? null);
+
+            $declarations += $brand === null ? [] : [
+                '--color-brand' => $brand['brand'],
+                '--color-brand-hover' => $brand['brand_hover'],
+                '--color-on-brand' => $brand['on_brand'],
+                '--color-brand-text' => $brand['brand_text'],
+            ];
         }
 
         $declarations += $font === null ? [] : self::FONTS[$font]['css'];

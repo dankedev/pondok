@@ -92,3 +92,93 @@ it('AC-8: keeps every scale readable for the sampled primary and accent colours'
         }
     }
 });
+
+/*
+| F071 AC-1 sampai AC-5. Kontrak: `static BuildColorScale::brandColors(string $hex, array $scale): array{brand, brand_hover, on_brand,
+| brand_text, fill_adjusted, text_adjusted}`; `$scale` = hasil `handle($hex, 'primary')`, teks gelap = `$scale[950]`, lolos = kontras >= 4,5.
+*/
+
+function brandOf(string $hex): array
+{
+    $scale = app(BuildColorScale::class)->handle($hex, 'primary');
+
+    return [BuildColorScale::brandColors($hex, $scale), $scale];
+}
+
+it('F071 AC-1: keeps a mid colour as the fill with white text and a darker hover', function () {
+    [$brand, $scale] = brandOf('#15803d');
+
+    expect($brand)->toBe([
+        'brand' => '#15803d',
+        'brand_hover' => $scale[600],
+        'on_brand' => '#ffffff',
+        'brand_text' => '#15803d',
+        'fill_adjusted' => false,
+        'text_adjusted' => false,
+    ]);
+});
+
+it('F071 AC-2: keeps a light colour as the fill with dark text and moves only the title colour darker', function () {
+    [$brand, $scale] = brandOf('#facc15');
+    $anchor = array_search('#facc15', $scale, true);
+    $steps = BuildColorScale::STEPS;
+    $textIndex = array_search($brand['brand_text'], array_map(fn (int $step): string => $scale[$step], $steps), true);
+    $anchorIndex = array_search($anchor, $steps, true);
+
+    expect($brand['brand'])->toBe('#facc15')
+        ->and($brand['on_brand'])->toBe($scale[950])
+        ->and(BuildColorScale::contrast('#facc15', $brand['on_brand']))->toBeGreaterThanOrEqual(4.5)
+        ->and($brand['brand_hover'])->toBe($scale[$steps[$anchorIndex - 1]])
+        ->and(BuildColorScale::contrast($brand['brand_hover'], $brand['on_brand']))->toBeGreaterThanOrEqual(4.5)
+        ->and($brand['fill_adjusted'])->toBeFalse()
+        ->and($brand['brand_text'])->not->toBe('#facc15')
+        ->and($textIndex)->toBeGreaterThan($anchorIndex)
+        ->and(BuildColorScale::contrast($brand['brand_text'], '#ffffff'))->toBeGreaterThanOrEqual(4.5)
+        ->and($brand['text_adjusted'])->toBeTrue();
+
+    if ($textIndex - 1 > $anchorIndex) {
+        expect(BuildColorScale::contrast($scale[$steps[$textIndex - 1]], '#ffffff'))->toBeLessThan(4.5);
+    }
+});
+
+it('F071 AC-3: keeps a dark colour with white text and a hover one step darker, or lighter at the end of the scale', function () {
+    [$brand, $scale] = brandOf('#1a2c72');
+
+    expect($brand)->toMatchArray(['brand' => '#1a2c72', 'brand_text' => '#1a2c72', 'on_brand' => '#ffffff', 'brand_hover' => $scale[800], 'fill_adjusted' => false, 'text_adjusted' => false]);
+
+    foreach (['#000a3c', '#000000'] as $hex) {
+        [$brand, $scale] = brandOf($hex);
+
+        expect($brand['brand'])->toBe($hex, $hex)
+            ->and($brand['on_brand'])->toBe('#ffffff', $hex)
+            ->and($brand['brand_hover'])->toBe($scale[900], $hex);
+    }
+});
+
+it('F071 AC-4: moves a fill that fits neither white nor dark text to the nearest passing step and derives the hover from it', function () {
+    [$brand, $scale] = brandOf('#777777');
+
+    expect(BuildColorScale::contrast('#777777', '#ffffff'))->toBeLessThan(4.5)
+        ->and(BuildColorScale::contrast('#777777', $scale[950]))->toBeLessThan(4.5)
+        ->and($brand)->toMatchArray(['brand' => $scale[500], 'on_brand' => '#ffffff', 'brand_hover' => $scale[600], 'fill_adjusted' => true]);
+
+    [$brand, $scale] = brandOf('#ffffff');
+
+    expect($brand)->toMatchArray(['brand' => '#ffffff', 'on_brand' => $scale[950], 'brand_hover' => $scale[100], 'text_adjusted' => true]);
+});
+
+it('F071 AC-5: every brand colour is readable and taken from the scale', function (string $hex) {
+    [$brand, $scale] = brandOf($hex);
+
+    expect($brand['brand'])->toBeIn($scale)
+        ->and($brand['brand_hover'])->toBeIn($scale)
+        ->and($brand['brand_text'])->toBeIn($scale)
+        ->and($brand['on_brand'])->toBeIn(['#ffffff', $scale[950]])
+        ->and(BuildColorScale::contrast($brand['brand'], $brand['on_brand']))->toBeGreaterThanOrEqual(4.5)
+        ->and(BuildColorScale::contrast($brand['brand_hover'], $brand['on_brand']))->toBeGreaterThanOrEqual(4.5)
+        ->and(BuildColorScale::contrast($brand['brand_text'], '#ffffff'))->toBeGreaterThanOrEqual(4.5);
+
+    foreach (['brand', 'brand_hover', 'on_brand', 'brand_text'] as $key) {
+        expect($brand[$key])->toMatch('/^#[0-9a-f]{6}$/', $key);
+    }
+})->with(['#15803d', '#facc15', '#1a2c72', '#000a3c', '#777777', '#808080', '#ffffff', '#000000', '#0000ff', '#ffff00', '#c00000', '#22d3ee']);

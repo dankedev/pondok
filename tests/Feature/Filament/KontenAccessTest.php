@@ -38,7 +38,7 @@ it('AC-10: admin-sekolah sees only the profile pages in Situs, not the content r
         $this->actingAs($user)->get($url)->assertForbidden();
     }
 
-    expect(situsNavigationLabels($user))->toBe(['Beranda', 'Navigasi', 'Footer']);
+    expect(situsNavigationLabels($user))->toBe(['Beranda', 'Navigasi', 'Footer', 'Tampilan']);
 });
 
 it('AC-6a: limits the school profile to admin-konten, admin-sekolah and super-admin', function (string $role, bool $allowed) {
@@ -76,7 +76,7 @@ it('AC-7: hides konten when the module is disabled but keeps the school profile'
     $this->actingAs($user)->get('/admin/settings/identity')->assertOk();
     $this->actingAs($user)->get('/admin/site/navigation')->assertOk();
 
-    expect(situsNavigationLabels($user))->toBe(['Beranda', 'Navigasi', 'Footer'])
+    expect(situsNavigationLabels($user))->toBe(['Beranda', 'Navigasi', 'Footer', 'Tampilan'])
         ->and(kontenNavigationText($user))->toContain('Kontak & sosial');
 });
 
@@ -84,7 +84,7 @@ it('AC-7: shows the konten group again when the module is enabled', function () 
     Setting::set('modules.konten.enabled', false);
     Setting::set('modules.konten.enabled', true);
 
-    expect(situsNavigationLabels(kontenUser('admin-konten')))->toHaveCount(8);
+    expect(situsNavigationLabels(kontenUser('admin-konten')))->toHaveCount(9);
 });
 
 it('AC-8: does not scope posts by unit', function () {

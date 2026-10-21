@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Settings;
 
 use App\Actions\Psb\UpdateReRegistrationMinimums;
+use App\Enums\Module;
 use App\Models\Unit;
 use App\Models\User;
 use BackedEnum;
@@ -45,9 +46,9 @@ class ReRegistrationPayment extends NumberingSettingsPage
         return 'view:re-registration-payment';
     }
 
-    protected static function moduleKey(): ?string
+    public static function getModule(): string
     {
-        return 'psb';
+        return Module::Psb->value;
     }
 
     protected function savedMessage(): string

@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Http\Controllers\Dokumen\DownloadDocument;
 use App\Http\Controllers\Dokumen\PrintIssuedLetter;
+use App\Http\Controllers\Keuangan\DownloadFinanceExport;
 use App\Http\Controllers\Keuangan\DownloadPaymentProof;
 use App\Http\Controllers\Keuangan\ShowPaymentReceipt;
 use App\Http\Controllers\Psb\DownloadApplicantDocument;
@@ -93,6 +94,7 @@ class AdminPanelProvider extends PanelProvider
                 Route::middleware(EnsureModuleIsEnabled::class.':keuangan')->group(function (): void {
                     Route::get('receipts/{payment}', ShowPaymentReceipt::class)->name('keuangan.receipt');
                     Route::get('payment-proofs/{payment}', DownloadPaymentProof::class)->name('keuangan.payment-proof');
+                    Route::get('finance-exports/{export}', DownloadFinanceExport::class)->whereUuid('export')->name('keuangan.finance-export');
                 });
                 Route::middleware(EnsureModuleIsEnabled::class.':psb')->group(function (): void {
                     Route::get('applicant-documents/{applicantDocument}', DownloadApplicantDocument::class)->name('psb.applicant-document');

@@ -993,16 +993,16 @@
       "name": "Uji konversi PSB bersamaan di MySQL (audit Grup 3)",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F012"],
       "description": "Tindak lanjut audit Grup 3: verifikasi lock/unique konversi daftar ulang pada MySQL produksi (baru diuji SQLite). Konsolidasi validasi ke FormRequest/DTO dicatat sebagai YAGNI.",
       "acceptance": [
         "Dua konversi bersamaan di MySQL tidak menghasilkan data ganda/rusak"
       ],
-      "owner": "test-f053-psb-konkurensi",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Jalur penuh (PSB). Konsolidasi validasi = YAGNI, tunda sampai ada pemakai kedua. Sumber: docs/audits/iso-25010-23026-audit.md."
+      "evidence": "commit 7ca3893 (test) + afbc306 (rencana). tests/Feature/Actions/Psb/ReRegisterConcurrencyMysqlTest.php: 4 test lulus (143 asersi, 3 run berturut-turut) di MySQL 9.0.1 native (InnoDB, REPEATABLE-READ) dengan dua proses PHP terpisah, database terpisah pondok_f053_test. Uji mutasi: MAX_ATTEMPTS=1 membuat kedua kasus AC-6 gagal (balapan angkatan/NIS nyata, diselamatkan retry); tanpa lockForUpdate pendaftar AC-3 tetap lulus lewat unique students.applicant_id. Tidak ada bug di ReRegisterApplicant. Di suite SQLite/CI test di-skip.",
+      "notes": "Jalur penuh (PSB). Cara run: F053_MYSQL_DATABASE=<nama>_test + F053_MYSQL_HOST/PORT/USERNAME/PASSWORD, php artisan test tests/Feature/Actions/Psb/ReRegisterConcurrencyMysqlTest.php (tanpa --parallel). Catatan terbuka: kakak-adik dengan wali sama (nama+HP) yang dikonversi pada detik yang sama bisa membuat dua baris guardians (ResolveApplicantGuardian select lalu insert, tanpa unique); tidak diperbaiki di F053, butuh keputusan user. Konsolidasi validasi = YAGNI, tunda sampai ada pemakai kedua. Sumber: docs/audits/iso-25010-23026-audit.md."
     },
     {
       "id": "F054",

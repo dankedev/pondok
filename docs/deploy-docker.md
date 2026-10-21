@@ -111,6 +111,17 @@ Pada platform seperti Coolify atau Dokploy:
 - Pastikan database memakai volume persisten (mis. `mysql_data`) atau layanan database terpisah, bukan penyimpanan di dalam container aplikasi.
 - Data yang sudah terhapus hanya bisa dipulihkan dari backup.
 
+## Panel berbasis Dockerfile (Easypanel dan sejenisnya)
+
+Panel seperti Easypanel, Coolify, atau Dokploy bisa membangun `Dockerfile` langsung tanpa Compose. Perilaku image sama: entrypoint memasang sekali lalu upgrade setiap start.
+
+- **Port:** container mendengarkan HTTP di port `80`; arahkan domain/proxy panel ke port itu.
+- **Environment runtime wajib:** `APP_ENV=production`, `APP_KEY`, `APP_URL`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, serta `SUPER_ADMIN_NAME`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` untuk instalasi pertama. Isi di menu environment panel, bukan sebagai build argument. Nilai lain dari `.env.production.example` (mis. `MAIL_*`) boleh ditambahkan. `DB_CONNECTION=mysql` sudah bawaan image.
+- **Database:** pakai layanan MySQL/MariaDB dari panel dengan volume persisten, dan isi `DB_HOST` dengan nama host internal layanan itu.
+- **Volume persisten:** pasang volume ke `/var/www/html/storage`. Tanpa volume ini, unggahan dan dokumen santri hilang setiap deploy.
+- **Scheduler:** buat cron/scheduled task panel setiap menit (`* * * * *`) yang menjalankan `php artisan schedule:run` di container aplikasi sebagai `www-data`. Bila panel tidak punya fitur cron, pakai cron di host: `docker exec -u www-data <nama-container> php artisan schedule:run`.
+- **Backup:** pakai fitur backup database panel, dan backup volume storage terpisah.
+
 ## Catatan healthcheck
 
 Healthcheck `db` memakai `mysqladmin ping` lewat TCP dengan user aplikasi. Ping hanya membuktikan server MySQL hidup; kredensial yang salah terlihat dari `app` yang gagal install/upgrade di `docker compose logs app`.

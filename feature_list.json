@@ -1275,7 +1275,7 @@
       "name": "Tema portal dari admin: warna, font, dan radius",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [],
       "description": "Audit UI/UX S7 bagian pertama (docs/audits/ui-ux-portal-konten.md §5.8). Admin mengatur warna primer dan aksen (skala dihitung di PHP, kontras ≥4.5:1), pasangan font dari font yang dibundel saat build, dan radius. Token diterapkan lewat variabel CSS tanpa build ulang; panel Filament tidak berubah.",
       "acceptance": [
@@ -1284,9 +1284,9 @@
         "Token diterapkan lewat variabel CSS, tanpa build ulang",
         "Panel admin Filament tidak berubah"
       ],
-      "owner": "sesi feat-f070-tema-portal",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit a2e19d7..0fe80d8 (BuildColorScale, UpdatePortalTheme, GetPortalTheme, halaman Situs > Tampilan, layout publik); test Pest BuildColorScaleTest, UpdatePortalThemeTest, GetPortalThemeTest, PortalThemeAdversarialTest, PortalThemeTest, ThemePageTest, SiteNavigationGroupsTest, KontenAccessTest lulus; suite penuh PHP 8.4 4596 test (lulus kecuali 2 test yang bergantung .env lokal worktree, lulus dengan env benar); cek tampilan 360/1024/1440px tema bawaan dan kustom",
       "notes": "Jalur penuh (Action yang menyimpan setting tema dan nilai yang masuk ke CSS inline). Preset template (#25) menyusul terpisah."
     }
   ]

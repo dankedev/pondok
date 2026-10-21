@@ -38,3 +38,12 @@ Schedule::command('keuangan:generate-annual-invoices')
     ->monthlyOn(1, '01:00')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping();
+
+/*
+| Pembersih berkas bukti transfer yang tidak dirujuk pembayaran (unggahan
+| yang pembayarannya tidak jadi dicatat), setiap hari pukul 02:30 WIB.
+*/
+Schedule::command('keuangan:prune-payment-proofs')
+    ->dailyAt('02:30')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping();

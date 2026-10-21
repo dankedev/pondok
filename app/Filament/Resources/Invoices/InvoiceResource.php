@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices;
 
 use App\Actions\Keuangan\CancelInvoice;
+use App\Actions\Keuangan\GenerateAnnualInvoices;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
 use App\Filament\Concerns\BelongsToModule;
@@ -310,6 +311,60 @@ class InvoiceResource extends Resource
                 Notification::make()
                     ->title(__('pondok.invoice.generated', [
                         'period' => static::periodLabel($period),
+                        'created' => $result['created_invoices'],
+                        'existing' => $result['existing_invoices'],
+                        'skipped' => $skipped,
+                    ]))
+                    ->body($skipped > 0 ? __('pondok.invoice.generated_skipped_hint') : null)
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * Menjalankan generator tagihan tahunan untuk satu tahun ajaran, untuk semua jenjang.
+     */
+    public static function generateAnnualAction(): Action
+    {
+        return Action::make('generateAnnual')
+            ->label(__('pondok.invoice.annual_generate_action'))
+            ->icon(Heroicon::OutlinedCalendarDays)
+            ->color('gray')
+            ->requiresConfirmation()
+            ->modalHeading(__('pondok.invoice.annual_generate_heading'))
+            ->modalDescription(fn (): string => ($month = GenerateAnnualInvoices::billingMonth()) !== null
+                ? __('pondok.invoice.annual_generate_description', ['month' => CarbonImmutable::create(2000, $month)->translatedFormat('F')])
+                : __('pondok.invoice.errors.annual_month_not_set'))
+            ->modalSubmitActionLabel(__('pondok.invoice.generate_submit'))
+            ->authorize(fn (): bool => static::can('generate'))
+            ->schema([
+                Select::make('academic_year_id')
+                    ->label(__('pondok.common.academic_year'))
+                    ->options(fn (): array => AcademicYear::query()->orderByDesc('starts_on')->pluck('name', 'id')->all())
+                    ->default(fn (): ?int => AcademicYear::current()?->id)
+                    ->required(),
+            ])
+            ->action(function (array $data, GenerateAnnualInvoices $generate, Action $action): void {
+                $year = AcademicYear::query()->findOrFail($data['academic_year_id']);
+
+                try {
+                    $result = static::runShowingFormErrors($action, fn (): array => $generate->handle($year, auth()->user()));
+                } catch (RuntimeException $exception) {
+                    if ($exception->getMessage() !== __('pondok.invoice.errors.number_conflict')) {
+                        throw $exception;
+                    }
+
+                    Notification::make()->title($exception->getMessage())->danger()->send();
+                    $action->halt();
+
+                    return;
+                }
+
+                $skipped = count($result['skipped']);
+
+                Notification::make()
+                    ->title(__('pondok.invoice.generated', [
+                        'period' => $year->name,
                         'created' => $result['created_invoices'],
                         'existing' => $result['existing_invoices'],
                         'skipped' => $skipped,

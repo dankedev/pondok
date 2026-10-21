@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\Konten\GetPortalHomeData;
 use App\Actions\Konten\GetPortalTheme;
+use Illuminate\Support\Facades\View;
 
 /*
 | F070 AC-1, AC-9, AC-10, AC-12 (bagian Action). Kontrak: `GetPortalTheme::handle(): array{css: ?string, font_aliases: ?list<string>}`.
@@ -20,13 +22,13 @@ function themeResolve(): array
 }
 
 it('AC-1: returns no css and no font aliases when no theme key is set', function () {
-    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null]);
+    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null, 'template' => 'default']);
 });
 
 it('AC-1: treats explicit default values as no theme', function () {
     themeSet(['primary' => null, 'accent' => null, 'font' => 'jakarta', 'radius' => 'medium']);
 
-    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null]);
+    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null, 'template' => 'default']);
 });
 
 it('AC-9: writes every token for a full theme and nothing else', function () {
@@ -76,7 +78,7 @@ it('AC-9: maps the radius options on the server', function () {
 it('AC-10: ignores a corrupt stored value', function (string $key, mixed $value) {
     themeSet([$key => $value]);
 
-    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null]);
+    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null, 'template' => 'default']);
 })->with([
     'css injection in primary' => ['primary', '#000000;}</style><script>alert(1)</script>'],
     'trailing newline' => ['primary', "#1f2a5e\n"],
@@ -113,5 +115,55 @@ it('AC-12: needs the Lora aliases too before using Lora', function () {
     themeBuild(['plus-jakarta-sans', 'noto-naskh-arabic']);
     themeSet(['font' => 'lora']);
 
-    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null]);
+    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null, 'template' => 'default']);
+});
+
+/*
+| F072 AC-1, AC-4 (Action), AC-5. Kontrak: `GetPortalTheme::template(): string`, `handle()['template']`,
+| `static blockView(string $template, string $type): string`, `TEMPLATES` (`default`, `centered`), `DEFAULT_TEMPLATE`.
+*/
+
+it('F072 AC-1: defaults to the default template and every home block resolves to its default view', function () {
+    $theme = themeResolve();
+
+    expect(app(GetPortalTheme::class)->template())->toBe('default')
+        ->and($theme['template'])->toBe('default')
+        ->and($theme['css'])->toBeNull();
+
+    blkSet([blk('hero', ['title' => 'Judul uji']), blk('quote', ['text' => 'Kutipan uji']), blk('cta', ['heading' => 'Ajakan uji', 'variant' => 'light'])]);
+
+    $views = collect(app(GetPortalHomeData::class)->handle()['blocks'])->pluck('view', 'type')->all();
+
+    expect($views)->toBe([
+        'hero' => 'themes.default.blocks.hero',
+        'quote' => 'themes.default.blocks.quote',
+        'cta' => 'themes.default.blocks.cta',
+    ]);
+});
+
+it('F072 AC-1: the template does not affect the generated css', function () {
+    themeSet(['template' => 'centered']);
+
+    expect(themeResolve())->toBe(['css' => null, 'font_aliases' => null, 'template' => 'centered']);
+});
+
+it('F072 AC-4: falls back to the default template for a corrupted stored value', function () {
+    foreach (['../portal/home', "centered\n", ['centered'], 'tidak-ada'] as $value) {
+        themeSet(['template' => $value]);
+
+        expect(app(GetPortalTheme::class)->template())->toBe('default', json_encode($value))
+            ->and(themeResolve()['template'])->toBe('default', json_encode($value));
+    }
+});
+
+it('F072 AC-5: resolves a block view from the template and falls back to default for a block it does not override', function () {
+    expect(GetPortalTheme::blockView('centered', 'hero'))->toBe('themes.centered.blocks.hero')
+        ->and(GetPortalTheme::blockView('centered', 'cta'))->toBe('themes.default.blocks.cta');
+
+    foreach (['hero', 'features', 'feed', 'cta', 'quote', 'text_image', 'video'] as $type) {
+        expect(View::exists("themes.default.blocks.{$type}"))->toBeTrue($type)
+            ->and(GetPortalTheme::blockView('default', $type))->toBe("themes.default.blocks.{$type}");
+    }
+
+    expect(is_dir(resource_path('views/portal/blocks')))->toBeFalse();
 });

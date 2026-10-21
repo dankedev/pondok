@@ -1071,7 +1071,7 @@
         "Compose menjalankan app + MySQL dengan health/dependency, port HTTP terkonfigurasi, serta named volume DB dan storage yang persisten",
         "Instruksi runtime secret, instalasi, upgrade, backup, dan trigger scheduler eksternal tersedia; tidak ada Redis atau daemon worker/scheduler"
       ],
-      "owner": "VS Code agent",
+      "owner": "sesi f057-docker-produksi",
       "handoff": null,
       "evidence": "",
       "notes": "jalur: penuh; rencana: docs/plans/F057-plan.md. Rencana direview langsung karena plan-reviewer gagal dijalankan (model default tidak dikenali). Compose config dan pemeriksaan statis lulus; build/smoke Docker menunggu daemon aktif."

@@ -72,3 +72,13 @@ Schedule::command('pondok:backup')
     ->dailyAt('01:30')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping(120);
+
+/*
+| Redaksi data pribadi snapshot surat keluar yang melewati masa simpan (F042),
+| setiap hari pukul 03:00 WIB. Inti, tanpa saklar modul; Action sendiri tidak
+| berbuat apa-apa selama `retention.letter_snapshot_years` kosong.
+*/
+Schedule::command('pondok:redact-letter-snapshots')
+    ->dailyAt('03:00')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping(120);

@@ -15,7 +15,8 @@ use Throwable;
 /**
  * Halaman cetak surat keluar (HTML mandiri tanpa aset eksternal): A4 untuk
  * surat, ukuran kartu CR80 untuk kartu santri. Isi diambil dari snapshot,
- * logo dari profil sekolah terkini. QR gagal dibuat → halaman tetap tampil
+ * logo dari profil sekolah terkini. Snapshot yang sudah diredaksi (masa simpan,
+ * F042) hanya berisi nama termasker dan diberi catatan. QR gagal dibuat → halaman tetap tampil
  * dengan URL dan kode verifikasi.
  */
 class PrintIssuedLetter extends Controller
@@ -33,6 +34,7 @@ class PrintIssuedLetter extends Controller
             'logo' => is_string($logoPath) && $logoPath !== '' && Storage::disk('public')->exists($logoPath) ? Storage::disk('public')->url($logoPath) : null,
             'qr' => $this->qr($issuedLetter, $qrCodeRenderer),
             'printedAt' => now('Asia/Jakarta'),
+            'redactedAt' => $issuedLetter->snapshot_redacted_at,
         ]);
     }
 

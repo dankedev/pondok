@@ -2,6 +2,7 @@
 
 use App\Enums\Module;
 use App\Filament\Pages\Settings\Contacts;
+use App\Filament\Pages\Settings\DataRetention;
 use App\Filament\Pages\Settings\Identity;
 use App\Filament\Pages\Settings\Modules;
 use App\Filament\Pages\Site\Footer;
@@ -65,7 +66,7 @@ it('AC-9: every panel resource, page and widget is core or declares a valid modu
         AcademicYearResource::class, StaffResource::class,
         RoleResource::class,
         Dashboard::class, Identity::class, Contacts::class,
-        Modules::class, Home::class, Navigation::class,
+        Modules::class, DataRetention::class, Home::class, Navigation::class,
         Footer::class, Theme::class,
         AccountWidget::class, SystemOverviewWidget::class,
     ];
@@ -155,7 +156,9 @@ it('AC-11: every non-core scheduled event is skipped when modules are off and ru
     Artisan::call('schedule:list');
 
     $isCore = fn (Event $event): bool => $event->description === 'pondok:scheduler-heartbeat'
-        || str_contains((string) $event->command, 'queue:work');
+        || str_contains((string) $event->command, 'queue:work')
+        || str_contains((string) $event->command, 'pondok:backup')
+        || str_contains((string) $event->command, 'pondok:redact-letter-snapshots');
     $events = collect(app(Schedule::class)->events())->reject($isCore);
     $label = fn (Event $event): string => (string) ($event->command ?: $event->description);
 

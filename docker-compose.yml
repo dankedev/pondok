@@ -40,7 +40,8 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in the host environment}
+      # Hanya dibaca MySQL saat volume pertama kali diinisialisasi; jangan isi di .env.
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-}
       MYSQL_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
       MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in .env}
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
@@ -49,7 +50,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent
+        - mysqladmin ping -h 127.0.0.1 -u "$${MYSQL_USER}" --password="$${MYSQL_PASSWORD}" --silent
       interval: 10s
       timeout: 5s
       retries: 10

@@ -40,7 +40,9 @@
       "phase": 1,
       "module": "Akademik",
       "status": "done",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Angkatan, rombel, santri (soft delete), riwayat kelas (enrollments), wali dan kontak tagihan. Saklar modules.akademik.enabled.",
       "acceptance": [
         "Kenaikan kelas idempotent dan riwayat lama tetap",
@@ -59,7 +61,9 @@
       "phase": 1,
       "module": "Asrama",
       "status": "done",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "dormitories, rooms (kapasitas), room_assignments dengan riwayat pindah kamar, dormitory_supervisors per tahun ajaran. Santri tanpa penempatan aktif = nonmukim.",
       "acceptance": [
         "Validasi gender dan kapasitas saat penempatan",
@@ -78,7 +82,10 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F002", "F003"],
+      "depends_on": [
+        "F002",
+        "F003"
+      ],
       "description": "fee_types (frekuensi, billing_group, priority, applies_to), fee_rates dengan generated column COALESCE, resolver tarif dari yang paling spesifik dan effective_from_year terbaru.",
       "acceptance": [
         "Urutan fallback: angkatan + asrama, angkatan, jenjang + asrama, jenjang (semua diuji)",
@@ -97,7 +104,9 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F004"],
+      "depends_on": [
+        "F004"
+      ],
       "description": "Program beasiswa dan donatur, fee_overrides per santri/pendaftar per jenis biaya dengan masa berlaku. Mode nominal, potongan, persen.",
       "acceptance": [
         "Ketiga mode override teruji",
@@ -115,7 +124,10 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F004", "F005"],
+      "depends_on": [
+        "F004",
+        "F005"
+      ],
       "description": "Action GenerateMonthlyInvoices: invoices + invoice_items (base_amount, discount_amount, amount snapshot), digabung per billing_group, dijalankan dari scheduler.",
       "acceptance": [
         "Idempotent dengan unique (student_id, period, billing_group)",
@@ -135,7 +147,9 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F006"],
+      "depends_on": [
+        "F006"
+      ],
       "description": "Action RecordPayment (tunai/transfer), alokasi ke item sesuai fee_types.priority di payment_allocations, status tagihan otomatis, kuitansi bernomor (PDF lewat Service). Pembatalan memakai status batal.",
       "acceptance": [
         "Alokasi cicilan berdasarkan prioritas teruji",
@@ -154,7 +168,9 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F007"],
+      "depends_on": [
+        "F007"
+      ],
       "description": "Tagihan bulan berjalan, terbayar vs menunggak, rasio koleksi, santri menunggak teratas, total subsidi beasiswa per program.",
       "acceptance": [
         "Laporan menghormati cakupan jenjang"
@@ -171,7 +187,9 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "admission_waves per tahun ajaran, admission_tracks (Reguler, Prestasi, Tahfidz, Yatim, scholarship_id), syarat berkas per jenjang. Saklar modules.psb.enabled.",
       "acceptance": [
         "Menu hilang dan halaman 403 saat modul mati"
@@ -188,7 +206,10 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F009", "F004"],
+      "depends_on": [
+        "F009",
+        "F004"
+      ],
       "description": "Form publik Livewire tanpa akun, nomor pendaftaran + token untuk cek status dan unggah berkas (disk private). Tagihan saat_daftar dibuat saat daftar; formulir lunas membuka unggah berkas dan tes.",
       "acceptance": [
         "Status: draft, diajukan, diverifikasi, diterima, cadangan, ditolak",
@@ -206,7 +227,11 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F010", "F005", "F018"],
+      "depends_on": [
+        "F010",
+        "F005",
+        "F018"
+      ],
       "description": "Verifikasi berkas, keputusan status, Action AcceptApplicant: tagihan saat_diterima dibuat dan beasiswa jalur diterapkan otomatis.",
       "acceptance": [
         "Beasiswa jalur muncul sebagai fee_override pendaftar"
@@ -223,7 +248,11 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F011", "F007", "F013"],
+      "depends_on": [
+        "F011",
+        "F007",
+        "F013"
+      ],
       "description": "Daftar ulang setelah pembayaran minimal psb.min_paid_percent membuat students; student_id diisi di tagihan dan override pendaftar, berkas valid disalin ke documents.",
       "acceptance": [
         "Konversi memindahkan tagihan, override, dan dokumen (teruji)"
@@ -240,7 +269,10 @@
       "phase": 1,
       "module": "Dokumen",
       "status": "done",
-      "depends_on": ["F002", "F009"],
+      "depends_on": [
+        "F002",
+        "F009"
+      ],
       "description": "document_types, documents untuk santri/wali/staff/prestasi, verifikasi, masa berlaku, riwayat versi (replaced_by_id), cek kelengkapan berkas wajib. Unduh lewat route berizin dari disk private.",
       "acceptance": [
         "Dokumen rahasia hanya bisa dibuka peran tertentu",
@@ -258,7 +290,10 @@
       "phase": 1,
       "module": "Dokumen",
       "status": "done",
-      "depends_on": ["F013", "F016"],
+      "depends_on": [
+        "F013",
+        "F016"
+      ],
       "description": "Surat keterangan aktif, rekomendasi, pindah, syahadah, kartu santri dengan penomoran otomatis dan halaman publik verifikasi QR.",
       "acceptance": [
         "Nomor surat unik dan berurutan"
@@ -275,7 +310,12 @@
       "phase": 1,
       "module": "Prestasi",
       "status": "done",
-      "depends_on": ["F002", "F013", "F016", "F018"],
+      "depends_on": [
+        "F002",
+        "F013",
+        "F016",
+        "F018"
+      ],
       "description": "Prestasi individu/beregu dengan kategori, tingkat, peringkat, sertifikat, foto. Rekap per santri dan per tahun.",
       "acceptance": [
         "Prestasi bisa diterbitkan menjadi berita (terhubung F016)"
@@ -292,7 +332,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "posts (soft delete) untuk berita/kegiatan/prestasi, galeri berkategori, video YouTube, halaman statis, profil sekolah lewat settings.",
       "acceptance": [
         "Gambar konten di disk public"
@@ -309,7 +351,10 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F016", "F010"],
+      "depends_on": [
+        "F016",
+        "F010"
+      ],
       "description": "Halaman publik Blade + Livewire + Tailwind: beranda, berita, galeri, halaman statis, tautan PSB.",
       "acceptance": [
         "Lolos checklist §0 docs/design-guide.md"
@@ -326,7 +371,10 @@
       "phase": 1,
       "module": "Dashboard",
       "status": "done",
-      "depends_on": ["F001", "F008"],
+      "depends_on": [
+        "F001",
+        "F008"
+      ],
       "description": "Widget konten, PSB, santri, keuangan, kelengkapan dokumen, prestasi terbaru; masing-masing dicek permission view-*-metrics.",
       "acceptance": [
         "Tetap render dengan pesan \"Modul belum tersedia\" saat modul atau tabel belum ada",
@@ -345,7 +393,14 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F008", "F012", "F014", "F015", "F017", "F018"],
+      "depends_on": [
+        "F008",
+        "F012",
+        "F014",
+        "F015",
+        "F017",
+        "F018"
+      ],
       "description": "Aset ter-build ikut paket, panduan instalasi cPanel (PHP 8.3, MySQL), satu cron schedule:run.",
       "acceptance": [
         "Aplikasi terpasang dan berjalan di cPanel dengan PHP 8.3 dan MySQL"
@@ -363,7 +418,9 @@
       "phase": 2,
       "module": "Keuangan",
       "status": "deferred",
-      "depends_on": ["F007"],
+      "depends_on": [
+        "F007"
+      ],
       "description": "Midtrans/Xendit/Tripay/bank syariah lewat Service class yang bisa diganti.",
       "acceptance": [],
       "owner": null,
@@ -379,7 +436,10 @@
       "phase": 2,
       "module": "Inti",
       "status": "deferred",
-      "depends_on": ["F007", "F010"],
+      "depends_on": [
+        "F007",
+        "F010"
+      ],
       "description": "Driver WhatsApp yang bisa diganti, dikirim lewat queue database.",
       "acceptance": [],
       "owner": null,
@@ -395,7 +455,10 @@
       "phase": 2,
       "module": "Portal Wali",
       "status": "deferred",
-      "depends_on": ["F007", "F013"],
+      "depends_on": [
+        "F007",
+        "F013"
+      ],
       "description": "Login wali (peran wali) untuk melihat data santri, tagihan, dan dokumen.",
       "acceptance": [],
       "owner": null,
@@ -411,7 +474,9 @@
       "phase": 3,
       "module": "Tahfidz",
       "status": "deferred",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Halaqah, setoran ziyadah/murajaah/tasmi' berbasis rentang surah-ayat, student_juz_progress, ujian dan syahadah.",
       "acceptance": [],
       "owner": null,
@@ -427,7 +492,9 @@
       "phase": 3,
       "module": "Perizinan",
       "status": "deferred",
-      "depends_on": ["F003"],
+      "depends_on": [
+        "F003"
+      ],
       "description": "Jenis izin, approver otomatis dari musyrif, pos keluar-kembali, pulang massal, kunjungan wali.",
       "acceptance": [],
       "owner": null,
@@ -443,7 +510,9 @@
       "phase": 3,
       "module": "Akademik",
       "status": "deferred",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Absensi santri.",
       "acceptance": [],
       "owner": null,
@@ -459,7 +528,9 @@
       "phase": 3,
       "module": "Akademik",
       "status": "deferred",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Pencatatan pelanggaran dan poin kedisiplinan.",
       "acceptance": [],
       "owner": null,
@@ -475,7 +546,9 @@
       "phase": 4,
       "module": "Akademik",
       "status": "deferred",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Rapor mata pelajaran diniyah.",
       "acceptance": [],
       "owner": null,
@@ -491,7 +564,9 @@
       "phase": 4,
       "module": "Keuangan",
       "status": "deferred",
-      "depends_on": ["F007"],
+      "depends_on": [
+        "F007"
+      ],
       "description": "Tabungan dan uang saku santri.",
       "acceptance": [],
       "owner": null,
@@ -507,7 +582,9 @@
       "phase": 4,
       "module": "Keuangan",
       "status": "deferred",
-      "depends_on": ["F007"],
+      "depends_on": [
+        "F007"
+      ],
       "description": "Pencatatan kas masuk dan keluar yayasan.",
       "acceptance": [],
       "owner": null,
@@ -523,7 +600,9 @@
       "phase": 4,
       "module": "Kepegawaian",
       "status": "deferred",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Data kepegawaian staff dan honor.",
       "acceptance": [],
       "owner": null,
@@ -539,7 +618,9 @@
       "phase": 4,
       "module": "Kesehatan",
       "status": "deferred",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Catatan kesehatan santri.",
       "acceptance": [],
       "owner": null,
@@ -555,7 +636,9 @@
       "phase": 4,
       "module": "Alumni",
       "status": "deferred",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Data alumni dan pencatatan donasi.",
       "acceptance": [],
       "owner": null,
@@ -570,7 +653,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Setting::get dan Setting::moduleEnabled membaca tabel settings sekali per key per request, bukan setiap cek otorisasi resource (BelongsToModule dipanggil per baris tabel).",
       "acceptance": [
         "Cek modul berulang dalam satu request hanya menjalankan satu query settings per key",
@@ -588,7 +673,18 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F002", "F003", "F007", "F008", "F012", "F014", "F015", "F017", "F018", "F019"],
+      "depends_on": [
+        "F002",
+        "F003",
+        "F007",
+        "F008",
+        "F012",
+        "F014",
+        "F015",
+        "F017",
+        "F018",
+        "F019"
+      ],
       "description": "DemoSeeder terpisah (db:seed --class=DemoSeeder, tidak dipanggil DatabaseSeeder/InstallSeeder) berisi data dikurasi dan deterministik untuk pondok fiktif Ma'had Al-Khair Belitang: akademik, asrama, keuangan (tarif, beasiswa, tagihan, pembayaran), PSB semua status, dokumen, surat, prestasi, konten portal, dan satu akun demo per peran. Dibuat lewat Action yang ada.",
       "acceptance": [
         "Menolak berjalan di APP_ENV=production tanpa menulis data",
@@ -610,7 +706,11 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F016", "F017", "F034"],
+      "depends_on": [
+        "F016",
+        "F017",
+        "F034"
+      ],
       "description": "Profil lembaga yang berlaku untuk lembaga mana pun, menggantikan field school.* yang terbatas: identitas (nama, nama singkat, nama Arab, tagline, logo cetak, logo desktop, logo mobile, favicon), alamat dan tautan peta, daftar kontak berlabel, daftar media sosial, sambutan beranda, keunggulan, media beranda (slider album, video profil, video PSB), dan footer (kutipan ayat, deskripsi, tautan cepat). Disimpan di settings (key school.*, daftar sebagai JSON). Halaman admin Profil lembaga (cluster Filament) dan portal F017 membaca field baru. Field lama dimigrasikan.",
       "acceptance": [
         "Migrasi data memindahkan school.whatsapp dan tiga URL media sosial lama ke daftar baru tanpa kehilangan data; kop surat dan kuitansi tetap memakai logo cetak, nama, alamat, dan telepon kantor",
@@ -633,7 +733,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F036"],
+      "depends_on": [
+        "F036"
+      ],
       "description": "Halaman statis tidak lagi terbatas profil, visi-misi, kontak: admin konten bisa membuat, mengubah, dan menghapus halaman dengan slug bebas (selain slug sistem dan slug route yang dicadangkan). Menu portal (desktop dan mobile) disusun dari item bawaan dan halaman, urutannya diatur dari panel. Tiga halaman bawaan tetap ada dan tidak bisa dihapus.",
       "acceptance": [
         "Slug halaman baru unik dan tidak bentrok dengan route portal (berita, galeri, video, psb, info-psb, sitemap.xml, robots.txt, verifikasi-surat, admin)",
@@ -654,7 +756,12 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F036", "F009", "F010", "F004"],
+      "depends_on": [
+        "F036",
+        "F009",
+        "F010",
+        "F004"
+      ],
       "description": "Halaman publik Info PSB yang menggabungkan data modul dan teks admin: syarat (admission_requirements per jenjang + syarat umum), timeline (admission_waves + agenda tambahan), cara mendaftar (langkah berurutan), biaya pendaftaran/uang masuk/SPP dari fee_rates per jenjang ditambah keterangan dan teks manual bila tarif kosong atau modul keuangan mati, fasilitas, kurikulum (program, mutu lulusan per jenjang, dokumen kelulusan), ekstrakurikuler, brosur PDF (disk public), dan kontak PSB dipilih dari daftar kontak F036.",
       "acceptance": [
         "Template halaman psb-info: slug dipaksa info-psb, hanya satu halaman, template lain tetap tidak boleh memakai slug itu",
@@ -677,7 +784,11 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F036", "F007", "F012"],
+      "depends_on": [
+        "F036",
+        "F007",
+        "F012"
+      ],
       "description": "Halaman admin untuk mengatur format NIS (setting students.nis_format sudah ada, UI belum), nomor kuitansi (sekarang tetap KW-{Ym}-NNNNN di GenerateReceiptNumber), dan nomor tagihan (sekarang tetap INV-{Ym}-NNNNN di GenerateInvoiceNumber), dengan pola token seperti penomoran surat keluar.",
       "acceptance": [
         "Format divalidasi (token dikenal, nomor urut di akhir, panjang maksimum) dengan pratinjau nomor berikutnya",
@@ -698,7 +809,10 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F036", "F012"],
+      "depends_on": [
+        "F036",
+        "F012"
+      ],
       "description": "Ganti psb.min_paid_percent dengan nominal minimal pembayaran (rupiah) yang diisi admin untuk daftar ulang. Kata user: \"jangan kita tentukan persen, user isi saja nominalnya\".",
       "acceptance": [
         "Admin mengisi nominal minimal (unsignedBigInteger rupiah) lewat panel; CheckReRegistrationPayment memakai nominal tersebut",
@@ -718,7 +832,10 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F036", "F006"],
+      "depends_on": [
+        "F036",
+        "F006"
+      ],
       "description": "Generator untuk jenis biaya berfrekuensi tahunan (mis. daftar ulang tahunan, nominal diisi admin lewat tarif), dijalankan pada bulan yang dipilih admin. Saat ini GenerateMonthlyInvoices hanya memproses frekuensi bulanan.",
       "acceptance": [
         "Idempotent seperti generator bulanan: tidak membuat tagihan ganda untuk santri, tahun ajaran, dan billing_group yang sama",
@@ -738,7 +855,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "deferred",
-      "depends_on": ["F019"],
+      "depends_on": [
+        "F019"
+      ],
       "description": "Backup data dan pembersihan data lama per periode yang bisa diatur admin, termasuk masa simpan snapshot surat keluar sesuai UU PDP.",
       "acceptance": [
         "Backup bisa dijalankan di shared hosting tanpa proses yang berjalan terus",
@@ -756,7 +875,11 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F017", "F036", "F037"],
+      "depends_on": [
+        "F017",
+        "F036",
+        "F037"
+      ],
       "description": "Mengganti warna portal publik dan PSB dari emerald ke warna logo Al-Khair (navy #000A3C primer, emas #F8B800 aksen) dengan gaya acuan docs/brand/referensi-gaya-coursex.md: ruang kosong lega, bayangan sangat tipis, tombol/input pill, hiasan cincin dan pola titik di belakang foto, selang-seling latar section, judul besar tebal. Layout portal yang ada dipertahankan; tanpa konten bawaan dan tanpa animasi muncul-saat-scroll. Panel admin Filament tidak berubah.",
       "acceptance": [
         "Token primary (navy) dan accent (emas) di resources/css/app.css mengikuti logo; tidak ada sisa emerald di portal publik dan PSB",
@@ -780,7 +903,11 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F035", "F036", "F037"],
+      "depends_on": [
+        "F035",
+        "F036",
+        "F037"
+      ],
       "description": "Paket 1 audit UI/UX (S1 + S3). Menu utama dan navigasi footer memakai satu model daftar tautan: label + tujuan dari pemilih (beranda, halaman, daftar berita, kategori berita, galeri, video, Info PSB, formulir PSB, cek status PSB, verifikasi surat, URL), dengan urutan dan submenu satu tingkat khusus menu utama. Tombol header menjadi satu field opsional (label + tujuan) menggantikan saklar tombol Daftar. Halaman statis mendapat aksi Tambahkan ke menu utama. Footer generik: logo dan deskripsi, kontak dan media sosial otomatis (bisa disembunyikan), navigasi footer, maksimal satu teks pendek, dan baris hak cipta; field kutipan dihapus dan isinya diarsipkan untuk paket beranda blok. Varian footer ringkas di alur PSB dan halaman 404.",
       "acceptance": [
         "Migrasi portal.menu_items, portal.menu_show_register, dan portal.footer_links ke model baru tanpa mengubah tautan yang tampil (label, URL, urutan); tautan sistem footer menjadi item biasa; idempotent dan punya rollback",
@@ -803,7 +930,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F043"],
+      "depends_on": [
+        "F043"
+      ],
       "description": "Paket 1 audit UI/UX (S5 + C7). Alamat, email, dan telepon diisi hanya di halaman Kontak & sosial; telepon kantor menjadi kontak berlabel yang bisa ditandai untuk kop surat dan kuitansi (maks. satu). Data demo halaman Kontak dirapikan tanpa duplikasi nomor. Panel admin: Beranda, Navigasi, Footer, Halaman, Berita, Kategori, Galeri, dan Video di grup Situs; Identitas dan Kontak & sosial di grup Pengaturan; cluster Profil lembaga dibubarkan. Permission per peran tidak berubah.",
       "acceptance": [
         "Migrasi school.phone menjadi kontak bertanda cetak (kontak bernomor sama dipakai ulang, tanpa duplikat); idempotent dan punya rollback",
@@ -824,7 +953,10 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F043", "F044"],
+      "depends_on": [
+        "F043",
+        "F044"
+      ],
       "description": "Paket 2 audit UI/UX (S2, C1, C3, C5, C8). Beranda disusun admin dari blok (Filament Builder, settings portal.home_blocks, satu query settings per request): Hero, Teks + gambar, Daftar poin, Angka, Kutipan, Ajakan, Video, dan Daftar otomatis (berita, prestasi, galeri, video). Setiap blok bisa diurutkan, disembunyikan, dan dihapus; blok kosong tidak dirender. Mesin blok (validasi, sanitasi teks terbatas, pemilih tujuan tombol, grid adaptif) dipakai ulang oleh footer widget F046. Field beranda F036 dan kutipan arsip F043 dimigrasikan menjadi blok.",
       "acceptance": [
         "Migrasi field hero, keunggulan, media beranda, ringkasan Tentang (halaman profil), dan portal.archived_footer_quote menjadi blok dengan urutan tampil sama; instalasi baru tanpa blok; idempotent dan punya rollback",
@@ -847,7 +979,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F045"],
+      "depends_on": [
+        "F045"
+      ],
       "description": "Paket 2 audit UI/UX, keputusan user 17 Okt 2026 (§9 Footer sebagai area widget). Footer berisi paling banyak 4 widget yang diatur admin dengan mesin blok F045 (settings portal.footer_widgets): Teks (opsi logo), Tautan (menggantikan navigasi footer F043, boleh lebih dari satu), Media sosial dan Kontak (memilih dari data Kontak & sosial tanpa mengetik ulang); heading opsional; grid 1-4 kolom sesuai jumlah widget. Baris hak cipta dan footer ringkas PSB/404 tetap di luar widget.",
       "acceptance": [
         "Migrasi deskripsi dan teks pendek menjadi widget Teks, navigasi footer menjadi widget Tautan, saklar kontak/sosial menjadi widget Kontak/Media sosial, maksimal 4 tanpa kehilangan data; instalasi baru tanpa widget; idempotent dan punya rollback",
@@ -870,7 +1004,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F046"],
+      "depends_on": [
+        "F046"
+      ],
       "description": "Paket 3 audit UI/UX (C4). Di /berita, chip jenis dan jenjang tanpa berita terbit disembunyikan; baris jenjang hanya tampil bila ≥2 jenjang punya berita; baris tanpa chip tidak dirender.",
       "acceptance": [
         "Chip jenis tanpa berita terbit tidak tampil; baris jenis hilang bila tidak ada berita",
@@ -891,7 +1027,10 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F037", "F044"],
+      "depends_on": [
+        "F037",
+        "F044"
+      ],
       "description": "Audit UI/UX S4 (§5.4). Semua halaman statis setara: halaman sistem dan slug terkunci dihapus (slug lama tetap). Kolom template (default, contact) menggantikan pengecekan slug kontak; tautan tetap Visi dan Misi di kode dihapus. Dibutuhkan agar Info PSB (F038) dan Kontak menjadi halaman bertemplate.",
       "acceptance": [
         "Halaman profil, visi-misi, dan kontak bisa dihapus dan slug-nya bisa diubah; tidak ada lagi badge atau kunci halaman sistem",
@@ -913,7 +1052,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F047"],
+      "depends_on": [
+        "F047"
+      ],
       "description": "Audit UI/UX S6 (§1 butir 7, §2.4, §5.7 bagian jenis berita). Kolom posts.type (kegiatan/prestasi/berita) dihapus dari admin dan portal (filter jenis, badge); data dimigrasikan menjadi kategori. Berita dari Prestasi otomatis berkategori Prestasi.",
       "acceptance": [
         "Form, tabel, dan filter admin tidak lagi punya Jenis; portal tanpa filter jenis dan badge jenis",
@@ -934,7 +1075,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Mengaktifkan halaman profil bawaan Filament di /admin/profile untuk pengguna yang sedang login: menampilkan dan mengedit nama, email, dan kata sandi. Item menu Profil otomatis muncul di menu user.",
       "acceptance": [
         "Halaman /admin/profile hanya bisa dibuka pengguna yang sudah login",
@@ -954,7 +1097,10 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F001", "F017"],
+      "depends_on": [
+        "F001",
+        "F017"
+      ],
       "description": "Tindak lanjut audit kualitas (docs/audits/iso-25010-23026-audit.md) Grup 1: (1) langkah vendor/bin/pint --test di CI, (2) breadcrumb + alt bermakna di portal, (3) samakan ikon Filament dengan design-guide, (4) opsional pecah lang/id per domain.",
       "acceptance": [
         "CI menjalankan vendor/bin/pint --test dan gagal bila ada file tidak lolos",
@@ -974,7 +1120,11 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F002", "F006", "F007"],
+      "depends_on": [
+        "F002",
+        "F006",
+        "F007"
+      ],
       "description": "Tindak lanjut audit Grup 2: (1) indeks invoices(status,due_on)/(period,status) dan students(entered_on), (2) antrekan generate tagihan manual & ekspor CSV, (3) pembersih berkas bukti yatim, (4) pertimbangkan cache agregat dashboard.",
       "acceptance": [
         "Indeks baru terpasang tanpa mengubah data",
@@ -994,7 +1144,9 @@
       "phase": 1,
       "module": "PSB",
       "status": "done",
-      "depends_on": ["F012"],
+      "depends_on": [
+        "F012"
+      ],
       "description": "Tindak lanjut audit Grup 3: verifikasi lock/unique konversi daftar ulang pada MySQL produksi (baru diuji SQLite). Konsolidasi validasi ke FormRequest/DTO dicatat sebagai YAGNI.",
       "acceptance": [
         "Dua konversi bersamaan di MySQL tidak menghasilkan data ganda/rusak"
@@ -1011,7 +1163,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Tindak lanjut audit ISO 27001 (docs/audits/iso-27001-annex-a-audit.md) kelompok aman & kuning: cookie sesi Secure dan payload terenkripsi di produksi, header HSTS, aturan password minimal 8 karakter dengan huruf dan angka, serta aktifkan lupa password di panel.",
       "acceptance": [
         "Template produksi memuat SESSION_ENCRYPT=true dan SESSION_SECURE_COOKIE=true",
@@ -1032,7 +1186,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "deferred",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Aktifkan autentikasi dua faktor (email OTP atau aplikasi TOTP) untuk akun privilese dan verifikasi email. Keduanya menunggu email produksi (SMTP) terkonfigurasi.",
       "acceptance": [],
       "owner": null,
@@ -1048,7 +1204,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "deferred",
-      "depends_on": ["F001"],
+      "depends_on": [
+        "F001"
+      ],
       "description": "Tindak lanjut audit ISO 27001 kelompok merah yang belum tertampung: enkripsi data pribadi saat tersimpan (NISN, tanggal lahir, alamat, telepon, snapshot surat) dan CSP/header keamanan untuk panel admin (/admin).",
       "acceptance": [],
       "owner": null,
@@ -1084,7 +1242,9 @@
       "phase": 1,
       "module": "Akademik",
       "status": "done",
-      "depends_on": ["F002"],
+      "depends_on": [
+        "F002"
+      ],
       "description": "Dasar import (Filament ImportAction + template CSV unduhan + baris gagal) dan import santri beserta angkatan otomatis dan wali.",
       "acceptance": [],
       "owner": null,
@@ -1100,7 +1260,10 @@
       "phase": 1,
       "module": "Asrama",
       "status": "done",
-      "depends_on": ["F003", "F058"],
+      "depends_on": [
+        "F003",
+        "F058"
+      ],
       "description": "Import penempatan santri ke asrama/kamar sebagai room_assignments baru.",
       "acceptance": [],
       "owner": null,
@@ -1116,7 +1279,11 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F006", "F007", "F058"],
+      "depends_on": [
+        "F006",
+        "F007",
+        "F058"
+      ],
       "description": "Import saldo tunggakan awal per santri per jenis biaya sebagai snapshot invoice_items (kelompok SALDO_AWAL), tanpa riwayat pembayaran.",
       "acceptance": [],
       "owner": null,
@@ -1132,7 +1299,10 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F001", "F058"],
+      "depends_on": [
+        "F001",
+        "F058"
+      ],
       "description": "Import data staff (ustadz, musyrif, TU) dari file template.",
       "acceptance": [],
       "owner": null,
@@ -1148,7 +1318,9 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "done",
-      "depends_on": ["F007"],
+      "depends_on": [
+        "F007"
+      ],
       "description": "Penandatangan kuitansi tetap (staff) diatur di pengaturan keuangan, dibekukan saat pembayaran dicatat, dengan baris 'Dicatat oleh' dan activity log.",
       "acceptance": [],
       "owner": null,
@@ -1164,7 +1336,9 @@
       "phase": 1,
       "module": "Dokumen",
       "status": "done",
-      "depends_on": ["F014"],
+      "depends_on": [
+        "F014"
+      ],
       "description": "Slot tanda tangan 1–3 per jenis surat (staff tertentu atau wali kelas santri), bisa diganti per surat, dibekukan di snapshot, plus activity log surat dan pengaturan.",
       "acceptance": [],
       "owner": null,
@@ -1180,7 +1354,9 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F057"],
+      "depends_on": [
+        "F057"
+      ],
       "description": "Larang perintah destruktif di production, DemoSeeder menolak jalan di production, dan entrypoint Docker hanya install sekali lalu upgrade.",
       "acceptance": [],
       "owner": null,
@@ -1196,7 +1372,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F016"],
+      "depends_on": [
+        "F016"
+      ],
       "description": "Form ubah foto bisa mengganti gambar (berkas lama dihapus setelah commit), plus hapus beberapa foto sekaligus.",
       "acceptance": [],
       "owner": null,
@@ -1212,7 +1390,10 @@
       "phase": 1,
       "module": "Inti",
       "status": "done",
-      "depends_on": ["F001", "F018"],
+      "depends_on": [
+        "F001",
+        "F018"
+      ],
       "description": "Halaman Pengaturan Modul untuk super-admin, aturan ketergantungan antarmodul, kepatuhan semua fitur pada saklar modul (menu, route, widget, portal, jadwal), data tidak dihapus, activity log, dan test kepatuhan.",
       "acceptance": [],
       "owner": null,
@@ -1228,7 +1409,10 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F017", "F035"],
+      "depends_on": [
+        "F017",
+        "F035"
+      ],
       "description": "404 mengikuti identitas visual portal; error 4xx/5xx global berbahasa Indonesia, 5xx tanpa ketergantungan database.",
       "acceptance": [],
       "owner": null,
@@ -1244,7 +1428,9 @@
       "phase": 1,
       "module": "Keuangan",
       "status": "deferred",
-      "depends_on": ["F052"],
+      "depends_on": [
+        "F052"
+      ],
       "description": "Pecahan F052: ekspor CSV keuangan sebagai job antrean, berkas di disk private, unduh lewat route ber-permission, notifikasi ke pemicu, pembersihan berkala.",
       "acceptance": [],
       "owner": null,
@@ -1259,8 +1445,10 @@
       "name": "Cegah wali ganda saat konversi PSB bersamaan",
       "phase": 1,
       "module": "PSB",
-      "status": "in-progress",
-      "depends_on": ["F053"],
+      "status": "done",
+      "depends_on": [
+        "F053"
+      ],
       "description": "Temuan F053: ResolveApplicantGuardian cari-lalu-simpan tanpa kunci/unique, sehingga dua konversi saudara bersamaan dengan wali sama bisa membuat dua baris wali.",
       "acceptance": [
         "AC-1 MySQL dua proses: saudara beda jenjang, wali nama sama, HP 08/628 -> keduanya ok, satu guardians, kedua santri terkait",
@@ -1275,9 +1463,9 @@
         "AC-11 HP kunci dibaca segar dari DB, bukan dari instance basi",
         "AC-12 HP berubah antara baca dan kunci baris -> guardian_busy, tanpa data baru, kunci dilepas"
       ],
-      "owner": "night-batch-e5e331",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 3c61c50 (test RED) + 5836830 (fix) + test VERIFY. ReRegisterGuardianLockTest 10 lulus; tests/Feature/Actions/Psb 515 lulus; suite penuh PHP 8.4 4711 test (2 gagal karena env lokal APP_URL/SUPER_ADMIN_*, lulus saat env benar). Test MySQL dua proses (AC-1..AC-3) ditulis tapi BELUM dijalankan: MySQL lokal mati dan kredensial ~/.config/pondok-f053.env kosong pada 22 Okt 2026 malam; jalankan dengan env F053_MYSQL_*.",
       "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026. Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F069-plan.md."
     },
     {
@@ -1309,7 +1497,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F070"],
+      "depends_on": [
+        "F070"
+      ],
       "description": "Tindak lanjut F070: tombol, judul, dan elemen aktif portal memakai langkah skala yang dekat dengan warna pilihan admin, tetap kontras 4.5:1, bukan langkah 900/950 secara tetap.",
       "acceptance": [
         "Tombol utama, chip/paginasi aktif, langkah PSB, dan input PSB memakai token --color-brand; judul hero/beranda dan nama sekolah header memakai --color-brand-text",
@@ -1331,7 +1521,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F070"],
+      "depends_on": [
+        "F070"
+      ],
       "description": "Audit UI/UX S7 bagian kedua (docs/audits/ui-ux-portal-konten.md §5.8). Admin memilih preset template beranda di Situs > Tampilan (setting theme.template). Preset ada di repo (resources/views/themes/<preset>/blocks/*.blade.php): default (tampilan sebelumnya) dan centered (Terpusat). Blok yang tidak dioverride preset jatuh ke default.",
       "acceptance": [
         "Semua preset merender blok beranda dan navigasi yang sama",
@@ -1352,7 +1544,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F045"],
+      "depends_on": [
+        "F045"
+      ],
       "description": "Sisa catatan minor F045: baris sisa grid Keunggulan rata tengah, form blok tidak menawarkan album saat modul Konten mati, test VERIFY path gambar palsu memakai assert yang lebih ketat.",
       "acceptance": [
         "Baris sisa grid blok Keunggulan rata tengah bila jumlah item tidak habis dibagi kolom",
@@ -1372,7 +1566,9 @@
       "phase": 1,
       "module": "Konten",
       "status": "done",
-      "depends_on": ["F045"],
+      "depends_on": [
+        "F045"
+      ],
       "description": "Tindak lanjut F066: pemilih blok Beranda tidak menawarkan blok Video dan Konten terbaru saat modul Konten mati, tanpa membuang blok yang sudah tersimpan.",
       "acceptance": [
         "Modul Konten mati: pemilih blok tidak memuat video dan feed, blok lain tetap ada",

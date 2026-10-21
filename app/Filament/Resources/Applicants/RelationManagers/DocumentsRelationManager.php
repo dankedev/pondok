@@ -66,7 +66,7 @@ class DocumentsRelationManager extends RelationManager
                     ->placeholder('-')
                     ->wrap(),
             ])
-            ->emptyStateIcon(Heroicon::OutlinedDocument)
+            ->emptyStateIcon(Heroicon::OutlinedDocumentText)
             ->emptyStateHeading(__('pondok.applicant_document.empty'))
             ->recordActions([
                 Action::make('download')
@@ -76,7 +76,7 @@ class DocumentsRelationManager extends RelationManager
                     ->url(fn (ApplicantDocument $record): string => url("/admin/applicant-documents/{$record->getKey()}"), shouldOpenInNewTab: true),
                 Action::make('markValid')
                     ->label(__('pondok.applicant_document.mark_valid'))
-                    ->icon(Heroicon::OutlinedCheckCircle)
+                    ->icon(Heroicon::OutlinedCheckBadge)
                     ->color('success')
                     ->authorize(fn (): bool => $this->canVerify())
                     ->hidden(fn (ApplicantDocument $record): bool => $record->status === ApplicantDocument::STATUS_VALID)

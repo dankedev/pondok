@@ -43,7 +43,7 @@ class AdmissionTrackResource extends Resource
     // Design guide §3: kapital hanya di awal kalimat.
     protected static bool $hasTitleCaseModelLabel = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFlag;
 
     protected static ?int $navigationSort = 2;
 

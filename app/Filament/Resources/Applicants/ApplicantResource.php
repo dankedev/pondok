@@ -442,7 +442,7 @@ class ApplicantResource extends Resource
                     $record,
                     fn () => $reject->handle($record, auth()->user(), (string) ($data['review_note'] ?? '')),
                 )),
-            static::decisionAction('reopen', __('pondok.applicant.reopen'), 'gray', Heroicon::OutlinedArrowPath, Applicant::STATUS_SUBMITTED, [Applicant::STATUS_REJECTED], noteRequired: true, ability: 'reopen')
+            static::decisionAction('reopen', __('pondok.applicant.reopen'), 'gray', Heroicon::OutlinedArrowUturnLeft, Applicant::STATUS_SUBMITTED, [Applicant::STATUS_REJECTED], noteRequired: true, ability: 'reopen')
                 ->modalDescription(__('pondok.applicant.reopen_description'))
                 ->action(fn (Applicant $record, array $data, ReopenRejectedApplicant $reopen, Action $action) => static::decide(
                     $action,

@@ -31,6 +31,8 @@
     $desktopLogo = $school['logo_desktop_url'];
     $mobileLogo = $school['logo_mobile_url'];
     $compactFooter ??= request()->routeIs('psb.*');
+    // Tema admin (F070): tanpa tema `css` dan `font_aliases` null, jadi keluaran sama dengan bawaan.
+    $theme = app(\App\Actions\Konten\GetPortalTheme::class)->handle();
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -62,8 +64,12 @@
     @else
         <link rel="icon" href="{{ asset('favicon.ico') }}">
     @endif
-    @fonts
+    @fonts($theme['font_aliases'])
     @vite(['resources/css/app.css'])
+    @if ($theme['css'])
+        {{-- Hanya hex hasil BuildColorScale dan nilai peta server (GetPortalTheme); harus setelah @vite agar menang atas @layer theme. --}}
+        <style data-portal-theme>{!! $theme['css'] !!}</style>
+    @endif
 </head>
 <body class="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased">
     <a href="#konten"

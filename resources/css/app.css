@@ -3,6 +3,11 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Tema portal dari admin (F070) menimpa token di bawah lewat `<style data-portal-theme>:root{...}`
+ * di layout publik. Jangan ubah blok ini menjadi `@theme inline` dan jangan pakai `theme()` di utilitas
+ * portal: tema hanya bekerja karena utilitas membaca `var(--color-*)`, `var(--font-*)`, dan `var(--radius-*)`.
+ */
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
@@ -103,6 +108,15 @@
     --color-gray-800: var(--color-slate-800);
     --color-gray-900: var(--color-slate-900);
     --color-gray-950: var(--color-slate-950);
+}
+
+/* Judul memakai font judul tema (F070, mis. Lora); tanpa tema sama dengan `--font-sans`. */
+@layer base {
+    h1,
+    h2,
+    h3 {
+        font-family: var(--font-heading, var(--font-sans));
+    }
 }
 
 /*

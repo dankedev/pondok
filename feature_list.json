@@ -1359,7 +1359,7 @@
       "name": "Kunci blok konten di Builder Beranda saat modul Konten mati",
       "phase": 1,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F045"],
       "description": "Tindak lanjut F066: pemilih blok Beranda tidak menawarkan blok Video dan Konten terbaru saat modul Konten mati, tanpa membuang blok yang sudah tersimpan.",
       "acceptance": [
@@ -1367,9 +1367,9 @@
         "Modul Konten mati: blok video/feed tersimpan tetap muncul di form dan tetap ada setelah disimpan",
         "Modul Konten hidup: pemilih blok memuat video dan feed"
       ],
-      "owner": "hopeful-aryabhata-673bbe",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit b5bafb4 (rencana), 33b1c79 (blok video/feed lewat maxItems 0, test HomeBuilderVerifyTest gagal tanpa perbaikan lalu lulus); HomeBuilderPageTest + HomeBuilderVerifyTest 13 test lulus; suite penuh PHP 8.4 4664 test: 4660 lulus, 4 skip; Pint lulus; cek tampilan 360px/desktop belum dilakukan (migrate DB terpisah untuk worktree ditolak)",
       "notes": "jalur: cepat (form admin dan test; tanpa migration, uang, atau hak akses). Rencana: docs/plans/F074-plan.md."
     }
   ]

@@ -4738,3 +4738,33 @@ function themeBuild(array|string|null $fontAliases = ['plus-jakarta-sans', 'lora
 
     return $dir;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Helper Backup & masa simpan (F042)
+|--------------------------------------------------------------------------
+|
+| Berawalan `retention`. Tes berjalan di SQLite; jalur khusus Postgres diuji dengan
+| menyamarkan nama driver koneksi (query tetap lewat grammar SQLite).
+|
+*/
+
+/**
+ * Buat koneksi bawaan melaporkan driver `pgsql` sampai aplikasi test dihancurkan.
+ * Berlaku untuk `DB::getDriverName()` maupun `config('database.connections.<default>.driver')`.
+ */
+function retentionPretendPgsql(): void
+{
+    $name = (string) config('database.default');
+    $connection = DB::connection($name);
+    $property = new ReflectionProperty($connection, 'config');
+    $original = $property->getValue($connection);
+
+    $property->setValue($connection, [...$original, 'driver' => 'pgsql']);
+    config(["database.connections.{$name}.driver" => 'pgsql']);
+
+    test()->beforeApplicationDestroyed(function () use ($property, $connection, $original, $name): void {
+        $property->setValue($connection, $original);
+        config(["database.connections.{$name}.driver" => $original['driver']]);
+    });
+}

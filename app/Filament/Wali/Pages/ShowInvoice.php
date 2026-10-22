@@ -11,6 +11,7 @@ use Filament\Pages\Page;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 
 /**
  * Halaman tagihan portal wali (F022): rincian item, sisa, dan pembayaran `diterima`.
@@ -32,6 +33,7 @@ class ShowInvoice extends Page
 
     protected string $view = 'filament.wali.pages.show-invoice';
 
+    #[Locked]
     public int $invoiceId;
 
     public static function canAccess(): bool

@@ -15,6 +15,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 
 /**
  * Halaman santri portal wali (F022): ringkasan santri, tagihan (Keuangan aktif), dan
@@ -32,6 +33,7 @@ class ShowStudent extends Page implements HasTable
 
     protected string $view = 'filament.wali.pages.show-student';
 
+    #[Locked]
     public int $studentId;
 
     public static function getRoutePath(Panel $panel): string

@@ -82,3 +82,15 @@ Schedule::command('pondok:redact-letter-snapshots')
     ->dailyAt('03:00')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping(120);
+
+/*
+| Pembersihan log aktivitas akademik dan konten yang melewati masa simpan
+| (F076), setiap hari pukul 03:30 WIB, hanya bila
+| `retention.activity_log_months` diisi. Log audit tidak pernah dihapus.
+| `activitylog:clean` bawaan Spatie sengaja tidak dijadwalkan (tanpa allowlist).
+*/
+Schedule::command('pondok:prune-activity-log')
+    ->when(fn (): bool => filled(Setting::get('retention.activity_log_months')))
+    ->dailyAt('03:30')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping(120);

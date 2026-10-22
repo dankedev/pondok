@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F079",
+  "next_id": "F080",
   "features": [
     {
       "id": "F001",
@@ -1500,6 +1500,35 @@
       "handoff": null,
       "evidence": "commit 79aa9ac (label kelompok tagihan). Test F078 di FinanceReportTest lulus; Invoices resource 61 test lulus. Suite penuh PHP 8.4 4798 test: 4796 lulus, 5 skipped MySQL; 2 gagal karena .env worktree (APP_URL localhost:8000, password super-admin uji tanpa angka) dan lulus saat diulang dengan env yang benar. Pint lulus. Belum dicek visual (hanya teks opsi Select).",
       "notes": "Jalur cepat. Disetujui user 22 Okt 2026 (batch orkestrator). Rencana: docs/plans/F078-plan.md."
+    },
+    {
+      "id": "F079",
+      "key": "portal-wali-blade-livewire",
+      "issue": 76,
+      "name": "Portal wali: tulis ulang tampilan dengan Blade + Livewire (ganti panel Filament /wali)",
+      "phase": 2,
+      "module": "Portal wali",
+      "status": "in-progress",
+      "depends_on": [
+        "F022"
+      ],
+      "description": "Keputusan user 22 Okt 2026: portal wali memakai Blade + Livewire + Tailwind sesuai CLAUDE.md dan design-guide §6, menyatu dengan tema portal. Ganti panel Filament /wali dari F022 dengan halaman Blade + Livewire; auth bawaan Laravel; aturan akses F022 dipertahankan.",
+      "acceptance": [
+        "Tidak ada panel Filament wali (provider, pages, concern, view dihapus); setiap route portal-wali.* di /wali dijaga EnsureModuleIsEnabled:portal-wali,404 dan dirender dengan layout portal",
+        "Modul portal-wali mati: semua route wali termasuk login 404 untuk tamu maupun wali (saklar modul jalan sebelum auth); aksi Livewire terbuka 404",
+        "Akses: hanya user aktif berperan wali (middleware EnsurePortalWaliUser, tiap request); wali tetap 403 di /admin; tamu ke login portal",
+        "Login Livewire dengan Auth::attemptWhen: staf (view-dashboard) dan non-wali ditolak pesan umum; rate limit 5 per email+IP; regenerasi sesi; logout POST invalidasi sesi",
+        "Lupa/atur ulang password lewat Password broker dan notifikasi ResetPassword Laravel ke route portal wali; pesan sama tanpa membocorkan akun; rate limit per IP; reset menandai email terverifikasi dan menggugurkan sesi lain (auth.session)",
+        "Verifikasi email bawaan (verified middleware, EmailVerificationRequest, signed + throttle, masa berlaku auth.verification.expire) di route portal-wali.verification.*",
+        "Reset password dan verifikasi email panel admin tetap ke URL /admin",
+        "Aturan data F022 tetap: lintas wali 404, arsip/tautan dilepas 404, tagihan batal tersembunyi, unit_user tidak berpengaruh, dokumen private lewat route ber-otorisasi, bagian Keuangan/Dokumen/Asrama ikut saklar",
+        "Buat akun portal dari admin mengirim tautan atur password ke /wali/atur-password",
+        "design-guide §0/§2/§6 kembali ke keputusan Blade; dicek 360px, 1024px, desktop"
+      ],
+      "owner": "batch-mfa-wali-tahfidz",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh (auth + data pribadi). Disetujui user 22 Okt 2026 (issue #76). Rencana: docs/plans/F079-plan.md"
     }
   ]
 }

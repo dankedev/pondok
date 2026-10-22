@@ -42,7 +42,7 @@
         @if ($link ?? null)
             <div>
                 <x-ui.button variant="secondary" :href="$link">
-                    {{ __('pondok.portal_wali.view_student') }}
+                    {{ __('pondok.portal_wali.view_student') }}<span class="sr-only"> {{ $student->name }}</span>
                     <x-heroicon-o-arrow-right class="size-5" aria-hidden="true" />
                 </x-ui.button>
             </div>

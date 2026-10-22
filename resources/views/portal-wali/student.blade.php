@@ -74,7 +74,7 @@
                                     <x-ui.badge :color="\App\Models\Document::STATUS_COLORS[$document->status] ?? 'gray'">{{ $document->statusLabel() }}</x-ui.badge>
                                     <x-ui.button variant="secondary" :href="route('portal-wali.documents.download', $document->id)">
                                         <x-heroicon-o-arrow-down-tray class="size-5" aria-hidden="true" />
-                                        {{ __('pondok.portal_wali.download') }}
+                                        {{ __('pondok.portal_wali.download') }}<span class="sr-only"> {{ $document->documentType?->name }}</span>
                                     </x-ui.button>
                                 </div>
                             </li>

@@ -5,6 +5,7 @@ use App\Actions\Kesehatan\RecordHealthVisit;
 use App\Actions\Kesehatan\UpdateHealthVisit;
 use App\Models\HealthVisit;
 use App\Models\Student;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -181,7 +182,7 @@ it('AC-6: validates an update like a new record and refuses visits outside the a
     $this->actingAs($f->kesSltp);
 
     expect(fn () => app(UpdateHealthVisit::class)->handle($outside, $f->kesSltp, kesehatanData($f, ['complaint' => 'Diubah diam-diam'])))
-        ->toThrow(Throwable::class);
+        ->toThrow(AuthorizationException::class);
 
     expect($visit->fresh()->complaint)->toBe('Demam dan sakit kepala sejak semalam')
         ->and($outside->fresh()->complaint)->toBe('Batuk pilek');
@@ -194,7 +195,7 @@ it('AC-7: lets only super-admin delete a visit and logs it without text', functi
     foreach ([$f->kes, $f->musyrif, $f->kesSltp] as $actor) {
         $this->actingAs($actor);
 
-        expect(fn () => app(DeleteHealthVisit::class)->handle($visit->fresh(), $actor))->toThrow(Throwable::class);
+        expect(fn () => app(DeleteHealthVisit::class)->handle($visit->fresh(), $actor))->toThrow(AuthorizationException::class);
     }
 
     expect(HealthVisit::query()->count())->toBe(1);

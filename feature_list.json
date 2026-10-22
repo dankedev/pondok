@@ -394,7 +394,7 @@
       "name": "Portal wali",
       "phase": 2,
       "module": "Portal Wali",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F007", "F013"],
       "description": "Login wali (peran wali) untuk melihat data santri, tagihan, dan dokumen.",
       "acceptance": [
@@ -408,9 +408,9 @@
         "guardians.user_id hanya diisi Action buat akun: Select user_id di form wali dihapus dan user_id keluar dari Fillable",
         "Reset password menandai email terverifikasi; MFA aplikasi opsional di panel wali"
       ],
-      "owner": "batch-mfa-wali-tahfidz",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit f3eebfe (modul + panel /wali), 1274d8f (akun portal dari data wali), b32cac7 (halaman santri/tagihan/unduh), fix #[Locked] id halaman. Test RED+VERIFY F022 (69 test) lulus; suite penuh PHP 8.4 4910 test, 4905 lulus, 5 skipped MySQL (2 test jumlah modul disesuaikan lalu lulus); Pint lulus. Belum dicek visual (.env worktree tidak bisa diakses sesi ini).",
       "notes": "Jalur penuh. Keputusan draf (22 Okt 2026, menunggu konfirmasi user): portal wali sebagai panel Filament kedua /wali (bukan Blade+Livewire), akun dibuat admin dari GuardianResource. Rencana: docs/plans/F022-plan.md"
     },
     {

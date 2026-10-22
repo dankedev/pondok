@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F076",
+  "next_id": "F077",
   "features": [
     {
       "id": "F001",
@@ -1411,6 +1411,24 @@
       "handoff": null,
       "evidence": "commit 3435afb (nav xl), 691121a (teks fees_note). Dicek di browser (situs Herd sementara worktree, DB SQLite demo): 360px/1024px (menu lipat)/1280px (nav satu baris)/1440px tanpa overflow; teks 'Berlaku untuk Gelombang I, tahun ajaran 2027/2028.'. Suite penuh PHP 8.4 4797 test lulus (5 skipped MySQL); Pint lulus.",
       "notes": "Jalur cepat. Disetujui user 22 Okt 2026 (cek tampilan: bug kecil langsung diperbaiki). Rencana: docs/plans/F075-plan.md."
+    },
+    {
+      "id": "F076",
+      "key": "inti-pembersihan-activity-log",
+      "issue": 67,
+      "name": "Pembersihan activity log lama per periode (allowlist log_name)",
+      "phase": 1,
+      "module": "Inti",
+      "status": "deferred",
+      "depends_on": [
+        "F042"
+      ],
+      "description": "Pecahan F042: masa simpan activity log dengan allowlist log_name; keuangan, sistem, pengaturan, dokumen, psb tidak pernah dihapus.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Ditunda menunggu keputusan user (perlu tidaknya, log_name dan masa simpan). Usulan dari batch malam 22 Okt 2026, issue #67."
     }
   ]
 }

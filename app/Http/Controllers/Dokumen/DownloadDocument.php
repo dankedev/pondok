@@ -21,6 +21,14 @@ class DownloadDocument extends Controller
     {
         Gate::authorize('download', $document);
 
+        return static::respond($document);
+    }
+
+    /**
+     * Respons unduhan berkas dokumen; dipakai juga oleh portal wali (F022). File hilang → 404.
+     */
+    public static function respond(Document $document): StreamedResponse
+    {
         $disk = Storage::disk(Document::DISK);
         $path = (string) $document->file_path;
 

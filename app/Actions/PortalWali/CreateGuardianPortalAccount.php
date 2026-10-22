@@ -5,6 +5,7 @@ namespace App\Actions\PortalWali;
 use App\Enums\Module;
 use App\Models\Guardian;
 use App\Models\User;
+use App\Notifications\GuardianPortalInvitation;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -14,8 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Membuat akun portal untuk wali (F022): user baru berperan `wali`, ditautkan lewat
- * `guardians.user_id` (satu-satunya pengisi kolom itu), lalu tautan atur password
- * portal wali (notifikasi reset password Laravel, F079) dikirim ke email tersebut. Email belum terverifikasi sampai tautan dibuka.
+ * `guardians.user_id` (satu-satunya pengisi kolom itu), lalu email undangan portal wali (F081)
+ * berisi tautan atur password dari broker undangan (berlaku 72 jam) dikirim ke email tersebut.
+ * Email belum terverifikasi sampai tautan dibuka. Email dikirim di luar transaksi: bila pengiriman
+ * gagal, akun tetap dibuat dan wali memakai "Lupa password".
  */
 class CreateGuardianPortalAccount
 {
@@ -75,7 +78,9 @@ class CreateGuardianPortalAccount
 
     private function sendPasswordSetupLink(User $user): void
     {
-        $user->sendPasswordResetNotification(Password::createToken($user));
+        $token = Password::broker(GuardianPortalInvitation::BROKER)->createToken($user);
+
+        $user->notify(new GuardianPortalInvitation($token));
     }
 
     private function reject(string $error): ValidationException

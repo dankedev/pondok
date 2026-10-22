@@ -11,7 +11,7 @@ use Illuminate\Http\UploadedFile;
  */
 final class DemoFiles
 {
-    /** Pasangan warna gradasi (atas, bawah) dari palet logo: navy #000A3C dan emas #F8B800 (design guide §2). */
+    /** Pasangan warna gradasi (atas, bawah) dari palet portal: navy #000A3C dan emas #F8B800 (design guide §2). */
     private const GRADIENTS = [
         [[0, 10, 60], [39, 62, 140]],
         [[255, 249, 229], [255, 212, 82]],
@@ -28,7 +28,7 @@ final class DemoFiles
 
     public function pdf(string $name): UploadedFile
     {
-        $text = "Dokumen contoh - data demo Ma'had Al-Khair Belitang";
+        $text = 'Dokumen contoh - data demo Pondok Pesantren Contoh';
         $stream = "BT /F1 12 Tf 72 720 Td ({$text}) Tj ET";
         $content = "%PDF-1.4\n"
             ."1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"

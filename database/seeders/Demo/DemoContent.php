@@ -20,7 +20,6 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\StaticPage;
-use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
 /**
@@ -97,7 +96,7 @@ final class DemoContent
 
     /**
      * Profil lembaga demo (F036) lewat Action panel. Tiap bagian hanya diisi bila
-     * masih kosong, sehingga seed ulang tidak mengubah isian atau menambah berkas logo.
+     * masih kosong, sehingga seed ulang tidak mengubah isian.
      */
     private function seedInstitutionProfile(): void
     {
@@ -108,14 +107,6 @@ final class DemoContent
         $identity = collect($profile)->only(['name', 'short_name', 'arabic_name', 'tagline'])->all();
         $identity['short_name'] ??= $demo['short_name'];
         $identity['arabic_name'] ??= $demo['arabic_name'];
-
-        foreach ($demo['logos'] as $field => $source) {
-            $path = base_path($source);
-
-            if ($profile[$field.'_path'] === null && is_file($path)) {
-                $identity[$field] = new UploadedFile($path, basename($path), null, null, true);
-            }
-        }
 
         app(UpdateSchoolProfile::class)->handle($identity, $actor);
 

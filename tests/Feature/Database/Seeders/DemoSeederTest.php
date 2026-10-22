@@ -1,7 +1,6 @@
 <?php
 
 use App\Actions\Konten\FormatPhoneForDisplay;
-use App\Actions\Konten\StorePublicImage;
 use App\Actions\Tahfidz\RefreshJuzProgress;
 use App\Models\AcademicYear;
 use App\Models\AdmissionWave;
@@ -86,35 +85,6 @@ function demoUser(string $role): User
 function demoCheck(bool $condition, string $message): void
 {
     test()->assertTrue($condition, $message);
-}
-
-/**
- * Deret angka (telepon, rekening) dari brosur, diambil saat test berjalan:
- * angka 8 digit atau lebih setelah tanda hubung dan spasi dibuang.
- *
- * @return list<string>
- */
-function demoBrochureNumbers(): array
-{
-    $text = (string) file_get_contents(base_path('docs/brand/brosur-psb-2027-2028.md'));
-    preg_match_all('/\d[\d -]{6,}\d/', $text, $matches);
-
-    return collect($matches[0])
-        ->map(fn (string $raw): string => preg_replace('/\D/', '', $raw))
-        ->filter(fn (string $digits): bool => strlen($digits) >= 8)
-        ->unique()->values()->all();
-}
-
-/**
- * Pola nama orang dan usaha dari brosur. Ditulis literal karena baris brosur
- * tidak stabil untuk diekstrak (gelar dan jabatan menempel). Sumber:
- * docs/brand/brosur-psb-2027-2028.md baris Binaan, Alamat, dan Kontak.
- *
- * @return list<string>
- */
-function demoBrochureForbiddenPatterns(): array
-{
-    return ['/\bWujud\b/u', '/Said Yai/u', '/Rendi Sulistiawan/u', '/Arwitra/u', '/Waterboom/u'];
 }
 
 /**
@@ -217,9 +187,9 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect(AcademicYear::query()->where('is_active', true)->pluck('name')->all())->toBe(['2026/2027']);
 
     // AC-5
-    expect(Setting::get('school.name'))->toBe("Ma'had Al-Khair Belitang");
-    expect(Setting::get('school.tagline'))->toBe("Generasi Beradab Bersama Al-Qur'an");
-    foreach (['Mojosari', 'Belitang', 'OKU Timur'] as $part) {
+    expect(Setting::get('school.name'))->toBe('Pondok Pesantren Contoh');
+    expect(Setting::get('school.tagline'))->toBe('Berilmu, beramal, dan beradab');
+    foreach (['Jl. Pendidikan No. 1', 'Desa Contoh', 'Kecamatan Contoh'] as $part) {
         expect((string) Setting::get('school.address'))->toContain($part);
     }
     // F044: telepon kantor menjadi kontak "Kantor" bertanda cetak; school.phone tidak ada lagi.
@@ -227,11 +197,11 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     demoCheck($printContacts->count() === 1 && $printContacts->first()['label'] === 'Kantor' && Setting::get('school.phone') === null && filled(Setting::get('school.email')), 'AC-5 kontak Kantor bertanda cetak dan email');
     // F037: konten profil dipecah ke halaman profil, pengurus, dan selayang-pandang.
     $profil = DB::table('pages')->whereIn('slug', ['profil', 'pengurus', 'selayang-pandang'])->get(['title', 'body'])->map(fn (object $row): string => $row->title.' '.$row->body)->implode(' ');
-    foreach (['Tentang Yayasan', 'Selayang Pandang', 'Pengurus Al-Khair', 'khusus putra'] as $part) {
+    foreach (['Tentang Yayasan', 'Selayang Pandang', 'Pengurus Yayasan', 'khusus putra'] as $part) {
         demoCheck(str_contains($profil, $part), "AC-5 profil memuat {$part}");
     }
     $kontakBody = (string) DB::table('pages')->where('slug', 'kontak')->value('body');
-    foreach (['Mojosari', 'info@alkhair-belitang.test', '0735', '0812 0000 0170'] as $retyped) {
+    foreach (['Desa Contoh', 'info@pondok-contoh.test', '0735', '0812 0000 0170'] as $retyped) {
         demoCheck(! str_contains($kontakBody, $retyped), "AC-8 halaman kontak tidak mengetik ulang {$retyped}");
     }
     demoCheck(str_contains($kontakBody, 'Jam layanan'), 'AC-8 halaman kontak memuat jam layanan');
@@ -549,7 +519,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     }
 
     // AC-20
-    $briefCategories = ['Kegiatan Al-Khair', 'Prestasi', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
+    $briefCategories = ['Kegiatan Pondok', 'Prestasi', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
     $postCategories = DB::table('categories')->where('type', 'post')->get();
     expect($postCategories->pluck('name')->all())->toContain(...$briefCategories)->and($postCategories->where('name', 'Prestasi'))->toHaveCount(1);
     expect(Schema::hasColumn('posts', 'type'))->toBeFalse();
@@ -600,36 +570,12 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         demoCheck(collect($averages)->contains(fn (array $c): bool => $c[2] > $c[0] && $c[2] >= $c[1]), 'ada placeholder bernuansa navy');
         demoCheck(collect($averages)->contains(fn (array $c): bool => $c[0] > $c[2] + 40 && $c[1] > $c[2] + 20), 'ada placeholder bernuansa emas');
     }
-    $this->get(route('portal.home'))->assertOk()->assertSee("Ma'had Al-Khair Belitang");
+    $this->get(route('portal.home'))->assertOk()->assertSee('Pondok Pesantren Contoh');
     $this->get(route('portal.posts.index'))->assertOk();
     $this->get(route('portal.albums.index'))->assertOk();
     $this->get(route('portal.videos.index'))->assertOk()->assertSee(__('pondok.portal.videos.empty'));
     $this->get(route('portal.home'))->assertOk()->assertDontSee(__('pondok.portal.home.featured_videos'));
     $this->get(route('portal.pages.show', 'profil'))->assertOk();
-
-    // AC-26
-    $patterns = demoBrochureForbiddenPatterns();
-    $numbers = demoBrochureNumbers();
-    demoCheck(count($numbers) >= 3, 'AC-26 brosur memuat nomor telepon dan rekening');
-    $brochureHits = demoScanColumns([
-        'settings' => ['value'], 'pages' => ['body'], 'posts' => ['title', 'body'], 'staff' => ['name', 'phone'],
-        'guardians' => ['name', 'phone'], 'applicants' => ['guardian_phone'], 'users' => ['name'],
-    ], function (string $value) use ($patterns, $numbers): bool {
-        $digits = preg_replace('/\D/', '', $value);
-        foreach ($numbers as $number) {
-            if (str_contains($digits, $number)) {
-                return true;
-            }
-        }
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $value) === 1) {
-                return true;
-            }
-        }
-
-        return false;
-    });
-    expect($brochureHits)->toBe([]);
 
     // AC-27
     $terms = DemoData::FORBIDDEN_CONTENT_TERMS;
@@ -650,7 +596,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     });
     expect($contentHits)->toBe([]);
 
-    // AC-59 (F036): profil lembaga fiktif dan logo merek, lewat seed pertama yang sama.
+    // AC-59 (F036): profil lembaga fiktif, lewat seed pertama yang sama.
     $profileKeys = ['school.contacts', 'school.social_links', 'portal.home_blocks', 'portal.footer_widgets', 'school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'];
     $contacts = collect(Setting::get('school.contacts'));
     expect($contacts->count())->toBeGreaterThanOrEqual(2)
@@ -664,36 +610,17 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     expect(array_column($homeBlocks, 'type'))->toContain('hero', 'features', 'quote', 'cta', 'feed')->not->toContain('video')
         ->and(array_count_values(array_column($homeBlocks, 'type'))['hero'])->toBe(1)
         ->and(Album::query()->whereKey($hero['data']['album_id'] ?? 0)->exists())->toBeTrue();
-    // Revisi 3: logo cetak (kop surat dan kuitansi) memakai logo simbol.
-    $printLogo = Setting::get('school.logo_path');
-    expect($printLogo)->toBeString()->not->toBeEmpty()
-        ->and(Storage::disk('public')->exists($printLogo))->toBeTrue()
-        ->and(Storage::disk('public')->get($printLogo))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')));
-    $logoPaths = [Setting::get('school.logo_desktop_path'), Setting::get('school.logo_mobile_path'), Setting::get('school.favicon_path')];
-    expect(array_unique($logoPaths))->toHaveCount(3)
-        ->and(collect($logoPaths)->every(fn (?string $path): bool => is_string($path) && str_starts_with($path, 'school/') && Storage::disk('public')->exists($path)))->toBeTrue()
-        ->and(Storage::disk('public')->allFiles('school'))->toHaveCount(4)
-        ->and(Storage::disk('public')->get($logoPaths[0]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-horizontal.png')))
-        ->and(Storage::disk('public')->get($logoPaths[1]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')))
-        ->and(Storage::disk('public')->get($logoPaths[2]))->toBe(file_get_contents(base_path('docs/brand/logo-mahad-simbol.png')));
-    // Logo desktop: PNG horizontal (rasio >= 3:1), transparan, di bawah batas unggah logo.
-    $desktopBytes = Storage::disk('public')->get($logoPaths[0]);
-    $desktopInfo = getimagesizefromstring($desktopBytes);
-    expect($desktopInfo)->not->toBeFalse()
-        ->and($desktopInfo['mime'])->toBe('image/png')
-        ->and($desktopInfo[0] / $desktopInfo[1])->toBeGreaterThanOrEqual(3.0)
-        ->and(strlen($desktopBytes))->toBeLessThan(StorePublicImage::LOGO_MAX_KILOBYTES * 1024)
-        ->and(substr($desktopBytes, 25, 1))->toBe("\x06"); // PNG IHDR color type 6 = RGBA (transparan)
-    $profileJson = json_encode(Setting::query()->where(fn ($q) => $q->where('key', 'like', 'school.%')->orWhere('key', 'like', 'portal.%'))->pluck('value', 'key')->all());
-    foreach (['085832333725', '085669941929'] as $brochureNumber) {
-        expect($profileJson)->not->toContain($brochureNumber);
+    // Demo tanpa logo bawaan: portal menampilkan nama lembaga.
+    foreach (['school.logo_path', 'school.logo_desktop_path', 'school.logo_mobile_path', 'school.favicon_path'] as $logoKey) {
+        expect(Setting::get($logoKey))->toBeNull();
     }
+    expect(Storage::disk('public')->allFiles('school'))->toBe([]);
     $profileSnapshot = collect($profileKeys)->mapWithKeys(fn (string $key): array => [$key => Setting::get($key)])->all();
 
     // AC-38 (F037): halaman dan menu contoh dari brief, lewat seed pertama yang sama.
     $pages = DB::table('pages')->get()->keyBy('slug');
     expect($pages->get('profil')->title)->toBe('Tentang Yayasan')
-        ->and($pages->get('pengurus')->title)->toBe('Pengurus Al-Khair')
+        ->and($pages->get('pengurus')->title)->toBe('Pengurus Yayasan')
         ->and($pages->get('selayang-pandang')->title)->toBe('Selayang Pandang')
         ->and($pages->keys()->all())->toContain('visi-misi', 'kontak')
         ->and($pages->only(['profil', 'pengurus', 'selayang-pandang', 'visi-misi', 'kontak'])->pluck('status')->unique()->all())->toBe(['terbit']);
@@ -715,7 +642,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
         ->and(Setting::query()->whereIn('key', ['portal.footer_quote_arabic', 'portal.footer_quote_translation', 'portal.footer_quote_source', 'portal.archived_footer_quote', 'portal.menu_items', 'portal.footer_links'])->count())->toBe(0);
     $demoHome = $this->get('/')->assertOk()->getContent();
     $demoNav = portalNavTexts($demoHome);
-    expect($demoNav[0])->toBe('Beranda')->and($demoNav)->toContain('Tentang Yayasan', 'Pengurus Al-Khair', 'Selayang Pandang')
+    expect($demoNav[0])->toBe('Beranda')->and($demoNav)->toContain('Tentang Yayasan', 'Pengurus Yayasan', 'Selayang Pandang')
         // Satu grup menu demo + grup Masuk (Wali santri/Staf pondok) karena portal wali aktif (F082).
         ->and(substr_count(navHtml($demoHome, 'desktop'), '<details'))->toBe(2)
         ->and(profilFooter($demoHome))->not->toContain('<blockquote')->not->toContain('lang="ar"');
@@ -743,8 +670,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     foreach ($profileSnapshot as $key => $value) {
         expect(Setting::get($key))->toBe($value, "AC-59 {$key} stabil pada seed ulang");
     }
-    expect(Storage::disk('public')->allFiles('school'))->toHaveCount(4);
-    expect(Setting::get('school.logo_path'))->toBe($printLogo);
+    expect(Storage::disk('public')->allFiles('school'))->toBe([]);
     expect([Setting::get('portal.navigation_primary'), Setting::get('portal.footer_widgets'), Setting::get('portal.header_button'), DB::table('pages')->count()])->toBe($menuSnapshot, 'AC-38 menu dan halaman stabil pada seed ulang');
 
     // AC-6 (cakupan jenjang) setelah seluruh seeding.
@@ -873,43 +799,6 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
     }
     expect($allWaves->filter(fn ($w) => $w->isAcceptingRegistrationsOn(CarbonImmutable::now('Asia/Jakarta')))->count())->toBe(1);
 
-    // Tidak ada data brosur di seluruh kolom semua tabel (termasuk nomor dokumen terenkripsi, snapshot surat, keterangan foto).
-    $numbers = demoBrochureNumbers();
-    $patterns = demoBrochureForbiddenPatterns();
-    $matches = static function (string $value) use ($numbers, $patterns): bool {
-        $digits = preg_replace('/\D/', '', $value);
-        foreach ($numbers as $number) {
-            if (str_contains($digits, $number)) {
-                return true;
-            }
-        }
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $value) === 1) {
-                return true;
-            }
-        }
-
-        return false;
-    };
-    $skipTables = ['migrations', 'cache', 'cache_locks', 'sessions', 'jobs', 'job_batches', 'failed_jobs', 'password_reset_tokens'];
-    $textTypes = ['varchar', 'text', 'longtext', 'mediumtext', 'json', 'string', 'char'];
-    $scan = [];
-    foreach (Schema::getTables() as $table) {
-        if (in_array($table['name'], $skipTables, true)) {
-            continue;
-        }
-        foreach (Schema::getColumns($table['name']) as $column) {
-            if (in_array(strtolower((string) $column['type_name']), $textTypes, true) && ! in_array($column['name'], ['password', 'remember_token', 'access_token_hash'], true)) {
-                $scan[$table['name']][] = $column['name'];
-            }
-        }
-    }
-    demoCheck(isset($scan['posts'], $scan['issued_letters'], $scan['photos'], $scan['activity_log']), 'VERIFY pemindaian mencakup tabel teks utama');
-    expect(demoScanColumns($scan, $matches))->toBe([]);
-    foreach (Document::query()->whereNotNull('number')->pluck('number') as $number) {
-        demoCheck(! $matches((string) $number), 'VERIFY nomor dokumen terdekripsi bebas data brosur');
-    }
-
     // Manhaj: istilah terlarang tidak ada di prestasi, surat, dan seluruh konten publik.
     $terms = DemoData::FORBIDDEN_CONTENT_TERMS;
     $termMatcher = function (string $value) use ($terms): bool {
@@ -928,17 +817,17 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
     ], $termMatcher))->toBe([]);
 
     // Portal menampilkan data revisi.
-    $this->get('/')->assertOk()->assertSee("Generasi Beradab Bersama Al-Qur'an");
+    $this->get('/')->assertOk()->assertSee('Berilmu, beramal, dan beradab');
     $this->get('/berita')->assertOk()->assertSee('Penerimaan Santri Baru');
     $this->get('/profil')->assertOk()->assertSee('Selayang Pandang');
-    $kontakHtml = $this->get('/kontak')->assertOk()->assertSee('Mojosari')->getContent();
+    $kontakHtml = $this->get('/kontak')->assertOk()->assertSee('Desa Contoh')->getContent();
     preg_match('#<main\b.*?</main>#is', $kontakHtml, $kontakMain);
     $kontak = profilVisibleText($kontakMain[0] ?? '');
     foreach (Setting::get('school.contacts') as $contact) {
         $shown = app(FormatPhoneForDisplay::class)->handle($contact['phone']);
         expect(substr_count($kontak, $shown))->toBe(1, "AC-8 nomor {$shown} tepat sekali di /kontak");
     }
-    expect(substr_count($kontak, 'info@alkhair-belitang.test'))->toBe(1);
+    expect(substr_count($kontak, 'info@pondok-contoh.test'))->toBe(1);
 
     // Dashboard panel untuk setiap akun demo tidak error; portal terbit tampil.
     foreach (array_keys(DEMO_ACCOUNTS) as $role) {

@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use RuntimeException;
 
 /**
- * Data demo realistis Ma'had Al-Khair Belitang (F034). Dijalankan terpisah:
+ * Data demo realistis Pondok Pesantren Contoh (F034). Dijalankan terpisah:
  * `php artisan db:seed --class=DemoSeeder`. Tidak pernah dipanggil seeder
  * instalasi. Menolak production, idempotent (jalan ulang tidak menambah
  * data), dan membuat data lewat Action agar aturan bisnis berlaku.
@@ -35,7 +35,7 @@ use RuntimeException;
  */
 class DemoSeeder extends Seeder
 {
-    public const DEFAULT_PASSWORD = 'demo-alkhair-belitang';
+    public const DEFAULT_PASSWORD = 'demo-pondok-contoh';
 
     public const EMAIL_DOMAIN = 'demo.test';
 
@@ -62,7 +62,7 @@ class DemoSeeder extends Seeder
             (new DemoAcademics($context))->run();
             (new DemoFinance($context))->run();
             (new DemoAdmissions($context))->run();
-            // Konten lebih dulu: berita prestasi memakai kategori "Prestasi Al-Khair".
+            // Konten lebih dulu: berita prestasi memakai kategori "Prestasi Pondok".
             (new DemoContent($context))->run();
             (new DemoRecords($context))->run();
             (new DemoTahfidz($context))->run();

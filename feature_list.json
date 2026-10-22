@@ -1639,7 +1639,7 @@
       "name": "Kirim ulang undangan akun portal wali",
       "phase": 2,
       "module": "Portal wali",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F081"
       ],
@@ -1651,9 +1651,9 @@
         "Dibatasi throttle bawaan broker dan tercatat di activity log.",
         "Mengikuti saklar modul portal-wali."
       ],
-      "owner": "f084-kirim-ulang-undangan",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 07cc750 (throttle broker), fd8340f (sendTo bersama), 0e28409 (Action + aksi admin), 79ba6e3/a663189/4503e0b (test). ResendGuardianPortalInvitationTest + ResendGuardianInvitationAdversarialTest; tests/Feature/PortalWali + Actions/PortalWali + ModuleComplianceTest 161 lulus; suite penuh PHP 8.4 5131 test: 5125 lulus, 5 skipped MySQL, 1 galat lingkungan (worktree tanpa .env: SUPER_ADMIN_*) yang lulus 10/10 saat diulang dengan env. Pint lulus. Cek tampilan 360/1024/1440 tidak dilakukan (izin menyiapkan .env worktree ditolak).",
       "notes": "Jalur: penuh (menyentuh auth/token). Rencana: docs/plans/F084-plan.md"
     }
   ]

@@ -16,6 +16,7 @@ return [
         'situs' => 'Situs',
         'prestasi' => 'Prestasi',
         'tahfidz' => 'Tahfidz',
+        'kesehatan' => 'Kesehatan',
         'pengaturan' => 'Pengaturan',
         'access' => 'Pengguna & Akses',
     ],
@@ -2379,6 +2380,10 @@ return [
         'tahfidz' => [
             'label' => 'Tahfidz',
             'description' => 'Halaqah, setoran hafalan, capaian juz, ujian tahfidz, dan target hafalan.',
+        ],
+        'kesehatan' => [
+            'label' => 'Kesehatan',
+            'description' => 'Catatan kunjungan dan keluhan kesehatan santri, rujukan, dan izin pulang.',
         ],
     ],
 

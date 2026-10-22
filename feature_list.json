@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F082",
+  "next_id": "F083",
   "features": [
     {
       "id": "F001",
@@ -1577,6 +1577,31 @@
       "handoff": null,
       "evidence": null,
       "notes": "Ditunda menunggu keputusan user atas opsi di issue #80 (notifikasi khusus, broker undangan terpisah, atau dibiarkan)."
+    },
+    {
+      "id": "F082",
+      "key": "portal-wali-pintu-masuk",
+      "issue": 82,
+      "name": "Pintu masuk wali: pilihan Wali/Staf di tombol Masuk portal",
+      "phase": 2,
+      "module": "Portal wali",
+      "status": "in-progress",
+      "depends_on": [
+        "F079"
+      ],
+      "description": "Tautan Masuk di header portal hanya ke /admin/login sehingga wali tersesat ke login staf. Saat modul portal-wali aktif: pilihan Wali santri/Staf pondok di header, tautan portal wali di login admin, dan tombol portal wali di halaman 403 untuk wali.",
+      "acceptance": [
+        "Modul aktif: kedua nav header memuat /wali/masuk dan /admin/login",
+        "Modul mati: header hanya memuat /admin/login",
+        "Login admin memuat tautan /wali/masuk saat modul aktif, tidak saat mati",
+        "Wali aktif membuka /admin mendapat 403 dengan tombol ke /wali; staf non-wali dan modul mati tanpa tombol",
+        "Teks dari lang/id; dicek 360px, 1024px, 1440px",
+        "Test terdampak dan suite penuh lulus; Pint"
+      ],
+      "owner": "qa-tampilan",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur cepat. Keputusan user 22 Okt 2026 (Opsi A tinjauan URL login wali). Rencana: docs/plans/F082-plan.md"
     }
   ]
 }

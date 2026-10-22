@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F075",
+  "next_id": "F076",
   "features": [
     {
       "id": "F001",
@@ -1391,6 +1391,26 @@
       "handoff": null,
       "evidence": "commit b5bafb4 (rencana), 33b1c79 (blok video/feed lewat maxItems 0, test HomeBuilderVerifyTest gagal tanpa perbaikan lalu lulus); HomeBuilderPageTest + HomeBuilderVerifyTest 13 test lulus; suite penuh PHP 8.4 4664 test: 4660 lulus, 4 skip; Pint lulus; cek tampilan 360px/desktop belum dilakukan (migrate DB terpisah untuk worktree ditolak)",
       "notes": "jalur: cepat (form admin dan test; tanpa migration, uang, atau hak akses). Rencana: docs/plans/F074-plan.md."
+    },
+    {
+      "id": "F075",
+      "key": "konten-perbaikan-tampilan-portal",
+      "issue": 65,
+      "name": "Perbaikan tampilan: menu portal 1024px dan teks rincian biaya PSB",
+      "phase": 1,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": [],
+      "description": "Temuan cek tampilan malam 22 Okt 2026: nav penuh portal terlipat di 1024px; teks 'Untuk gelombang Gelombang I' ganda di Info PSB.",
+      "acceptance": [
+        "Nav penuh mulai xl (1280px), menu lipat di bawahnya; label desktop tidak terlipat",
+        "Teks rincian biaya: 'Berlaku untuk :wave, tahun ajaran :year.'",
+        "Tanpa overflow di 360px, 1024px, desktop"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit 3435afb (nav xl), 691121a (teks fees_note). Dicek di browser (situs Herd sementara worktree, DB SQLite demo): 360px/1024px (menu lipat)/1280px (nav satu baris)/1440px tanpa overflow; teks 'Berlaku untuk Gelombang I, tahun ajaran 2027/2028.'. Suite penuh PHP 8.4 4797 test lulus (5 skipped MySQL); Pint lulus.",
+      "notes": "Jalur cepat. Disetujui user 22 Okt 2026 (cek tampilan: bug kecil langsung diperbaiki). Rencana: docs/plans/F075-plan.md."
     }
   ]
 }

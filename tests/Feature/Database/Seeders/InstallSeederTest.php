@@ -71,15 +71,14 @@ it('AC-21: system seeder restores permissions and settings without overwriting',
         ->and(Setting::query()->find('modules.konten.enabled')->value)->toBeFalse();
 });
 
-it('AC-2: setting seeder creates the seven enum modules enabled and no tahfidz or perizinan row', function () {
+it('AC-2: setting seeder creates the nine enum modules enabled and no perizinan row', function () {
     $this->seed(SettingSeeder::class);
 
     foreach (Module::cases() as $module) {
         expect(Setting::query()->find("modules.{$module->value}.enabled")?->value)->toBeTrue("modul {$module->value}");
     }
 
-    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(8)
-        ->and(Setting::query()->whereKey('modules.tahfidz.enabled')->exists())->toBeFalse()
+    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(9)
         ->and(Setting::query()->whereKey('modules.perizinan.enabled')->exists())->toBeFalse();
 });
 

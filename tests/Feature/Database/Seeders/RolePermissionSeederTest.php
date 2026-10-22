@@ -107,7 +107,12 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:achievement', 'view:achievement', 'create:achievement', 'update:achievement', 'delete:achievement',
     ]],
     'musyrif' => ['musyrif', ['view-dashboard', 'view-any:room-assignment', 'view:room-assignment']],
-    'ustadz-tahfidz' => ['ustadz-tahfidz', ['view-dashboard']],
+    'ustadz-tahfidz' => ['ustadz-tahfidz', [
+        'view-dashboard',
+        'view-any:halaqah', 'view:halaqah',
+        'view-any:memorization-record', 'view:memorization-record', 'create:memorization-record', 'delete:memorization-record',
+        'view-any:tahfidz-exam', 'view:tahfidz-exam', 'create:tahfidz-exam',
+    ]],
     'petugas-pos' => ['petugas-pos', ['view-dashboard']],
     'wali' => ['wali', []],
     'admin-sekolah' => ['admin-sekolah', [
@@ -126,6 +131,10 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:issued-letter', 'view:issued-letter', 'create:issued-letter', 'cancel:issued-letter', 'configure-numbering:issued-letter',
         'view-any:achievement', 'view:achievement', 'verify:achievement',
         'view:student-numbering',
+        'view-any:halaqah', 'view:halaqah', 'create:halaqah', 'update:halaqah',
+        'view-any:memorization-record', 'view:memorization-record', 'create:memorization-record', 'delete:memorization-record',
+        'view-any:tahfidz-exam', 'view:tahfidz-exam', 'create:tahfidz-exam', 'delete:tahfidz-exam',
+        'view-any:tahfidz-target', 'view:tahfidz-target', 'create:tahfidz-target', 'update:tahfidz-target', 'delete:tahfidz-target', 'delete-any:tahfidz-target',
     ]],
 ]);
 

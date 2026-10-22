@@ -1567,16 +1567,24 @@
       "name": "Email akun portal wali baru memakai teks reset password dan kedaluwarsa 60 menit",
       "phase": 2,
       "module": "Portal wali",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": [
         "F079"
       ],
       "description": "CreateGuardianPortalAccount mengirim notifikasi reset password bawaan: teks seperti permintaan reset dan tautan kedaluwarsa 60 menit untuk wali baru.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "Buat akun portal mengirim notifikasi GuardianPortalInvitation (bukan ResetPassword bawaan) dengan token dari broker guardian_invitations (tabel guardian_invitation_tokens).",
+        "Teks email undangan dari lang/id portal_wali.invitation.*: memakai email/password, menyebut masa berlaku 72 jam dan tautan Lupa password; tanpa surel/kata sandi.",
+        "Token undangan berlaku 72 jam hanya lewat tautan undangan; ditolak di jalur default dan setelah kedaluwarsa.",
+        "Token Lupa password tetap 60 menit dan ditolak di tautan undangan.",
+        "Atur password berhasil menandai email terverifikasi dan menghapus token kedua broker.",
+        "Gagal buat akun atau modul mati: tanpa notifikasi/token; halaman atur password 404 saat modul mati.",
+        "Semua kegagalan atur password (token salah, email tidak ada, token kedaluwarsa) menampilkan satu galat portal pondok.portal_wali.reset_invalid tanpa kata sandi."
+      ],
+      "owner": "sesi F081 (feat/f081-undangan-wali)",
       "handoff": null,
       "evidence": null,
-      "notes": "Ditunda menunggu keputusan user atas opsi di issue #80 (notifikasi khusus, broker undangan terpisah, atau dibiarkan)."
+      "notes": "Jalur: penuh (menyentuh auth). Keputusan user 22 Okt 2026: opsi 2 (notifikasi undangan khusus + broker undangan 72 jam). Rencana: docs/plans/F081-plan.md"
     },
     {
       "id": "F082",

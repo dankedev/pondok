@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\Module;
+use App\Models\Scopes\UnitScope;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -55,19 +58,12 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     }
 
     /**
-     * Panel `admin` untuk staf (`view-dashboard`), panel `wali` untuk peran `wali` (F022).
-     * Staf yang juga wali boleh masuk keduanya.
+     * Panel `admin` untuk staf aktif (`view-dashboard`). Wali memakai portal Blade `/wali` (F079),
+     * bukan panel Filament.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        if (! $this->is_active) {
-            return false;
-        }
-
-        return match ($panel->getId()) {
-            'wali' => $this->hasRole('wali'),
-            default => $this->can('view-dashboard'),
-        };
+        return $this->is_active && $this->can('view-dashboard');
     }
 
     /**
@@ -109,6 +105,25 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     {
         return Student::withoutUnitScope()
             ->whereHas('guardians', fn (Builder $query) => $query->where('guardians.user_id', $this->id));
+    }
+
+    /**
+     * Santri portal beserta ringkasan: jenjang, rombel tahun aktif, dan kamar aktif (bila Asrama aktif),
+     * tanpa cakupan jenjang user login. Dipakai beranda dan rincian santri portal wali.
+     *
+     * @return Builder<Student>
+     */
+    public function portalStudentsWithSummary(): Builder
+    {
+        $query = $this->portalStudents()->with(['unit', 'currentEnrollment.classroom']);
+
+        if (Module::Asrama->isEnabled()) {
+            $query->with(['activeRoomAssignment' => fn (Relation $relation) => $relation
+                ->withoutGlobalScope(UnitScope::class)
+                ->with('room.dormitory')]);
+        }
+
+        return $query;
     }
 
     public function portalStudent(int $id): Student

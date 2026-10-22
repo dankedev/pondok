@@ -5,8 +5,6 @@ namespace App\Actions\PortalWali;
 use App\Enums\Module;
 use App\Models\Guardian;
 use App\Models\User;
-use Filament\Auth\Notifications\ResetPassword;
-use Filament\Facades\Filament;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -17,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Membuat akun portal untuk wali (F022): user baru berperan `wali`, ditautkan lewat
  * `guardians.user_id` (satu-satunya pengisi kolom itu), lalu tautan atur password
- * panel `wali` dikirim ke email tersebut. Email belum terverifikasi sampai tautan dibuka.
+ * portal wali (notifikasi reset password Laravel, F079) dikirim ke email tersebut. Email belum terverifikasi sampai tautan dibuka.
  */
 class CreateGuardianPortalAccount
 {
@@ -77,13 +75,7 @@ class CreateGuardianPortalAccount
 
     private function sendPasswordSetupLink(User $user): void
     {
-        $panel = Filament::getPanel('wali');
-        $token = Password::broker($panel->getAuthPasswordBroker())->createToken($user);
-
-        $notification = app(ResetPassword::class, ['token' => $token]);
-        $notification->url = $panel->getResetPasswordUrl($token, $user);
-
-        $user->notify($notification);
+        $user->sendPasswordResetNotification(Password::createToken($user));
     }
 
     private function reject(string $error): ValidationException

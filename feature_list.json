@@ -1585,7 +1585,7 @@
       "name": "Pintu masuk wali: pilihan Wali/Staf di tombol Masuk portal",
       "phase": 2,
       "module": "Portal wali",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F079"
       ],
@@ -1598,9 +1598,9 @@
         "Teks dari lang/id; dicek 360px, 1024px, 1440px",
         "Test terdampak dan suite penuh lulus; Pint"
       ],
-      "owner": "qa-tampilan",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 3730266 (header), f97b49e (login admin), 888fa75 (403), a93dbb5 + test demo (test). WaliEntryPointsTest 5 lulus; Http/Portal, PortalWali, ErrorPages, ModuleCompliance lulus; suite penuh PHP 8.4 5082 test: 5076 lulus, 5 skipped MySQL, 1 gagal (DemoSeederTest hitung <details> header) lalu diperbaiki dan lulus. Pint lulus. Dicek visual 360px/1024px/1440px di Herd link sementara.",
       "notes": "Jalur cepat. Keputusan user 22 Okt 2026 (Opsi A tinjauan URL login wali). Rencana: docs/plans/F082-plan.md"
     }
   ]

@@ -4942,9 +4942,7 @@ function waliText(User $user, string $path = '/wali'): string
  */
 function waliReset(User $user, string $token, string $password, ?string $confirmation = null, bool $invitation = false): Testable
 {
-    if ($invitation) {
-        Livewire::withQueryParams(['undangan' => 1]);
-    }
+    Livewire::withQueryParams($invitation ? ['undangan' => 1] : []);
 
     return Livewire::test(PortalResetPassword::class, ['token' => $token])
         ->set('email', $user->email)->set('password', $password)->set('password_confirmation', $confirmation ?? $password)

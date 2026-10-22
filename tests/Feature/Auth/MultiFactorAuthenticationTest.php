@@ -63,14 +63,14 @@ it('AC-3: rejects a wrong code and accepts the current TOTP code', function () {
     $wrong = $current === '123456' ? '654321' : '123456';
 
     mfaLoginToChallenge()
-        ->set('data.multiFactor.code', $wrong)
+        ->set('data.multiFactor.app.code', $wrong)
         ->call('authenticate')
-        ->assertHasErrors(['data.multiFactor.code']);
+        ->assertHasErrors(['data.multiFactor.app.code']);
 
     $this->assertGuest();
 
     mfaLoginToChallenge()
-        ->set('data.multiFactor.code', $current)
+        ->set('data.multiFactor.app.code', $current)
         ->call('authenticate')
         ->assertHasNoErrors();
 
@@ -82,8 +82,8 @@ it('AC-4: a recovery code logs in once and is then consumed', function () {
     $code = $mfa['codes'][0];
 
     mfaLoginToChallenge()
-        ->set('data.multiFactor.useRecoveryCode', true)
-        ->set('data.multiFactor.recoveryCode', $code)
+        ->set('data.multiFactor.app.useRecoveryCode', true)
+        ->set('data.multiFactor.app.recoveryCode', $code)
         ->call('authenticate')
         ->assertHasNoErrors();
 
@@ -92,10 +92,10 @@ it('AC-4: a recovery code logs in once and is then consumed', function () {
     auth()->logout();
 
     mfaLoginToChallenge()
-        ->set('data.multiFactor.useRecoveryCode', true)
-        ->set('data.multiFactor.recoveryCode', $code)
+        ->set('data.multiFactor.app.useRecoveryCode', true)
+        ->set('data.multiFactor.app.recoveryCode', $code)
         ->call('authenticate')
-        ->assertHasErrors(['data.multiFactor.recoveryCode']);
+        ->assertHasErrors(['data.multiFactor.app.recoveryCode']);
 
     $this->assertGuest();
 });

@@ -12,6 +12,7 @@ use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,9 +54,20 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         ];
     }
 
+    /**
+     * Panel `admin` untuk staf (`view-dashboard`), panel `wali` untuk peran `wali` (F022).
+     * Staf yang juga wali boleh masuk keduanya.
+     */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_active && $this->can('view-dashboard');
+        if (! $this->is_active) {
+            return false;
+        }
+
+        return match ($panel->getId()) {
+            'wali' => $this->hasRole('wali'),
+            default => $this->can('view-dashboard'),
+        };
     }
 
     /**
@@ -77,6 +89,70 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function staff(): HasOne
     {
         return $this->hasOne(Staff::class);
+    }
+
+    /**
+     * Data wali yang tertaut ke akun ini (portal wali, F022).
+     */
+    public function guardian(): HasOne
+    {
+        return $this->hasOne(Guardian::class);
+    }
+
+    /**
+     * Santri yang terhubung dengan wali akun ini. Satu-satunya pintu data portal wali (F022):
+     * kepemilikan menggantikan cakupan jenjang, santri diarsipkan tetap tersaring SoftDeletes.
+     *
+     * @return Builder<Student>
+     */
+    public function portalStudents(): Builder
+    {
+        return Student::withoutUnitScope()
+            ->whereHas('guardians', fn (Builder $query) => $query->where('guardians.user_id', $this->id));
+    }
+
+    public function portalStudent(int $id): Student
+    {
+        return $this->portalStudents()->findOrFail($id);
+    }
+
+    /**
+     * Tagihan non-batal milik santri portal.
+     *
+     * @return Builder<Invoice>
+     */
+    public function portalInvoices(Student $student): Builder
+    {
+        return Invoice::withoutUnitScope()
+            ->where('student_id', $student->id)
+            ->where('status', '!=', Invoice::STATUS_CANCELLED);
+    }
+
+    public function portalInvoice(int $id): Invoice
+    {
+        return Invoice::withoutUnitScope()
+            ->whereIn('student_id', $this->portalStudents()->select('students.id'))
+            ->where('status', '!=', Invoice::STATUS_CANCELLED)
+            ->findOrFail($id);
+    }
+
+    /**
+     * Dokumen terkini berjenis non-rahasia milik santri portal.
+     *
+     * @return Builder<Document>
+     */
+    public function portalDocuments(): Builder
+    {
+        return Document::withoutUnitScope()
+            ->where('documentable_type', 'student')
+            ->whereIn('documentable_id', $this->portalStudents()->select('students.id'))
+            ->whereNull('replaced_by_id')
+            ->whereHas('documentType', fn (Builder $query) => $query->where('is_confidential', false));
+    }
+
+    public function portalDocument(int $id): Document
+    {
+        return $this->portalDocuments()->findOrFail($id);
     }
 
     /**

@@ -176,3 +176,14 @@ it('AC-11: every non-core scheduled event is skipped when modules are off and ru
     expect($events->reject(fn (Event $e): bool => $e->filtersPass(app()) === true)->map($label)->values()->all())
         ->toBe([], 'Event jadwal terblokir saat semua modul aktif');
 });
+
+it('AC-9: every wali panel page declares portal-wali and the panel is guarded by the module middleware', function () {
+    $panel = Filament::getPanel('wali');
+    $wrong = collect($panel->getPages())
+        ->reject(fn (string $page): bool => componentModule($page) === Module::PortalWali)
+        ->values()->all();
+
+    expect($panel->getPages())->not->toBeEmpty()
+        ->and($wrong)->toBe([], 'Halaman panel wali tanpa modul portal-wali: '.implode(', ', $wrong))
+        ->and($panel->getMiddleware())->toContain(EnsureModuleIsEnabled::class.':portal-wali,404');
+});

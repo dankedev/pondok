@@ -241,6 +241,7 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Ujian tahfidz | lulus | `success` |
 | Ujian tahfidz | ulang | `warning` |
 | Anggota halaqah | di bawah target (dihitung, bukan status) | `warning` |
+| Kesehatan | perlu rujukan, perlu izin pulang (penanda boolean, tampil hanya bila true) | `warning` |
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |

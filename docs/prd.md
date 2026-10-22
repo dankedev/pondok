@@ -100,6 +100,12 @@ Akses diatur dua lapis:
 - Widget: jumlah konten, statistik PSB (total, status, 7 hari terakhir), santri aktif per jenjang dan angkatan, keuangan bulan berjalan, kelengkapan dokumen, dan prestasi terbaru.
 - Tetap render ketika modul atau tabel belum tersedia, dengan pesan "Modul belum tersedia".
 
+### 3.11 Kesehatan (Fase 4)
+- Catatan kunjungan/keluhan kesehatan santri: waktu, keluhan, tindakan/obat, perlu rujukan, perlu izin pulang, dan catatan. Teks keluhan dan tindakan disimpan terenkripsi.
+- Riwayat per santri (tab di halaman santri) dan daftar dengan filter tanggal, jenjang, dan rujukan.
+- Kesantrian mencatat dan mengoreksi; musyrif mencatat untuk santri binaannya; hapus hanya super-admin.
+- Belum termasuk: stok obat, rekam medis lengkap, integrasi ke Perizinan, tampilan di portal wali, dan notifikasi wali.
+
 ## 4. Kebutuhan teknis
 
 - Laravel 13, PHP 8.3+, Filament untuk panel admin, Blade + Livewire + Tailwind untuk halaman publik.

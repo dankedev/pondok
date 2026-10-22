@@ -58,6 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ->emailVerification()
             ->emailChangeVerification()
             ->renderHook(PanelsRenderHook::CONTENT_START, fn () => view('filament.mfa-warning'))
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => view('filament.portal-wali-login-hint'))
             ->databaseNotifications()
             ->databaseNotificationsPolling(null)
             ->lazyLoadedDatabaseNotifications(false)

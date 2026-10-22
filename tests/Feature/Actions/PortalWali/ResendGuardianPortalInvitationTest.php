@@ -268,7 +268,7 @@ describe('admin action', function () {
         Livewire::test(EditGuardian::class, ['record' => $this->guardian->id])
             ->callAction('resendPortalInvitation')
             ->assertNotified(
-                Filament\Notifications\Notification::make()
+                \Filament\Notifications\Notification::make()
                     ->danger()
                     ->title(__('pondok.portal_wali.errors.invitation_throttled'))
             );

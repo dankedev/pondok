@@ -561,7 +561,16 @@
       "status": "in-progress",
       "depends_on": ["F002"],
       "description": "Catatan kesehatan santri.",
-      "acceptance": [],
+      "acceptance": [
+        "Modul kesehatan (requires Akademik) dengan saklar; resource dan tab santri BelongsToModule; modul mati menutup akses tanpa menghapus data",
+        "Tabel health_visits: waktu kunjungan, keluhan, tindakan/obat, catatan (cast encrypted), perlu rujukan, perlu izin pulang, petugas pencatat",
+        "Action RecordHealthVisit/UpdateHealthVisit/DeleteHealthVisit dengan validasi (santri aktif dan terlihat, waktu tidak di masa depan); santri tidak diganti saat edit",
+        "Activity log log_name kesehatan tanpa isi teks sensitif, tidak masuk allowlist pembersihan F076",
+        "Permission: super-admin penuh (hanya ia yang menghapus), kesantrian lihat/catat/ubah, musyrif lihat/catat untuk penghuni kamar/asrama binaannya; peran lain tanpa akses",
+        "Cakupan jenjang unit_user lewat santri",
+        "Daftar dengan filter tanggal, jenjang, rujukan; riwayat per santri di tab StudentResource (hanya baca)",
+        "Data demo singkat lewat Action, idempotent; ERD, PRD, dan design-guide diperbarui"
+      ],
       "owner": "batch-f076-f031",
       "handoff": null,
       "evidence": "",

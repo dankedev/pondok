@@ -18,6 +18,7 @@ use Database\Seeders\Demo\DemoContent;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoData;
 use Database\Seeders\Demo\DemoFinance;
+use Database\Seeders\Demo\DemoHealth;
 use Database\Seeders\Demo\DemoRecords;
 use Database\Seeders\Demo\DemoTahfidz;
 use Illuminate\Database\Seeder;
@@ -66,6 +67,7 @@ class DemoSeeder extends Seeder
             (new DemoContent($context))->run();
             (new DemoRecords($context))->run();
             (new DemoTahfidz($context))->run();
+            (new DemoHealth($context))->run();
         } finally {
             $context->files->cleanup();
         }

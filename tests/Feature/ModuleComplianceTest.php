@@ -194,10 +194,10 @@ it('AC-9: portal wali has no Filament panel and every portal-wali route is modul
     foreach ($routes as $route) {
         $middleware = $route->gatherMiddleware();
 
-        expect($middleware)->toContain($guard.':portal-wali,404', "{$route->getName()} tanpa saklar portal-wali");
+        expect($middleware)->toContain($guard.':portal-wali,404');
 
         if (isset($extra[$route->getName()])) {
-            expect($middleware)->toContain($guard.':'.$extra[$route->getName()].',404', "{$route->getName()} tanpa saklar {$extra[$route->getName()]}");
+            expect($middleware)->toContain($guard.':'.$extra[$route->getName()].',404');
         }
     }
 });

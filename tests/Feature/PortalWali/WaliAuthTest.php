@@ -23,7 +23,7 @@ beforeEach(function () {
 /**
  * Coba masuk lewat komponen login portal wali.
  */
-function waliAttempt(string $email, string $password): Livewire\Features\SupportTesting\Testable
+function waliAttempt(string $email, string $password): \Livewire\Features\SupportTesting\Testable
 {
     return Livewire::test(PortalLogin::class)->set('email', $email)->set('password', $password)->call('authenticate');
 }

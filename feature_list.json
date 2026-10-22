@@ -1567,7 +1567,7 @@
       "name": "Email akun portal wali baru memakai teks reset password dan kedaluwarsa 60 menit",
       "phase": 2,
       "module": "Portal wali",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F079"
       ],
@@ -1581,9 +1581,9 @@
         "Gagal buat akun atau modul mati: tanpa notifikasi/token; halaman atur password 404 saat modul mati.",
         "Semua kegagalan atur password (token salah, email tidak ada, token kedaluwarsa) menampilkan satu galat portal pondok.portal_wali.reset_invalid tanpa kata sandi."
       ],
-      "owner": "sesi F081 (feat/f081-undangan-wali)",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit a816988 (broker+tabel), 21b720c (email undangan), b99b1ea (atur password), f1ef4b8/e486736/a44374c (test). GuardianInvitationTest, GuardianInvitationAdversarialTest, CreateGuardianPortalAccountTest dan tests/Feature/PortalWali: 139 test lulus; suite penuh PHP 8.4 5103 test, 5098 lulus, 5 skipped MySQL; Pint lulus. Isi email dicek dari render HTML; cek visual halaman lewat Herd link tidak dilakukan (Blade halaman tidak berubah).",
       "notes": "Jalur: penuh (menyentuh auth). Keputusan user 22 Okt 2026: opsi 2 (notifikasi undangan khusus + broker undangan 72 jam). Rencana: docs/plans/F081-plan.md"
     },
     {

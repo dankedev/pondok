@@ -1,6 +1,6 @@
-# Data demo Ma'had Al-Khair Belitang
+# Data demo Pondok Pesantren Contoh
 
-Data contoh untuk mencoba panel admin dan portal publik. Nama lembaga, alamat (Mojosari, Belitang, OKU Timur), tagline, program, dan nominal biaya mengikuti brosur PSB 2027/2028. Semua nama orang, nomor telepon, email, nomor KK, dan isi berita **fiktif**. Nomor telepon dan rekening brosur tidak dipakai.
+Data contoh untuk mencoba panel admin dan portal publik, untuk lembaga fiktif "Pondok Pesantren Contoh". Nama lembaga, alamat, semua nama orang, nomor telepon, email, nomor KK, dan isi berita **fiktif**. Program dan nominal biaya hanya contoh.
 
 ## Biaya demo
 
@@ -11,7 +11,7 @@ Tarif berlaku untuk MTW/SMP dan TSN/SMA:
 | `SPP` | SPP bulanan (termasuk makan 3x sehari, laundry, operasional) | Rp1.600.000 |
 | `FORMULIR` | Biaya pendaftaran | Rp300.000 |
 | `UANG_MASUK` | Uang masuk | Rp10.000.000 |
-| `DAFTAR_ULANG` | Daftar ulang tahunan: nominal **contoh** Rp1.500.000, brosur tidak menyebut angka; sesuaikan dengan keputusan pondok | Rp1.500.000 (contoh) |
+| `DAFTAR_ULANG` | Daftar ulang tahunan: nominal **contoh** Rp1.500.000, sesuaikan dengan keputusan pondok | Rp1.500.000 (contoh) |
 
 - SPP TSN/SMA angkatan kelas 12 memakai tarif lama terkunci Rp1.500.000 (contoh tarif angkatan).
 - Tagihan tahunan tidak dibuat: belum ada generator tagihan tahunan, hanya jenis biaya dan tarifnya.
@@ -24,7 +24,7 @@ php artisan migrate:fresh --force
 php artisan db:seed --class=DemoSeeder
 ```
 
-- Jalankan `php artisan migrate:fresh` lebih dulu. Revisi data demo ini (khusus putra, tanpa SD, tarif brosur) tidak memigrasikan data demo versi lama.
+- Jalankan `php artisan migrate:fresh` lebih dulu. Revisi data demo ini (khusus putra, tanpa SD, tarif contoh) tidak memigrasikan data demo versi lama.
 - Seeder memanggil `InstallSeeder` lebih dulu, jadi cukup dijalankan di database yang sudah dimigrasi.
 - Seeder **menolak berjalan** bila `APP_ENV=production`.
 - Seeder tidak dipanggil `DatabaseSeeder`, `InstallSeeder`, `pondok:install`, maupun `pondok:upgrade`.
@@ -57,7 +57,7 @@ php artisan db:seed --class=DemoSeeder
 Semua akun demo memakai nilai `DEMO_PASSWORD` di `.env`. Bila kosong, dipakai password bawaan `DemoSeeder::DEFAULT_PASSWORD`:
 
 ```
-demo-alkhair-belitang
+demo-pondok-contoh
 ```
 
 **Peringatan:** password bawaan ini tertulis di dokumen publik. Untuk instance yang bisa diakses orang lain (mis. staging), isi `DEMO_PASSWORD` sebelum menjalankan seeder. Seeder menampilkan peringatan bila `DEMO_PASSWORD` kosong. Password hanya diatur saat akun dibuat; menjalankan ulang seeder tidak mengubah password akun yang sudah ada.
@@ -69,7 +69,7 @@ demo-alkhair-belitang
 - 2 asrama putra (Abu Bakar Ash-Shiddiq untuk MTW/SMP, Umar bin Khattab untuk TSN/SMA), 8 kamar, satu musyrif per kamar. Semua santri berombel tinggal di asrama; santri baru dari PSB belum ditempatkan sampai serah terima.
 - Tagihan SPP empat bulan terakhir dengan pola lunas, cicilan, dan tunggakan, serta satu pembayaran yang dibatalkan.
 - PSB: Gelombang I dan Gelombang II yang bersambung (pendaftaran dibuka sepanjang tahun selama kuota tersedia) dan 14 pendaftar di semua status.
-- Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori sesuai brief, dan album foto (gambar placeholder berpola netral tanpa teks). Logo cetak (kop surat dan kuitansi) memakai logo simbol dari `docs/brand/`. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
+- Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori contoh, dan album foto (gambar placeholder berpola netral tanpa teks). Demo tidak memuat logo: portal menampilkan nama lembaga, dan admin dapat mengunggah logo sendiri di Profil lembaga. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
 - Tahfidz: Halaqah Abu Hurairah (MTW/SMP, diampu akun `ustadz-tahfidz@demo.test`) dan Halaqah Zaid bin Tsabit (TSN/SMA) dengan setoran beberapa hari terakhir, satu ujian kenaikan juz 30 lulus bersyahadah, serta Halaqah Aisyah (putri, nonaktif) sebagai contoh halaqah putri. Capaian juz dihitung Action dari setoran dan ujian.
 
 ## Keterbatasan

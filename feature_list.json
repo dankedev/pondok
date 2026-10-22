@@ -558,14 +558,14 @@
       "name": "Kesehatan santri",
       "phase": 4,
       "module": "Kesehatan",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F002"],
       "description": "Catatan kesehatan santri.",
       "acceptance": [],
-      "owner": null,
+      "owner": "batch-f076-f031",
       "handoff": null,
       "evidence": "",
-      "notes": "Fase 4."
+      "notes": "Jalur penuh (data kesehatan = data pribadi sensitif). Disetujui user 23 Okt 2026 dengan lingkup minimum (komentar #12), dibangun sebagai modul (F066)."
     },
     {
       "id": "F032",
@@ -1473,7 +1473,7 @@
       "name": "Masa simpan surat keluar: backup lalu hapus data melewati batas",
       "phase": 2,
       "module": "Dokumen",
-      "status": "deferred",
+      "status": "done",
       "depends_on": [
         "F042"
       ],
@@ -1481,8 +1481,8 @@
       "acceptance": [],
       "owner": null,
       "handoff": null,
-      "evidence": null,
-      "notes": "Ditunda ke fase berikutnya atas keputusan user 22 Okt 2026."
+      "evidence": "PR #63",
+      "notes": "Ditutup user 23 Okt 2026: sudah tercakup F042 (PR #63), issue #70 closed"
     },
     {
       "id": "F078",

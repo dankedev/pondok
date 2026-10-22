@@ -2399,6 +2399,8 @@ return [
         'forgot_intro' => 'Isi email akun wali Anda. Kami kirim tautan untuk mengatur password baru.',
         'forgot_submit' => 'Kirim tautan',
         'forgot_sent' => 'Bila email tersebut terdaftar sebagai akun wali, tautan untuk mengatur password baru sudah dikirim. Periksa juga folder spam.',
+        'admin_login_hint' => 'Wali santri?',
+        'admin_login_link' => 'Masuk lewat portal wali',
         'back_to_login' => 'Kembali ke halaman masuk',
         'reset_title' => 'Atur password',
         'reset_intro' => 'Buat password baru untuk akun wali Anda.',

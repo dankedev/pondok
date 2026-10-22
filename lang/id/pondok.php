@@ -2358,7 +2358,7 @@ return [
             'required' => 'Wajib',
             'optional' => 'Opsional',
             'fees_title' => 'Rincian biaya',
-            'fees_note' => 'Untuk gelombang :wave tahun ajaran :year.',
+            'fees_note' => 'Berlaku untuk :wave, tahun ajaran :year.',
             'contacts_title' => 'Kontak panitia PSB',
         ],
         'contact' => [

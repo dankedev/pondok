@@ -1527,7 +1527,7 @@
       ],
       "owner": "batch-mfa-wali-tahfidz",
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 63e9827 (middleware + URL notifikasi), 9cd5382 (portal Blade + Livewire), 24614d4 (hapus panel /wali), 7ba9383 (design-guide). Test RED+VERIFY F079 lulus; suite penuh PHP 8.4 5077 test, 5072 lulus, 5 skipped MySQL; Pint lulus. BELUM dicek visual 360px/1024px/desktop (akses .env worktree ditolak) — kriteria issue #76 ini masih terbuka.",
       "notes": "Jalur penuh (auth + data pribadi). Disetujui user 22 Okt 2026 (issue #76). Rencana: docs/plans/F079-plan.md"
     }
   ]

@@ -11,8 +11,8 @@ it('AC-1: renders the home page for guests', function () {
     $response = $this->get('/')->assertOk();
 
     expect($response->getContent())
-        ->toMatch('/<title>[^<]*Ma&#039;had Al-Khair|<title>[^<]*Ma\'had Al-Khair/')
-        ->toMatch('/<h1[^>]*>[^<]*Ma(&#039;|\')had Al-Khair/')
+        ->toMatch('/<title>[^<]*Ma&#039;had Al-Kitab|<title>[^<]*Ma\'had Al-Kitab/')
+        ->toMatch('/<h1[^>]*>[^<]*Ma(&#039;|\')had Al-Kitab/')
         ->toContain('Mencetak generasi Qur');
     expect(route('portal.home'))->toBe(url('/'));
     expect(resource_path('views/welcome.blade.php'))->not->toBeFile();

@@ -12,8 +12,8 @@ const LEGACY_KEYS = ['school.whatsapp', 'school.instagram_url', 'school.facebook
 
 it('AC-5: moves whatsapp and social urls into lists', function () {
     profilRawSet('school.whatsapp', '0812-0000-0170');
-    profilRawSet('school.instagram_url', 'https://instagram.com/alkhair');
-    profilRawSet('school.youtube_url', 'https://youtube.com/@alkhair');
+    profilRawSet('school.instagram_url', 'https://instagram.com/pondokcontoh');
+    profilRawSet('school.youtube_url', 'https://youtube.com/@pondokcontoh');
 
     profilMigration()->up();
 
@@ -31,8 +31,8 @@ it('AC-5: moves whatsapp and social urls into lists', function () {
     $socials = collect(json_decode((string) $socialRow->value, true))->map(fn (array $link): array => ['platform' => $link['platform'], 'url' => $link['url']])->all();
 
     expect($socials)->toBe([
-        ['platform' => 'instagram', 'url' => 'https://instagram.com/alkhair'],
-        ['platform' => 'youtube', 'url' => 'https://youtube.com/@alkhair'],
+        ['platform' => 'instagram', 'url' => 'https://instagram.com/pondokcontoh'],
+        ['platform' => 'youtube', 'url' => 'https://youtube.com/@pondokcontoh'],
     ])->and($socialRow->created_at)->not->toBeNull()->and($socialRow->updated_at)->not->toBeNull()
         ->and(DB::table('settings')->whereIn('key', LEGACY_KEYS)->count())->toBe(0);
 });
@@ -61,14 +61,14 @@ it('AC-6: merges the legacy whatsapp number into existing contacts only when it 
 ]);
 
 it('AC-7: skips unsafe legacy urls and does not duplicate existing ones', function () {
-    profilRawSet('school.social_links', [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair']]);
-    profilRawSet('school.instagram_url', 'https://instagram.com/alkhair');
+    profilRawSet('school.social_links', [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/pondokcontoh']]);
+    profilRawSet('school.instagram_url', 'https://instagram.com/pondokcontoh');
     profilRawSet('school.facebook_url', 'ftp://x');
     profilRawSet('school.youtube_url', 'javascript:alert(1)');
 
     profilMigration()->up();
 
-    expect(array_column(profilRawGet('school.social_links'), 'url'))->toBe(['https://instagram.com/alkhair'])
+    expect(array_column(profilRawGet('school.social_links'), 'url'))->toBe(['https://instagram.com/pondokcontoh'])
         ->and(DB::table('settings')->whereIn('key', LEGACY_KEYS)->count())->toBe(0);
 });
 
@@ -117,7 +117,7 @@ it('AC-9: is idempotent', function () {
     Storage::disk('public')->put('school/cetak.png', 'cetak');
     profilRawSet('school.logo_path', 'school/cetak.png');
     profilRawSet('school.whatsapp', '0812-0000-0170');
-    profilRawSet('school.instagram_url', 'https://instagram.com/alkhair');
+    profilRawSet('school.instagram_url', 'https://instagram.com/pondokcontoh');
 
     profilMigration()->up();
     $first = collect(profilSettingsSnapshot())->except([])->all();
@@ -150,16 +150,16 @@ it('AC-10: down restores the legacy keys and keeps the new data', function () {
     Storage::disk('public')->put('school/cetak.png', 'cetak');
     profilRawSet('school.logo_path', 'school/cetak.png');
     profilRawSet('school.whatsapp', '0812-0000-0170');
-    profilRawSet('school.instagram_url', 'https://instagram.com/alkhair');
-    profilRawSet('school.youtube_url', 'https://youtube.com/@alkhair');
+    profilRawSet('school.instagram_url', 'https://instagram.com/pondokcontoh');
+    profilRawSet('school.youtube_url', 'https://youtube.com/@pondokcontoh');
     profilMigration()->up();
     $desktop = profilRawGet('school.logo_desktop_path');
 
     profilMigration()->down();
 
     expect(profilRawGet('school.whatsapp'))->toBe('081200000170')
-        ->and(profilRawGet('school.instagram_url'))->toBe('https://instagram.com/alkhair')
-        ->and(profilRawGet('school.youtube_url'))->toBe('https://youtube.com/@alkhair')
+        ->and(profilRawGet('school.instagram_url'))->toBe('https://instagram.com/pondokcontoh')
+        ->and(profilRawGet('school.youtube_url'))->toBe('https://youtube.com/@pondokcontoh')
         ->and(profilRawHas('school.facebook_url'))->toBeFalse()
         ->and(profilRawGet('school.logo_desktop_path'))->toBe($desktop);
 });

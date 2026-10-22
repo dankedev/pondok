@@ -42,7 +42,7 @@ it('AC-3: an empty menu leaves only Masuk, and the register button follows heade
 
 it('AC-7: renders the stored order and labels identically in both navs', function () {
     portalContactData();
-    $pengurus = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Al-Khair']);
+    $pengurus = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
     navSeedPublicContent();
     navSet([navPage($pengurus, 'Pengurus'), navItem('home'), navItem('albums', 'Foto'), navPage(StaticPage::findBySlug('kontak')), navItem('url', 'Situs Luar', ['url' => 'https://contoh.test/x'])]);
 

@@ -7,7 +7,7 @@ use App\Models\StaticPage;
 
 beforeEach(function () {
     portalBoot();
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
 });
 
 it('AC-48: renders the description, contacts, socials and footer links through widgets (F046)', function () {
@@ -17,8 +17,8 @@ it('AC-48: renders the description, contacts, socials and footer links through w
             profilContact(['key' => 'bbbb2222', 'label' => 'Telepon Kantor', 'phone' => '0735000170', 'is_whatsapp' => false]),
         ],
         'school.social_links' => [
-            ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair'],
-            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.com/@alkhair'],
+            ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/pondokcontoh'],
+            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.com/@pondokcontoh'],
             ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test'],
         ],
     ]);
@@ -35,7 +35,7 @@ it('AC-48: renders the description, contacts, socials and footer links through w
         ->toContain(__('pondok.portal.social.instagram'))->toContain(__('pondok.portal.social.youtube'))->toContain('Blog Kami')
         ->and(__('pondok.portal.social.instagram'))->not->toBe('pondok.portal.social.instagram')
         ->and($footer)->toContain('href="https://wa.me/6281234567890"')->toContain('href="tel:0735000170"')
-        ->toContain('href="https://instagram.com/alkhair"')->toContain('href="https://blog.contoh.test"')
+        ->toContain('href="https://instagram.com/pondokcontoh"')->toContain('href="https://blog.contoh.test"')
         ->toContain('href="/berita"')->toContain('href="https://contoh.test/psb"');
 
     // F037: tautan visi-misi bawaan dihapus dari footer; hanya tautan pilihan admin yang tampil.
@@ -46,7 +46,7 @@ it('AC-48: renders the description, contacts, socials and footer links through w
 it('AC-6 (F044): shows address, email, map and every contact exactly once, with no separate phone row, in the footer and on /kontak', function () {
     StaticPage::findBySlug('kontak')->update(['body' => '']);
     profilSet([
-        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@alkhair.sch.id', 'school.map_url' => 'https://maps.app.goo.gl/abc',
+        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@pondokcontoh.sch.id', 'school.map_url' => 'https://maps.app.goo.gl/abc',
         'school.contacts' => [
             profilContact(['key' => 'aaaa1111', 'label' => 'Panitia', 'phone' => '081234567890', 'is_print' => false]),
             profilContact(['key' => 'bbbb2222', 'label' => 'Kantor', 'phone' => '0735000170', 'is_whatsapp' => false, 'is_print' => true]),
@@ -64,7 +64,7 @@ it('AC-6 (F044): shows address, email, map and every contact exactly once, with 
 
     foreach ([$footer, $page] as $text) {
         expect(substr_count($text, 'Jl. Pesantren No. 1'))->toBe(1)
-            ->and(substr_count($text, 'info@alkhair.sch.id'))->toBe(1)
+            ->and(substr_count($text, 'info@pondokcontoh.sch.id'))->toBe(1)
             ->and(substr_count($text, '0812-3456-7890'))->toBe(1)
             ->and(substr_count($text, app(FormatPhoneForDisplay::class)->handle('0735000170')))->toBe(1)
             ->and(substr_count($text, 'Lihat di peta'))->toBe(1);

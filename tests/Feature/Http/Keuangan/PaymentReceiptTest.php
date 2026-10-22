@@ -18,7 +18,7 @@ beforeEach(function () {
     Filament::setCurrentPanel('admin');
     $this->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
     $this->f = tagihanFixture();
-    Setting::set('school.name', 'Pondok Al-Khair');
+    Setting::set('school.name', 'Pondok Contoh');
     $this->officer = keuanganUser('bendahara');
     $this->officer->forceFill(['name' => 'Bu Bendahara'])->save();
     $this->student = tagihanStudent($this->f, resident: true, attributes: ['name' => 'Ahmad Fauzi', 'nis' => '2026000123']);
@@ -42,7 +42,7 @@ it('AC-40: prints a receipt without external assets', function () {
     $text = bayarHtmlText($html);
 
     expect($response->headers->get('Content-Type'))->toContain('text/html')
-        ->and($text)->toContain('Pondok Al-Khair')
+        ->and($text)->toContain('Pondok Contoh')
         ->toContain(__('pondok.receipt.title'))
         ->toContain('KW-202610-00001')
         ->toContain('15 Okt 2026')
@@ -232,7 +232,7 @@ it('AC-53: prints the print logo and never the desktop or mobile logo', function
 
     expect($html)->toContain(Storage::disk('public')->url('school/cetak.png'))
         ->not->toContain('school/desktop.png')->not->toContain('school/mobile.png')
-        ->and(bayarHtmlText($html))->toContain('Pondok Al-Khair')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+        ->and(bayarHtmlText($html))->toContain('Pondok Contoh')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
 });
 
 it('AC-2 (F044): prints the same name, address and phone after the school.phone migration', function () {
@@ -244,7 +244,7 @@ it('AC-2 (F044): prints the same name, address and phone after the school.phone 
 
     $text = bayarHtmlText($this->actingAs($this->officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
 
-    expect($text)->toContain('Pondok Al-Khair')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
+    expect($text)->toContain('Pondok Contoh')->toContain('Jl. Pesantren No. 1')->toContain('0812-0000-1111');
 });
 
 it('AC-2 (F044): omits the phone line without a print contact and never prints other contacts', function () {

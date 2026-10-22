@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 beforeEach(function () {
     portalBoot();
     $this->seed(RolePermissionSeeder::class);
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
     Setting::set('modules.psb.enabled', false);
     Setting::set('modules.dokumen.enabled', false);
 });
@@ -138,7 +138,7 @@ it('compact links skip a hidden first links widget and fall back to empty when n
     ftrSet([ftr('text', ['body' => '<p>Teks</p>', 'show_logo' => false]), ftr('links', ['items' => [navPage(99999)]])]);
     $footer = profilFooter($this->get('/halaman-yang-tidak-ada')->assertNotFound()->getContent());
 
-    expect($footer)->not->toBe('')->not->toContain('Teks')->toContain('Ma&#039;had Al-Khair');
+    expect($footer)->not->toBe('')->not->toContain('Teks')->toContain('Ma&#039;had Al-Kitab');
 });
 
 it('loads footer settings in one query and does not grow the pages queries with the number of links', function () {

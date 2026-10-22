@@ -86,7 +86,7 @@ it('AC-24: builds the scholarship rows per program, per sponsor, and non-scholar
 
     expect($blank)->not->toBe([])
         ->and($rows[1][0])->toBe('Beasiswa Tahfidz')
-        ->and($rows[1][1])->toBe('Yayasan Al-Khair')
+        ->and($rows[1][1])->toBe('Yayasan Contoh')
         ->and(array_slice($rows[1], 2, 3))->toBe([2, 2, 750000])
         ->and($rows[2][0])->toBe('Yatim')
         ->and($rows[3][0])->toBe('Anak Ustadz')

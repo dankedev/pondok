@@ -102,12 +102,12 @@ it('AC-22: renders static pages and contact info', function () {
         ['key' => 'abcd1234', 'label' => 'WhatsApp', 'name' => null, 'phone' => '+6281234567890', 'is_whatsapp' => true],
         ['key' => 'efgh5678', 'label' => 'Kantor', 'name' => null, 'phone' => '081234567890', 'is_whatsapp' => false, 'is_print' => true],
     ]);
-    Setting::set('school.email', 'info@alkhair.test');
+    Setting::set('school.email', 'info@pondokcontoh.test');
 
     $kontak = $this->get('/kontak')->assertOk();
     expect($kontak->getContent())->not->toContain(__('pondok.portal.pages.empty'))
         ->toContain('0812-3456-7890')->toContain('href="tel:081234567890"')
-        ->toContain('href="https://wa.me/6281234567890"')->toContain('href="mailto:info@alkhair.test"');
+        ->toContain('href="https://wa.me/6281234567890"')->toContain('href="mailto:info@pondokcontoh.test"');
 
     $this->get('/beranda')->assertNotFound();
 });

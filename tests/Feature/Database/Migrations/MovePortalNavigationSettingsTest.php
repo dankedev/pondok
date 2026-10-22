@@ -36,7 +36,7 @@ function navStoredPrimary(): array
 
 it('AC-1: migrates only the visible menu items, keeping labels, order and the missing builtin items', function () {
     navSeedPublicContent();
-    $a = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Al-Khair']);
+    $a = staticPage(['slug' => 'pengurus', 'title' => 'Pengurus Yayasan']);
     $b = staticPage(['slug' => 'tersembunyi', 'title' => 'Halaman Tersembunyi']);
     profilRawSet('portal.menu_items', [
         menuBuiltin('home'), menuPage($a, 'Pengurus'), menuBuiltin('news', false), menuPage($b, null, false),

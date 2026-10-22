@@ -8,7 +8,7 @@ use Database\Seeders\SettingSeeder;
 beforeEach(function () {
     $this->withoutVite();
     $this->seed(SettingSeeder::class);
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
 });
 
 it('shows the school identity and a login link to a guest', function () {
@@ -16,7 +16,7 @@ it('shows the school identity and a login link to a guest', function () {
 
     $this->get('/')
         ->assertOk()
-        ->assertSee("Ma'had Al-Khair")
+        ->assertSee("Ma'had Al-Kitab")
         ->assertSee("Mencetak generasi Qur'ani")
         ->assertSee(route('filament.admin.auth.login'), escape: false)
         ->assertSeeText(__('pondok.portal.nav.login'));

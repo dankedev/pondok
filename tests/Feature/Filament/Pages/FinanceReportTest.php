@@ -40,7 +40,7 @@ function laporanPageData(object $f): void
     laporanInvoice($f, laporanStudent($f), '2026-09-01', 300000);
     laporanInvoice($f, laporanStudent($f), '2026-11-01', 700000);
 
-    laporanItem($partialInvoice, $f->spp, 650000, 50000, laporanOverride($partial, $f->spp, laporanScholarship('Beasiswa Tahfidz', 'Yayasan Al-Khair')));
+    laporanItem($partialInvoice, $f->spp, 650000, 50000, laporanOverride($partial, $f->spp, laporanScholarship('Beasiswa Tahfidz', 'Yayasan Contoh')));
     laporanPayment($partialInvoice, 250000, '2026-10-14');
 }
 

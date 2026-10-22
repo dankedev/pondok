@@ -69,7 +69,7 @@ it('F071 AC-10: renders the chosen colour into the home page for both presets', 
     expect($html)->toContain('--color-brand: #15803d')
         ->and($html)->toMatch('/<h1\b[^>]*text-brand-text/')
         ->and($html)->toMatch('/<a\b[^>]*bg-brand[^>]*>\s*Tombol uji/')
-        ->and($html)->toMatch('/<span\b[^>]*text-brand-text[^>]*>[^<]*Al-Khair/');
+        ->and($html)->toMatch('/<span\b[^>]*text-brand-text[^>]*>[^<]*Al-Kitab/');
 })->with(['default', 'centered']);
 
 it('F071 AC-10: the registration form uses the brand accent for radios', function () {

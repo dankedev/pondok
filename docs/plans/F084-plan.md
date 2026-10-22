@@ -96,6 +96,7 @@ Paket 2 — Filament (hijau: `describe('admin action')`, lalu `tests/Feature/Por
 - `UserResource` (admin pengguna) bisa mengisi password wali tanpa memverifikasi email, sehingga aksi tetap tampil; mengirim undangan hanya memberi wali tautan atur password baru, tidak membuka akses baru. Admin juga bisa "Tandai email terverifikasi" (`MarkUserEmailVerified`) yang menyembunyikan aksi. Tidak ditangani.
 - Akun wali nonaktif (`is_active` false) tetap bisa dikirimi undangan; password diatur tetapi masuk portal tetap ditolak. **Pertanyaan (user, tidak memblokir):** perlu ditolak juga? Default rencana: tidak (YAGNI).
 - Dua kiriman bersamaan dalam milidetik bisa sama-sama lolos throttle; hanya token terakhir yang berlaku. Risiko rendah, tidak dikunci.
+- Bila `notify` gagal (sinkron) setelah token dibuat, token lama sudah gugur dan throttle 60 detik berlaku, jadi admin menunggu semenit sebelum mencoba lagi. Diterima.
 
 ## Riwayat revisi
 

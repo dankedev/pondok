@@ -105,6 +105,7 @@ return [
             'provider' => 'users',
             'table' => 'guardian_invitation_tokens',
             'expire' => 4320,
+            'throttle' => 60,
         ],
     ],
 

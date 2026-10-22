@@ -79,6 +79,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -4748,6 +4749,16 @@ function themeBuild(array|string|null $fontAliases = ['plus-jakarta-sans', 'lora
 | menyamarkan nama driver koneksi (query tetap lewat grammar SQLite).
 |
 */
+
+/**
+ * Arahkan `storage_path()` ke folder per proses paralel. Folder sementara backup
+ * (`app/backup-tmp`) dibersihkan dan diperiksa test; tanpa ini proses lain bisa
+ * menghapus folder backup yang sedang dibuat.
+ */
+function backupIsolateStorage(): void
+{
+    app()->useStoragePath(storage_path('framework/testing/backup-'.(ParallelTesting::token() ?: 'serial')));
+}
 
 /**
  * Buat koneksi bawaan melaporkan driver `pgsql` sampai aplikasi test dihancurkan.

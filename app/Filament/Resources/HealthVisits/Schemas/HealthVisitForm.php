@@ -34,7 +34,7 @@ class HealthVisitForm
                             ->helperText(fn (string $operation): ?string => $operation === 'create' ? __('pondok.health_visit.student_helper') : null)
                             ->searchable()
                             ->getSearchResultsUsing(fn (string $search): array => static::searchStudents($search))
-                            ->getOptionLabelUsing(fn (mixed $value): ?string => static::studentLabel($value))
+                            ->getOptionLabelUsing(fn (mixed $value, ?HealthVisit $record): ?string => static::studentLabel($value, $record))
                             ->disabledOn('edit')
                             ->required(),
                         DateTimePicker::make('visited_at')
@@ -94,9 +94,19 @@ class HealthVisitForm
             ->all();
     }
 
-    public static function studentLabel(mixed $value): ?string
+    /**
+     * Label santri terpilih: hanya santri yang terlihat user (termasuk terarsip) atau santri catatan
+     * yang sedang diedit, agar `student_id` palsu di payload tidak membocorkan nama/NIS.
+     */
+    public static function studentLabel(mixed $value, ?HealthVisit $record = null): ?string
     {
-        $student = is_numeric($value) ? Student::withoutUnitScope()->withTrashed()->find((int) $value) : null;
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        $student = (int) $value === $record?->student_id
+            ? $record->student
+            : HealthVisit::visibleStudents(HealthVisitResource::user())->withTrashed()->find((int) $value);
 
         return $student === null ? null : static::formatStudent($student);
     }

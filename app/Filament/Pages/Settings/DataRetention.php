@@ -21,7 +21,8 @@ use Illuminate\Support\Number;
 
 /**
  * Pengaturan → Backup & masa simpan (F042, hanya super-admin seperti `Modules`):
- * saklar backup terjadwal, info arsip terakhir, dan masa simpan snapshot surat.
+ * saklar backup terjadwal, info arsip terakhir, masa simpan snapshot surat, dan
+ * masa simpan log aktivitas (F076).
  * Disimpan lewat `UpdateDataRetentionSettings`. Unduh arsip sengaja tidak
  * disediakan di panel; arsip diambil lewat File Manager hosting.
  */
@@ -98,17 +99,32 @@ class DataRetention extends NumberingSettingsPage
                             ->nullable()
                             ->extraInputAttributes(['class' => 'tabular-nums']),
                     ]),
+                Section::make(__('pondok.data_retention.activity_log_heading'))
+                    ->description(__('pondok.data_retention.activity_log_description'))
+                    ->schema([
+                        TextInput::make('activity_log_months')
+                            ->label(__('pondok.data_retention.activity_log_months'))
+                            ->helperText(__('pondok.data_retention.activity_log_months_helper'))
+                            ->numeric()
+                            ->integer()
+                            ->minValue(UpdateDataRetentionSettings::MIN_ACTIVITY_LOG_MONTHS)
+                            ->maxValue(UpdateDataRetentionSettings::MAX_ACTIVITY_LOG_MONTHS)
+                            ->suffix(__('pondok.data_retention.months_suffix'))
+                            ->nullable()
+                            ->extraInputAttributes(['class' => 'tabular-nums']),
+                    ]),
             ]);
     }
 
     /**
-     * @return array{backup_enabled: bool, letter_snapshot_years: mixed}
+     * @return array{backup_enabled: bool, letter_snapshot_years: mixed, activity_log_months: mixed}
      */
     protected function fillData(): array
     {
         return [
             'backup_enabled' => (bool) Setting::get('backup.enabled', false),
             'letter_snapshot_years' => Setting::get('retention.letter_snapshot_years'),
+            'activity_log_months' => Setting::get('retention.activity_log_months'),
         ];
     }
 
@@ -122,6 +138,7 @@ class DataRetention extends NumberingSettingsPage
         app(UpdateDataRetentionSettings::class)->handle([
             'backup_enabled' => (bool) ($data['backup_enabled'] ?? false),
             'letter_snapshot_years' => filled($data['letter_snapshot_years'] ?? null) ? $data['letter_snapshot_years'] : null,
+            'activity_log_months' => filled($data['activity_log_months'] ?? null) ? $data['activity_log_months'] : null,
         ], $user);
     }
 

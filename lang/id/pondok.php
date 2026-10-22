@@ -2921,6 +2921,13 @@ return [
         'activity_updated' => 'Pengaturan backup dan masa simpan diubah',
         'activity_redacted' => 'Data pribadi surat yang melewati masa simpan dihapus',
         'redact_done' => 'Data pribadi :count surat dihapus sesuai masa simpan.',
+        'activity_log_heading' => 'Masa simpan log aktivitas',
+        'activity_log_description' => 'Log aktivitas akademik dan konten yang lebih lama dari masa simpan dihapus setiap hari pukul 03.30 WIB.',
+        'activity_log_months' => 'Masa simpan log akademik dan konten',
+        'activity_log_months_helper' => 'Isi minimal 24 bulan. Kosongkan bila log tidak perlu dihapus. Log keuangan, PSB, dokumen, pengaturan, dan sistem tidak pernah dihapus.',
+        'months_suffix' => 'bulan',
+        'activity_log_pruned' => ':count log aktivitas dihapus sesuai masa simpan.',
+        'activity_pruned' => 'Log aktivitas akademik dan konten yang melewati masa simpan dihapus',
     ],
 
     'demo' => [

@@ -15,6 +15,7 @@ use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function () {
     kontenBoot();
+    backupIsolateStorage();
     File::deleteDirectory(storage_path('app/backup-tmp'));
 });
 

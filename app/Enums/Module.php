@@ -18,6 +18,7 @@ enum Module: string
     case Dokumen = 'dokumen';
     case Konten = 'konten';
     case Prestasi = 'prestasi';
+    case PortalWali = 'portal-wali';
 
     public function label(): string
     {
@@ -37,7 +38,7 @@ enum Module: string
     public function requires(): array
     {
         return match ($this) {
-            self::Asrama, self::Keuangan, self::Prestasi => [self::Akademik],
+            self::Asrama, self::Keuangan, self::Prestasi, self::PortalWali => [self::Akademik],
             self::Psb => [self::Akademik, self::Keuangan],
             self::Akademik, self::Dokumen, self::Konten => [],
         };

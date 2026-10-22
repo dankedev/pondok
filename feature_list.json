@@ -394,14 +394,24 @@
       "name": "Portal wali",
       "phase": 2,
       "module": "Portal Wali",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F007", "F013"],
       "description": "Login wali (peran wali) untuk melihat data santri, tagihan, dan dokumen.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "Modul portal-wali (requires Akademik) dengan saklar; route/panel /wali 404 saat mati; ModuleComplianceTest memeriksa panel wali",
+        "Panel Filament wali: hanya user aktif berperan wali; wali tidak bisa masuk /admin, staf tanpa peran wali tidak bisa masuk /wali",
+        "Wali hanya melihat santri yang terhubung lewat guardians.user_id -> student_guardian; santri lain, diarsipkan, atau relasi dilepas -> 404; scope unit_user tidak mempengaruhi santri, tagihan, pembayaran, dokumen, maupun kamar wali",
+        "Beranda: daftar santri (jenjang, rombel, kamar bila Asrama aktif, sisa tagihan bila Keuangan aktif) dan empty state",
+        "Tagihan (tanpa batal) beserta rincian item dan pembayaran diterima; disembunyikan/404 saat Keuangan mati",
+        "Dokumen santri current non-rahasia diunduh dari disk private lewat route ber-otorisasi; disembunyikan/404 saat Dokumen mati",
+        "Admin pemegang update:guardian membuat akun portal dari data wali (email unik case-insensitive, peran wali, tautan atur password panel wali, activity log)",
+        "guardians.user_id hanya diisi Action buat akun: Select user_id di form wali dihapus dan user_id keluar dari Fillable",
+        "Reset password menandai email terverifikasi; MFA aplikasi opsional di panel wali"
+      ],
+      "owner": "batch-mfa-wali-tahfidz",
       "handoff": null,
       "evidence": "",
-      "notes": "Fase 2. Keputusan user 16 Okt 2026: ditunda."
+      "notes": "Jalur penuh. Keputusan draf (22 Okt 2026, menunggu konfirmasi user): portal wali sebagai panel Filament kedua /wali (bukan Blade+Livewire), akun dibuat admin dari GuardianResource. Rencana: docs/plans/F022-plan.md"
     },
     {
       "id": "F023",

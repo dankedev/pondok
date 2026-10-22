@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F077",
+  "next_id": "F078",
   "features": [
     {
       "id": "F001",
@@ -747,7 +747,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "commit 5461955 (test RED) + f40c743, 731f09c, 489d773, 238165e (feat/docs) + VERIFY. File F042 ±50 test lulus; suite penuh PHP 8.4 4797 test lulus (5 skipped MySQL). Jalur dump MySQL belum diuji otomatis/manual (MySQL lokal mati 22 Okt 2026).",
-      "notes": "Ditunda atas keputusan user 16 Okt 2026 (Jawaban user no. 7): termasuk masa simpan snapshot surat keluar (UU PDP). Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F042-plan.md (lingkup minimum: backup terjadwal default mati + redaksi snapshot surat; pembersihan activity log di luar lingkup)."
+      "notes": "Ditunda atas keputusan user 16 Okt 2026 (Jawaban user no. 7): termasuk masa simpan snapshot surat keluar (UU PDP). Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F042-plan.md (lingkup minimum: backup terjadwal default mati + redaksi snapshot surat; pembersihan activity log di luar lingkup). Keputusan user 22 Okt 2026: masa simpan surat dibiarkan kosong dulu; pengaturan + backup sebelum hapus di fase berikutnya (F077, #70)."
     },
     {
       "id": "F035",
@@ -1285,7 +1285,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "commit 3c61c50 (test RED) + 5836830 (fix) + test VERIFY. ReRegisterGuardianLockTest 10 lulus; tests/Feature/Actions/Psb 515 lulus; suite penuh PHP 8.4 4711 test (2 gagal karena env lokal APP_URL/SUPER_ADMIN_*, lulus saat env benar). Test MySQL dua proses (ReRegisterConcurrencyMysqlTest, 5 test) lulus di MySQL 9.0.1 lokal 22 Okt 2026 setelah perbaikan data uji AC-1 (HP 08… seperti hasil normalisasi SubmitApplication; fixture SD tanpa tagihan). Uji mutasi: tanpa kunci terbagi test AC-1 tetap lulus karena fixture sudah terserialkan kunci lain, jadi bukan bukti RED; perlindungan kunci dibuktikan test SQLite AC-5..AC-12.",
+      "evidence": "commit 3c61c50 (test RED) + 5836830 (fix) + test VERIFY. ReRegisterGuardianLockTest 10 lulus; tests/Feature/Actions/Psb 515 lulus; suite penuh PHP 8.4 4711 test (2 gagal karena env lokal APP_URL/SUPER_ADMIN_*, lulus saat env benar). Test MySQL dua proses (ReRegisterConcurrencyMysqlTest, 5 test) lulus di MySQL 9.0.1 lokal 22 Okt 2026 setelah perbaikan data uji AC-1 (HP 08… seperti hasil normalisasi SubmitApplication; fixture SD tanpa tagihan). Uji mutasi: tanpa kunci terbagi test AC-1 tetap lulus karena fixture sudah terserialkan kunci lain, jadi bukan bukti RED; perlindungan kunci dibuktikan test SQLite AC-5..AC-12. Diterima user 22 Okt 2026 sebagai lulus.",
       "notes": "Ditunda, dampak rendah. Kriteria dan opsi di issue #49. Permintaan user 21 Okt 2026. Jalur penuh. Disetujui user 22 Okt 2026. Rencana: docs/plans/F069-plan.md."
     },
     {
@@ -1429,6 +1429,24 @@
       "handoff": null,
       "evidence": null,
       "notes": "Ditunda menunggu keputusan user (perlu tidaknya, log_name dan masa simpan). Usulan dari batch malam 22 Okt 2026, issue #67."
+    },
+    {
+      "id": "F077",
+      "key": "dokumen-masa-simpan-surat",
+      "issue": 70,
+      "name": "Masa simpan surat keluar: backup lalu hapus data melewati batas",
+      "phase": 2,
+      "module": "Dokumen",
+      "status": "deferred",
+      "depends_on": [
+        "F042"
+      ],
+      "description": "Pengaturan masa simpan surat keluar; data yang melewati batas dibackup lebih dulu lalu dihapus/diredaksi.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Ditunda ke fase berikutnya atas keputusan user 22 Okt 2026."
     }
   ]
 }

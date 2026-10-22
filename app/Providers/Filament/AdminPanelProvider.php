@@ -10,6 +10,7 @@ use App\Http\Controllers\Keuangan\ShowPaymentReceipt;
 use App\Http\Controllers\Psb\DownloadApplicantDocument;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Events\ServingFilament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -20,6 +21,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -51,6 +53,11 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->profile()
+            // F055: 2FA aplikasi authenticator opsional; email wajib terverifikasi.
+            ->multiFactorAuthentication([AppAuthentication::make()->recoverable()], isRequired: false)
+            ->emailVerification()
+            ->emailChangeVerification()
+            ->renderHook(PanelsRenderHook::CONTENT_START, fn () => view('filament.mfa-warning'))
             ->databaseNotifications()
             ->databaseNotificationsPolling(null)
             ->lazyLoadedDatabaseNotifications(false)
@@ -88,9 +95,9 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            // Kuitansi cetak dan unduh bukti transfer: login panel, saklar modul
-            // (sebelum binding), cakupan jenjang lewat binding, lalu policy di controller.
-            ->authenticatedRoutes(function (): void {
+            // Kuitansi cetak dan unduh bukti transfer: login panel, email terverifikasi,
+            // saklar modul (sebelum binding), cakupan jenjang lewat binding, lalu policy di controller.
+            ->authenticatedRoutes(fn (Panel $panel) => Route::middleware($panel->getEmailVerifiedMiddleware())->group(function (): void {
                 Route::middleware(EnsureModuleIsEnabled::class.':keuangan')->group(function (): void {
                     Route::get('receipts/{payment}', ShowPaymentReceipt::class)->name('keuangan.receipt');
                     Route::get('payment-proofs/{payment}', DownloadPaymentProof::class)->name('keuangan.payment-proof');
@@ -103,6 +110,6 @@ class AdminPanelProvider extends PanelProvider
                     Route::get('documents/{document}/download', DownloadDocument::class)->whereNumber('document')->name('dokumen.download');
                     Route::get('letters/{issuedLetter}/print', PrintIssuedLetter::class)->whereNumber('issuedLetter')->name('dokumen.letters.print');
                 });
-            });
+            }));
     }
 }

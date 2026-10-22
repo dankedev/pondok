@@ -843,9 +843,12 @@ erDiagram
     bigint id PK
     string name
     string email UK
+    timestamp email_verified_at "nullable, wajib terisi untuk masuk panel (F055)"
     string password
     boolean is_active
     timestamp last_login_at "nullable"
+    text app_authentication_secret "nullable, encrypted, secret TOTP (F055)"
+    text app_authentication_recovery_codes "nullable, encrypted, hash kode pemulihan (F055)"
   }
   unit_user {
     bigint user_id PK,FK

@@ -3,8 +3,13 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,13 +22,26 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'is_active', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, HasRoles, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable;
 
     /** @var list<int>|null */
     protected ?array $scopedUnitIdsCache = null;
+
+    /**
+     * Email yang berubah harus diverifikasi ulang, kecuali penyimpanan itu juga
+     * mengisi `email_verified_at` (mis. alur ganti email Filament).
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (User $user): void {
+            if ($user->isDirty('email') && ! $user->isDirty('email_verified_at')) {
+                $user->email_verified_at = null;
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -38,6 +56,14 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_active && $this->can('view-dashboard');
+    }
+
+    /**
+     * Peran berwenang besar tanpa MFA diberi peringatan persisten di panel (F055).
+     */
+    public function shouldBeWarnedToEnableMultiFactor(): bool
+    {
+        return $this->hasAnyRole(['super-admin', 'bendahara']) && blank($this->getAppAuthenticationSecret());
     }
 
     /**

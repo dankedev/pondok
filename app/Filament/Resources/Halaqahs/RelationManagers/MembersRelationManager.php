@@ -106,6 +106,7 @@ class MembersRelationManager extends RelationManager
         return Action::make('add')
             ->label(__('pondok.tahfidz.member.add'))
             ->icon(Heroicon::OutlinedPlus)
+            ->modalSubmitActionLabel(__('pondok.tahfidz.save'))
             ->visible(fn (): bool => $this->manages())
             ->schema([
                 Select::make('student_id')

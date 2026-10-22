@@ -2231,6 +2231,7 @@ return [
             'L' => 'Putra',
             'P' => 'Putri',
         ],
+        'save' => 'Simpan',
         'cross_unit' => 'Lintas jenjang',
         'juz_count' => ':count juz',
         'juz_statuses' => [

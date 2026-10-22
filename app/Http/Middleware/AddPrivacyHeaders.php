@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Header privasi untuk halaman publik yang memuat data pribadi minimal
- * (verifikasi surat): tidak diindeks, tanpa referrer, tidak di-cache.
+ * (verifikasi surat, portal wali): tidak diindeks, tanpa referrer, tidak di-cache.
  *
  * Didaftarkan di daftar prioritas sebelum `EnsureModuleIsEnabled`, sehingga
  * respons 403 (modul mati) dan 429 (throttle) juga membawa header ini.

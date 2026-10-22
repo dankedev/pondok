@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\User;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Password;
 
 /**
  * Email undangan akun portal wali (F081): tautan atur password dari broker
@@ -15,6 +16,17 @@ class GuardianPortalInvitation extends Notification
     public const BROKER = 'guardian_invitations';
 
     public function __construct(public string $token) {}
+
+    /**
+     * Membuat token baru di broker undangan (token lama email itu gugur) lalu mengirim undangan.
+     * Dipakai saat akun dibuat (F081) dan saat undangan dikirim ulang (F084).
+     */
+    public static function sendTo(User $user): void
+    {
+        $token = Password::broker(self::BROKER)->createToken($user);
+
+        $user->notify(new self($token));
+    }
 
     /**
      * @return array<int, string>

@@ -45,18 +45,18 @@
                 @foreach ($invoice->items as $item)
                     <li class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
                         <p class="font-semibold text-gray-900">{{ $item->description ?: $item->feeType?->name }}</p>
-                        <dl class="grid grid-cols-3 gap-2 text-sm">
+                        <dl class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
                             <div>
                                 <dt class="text-gray-600">{{ __('pondok.portal_wali.base_amount') }}</dt>
-                                <dd class="tabular-nums text-gray-900">{{ $rupiah($item->base_amount) }}</dd>
+                                <dd class="whitespace-nowrap tabular-nums text-gray-900">{{ $rupiah($item->base_amount) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-600">{{ __('pondok.portal_wali.discount_amount') }}</dt>
-                                <dd class="tabular-nums text-gray-900">{{ $rupiah($item->discount_amount) }}</dd>
+                                <dd class="whitespace-nowrap tabular-nums text-gray-900">{{ $rupiah($item->discount_amount) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-600">{{ __('pondok.portal_wali.amount') }}</dt>
-                                <dd class="font-semibold tabular-nums text-gray-900">{{ $rupiah($item->amount) }}</dd>
+                                <dd class="whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ $rupiah($item->amount) }}</dd>
                             </div>
                         </dl>
                     </li>

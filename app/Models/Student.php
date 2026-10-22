@@ -122,6 +122,14 @@ class Student extends Model
         return $this->hasMany(StudentJuzProgress::class);
     }
 
+    /**
+     * Riwayat kunjungan kesehatan (F031).
+     */
+    public function healthVisits(): HasMany
+    {
+        return $this->hasMany(HealthVisit::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);

@@ -12,7 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Bawaan 403 dengan pesan; parameter `404` (mis. `:konten,404`) untuk route publik
  * agar pengunjung tidak melihat pesan admin. Didaftarkan di daftar prioritas sebelum
- * `SubstituteBindings`, sehingga id yang tidak ada pun dijawab sesuai saklar saat modul mati.
+ * autentikasi (`AuthenticatesRequests`, jadi juga sebelum `SubstituteBindings`): tamu dan id
+ * yang tidak ada pun dijawab sesuai saklar saat modul mati, bukan redirect ke halaman masuk.
  */
 class EnsureModuleIsEnabled
 {

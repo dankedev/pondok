@@ -9,6 +9,8 @@ use ArrayObject;
 use Carbon\Carbon;
 use Carbon\Translator as CarbonTranslator;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -64,11 +66,33 @@ class AppServiceProvider extends ServiceProvider
         // Halaman verifikasi surat publik (F014): 30 permintaan per menit per IP, form dan hasil berbagi batas.
         RateLimiter::for('letter-verification', fn (Request $request): Limit => Limit::perMinute(30)->by((string) $request->ip()));
 
+        $this->configurePortalWaliAuthUrls();
+
         Event::listen(function (Login $event): void {
             if ($event->user instanceof User) {
                 $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
             }
         });
+    }
+
+    /**
+     * Tautan notifikasi reset password dan verifikasi email bawaan Laravel menuju portal wali (F079).
+     * Panel admin tidak terdampak: notifikasi Filament meng-override `resetUrl()`/`verificationUrl()`
+     * dengan URL panel. Callback ini global: notifikasi dasar Laravel untuk pengguna lain kelak
+     * juga menuju portal wali.
+     */
+    private function configurePortalWaliAuthUrls(): void
+    {
+        ResetPassword::createUrlUsing(fn (User $user, string $token): string => route('portal-wali.password.reset', [
+            'token' => $token,
+            'email' => $user->getEmailForPasswordReset(),
+        ]));
+
+        VerifyEmail::createUrlUsing(fn (User $user): string => URL::temporarySignedRoute(
+            'portal-wali.verification.verify',
+            now()->addMinutes((int) config('auth.verification.expire', 60)),
+            ['id' => $user->getKey(), 'hash' => sha1($user->getEmailForVerification())],
+        ));
     }
 
     /**

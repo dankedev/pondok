@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Unduh dokumen santri dari portal wali (F022). Hak akses hanya kepemilikan lewat
+ * Unduh dokumen santri dari portal wali (F022, route Blade F079). Hak akses hanya kepemilikan lewat
  * `User::portalDocument()` (current, non-rahasia, santri milik wali); selain itu 404.
  */
 class DownloadStudentDocument extends Controller

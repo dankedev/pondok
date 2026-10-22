@@ -11,12 +11,22 @@ use App\Http\Controllers\Portal\ShowPsbInfo;
 use App\Http\Controllers\Portal\ShowRobots;
 use App\Http\Controllers\Portal\ShowSitemap;
 use App\Http\Controllers\Portal\ShowStaticPage;
+use App\Http\Controllers\PortalWali\DownloadStudentDocument;
+use App\Http\Controllers\PortalWali\EmailVerificationController;
+use App\Http\Controllers\PortalWali\Logout as PortalWaliLogout;
+use App\Http\Controllers\PortalWali\ShowHome as PortalWaliHome;
+use App\Http\Controllers\PortalWali\ShowInvoice as PortalWaliInvoice;
+use App\Http\Controllers\PortalWali\ShowStudent as PortalWaliStudent;
 use App\Http\Controllers\Psb\DownloadOwnApplicantDocument;
 use App\Http\Middleware\AddPrivacyHeaders;
 use App\Http\Middleware\EnsureModuleIsEnabled;
+use App\Http\Middleware\EnsurePortalWaliUser;
 use App\Http\Middleware\ForcePortalRootUrl;
 use App\Http\Middleware\SetPortalCacheHeaders;
 use App\Http\Middleware\SetPortalSecurityHeaders;
+use App\Livewire\PortalWali\ForgotPassword as PortalWaliForgotPassword;
+use App\Livewire\PortalWali\Login as PortalWaliLogin;
+use App\Livewire\PortalWali\ResetPassword as PortalWaliResetPassword;
 use App\Livewire\Psb\ApplicationStatus;
 use App\Livewire\Psb\RegistrationForm;
 use App\Models\StaticPage;
@@ -34,6 +44,44 @@ Route::prefix('psb')->name('psb.')->middleware(EnsureModuleIsEnabled::class.':ps
     Route::get('status', ApplicationStatus::class)->name('status');
     Route::get('berkas/{document}', DownloadOwnApplicantDocument::class)->whereNumber('document')->name('document');
 });
+
+// Portal wali (F079): Blade + Livewire, guard `web`. Seluruh route (termasuk masuk) 404 saat modul mati;
+// saklar dicek sebelum autentikasi (prioritas di bootstrap/app.php), jadi tamu pun mendapat 404.
+Route::prefix('wali')
+    ->name('portal-wali.')
+    ->middleware([EnsureModuleIsEnabled::class.':portal-wali,404', AddPrivacyHeaders::class])
+    ->group(function (): void {
+        Route::middleware('guest')->group(function (): void {
+            Route::get('masuk', PortalWaliLogin::class)->name('login');
+            Route::get('lupa-password', PortalWaliForgotPassword::class)->name('password.request');
+        });
+
+        // Tanpa `guest`: tautan atur password dari email tetap terbuka walau peramban sedang masuk akun lain.
+        Route::get('atur-password/{token}', PortalWaliResetPassword::class)->name('password.reset');
+
+        Route::middleware(['auth', 'auth.session', EnsurePortalWaliUser::class])->group(function (): void {
+            Route::get('email/verifikasi', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+            Route::get('email/verifikasi/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+                ->middleware(['signed', 'throttle:6,1'])
+                ->whereNumber('id')
+                ->name('verification.verify');
+            Route::post('email/verifikasi', [EmailVerificationController::class, 'send'])->middleware('throttle:6,1')->name('verification.send');
+            Route::post('keluar', PortalWaliLogout::class)->name('logout');
+
+            Route::middleware('verified:portal-wali.verification.notice')->group(function (): void {
+                Route::get('/', PortalWaliHome::class)->name('home');
+                Route::get('santri/{student}', PortalWaliStudent::class)->whereNumber('student')->name('students.show');
+                Route::get('tagihan/{invoice}', PortalWaliInvoice::class)
+                    ->middleware(EnsureModuleIsEnabled::class.':keuangan,404')
+                    ->whereNumber('invoice')
+                    ->name('invoices.show');
+                Route::get('dokumen/{document}/unduh', DownloadStudentDocument::class)
+                    ->middleware(EnsureModuleIsEnabled::class.':dokumen,404')
+                    ->whereNumber('document')
+                    ->name('documents.download');
+            });
+        });
+    });
 
 // Verifikasi keaslian surat keluar tanpa login (F014). Kode divalidasi controller, bukan regex route,
 // agar kode salah format tetap mendapat halaman 404 yang sama beserta header privasi.

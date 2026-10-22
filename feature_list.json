@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F084",
+  "next_id": "F085",
   "features": [
     {
       "id": "F001",
@@ -1631,6 +1631,30 @@
       "handoff": null,
       "evidence": "commit c82d27f (hapus aset), f171dbb (data demo), abab85e (test), b8daf5a (css), b718ff9 + 80ea1ec (dokumen). Test terdampak 603 lulus; suite penuh PHP 8.4 5082 test: 5077 lulus, 5 skipped MySQL. Pint lulus.",
       "notes": "Jalur cepat. Permintaan user 22 Okt 2026. Rencana: docs/plans/F083-plan.md. Riwayat git publik tetap memuat berkas lama; penulisan ulang riwayat tidak dilakukan."
+    },
+    {
+      "id": "F084",
+      "key": "portal-wali-kirim-ulang-undangan",
+      "issue": 87,
+      "name": "Kirim ulang undangan akun portal wali",
+      "phase": 2,
+      "module": "Portal wali",
+      "status": "in-progress",
+      "depends_on": [
+        "F081"
+      ],
+      "description": "Admin belum bisa mengirim ulang undangan akun portal wali (72 jam) bila wali tidak sempat membuka email atau tautan kedaluwarsa.",
+      "acceptance": [
+        "Admin dengan izin yang sama seperti Buat akun portal melihat aksi Kirim ulang undangan di halaman wali yang sudah punya akun portal tetapi belum pernah mengatur password.",
+        "Kirim ulang membuat token undangan baru di broker guardian_invitations (token lama tidak berlaku) dan mengirim notifikasi GuardianPortalInvitation yang sama.",
+        "Aksi tidak tampil untuk wali yang sudah mengatur password.",
+        "Dibatasi throttle bawaan broker dan tercatat di activity log.",
+        "Mengikuti saklar modul portal-wali."
+      ],
+      "owner": "f084-kirim-ulang-undangan",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur: penuh (menyentuh auth/token). Rencana: docs/plans/F084-plan.md"
     }
   ]
 }

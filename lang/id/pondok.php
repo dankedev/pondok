@@ -2580,6 +2580,8 @@ return [
             'psb_status' => 'Cek status pendaftaran',
             'letters_verify' => 'Verifikasi keaslian surat',
             'login' => 'Masuk',
+            'login_wali' => 'Wali santri',
+            'login_staff' => 'Staf pondok',
         ],
         'meta' => [
             'title' => ':title — :name',

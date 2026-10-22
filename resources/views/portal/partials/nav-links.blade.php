@@ -1,9 +1,11 @@
 {{--
     Tautan navigasi utama portal; dirender dua kali (desktop dan menu seluler) dari `GetPortalNavigation`. Tanpa query.
     Urutan: item menu utama (grup = submenu satu tingkat), Masuk, lalu tombol header.
+    F082: saat modul portal wali aktif, Masuk berisi dua pilihan (wali santri dan staf pondok).
 --}}
 @php
     $loginUrl = \Illuminate\Support\Facades\Route::has('filament.admin.auth.login') ? route('filament.admin.auth.login') : null;
+    $waliLoginUrl = $loginUrl && \App\Enums\Module::PortalWali->isEnabled() ? route('portal-wali.login') : null;
     $isMobile = $layout === 'mobile';
     $linkClass = $isMobile
         ? 'flex min-h-11 items-center rounded-full px-4 text-base font-semibold'
@@ -45,7 +47,33 @@
     @endif
 @endforeach
 
-@if ($loginUrl)
+@if ($waliLoginUrl)
+    @php($loginChoices = [$waliLoginUrl => __('pondok.portal.nav.login_wali'), $loginUrl => __('pondok.portal.nav.login_staff')])
+    @if ($isMobile)
+        <div class="flex flex-col gap-1">
+            <p class="flex items-center gap-2 px-4 pt-2 text-sm font-semibold text-gray-500">
+                <x-heroicon-o-arrow-right-end-on-rectangle class="size-5" aria-hidden="true" />
+                {{ __('pondok.portal.nav.login') }}
+            </p>
+            @foreach ($loginChoices as $url => $label)
+                <a href="{{ $url }}" class="{{ $linkClass }} ml-3 {{ $focusClass }} {{ $stateClass(false) }}">{{ $label }}</a>
+            @endforeach
+        </div>
+    @else
+        <details class="group/menu relative">
+            <summary class="{{ $linkClass }} cursor-pointer list-none gap-2 {{ $focusClass }} {{ $stateClass(false) }}">
+                <x-heroicon-o-arrow-right-end-on-rectangle class="size-5" aria-hidden="true" />
+                {{ __('pondok.portal.nav.login') }}
+                <x-heroicon-o-chevron-down class="size-4 transition-transform group-open/menu:rotate-180" aria-hidden="true" />
+            </summary>
+            <div class="absolute right-0 z-10 mt-2 flex w-48 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg">
+                @foreach ($loginChoices as $url => $label)
+                    <a href="{{ $url }}" class="flex min-h-11 items-center rounded-full px-4 text-sm font-semibold {{ $focusClass }} {{ $stateClass(false) }}">{{ $label }}</a>
+                @endforeach
+            </div>
+        </details>
+    @endif
+@elseif ($loginUrl)
     <a href="{{ $loginUrl }}"
        class="{{ $linkClass }} gap-2 {{ $focusClass }} {{ $stateClass(false) }}">
         <x-heroicon-o-arrow-right-end-on-rectangle class="size-5" aria-hidden="true" />

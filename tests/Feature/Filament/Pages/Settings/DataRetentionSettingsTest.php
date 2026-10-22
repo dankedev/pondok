@@ -109,3 +109,70 @@ it('AC-10: on Postgres the page warns, disables the toggle and the action refuse
 it('AC-9: the data retention language keys have text', function () {
     expectTranslatedKeys(['pondok.backup.none_yet', 'pondok.backup.pgsql_unsupported']);
 });
+
+it('F076 AC-9: saves the activity log retention and logs old and new values', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => 36])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $activity = Activity::query()->where('log_name', 'sistem')->where('event', 'updated')->latest('id')->firstOrFail();
+
+    expect(Setting::get('retention.activity_log_months'))->toBe(36)
+        ->and($activity->properties['old'])->toHaveKey('activity_log_months')
+        ->and($activity->properties['attributes']['activity_log_months'])->toBe(36);
+});
+
+it('F076 AC-9: an empty activity log field stores null', function () {
+    $this->actingAs(kontenUser('super-admin'));
+    Setting::set('retention.activity_log_months', 36);
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => null])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Setting::get('retention.activity_log_months'))->toBeNull();
+});
+
+it('F076 AC-9: rejects an activity log retention outside 24 to 1200 months', function (int $months) {
+    $this->actingAs(kontenUser('super-admin'));
+    Setting::set('retention.activity_log_months', 36);
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => $months])
+        ->call('save')
+        ->assertHasFormErrors(['activity_log_months']);
+
+    expect(Setting::get('retention.activity_log_months'))->toBe(36);
+})->with([0, 23, 1201]);
+
+it('F076 AC-10: the action rejects 23 months and treats a missing key as null', function () {
+    $admin = kontenUser('super-admin');
+    Setting::set('retention.activity_log_months', 36);
+
+    try {
+        app(UpdateDataRetentionSettings::class)->handle(['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => 23], $admin);
+        $this->fail('ValidationException diharapkan.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey('activity_log_months');
+    }
+
+    app(UpdateDataRetentionSettings::class)->handle(['backup_enabled' => false, 'letter_snapshot_years' => null], $admin);
+
+    expect(Setting::get('retention.activity_log_months'))->toBeNull();
+});
+
+it('F076 AC-10: the activity log language keys have text', function () {
+    expectTranslatedKeys([
+        'pondok.data_retention.activity_log_heading',
+        'pondok.data_retention.activity_log_description',
+        'pondok.data_retention.activity_log_months',
+        'pondok.data_retention.activity_log_months_helper',
+        'pondok.data_retention.months_suffix',
+        'pondok.data_retention.activity_log_pruned',
+        'pondok.data_retention.activity_pruned',
+    ]);
+});

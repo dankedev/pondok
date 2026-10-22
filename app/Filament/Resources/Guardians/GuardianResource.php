@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Guardians;
 
 use App\Actions\PortalWali\CreateGuardianPortalAccount;
+use App\Actions\PortalWali\ResendGuardianPortalInvitation;
 use App\Enums\Module;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Concerns\ShowsActionErrorsOnForm;
@@ -14,6 +15,7 @@ use App\Filament\Resources\Guardians\RelationManagers\StudentsRelationManager;
 use App\Filament\Resources\Guardians\Schemas\GuardianForm;
 use App\Filament\Resources\Guardians\Tables\GuardiansTable;
 use App\Models\Guardian;
+use App\Notifications\GuardianPortalInvitation;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -22,6 +24,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Validation\ValidationException;
 
 class GuardianResource extends Resource
 {
@@ -100,6 +103,41 @@ class GuardianResource extends Resource
 
                 Notification::make()
                     ->title(__('pondok.portal_wali.account_created', ['email' => $user->email]))
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * "Kirim ulang undangan" (F084): wali punya akun portal tetapi belum mengatur password
+     * (email belum terverifikasi). Aksi tanpa form, jadi galat Action tampil sebagai notifikasi.
+     */
+    public static function resendPortalInvitationAction(): Action
+    {
+        return Action::make('resendPortalInvitation')
+            ->label(__('pondok.portal_wali.resend_invitation'))
+            ->icon(Heroicon::OutlinedEnvelope)
+            ->color('gray')
+            ->visible(fn (Guardian $record): bool => Module::PortalWali->isEnabled()
+                && $record->user !== null
+                && ! $record->user->hasVerifiedEmail()
+                && static::canEdit($record))
+            ->requiresConfirmation()
+            ->modalHeading(fn (Guardian $record): string => __('pondok.portal_wali.resend_invitation_heading', ['email' => $record->user?->email]))
+            ->modalDescription(__('pondok.portal_wali.resend_invitation_confirm', [
+                'hours' => intdiv((int) config('auth.passwords.'.GuardianPortalInvitation::BROKER.'.expire'), 60),
+            ]))
+            ->modalSubmitActionLabel(__('pondok.portal_wali.resend_invitation_submit'))
+            ->action(function (Guardian $record, ResendGuardianPortalInvitation $resend, Action $action): void {
+                try {
+                    $user = $resend->handle($record, auth()->user());
+                } catch (ValidationException $exception) {
+                    Notification::make()->title($exception->validator->errors()->first())->danger()->send();
+                    $action->halt();
+                }
+
+                Notification::make()
+                    ->title(__('pondok.portal_wali.invitation_resent', ['email' => $user->email]))
                     ->success()
                     ->send();
             });

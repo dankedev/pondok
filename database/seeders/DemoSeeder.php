@@ -19,6 +19,7 @@ use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoData;
 use Database\Seeders\Demo\DemoFinance;
 use Database\Seeders\Demo\DemoRecords;
+use Database\Seeders\Demo\DemoTahfidz;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use RuntimeException;
@@ -64,6 +65,7 @@ class DemoSeeder extends Seeder
             // Konten lebih dulu: berita prestasi memakai kategori "Prestasi Al-Khair".
             (new DemoContent($context))->run();
             (new DemoRecords($context))->run();
+            (new DemoTahfidz($context))->run();
         } finally {
             $context->files->cleanup();
         }

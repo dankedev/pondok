@@ -2,7 +2,7 @@
 
 Situs proyek: **pondok.org**
 
-Aplikasi open source untuk pondok pesantren dan sekolah: portal publik, PSB, data santri, asrama, tahfidz, perizinan, dokumen, prestasi, dan keuangan (SPP & biaya lain). Pengguna pertama: **Ma'had Al-Khair**.
+Aplikasi open source untuk pondok pesantren dan sekolah: portal publik, PSB, data santri, asrama, tahfidz, perizinan, dokumen, prestasi, dan keuangan (SPP & biaya lain).
 
 Dokumen acuan:
 - `docs/prd.md` — kebutuhan produk dan kriteria penerimaan

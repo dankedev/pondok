@@ -43,7 +43,7 @@ it('AC-6: overlapping records close a juz but a one-ayat gap does not', function
 
     expect(tahfidzProgress($this->student))->toBe([30 => ['hafal', '2026-10-02']]);
 
-    MemorizationRecord::query()->where('recorded_on', '2026-10-02')->update(['from_surah_id' => 100, 'from_ayah' => 7, 'to_surah_id' => 114, 'to_ayah' => 6]);
+    MemorizationRecord::query()->whereDate('recorded_on', '2026-10-02')->update(['from_surah_id' => 100, 'from_ayah' => 7, 'to_surah_id' => 114, 'to_ayah' => 6]);
     tahfidzRefresh($this->student);
 
     expect(tahfidzProgress($this->student))->toBe([30 => ['proses', null]]);

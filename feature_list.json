@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F078",
+  "next_id": "F079",
   "features": [
     {
       "id": "F001",
@@ -1447,6 +1447,28 @@
       "handoff": null,
       "evidence": null,
       "notes": "Ditunda ke fase berikutnya atas keputusan user 22 Okt 2026."
+    },
+    {
+      "id": "F078",
+      "key": "keuangan-label-kelompok-tagihan",
+      "issue": 72,
+      "name": "Label kelompok tagihan yang mudah dibaca di laporan keuangan",
+      "phase": 1,
+      "module": "Keuangan",
+      "status": "in-progress",
+      "depends_on": [],
+      "description": "Filter Kelompok tagihan di Laporan Keuangan dan daftar Tagihan menampilkan kode mentah billing_group (BULANAN, PSB_DAFTAR). Tampilkan label dari lang/id dengan fallback terbaca untuk kode buatan admin.",
+      "acceptance": [
+        "Opsi filter Kelompok tagihan di Laporan Keuangan dan daftar Tagihan memakai label; nilainya tetap kode billing_group",
+        "Kode umum (BULANAN, PSB_DAFTAR, PSB_TERIMA, DAFTAR_ULANG, SALDO_AWAL) berlabel dari lang/id",
+        "Kode tanpa label ditampilkan terbaca (garis bawah jadi spasi, huruf kapital awal)",
+        "Kolom dan rincian tagihan memakai label yang sama",
+        "Tanpa migration dan tanpa perubahan nilai tersimpan"
+      ],
+      "owner": "batch-mfa-wali-tahfidz",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur cepat. Disetujui user 22 Okt 2026 (batch orkestrator). Rencana: docs/plans/F078-plan.md."
     }
   ]
 }

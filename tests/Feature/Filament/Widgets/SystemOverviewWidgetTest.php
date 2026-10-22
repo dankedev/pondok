@@ -16,7 +16,7 @@ it('AC-14: renders system status', function () {
 
     expect($text)->toContain('Status sistem')
         ->and($text)->toContain('2026/2027')
-        ->and($text)->toContain('3 dari 7')
+        ->and($text)->toContain('3 dari 8')
         ->and($text)->not->toContain('Modul belum tersedia.');
 });
 

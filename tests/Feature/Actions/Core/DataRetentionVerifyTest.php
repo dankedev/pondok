@@ -20,6 +20,8 @@ use Spatie\Permission\Models\Permission;
 | F042 VERIFY: celah di luar test RED (isi dump yang bermusuhan, cakupan arsip, setting rusak, akses).
 */
 
+beforeEach(fn () => backupIsolateStorage());
+
 it('VERIFY: dump round-trips hostile strings, big money, floats, booleans and json', function () {
     Schema::create('verify_dump', function ($table) {
         $table->id();

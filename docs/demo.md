@@ -70,6 +70,7 @@ demo-alkhair-belitang
 - Tagihan SPP empat bulan terakhir dengan pola lunas, cicilan, dan tunggakan, serta satu pembayaran yang dibatalkan.
 - PSB: Gelombang I dan Gelombang II yang bersambung (pendaftaran dibuka sepanjang tahun selama kuota tersedia) dan 14 pendaftar di semua status.
 - Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori sesuai brief, dan album foto (gambar placeholder berpola netral tanpa teks). Logo cetak (kop surat dan kuitansi) memakai logo simbol dari `docs/brand/`. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
+- Tahfidz: Halaqah Abu Hurairah (MTW/SMP, diampu akun `ustadz-tahfidz@demo.test`) dan Halaqah Zaid bin Tsabit (TSN/SMA) dengan setoran beberapa hari terakhir, satu ujian kenaikan juz 30 lulus bersyahadah, serta Halaqah Aisyah (putri, nonaktif) sebagai contoh halaqah putri. Capaian juz dihitung Action dari setoran dan ujian.
 
 ## Keterbatasan
 

@@ -3,6 +3,7 @@
 use App\Actions\Core\UpdateDataRetentionSettings;
 use App\Filament\Pages\Settings\DataRetention;
 use App\Models\Setting;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -176,3 +177,48 @@ it('F076 AC-10: the activity log language keys have text', function () {
         'pondok.data_retention.activity_pruned',
     ]);
 });
+
+it('VERIFY F076: accepts exactly 24 and 1200 months through the page', function (int $months) {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => $months])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Setting::get('retention.activity_log_months'))->toBe($months);
+})->with([24, 1200]);
+
+it('VERIFY F076: saving again without changes writes no extra activity', function () {
+    $this->actingAs(kontenUser('super-admin'));
+    Setting::set('retention.activity_log_months', 36);
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => 36])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Activity::query()->where('event', 'updated')->count())->toBe(0);
+});
+
+it('VERIFY F076: the action refuses a non super-admin and keeps the retention', function () {
+    Setting::set('retention.activity_log_months', 36);
+
+    expect(fn () => app(UpdateDataRetentionSettings::class)->handle(
+        ['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => 24],
+        kontenUser('admin-sekolah'),
+    ))->toThrow(AuthorizationException::class);
+
+    expect(Setting::get('retention.activity_log_months'))->toBe(36);
+});
+
+it('VERIFY F076: a non-integer or text retention is rejected by the action', function (mixed $value) {
+    Setting::set('retention.activity_log_months', 36);
+
+    expect(fn () => app(UpdateDataRetentionSettings::class)->handle(
+        ['backup_enabled' => false, 'letter_snapshot_years' => null, 'activity_log_months' => $value],
+        kontenUser('super-admin'),
+    ))->toThrow(ValidationException::class);
+
+    expect(Setting::get('retention.activity_log_months'))->toBe(36);
+})->with(['abc', '24.5']);

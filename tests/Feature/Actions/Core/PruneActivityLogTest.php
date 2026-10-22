@@ -127,3 +127,30 @@ it('AC-7: the command exits 0 and prints the count, also when the setting is emp
     expect(Artisan::call('pondok:prune-activity-log'))->toBe(0)
         ->and(Artisan::output())->toContain(__('pondok.data_retention.activity_log_pruned', ['count' => 2]));
 });
+
+it('VERIFY: a non-numeric or below-minimum stored setting deletes nothing, a numeric string works', function () {
+    pruneLog('akademik', 60);
+
+    foreach (['abc', '', '23.9', '-5', '0'] as $value) {
+        Setting::set('retention.activity_log_months', $value);
+
+        expect(app(PruneActivityLog::class)->handle())->toBe(0, 'nilai '.var_export($value, true));
+    }
+
+    Setting::set('retention.activity_log_months', '36');
+
+    expect(app(PruneActivityLog::class)->handle())->toBe(1);
+});
+
+it('VERIFY: a row exactly at the cutoff is kept and one second older is deleted', function () {
+    Setting::set('retention.activity_log_months', 24);
+    $cutoff = now()->subMonthsNoOverflow(24);
+
+    foreach ([['konten', $cutoff], ['akademik', $cutoff->copy()->subSecond()]] as [$name, $at]) {
+        DB::table('activity_log')->insert(['log_name' => $name, 'description' => 'uji', 'created_at' => $at->toDateTimeString(), 'updated_at' => $at->toDateTimeString()]);
+    }
+
+    expect(app(PruneActivityLog::class)->handle())->toBe(1)
+        ->and(pruneCount('konten'))->toBe(1)
+        ->and(pruneCount('akademik'))->toBe(0);
+});

@@ -50,6 +50,7 @@ class RolePermissionSeeder extends Seeder
         'DocumentType', 'Document', 'IssuedLetter',
         'Category', 'Post', 'Album', 'Video', 'StaticPage',
         'Achievement',
+        'Halaqah', 'MemorizationRecord', 'TahfidzExam', 'TahfidzTarget',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -218,6 +219,11 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Achievement', ['viewAny', 'view', 'verify']),
                 // Penomoran NIS (F039).
                 'view:student-numbering',
+                // Tahfidz (F023): halaqah dinonaktifkan, tidak dihapus; setoran/ujian dikoreksi dengan hapus lalu catat ulang.
+                ...self::resourcePermissions('Halaqah', $withoutDelete),
+                ...self::resourcePermissions('MemorizationRecord', ['viewAny', 'view', 'create', 'delete']),
+                ...self::resourcePermissions('TahfidzExam', ['viewAny', 'view', 'create', 'delete']),
+                ...self::resourcePermissions('TahfidzTarget'),
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.
@@ -250,7 +256,15 @@ class RolePermissionSeeder extends Seeder
                 'view-dashboard',
                 ...self::resourcePermissions('RoomAssignment', $readOnly),
             ],
-            'ustadz-tahfidz', 'petugas-pos' => ['view-dashboard'],
+            // Pengampu melihat halaqah yang ia ampu (`Halaqah::visibleTo`), mencatat setoran dan ujian
+            // anggotanya, dan menghapus setoran yang salah. Anggota halaqah dikelola admin sekolah.
+            'ustadz-tahfidz' => [
+                'view-dashboard',
+                ...self::resourcePermissions('Halaqah', $readOnly),
+                ...self::resourcePermissions('MemorizationRecord', ['viewAny', 'view', 'create', 'delete']),
+                ...self::resourcePermissions('TahfidzExam', ['viewAny', 'view', 'create']),
+            ],
+            'petugas-pos' => ['view-dashboard'],
             // Portal wali (Fase 2) di luar panel admin.
             'wali' => [],
         };

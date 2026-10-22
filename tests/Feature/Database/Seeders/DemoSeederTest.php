@@ -970,6 +970,7 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
         app(RefreshJuzProgress::class)->handle($demoStudent);
     }
     expect(DB::table('student_juz_progress')->orderBy('student_id')->orderBy('juz')->get(['student_id', 'juz', 'status', 'completed_on'])->toArray())->toEqual($juzSnapshot);
+    $forbidden = ['maulid', "isra' mi'raj", "nuzulul qur'an", 'tahun baru hijriah', "nisfu sya'ban", 'haul', 'tahlilan', 'harlah', 'hadrah', 'shalawatan'];
     $tahfidzText = mb_strtolower(json_encode([DB::table('halaqahs')->get(['name', 'schedule']), DB::table('memorization_records')->pluck('note')], JSON_UNESCAPED_UNICODE));
     expect(array_values(array_filter($forbidden, fn (string $word): bool => str_contains($tahfidzText, $word))))->toBe([]);
 

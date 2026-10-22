@@ -19,6 +19,7 @@ Bila ada aturan yang tidak bisa diikuti, jangan improvisasi gaya baru. Ikuti pol
 - [ ] Status tampil sebagai badge dengan warna sesuai tabel status (§4).
 - [ ] Ada empty state, dan state "Modul belum tersedia" untuk widget/halaman modul non-inti (§7).
 - [ ] Layar portal/PSB dicek di lebar 360px tanpa scroll horizontal (§6).
+- [ ] Portal wali (panel Filament `wali`): komponen dan warna Filament seperti panel admin, bukan token/komponen portal publik; mode terang; data hanya lewat `User::portal*()` (§2, §6).
 - [ ] Ikon dari Heroicon Outlined (§3).
 - [ ] Aksi destruktif dan aksi keuangan meminta konfirmasi (§8).
 
@@ -37,7 +38,7 @@ Bila ada aturan yang tidak bisa diikuti, jangan improvisasi gaya baru. Ikuti pol
 
 Dua permukaan, nama semantik yang sama:
 
-| Peran | Filament (`AdminPanelProvider`) | Tailwind (`resources/css/app.css`) | Pakai untuk |
+| Peran | Filament (`AdminPanelProvider`, `WaliPanelProvider`) | Tailwind (`resources/css/app.css`) | Pakai untuk |
 |---|---|---|---|
 | Primary | `Color::Emerald` | `primary-*` navy logo Al-Khair (skala di bawah, 950 = `#000A3C`) | Tombol utama, link, elemen aktif |
 | Accent | — | `accent-*` emas logo Al-Khair (500 = `#F8B800`) | Portal/PSB: latar badge "Pendaftaran dibuka", garis aksen footer, `blockquote`, hiasan. Bukan warna teks. |
@@ -47,7 +48,7 @@ Dua permukaan, nama semantik yang sama:
 | Danger | `danger` | `danger-*` (red) | Terlambat, ditolak, batal, aksi hapus |
 | Info | `info` | `info-*` (sky) | Proses berjalan, informasi netral |
 
-**Portal dan panel sengaja berbeda primer.** Panel admin Filament tetap `Color::Emerald` dan tidak memuat `app.css`. Panel memakai theme Filament sendiri (`resources/css/filament/admin/theme.css`) yang hanya mengimpor `theme.css` bawaan Filament dan memindai `app/Filament` serta `resources/views/filament`, sehingga token navy/emas tetap hanya berlaku di portal publik, PSB, dan layout publik. Acuan gaya portal: [`docs/brand/referensi-gaya-coursex.md`](brand/referensi-gaya-coursex.md).
+**Portal dan panel sengaja berbeda primer.** Panel admin Filament tetap `Color::Emerald` dan tidak memuat `app.css`. Portal wali (F022) adalah panel Filament kedua (`wali`) dengan `Color::Emerald` dan theme admin yang sama, jadi ikut aturan panel, bukan token navy/emas portal. Panel memakai theme Filament sendiri (`resources/css/filament/admin/theme.css`) yang hanya mengimpor `theme.css` bawaan Filament dan memindai `app/Filament` serta `resources/views/filament`, sehingga token navy/emas tetap hanya berlaku di portal publik, PSB, dan layout publik. Acuan gaya portal: [`docs/brand/referensi-gaya-coursex.md`](brand/referensi-gaya-coursex.md).
 
 Skala portal (hex literal di `@theme`, kontras WCAG 2.x):
 
@@ -103,7 +104,7 @@ Aturan:
 - Teks utama `gray-900` di atas putih, teks isi `gray-600`/`gray-700`. `gray-500` hanya untuk ikon; `gray-300`/`gray-400` tidak untuk teks yang harus dibaca (kecuali paginasi nonaktif).
 - Portal: teks di atas `primary-700` ke atas putih; teks di atas emas `primary-950`. Panel admin mengikuti Filament.
 - Latar portal: halaman putih, section beranda berselang-seling `gray-50`/putih, form PSB di atas `gray-50`, footer `primary-950` (satu-satunya section gelap; teks `white`/`primary-100`/`primary-200`). Kartu putih dengan `border-gray-100` + `shadow-card`.
-- Dark mode: panel Filament mengikuti bawaan Filament. Portal publik, portal wali, dan PSB **hanya mode terang** (Fase 1–2). Jangan menambahkan kelas `dark:` di Blade portal.
+- Dark mode: panel admin mengikuti bawaan Filament. Portal wali (panel `wali`, `->darkMode(false)`), portal publik, dan PSB **hanya mode terang** (Fase 1–2). Jangan menambahkan kelas `dark:` di Blade portal maupun view panel wali.
 
 ## 3. Tipografi & ikon
 
@@ -272,10 +273,17 @@ Zona waktu selalu `Asia/Jakarta`. Jangan menampilkan ISO timestamp mentah.
 - **Navigasi:** grup dari `pondok.navigation.*`, urutan sesuai alur kerja (yang paling sering dipakai di atas). Jangan membuat grup baru tanpa menambahkannya ke `lang/id`.
 - **Dashboard:** widget stat di baris atas (maks. 4), lalu tabel/daftar tindak lanjut ("Tagihan jatuh tempo", "Izin menunggu"), lalu grafik. Grafik hanya bila menjawab pertanyaan; jangan hiasan.
 
-### Portal publik, portal wali, PSB (Blade + Livewire)
+### Portal wali (panel Filament `wali`, F022)
+
+- Panel Filament kedua di `/wali` (`WaliPanelProvider`): `->topNavigation()`, `->maxContentWidth(Width::TwoExtraLarge)` (setara `max-w-2xl`), `->darkMode(false)`, `Color::Emerald`, theme `resources/css/filament/admin/theme.css`. Tanpa dashboard bawaan, `AccountWidget`, maupun notifikasi database.
+- Halaman di `app/Filament/Wali/Pages` memakai trait `BelongsToPortalWali` (`getModule()` = `portal-wali`, `canAccess()` cek modul). Halaman detail tidak masuk navigasi, menyimpan id saja, dan me-resolve ulang record lewat `User::portal*()` setiap render; tidak berhak → 404.
+- Komponen: `x-filament::section`, `x-filament::badge`, `x-filament::empty-state`, `x-filament::button`, dan tabel Filament untuk daftar berhalaman. Ringkasan santri dipakai ulang lewat `filament/wali/partials/student-summary`.
+- Mobile-first seperti portal: satu kolom di 360px, `sm:grid-cols-*` di atasnya. Sapaan "Anda" (§9).
+
+### Portal publik, PSB (Blade + Livewire)
 
 - **Mobile-first.** Rancang untuk 360px dulu, lalu `sm`/`md`/`lg`. Wali dan pendaftar hampir semua memakai HP.
-- Kontainer: `mx-auto max-w-6xl px-4 sm:px-6` (portal publik), `max-w-2xl` (portal wali, form PSB).
+- Kontainer: `mx-auto max-w-6xl px-4 sm:px-6` (portal publik), `max-w-2xl` (form PSB).
 - Spasi memakai skala Tailwind 4 kelipatan: `gap-4`/`gap-6`, `p-4`/`p-6`. Section beranda `py-16 lg:py-24`, kontainer halaman dalam `py-12 lg:py-20`. Hindari nilai arbitrer (`p-[13px]`, `w-[85%]`); pakai pecahan skala (`w-5/6`).
 - Sudut: `rounded-full` (pill) untuk tombol, input, select, input file, badge, chip filter, paginasi, item nav, dan tautan "Daftar". `rounded-xl` untuk kartu, alert, empty state, foto, iframe, menu lipat, dan ubin pilihan radio.
 - Bayangan hanya token di `@theme`: `shadow-card` (kartu, `border-gray-100`), `shadow-card-lg` (kartu besar, menu lipat), `shadow-button` (tombol utama navy). Tanpa `shadow-[…]`.
@@ -283,7 +291,7 @@ Zona waktu selalu `Asia/Jakarta`. Jangan menampilkan ISO timestamp mentah.
 - Beranda (F045) = daftar blok (`resources/views/themes/<preset>/blocks/{type}.blade.php`): hero putih, lalu blok yang dirender berselang-seling `bg-gray-50` → `bg-white` (penghitung `$band()` di `home.blade.php`, hanya dipanggil blok yang tampil). Blok kosong tidak dirender. Blok Ajakan punya latar sendiri: `light` = band, `navy` = `bg-primary-950` teks putih dengan tombol varian `inverse`/`inverse-secondary` dan fokus `ring-accent-400`, `gold` = `bg-accent-500` teks `text-primary-950` (emas tetap bukan warna teks). Grid Keunggulan dan Konten terbaru memakai `<x-portal.adaptive-grid>`: kolom `lg` = min(jumlah item, maks.), satu item tanpa grid lebar, baris sisa rata tengah dengan lebar kartu sama (`.portal-adaptive-grid` + `adaptive-cols-<n>` di `app.css`, F073).
 - Preset template beranda (F072, Situs > Tampilan, key `theme.template`): `default` (Standar: hero dua kolom, keunggulan dalam kartu) dan `centered` (Terpusat: hero rata tengah dengan media `max-w-4xl` di bawah teks, keunggulan sebagai daftar bergaris `divide-y` tanpa kartu (butir terakhir jumlah ganjil di tengah pada `lg`), gambar Teks + gambar di kiri pada `lg`, kutipan rata tengah dengan garis emas pendek di atas). Preset hanya mengoverride blok yang tata letaknya beda; blok lain jatuh ke `themes/default` (`GetPortalTheme::blockView`). Semua preset merender isian `portal.home_blocks` yang sama dengan kontrak yang sama: satu `h1` (hero atau pita nama lembaga), `section` dengan `aria-labelledby` hanya bila ada judul, `$band()`/`$sectionHeading`/`$sectionLink` dari `home.blade.php`, tombol dan alt gambar sama. Header, footer, navigasi, dan halaman selain beranda tidak ikut preset. Preset baru = folder `themes/<kunci>/blocks/` + kunci di `GetPortalTheme::TEMPLATES` + label/deskripsi di `pondok.school_profile.theme.templates`.
 - Hiasan cincin emas setengah lingkaran (`.portal-decor-ring`) dan pola titik navy muda (`.portal-decor-dots`): murni CSS, hanya di hero (titik, `lg`) dan slider (cincin + titik, `sm`), sebagai `<div aria-hidden="true">` kosong di belakang konten (`-z-10` dalam wadah `isolate`), selalu berkelas `hidden` di bawah breakpoint. Section berhias memakai `overflow-x-clip`.
-- Target sentuh minimal 44×44px. Tombol utama di portal wali/PSB lebar penuh di mobile (`w-full sm:w-auto`).
+- Target sentuh minimal 44×44px. Tombol utama di PSB lebar penuh di mobile (`w-full sm:w-auto`).
 - Form PSB dipecah menjadi langkah (wizard) dengan indikator langkah, satu kolom di mobile, label di atas field, dan tombol "Simpan & lanjut" di bawah.
 - Komponen Blade yang dipakai ulang (tombol, badge, kartu, field, empty state, alert) dibuat sebagai anonymous component di `resources/views/components/ui/` dan dipakai sebagai `<x-ui.button>`. Cek komponen yang sudah ada sebelum membuat yang baru.
 - Foto: rasio tetap (`aspect-video` untuk berita/galeri, `aspect-square` untuk foto santri), `object-cover`, `loading="lazy"`, ada `alt`.

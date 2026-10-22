@@ -99,6 +99,13 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Undangan akun portal wali (F081): tabel token sendiri, berlaku 72 jam.
+        'guardian_invitations' => [
+            'provider' => 'users',
+            'table' => 'guardian_invitation_tokens',
+            'expire' => 4320,
+        ],
     ],
 
     /*

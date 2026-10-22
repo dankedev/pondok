@@ -978,6 +978,7 @@ MySQL dan Postgres menganggap setiap `NULL` berbeda, jadi unique key biasa di `f
 ### Tabel bawaan yang tidak digambar
 
 - `sessions`, `cache`, `password_reset_tokens`
+- `guardian_invitation_tokens` (bentuk sama dengan `password_reset_tokens`): token undangan akun portal wali dari broker `guardian_invitations`, berlaku 72 jam, terpisah dari token "Lupa password" (60 menit).
 - `jobs`, `job_batches`, `failed_jobs` (queue driver database)
 - `notifications` (notifikasi in-app Filament)
 - `activity_log` dari Spatie Activitylog untuk audit `invoices`, `payments`, dan perubahan override

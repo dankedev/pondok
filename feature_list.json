@@ -1450,7 +1450,7 @@
       "name": "Pembersihan activity log lama per periode (allowlist log_name)",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F042"
       ],
@@ -1461,9 +1461,9 @@
         "Hapus ber-chunk portabel (chunkById + whereIn), idempoten, satu activity sistem/prune berisi jumlah bila ada yang dihapus",
         "pondok:prune-activity-log terjadwal 03:30 WIB tanpa overlap hanya bila setting diisi; activitylog:clean tidak dijadwalkan"
       ],
-      "owner": "batch-f076-f031",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 1111363, b929fae, 6756060, de87995. PruneActivityLogTest, DataRetentionScheduleTest, DataRetentionSettingsTest, ModuleComplianceTest lulus; suite penuh PHP 8.4 5155 test lulus (3 gagal karena lingkungan worktree tanpa .env/public/css, lulus setelah disiapkan).",
       "notes": "Jalur penuh. Disetujui user 23 Okt 2026 (komentar #67): default kosong, minimum 24 bulan, allowlist akademik dan konten."
     },
     {

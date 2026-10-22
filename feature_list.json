@@ -1031,7 +1031,7 @@
       "name": "MFA/2FA & verifikasi email (audit ISO 27001)",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001"],
       "description": "Aktifkan autentikasi dua faktor (email OTP atau aplikasi TOTP) untuk akun privilese dan verifikasi email. Keduanya menunggu email produksi (SMTP) terkonfigurasi.",
       "acceptance": [
@@ -1046,9 +1046,9 @@
         "Ganti email di profil memakai email change verification Filament",
         "CreateSuperAdmin menghasilkan akun terverifikasi, termasuk akun lama yang dipromosikan"
       ],
-      "owner": "batch-mfa-wali-tahfidz",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 1f7e753 (MFA, verifikasi email, peringatan), 47ba43a (reset MFA, tandai terverifikasi, pondok:reset-mfa). Test RED+VERIFY F055 lulus; suite penuh PHP 8.4 4846 test, 4841 lulus, 5 skipped MySQL; Pint lulus. Banner belum dicek visual (.env worktree tidak bisa diakses sesi ini).",
       "notes": "Jalur penuh. Keputusan (22 Okt 2026): MFA aplikasi opsional, tanpa email OTP; verifikasi email wajib dengan migrasi data user lama dan aksi super-admin tandai terverifikasi; reset MFA khusus super-admin tanpa permission baru. Rencana: docs/plans/F055-plan.md"
     },
     {

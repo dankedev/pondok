@@ -7,7 +7,7 @@
     $isMobile = $layout === 'mobile';
     $linkClass = $isMobile
         ? 'flex min-h-11 items-center rounded-full px-4 text-base font-semibold'
-        : 'inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold';
+        : 'inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm font-semibold';
     $focusClass = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
     $stateClass = fn (bool $active): string => $active ? 'bg-primary-50 text-primary-900' : 'text-gray-700 hover:bg-gray-50 hover:text-primary-950';
     $button = $navigation['headerButton'];

@@ -102,12 +102,12 @@
                 @endif
             </a>
 
-            {{-- Menu bisa sampai 8 item + Masuk/Daftar: nav penuh mulai lg, menu lipat di bawahnya. --}}
-            <nav class="hidden lg:flex lg:items-center lg:gap-1" aria-label="{{ __('pondok.portal.nav.label') }}">
+            {{-- Menu bisa sampai 8 item + Masuk/Daftar: nav penuh mulai xl (di 1024px label terlipat), menu lipat di bawahnya. --}}
+            <nav class="hidden xl:flex xl:items-center xl:gap-1" aria-label="{{ __('pondok.portal.nav.label') }}">
                 @include('portal.partials.nav-links', ['layout' => 'desktop', 'navigation' => $navigation])
             </nav>
 
-            <details class="group relative lg:hidden">
+            <details class="group relative xl:hidden">
                 <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-gray-200 px-4 text-base font-semibold text-primary-950 hover:border-primary-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                     <x-heroicon-o-bars-3 class="size-6" aria-hidden="true" />
                     {{ __('pondok.portal.nav.menu') }}

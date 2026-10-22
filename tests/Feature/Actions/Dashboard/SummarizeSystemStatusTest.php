@@ -19,7 +19,7 @@ it('AC-14: summarizes system status', function () {
     expect($summary)->toMatchArray([
         'active_academic_year' => '2026/2027',
         'enabled_module_count' => 3,
-        'module_count' => 7,
+        'module_count' => 8,
         'active_user_count' => 4,
     ])->and(array_keys($summary))->toHaveCount(4);
 });
@@ -38,6 +38,6 @@ it('AC-2: counts the modules of the enum and ignores legacy tahfidz and perizina
 
     $summary = app(SummarizeSystemStatus::class)->handle();
 
-    expect($summary['module_count'])->toBe(7)
+    expect($summary['module_count'])->toBe(8)
         ->and($summary['enabled_module_count'])->toBe(3);
 });

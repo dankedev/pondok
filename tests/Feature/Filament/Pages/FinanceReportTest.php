@@ -128,6 +128,21 @@ it('AC-22: limits the report to the user units', function () {
         ->and($text)->not->toContain('Rp 777.000');
 });
 
+it('F078: labels billing group options while filtering by the stored code', function () {
+    $f = $this->f;
+    laporanInvoice($f, laporanStudent($f, attributes: ['name' => 'Santri Bulanan']), '2026-10-01', 111000, 0, null, '2026-10-10');
+    laporanInvoice($f, laporanStudent($f, attributes: ['name' => 'Santri Kitab']), '2026-10-01', 222000, 0, null, '2026-10-10', 'PSB_KITAB');
+    $this->actingAs(keuanganUser('bendahara'));
+
+    $component = Livewire::test(FinanceReport::class)
+        ->assertFormFieldExists('billing_group', fn (Select $field): bool => $field->getOptions() === ['BULANAN' => 'Bulanan', 'PSB_KITAB' => 'Psb kitab']);
+
+    $text = tagihanPlainText($component->set('data.billing_group', 'PSB_KITAB'));
+
+    expect($text)->toContain('Santri Kitab')
+        ->and($text)->not->toContain('Santri Bulanan');
+});
+
 it('AC-1: queues the CSV export and shows a processing notice', function () {
     Queue::fake();
     Storage::fake('private');

@@ -22,6 +22,7 @@ use App\Actions\Tahfidz\RecordTahfidzExam;
 use App\Actions\Tahfidz\RefreshJuzProgress;
 use App\Enums\Module;
 use App\Filament\Resources\Applicants\Pages\ViewApplicant;
+use App\Livewire\PortalWali\ResetPassword as PortalResetPassword;
 use App\Models\AcademicYear;
 use App\Models\Achievement;
 use App\Models\AdmissionRequirement;
@@ -4829,7 +4830,7 @@ function mfaRaw(User $user): array
 
 /*
 |--------------------------------------------------------------------------
-| Helper portal wali (F022)
+| Helper portal wali (F022, dipindah ke Blade + Livewire oleh F079)
 |--------------------------------------------------------------------------
 |
 | Berawalan `wali`. Memakai `keuanganUser`, `asramaResident`, `asramaRoom`, `dokumenCreate`,
@@ -4929,11 +4930,21 @@ function waliInvoice(object $f, Student $student, array $attributes = [], string
 }
 
 /**
- * Teks polos halaman panel `/wali...` untuk user (harus 200).
+ * Teks polos halaman portal `/wali...` (Blade, F079) untuk user (harus 200).
  */
 function waliText(User $user, string $path = '/wali'): string
 {
     return bayarHtmlText(test()->actingAs($user)->get($path)->assertOk()->getContent());
+}
+
+/**
+ * Atur ulang password lewat komponen Livewire portal wali (token dari broker, email diisi manual).
+ */
+function waliReset(User $user, string $token, string $password, ?string $confirmation = null): Testable
+{
+    return Livewire::test(PortalResetPassword::class, ['token' => $token])
+        ->set('email', $user->email)->set('password', $password)->set('password_confirmation', $confirmation ?? $password)
+        ->call('resetPassword');
 }
 
 /**

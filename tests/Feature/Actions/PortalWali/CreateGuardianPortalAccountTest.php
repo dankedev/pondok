@@ -5,9 +5,8 @@ use App\Filament\Resources\Guardians\Pages\CreateGuardian;
 use App\Filament\Resources\Guardians\Pages\EditGuardian;
 use App\Models\Guardian;
 use App\Models\User;
-use Filament\Auth\Notifications\ResetPassword as ResetPasswordNotification;
-use Filament\Auth\Pages\PasswordReset\ResetPassword;
 use Filament\Facades\Filament;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -20,7 +19,7 @@ beforeEach(function () {
     $this->guardian = Guardian::factory()->create(['name' => 'Wali Baru']);
 });
 
-it('AC-11: the admin action creates a wali user, links it and sends one wali-panel reset link', function () {
+it('AC-11: the admin action creates a wali user, links it and sends one Laravel reset notification pointing at the wali portal', function () {
     Notification::fake();
     Filament::setCurrentPanel('admin');
     $this->actingAs($this->admin);
@@ -39,7 +38,15 @@ it('AC-11: the admin action creates a wali user, links it and sends one wali-pan
         ->and($this->guardian->fresh()->user_id)->toBe($user->id);
 
     Notification::assertSentToTimes($user, ResetPasswordNotification::class, 1);
-    Notification::assertSentTo($user, ResetPasswordNotification::class, fn (ResetPasswordNotification $n): bool => str_contains($n->url, '/wali/'));
+    $url = null;
+    Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $n) use ($user, &$url): bool {
+        $url = $n->toMail($user)->actionUrl;
+
+        return str_starts_with($url, route('portal-wali.password.reset', ['token' => $n->token]));
+    });
+
+    expect($url)->toContain('/wali/atur-password/');
+    $this->get($url)->assertOk();
 
     $activity = Activity::query()->where('log_name', 'akademik')->latest('id')->firstOrFail();
 
@@ -104,14 +111,10 @@ it('AC-13: user_id cannot be changed through the form or mass assignment', funct
 });
 
 it('AC-14: resetting the password marks the email verified and the wali enters without a verification prompt', function () {
-    Filament::setCurrentPanel('wali');
     $user = User::factory()->unverified()->create()->assignRole('wali');
     $token = Password::createToken($user);
 
-    Livewire::test(ResetPassword::class, ['email' => $user->email, 'token' => $token])
-        ->fillForm(['password' => 'Password-Baru-123!', 'passwordConfirmation' => 'Password-Baru-123!'])
-        ->call('resetPassword')
-        ->assertHasNoFormErrors();
+    waliReset($user, $token, 'Password-Baru-123!')->assertHasNoErrors();
 
     $user->refresh();
 
@@ -122,23 +125,16 @@ it('AC-14: resetting the password marks the email verified and the wali enters w
 });
 
 it('AC-14: a wrong token leaves the email unverified, a valid one verifies it; a verified user keeps the verification date', function () {
-    Filament::setCurrentPanel('wali');
     $unverified = User::factory()->unverified()->create()->assignRole('wali');
     $verified = User::factory()->create(['email_verified_at' => '2024-03-01 08:00:00'])->assignRole('wali');
 
-    Livewire::test(ResetPassword::class, ['email' => $unverified->email, 'token' => 'salah'])
-        ->fillForm(['password' => 'Password-Baru-123!', 'passwordConfirmation' => 'Password-Baru-123!'])
-        ->call('resetPassword');
+    waliReset($unverified, 'salah', 'Password-Baru-123!');
 
     expect($unverified->fresh()->email_verified_at)->toBeNull();
 
-    Livewire::test(ResetPassword::class, ['email' => $unverified->email, 'token' => Password::createToken($unverified)])
-        ->fillForm(['password' => 'Password-Baru-123!', 'passwordConfirmation' => 'Password-Baru-123!'])
-        ->call('resetPassword');
+    waliReset($unverified, Password::createToken($unverified), 'Password-Baru-123!');
 
-    Livewire::test(ResetPassword::class, ['email' => $verified->email, 'token' => Password::createToken($verified)])
-        ->fillForm(['password' => 'Password-Baru-123!', 'passwordConfirmation' => 'Password-Baru-123!'])
-        ->call('resetPassword');
+    waliReset($verified, Password::createToken($verified), 'Password-Baru-123!');
 
     expect($unverified->fresh()->email_verified_at)->not->toBeNull()
         ->and($verified->fresh()->email_verified_at->toDateTimeString())->toBe('2024-03-01 08:00:00');

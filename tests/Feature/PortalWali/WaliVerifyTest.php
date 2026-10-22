@@ -2,52 +2,34 @@
 
 use App\Actions\PortalWali\CreateGuardianPortalAccount;
 use App\Filament\Resources\Guardians\Pages\EditGuardian;
-use App\Filament\Wali\Pages\ShowInvoice;
-use App\Filament\Wali\Pages\ShowStudent;
+use App\Livewire\PortalWali\ForgotPassword as PortalForgotPassword;
 use App\Models\Applicant;
 use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Models\User;
-use Filament\Auth\Pages\PasswordReset\RequestPasswordReset;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
-use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->f = waliBoot();
-    Filament::setCurrentPanel('wali');
 });
 
-it('VERIFY: tampering studentId in Livewire to another wali student never yields that student', function () {
+it('VERIFY: a student or invoice page of another wali is 404 even with a crafted id and never leaks its amounts', function () {
     $f = $this->f;
-    waliInvoice($f, $f->o1, ['total' => 123000]);
+    $theirs = waliInvoice($f, $f->o1, ['total' => 123000]);
     $this->actingAs($f->wali);
 
-    $component = Livewire::test(ShowStudent::class, ['student' => $f->s1->id]);
-
-    expect(fn () => $component->set('studentId', $f->o1->id))->toThrow(CannotUpdateLockedPropertyException::class);
-    $component->call('$refresh')->assertOk()->assertDontSee('123.000');
+    $this->get("/wali/santri/{$f->o1->id}")->assertNotFound()->assertDontSee('123.000');
+    $this->get("/wali/tagihan/{$theirs->id}")->assertNotFound()->assertDontSee('123.000');
+    $this->get("/wali/santri/{$f->s1->id}")->assertOk()->assertDontSee('123.000');
 });
 
-it('VERIFY: tampering invoiceId in Livewire to another wali invoice is rejected', function () {
-    $f = $this->f;
-    $mine = waliInvoice($f, $f->s1);
-    $theirs = waliInvoice($f, $f->o1);
-    $this->actingAs($f->wali);
-
-    $component = Livewire::test(ShowInvoice::class, ['invoice' => $mine->id]);
-
-    expect(fn () => $component->set('invoiceId', $theirs->id))->toThrow(CannotUpdateLockedPropertyException::class);
-    $component->call('$refresh')->assertOk()->assertSee($mine->invoice_no)->assertDontSee($theirs->invoice_no);
-});
-
-it('VERIFY: an open invoice page fails after the invoice is cancelled or the student link is detached', function (string $case) {
+it('VERIFY: an invoice page is 404 after the invoice is cancelled or the student link is detached or archived', function (string $case) {
     $f = $this->f;
     $invoice = waliInvoice($f, $f->s1);
-    $this->actingAs($f->wali);
-    $component = Livewire::test(ShowInvoice::class, ['invoice' => $invoice->id]);
+    $this->actingAs($f->wali)->get("/wali/tagihan/{$invoice->id}")->assertOk();
 
     match ($case) {
         'cancelled' => $invoice->forceFill(['status' => Invoice::STATUS_CANCELLED])->save(),
@@ -55,26 +37,22 @@ it('VERIFY: an open invoice page fails after the invoice is cancelled or the stu
         'archived' => $f->s1->delete(),
     };
 
-    $component->call('$refresh')->assertNotFound();
+    $this->get("/wali/tagihan/{$invoice->id}")->assertNotFound();
 })->with(['cancelled', 'detached', 'archived']);
 
-it('VERIFY: an open Livewire page stops serving when the module is switched off mid-session', function (string $module, string $page) {
+it('VERIFY: a module switched off mid-session closes the pages that depend on it', function (string $module, string $page) {
     $f = $this->f;
     $invoice = waliInvoice($f, $f->s1);
     $this->actingAs($f->wali);
-    $component = $page === 'invoice'
-        ? Livewire::test(ShowInvoice::class, ['invoice' => $invoice->id])
-        : Livewire::test(ShowStudent::class, ['student' => $f->s1->id]);
+    $path = $page === 'invoice' ? "/wali/tagihan/{$invoice->id}" : "/wali/santri/{$f->s1->id}";
+    $this->get($path)->assertOk();
 
     Setting::set("modules.{$module}.enabled", false);
 
-    $html = rescue(fn () => $component->call('$refresh')->html(), fn () => '', report: false);
-
-    expect($html)->not->toContain($invoice->invoice_no);
+    $this->get($path)->assertNotFound();
 })->with([
     'portal-wali on invoice' => ['portal-wali', 'invoice'],
     'keuangan on invoice' => ['keuangan', 'invoice'],
-    'keuangan on student' => ['keuangan', 'student'],
     'portal-wali on student' => ['portal-wali', 'student'],
 ]);
 
@@ -86,7 +64,7 @@ it('VERIFY: a guardian-owned document with the same id as a student never reache
     $document = dokumenCreate($guardian, $type);
 
     expect(waliText($f->wali, "/wali/santri/{$f->s1->id}"))->not->toContain('KTP Wali Rahasia');
-    $this->get("/wali/documents/{$document->id}/download")->assertNotFound();
+    $this->get("/wali/dokumen/{$document->id}/unduh")->assertNotFound();
 });
 
 it('VERIFY: an unverified wali is sent to the email prompt instead of downloading a document', function () {
@@ -94,7 +72,7 @@ it('VERIFY: an unverified wali is sent to the email prompt instead of downloadin
     $document = dokumenCreate($f->s1, dokumenType(['name' => 'Rapor', 'is_confidential' => false]));
     $f->wali->forceFill(['email_verified_at' => null])->save();
 
-    $this->actingAs($f->wali)->get("/wali/documents/{$document->id}/download")->assertRedirect();
+    $this->actingAs($f->wali)->get("/wali/dokumen/{$document->id}/unduh")->assertRedirect(route('portal-wali.verification.notice'));
 });
 
 it('VERIFY: siblings with two walis are visible to both, each only for own students, invoice of applicant without student hidden', function () {
@@ -118,11 +96,6 @@ it('VERIFY: a wali deactivated mid-session is rejected on the next request', fun
     $this->get('/wali')->assertForbidden();
 });
 
-it('VERIFY: wali without MFA enabled is never blocked by an MFA setup redirect', function () {
-    $this->actingAs($this->f->wali)->get('/wali')->assertOk();
-    $this->get("/wali/santri/{$this->f->s1->id}")->assertOk();
-});
-
 it('VERIFY: pages never leak sensitive student fields', function () {
     $f = $this->f;
     $f->s1->forceFill(['nisn' => '5544332211', 'address' => 'Jl. Pribadi 17', 'birth_place' => 'Kota Lahir Rahasia'])->save();
@@ -132,11 +105,11 @@ it('VERIFY: pages never leak sensitive student fields', function () {
     }
 });
 
-it('VERIFY: a staff user without the wali role cannot request a reset link through the wali panel', function () {
+it('VERIFY: a staff user without the wali role cannot request a reset link through the wali portal', function () {
     Notification::fake();
     $staff = keuanganUser('bendahara');
 
-    Livewire::test(RequestPasswordReset::class)->fillForm(['email' => $staff->email])->call('request');
+    Livewire::test(PortalForgotPassword::class)->set('email', $staff->email)->call('send');
 
     Notification::assertNothingSentTo($staff);
 });

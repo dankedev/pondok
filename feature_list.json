@@ -420,7 +420,7 @@
       "name": "Tahfidz",
       "phase": 3,
       "module": "Tahfidz",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002"],
       "description": "Halaqah, setoran ziyadah/murajaah/tasmi' berbasis rentang surah-ayat, student_juz_progress, ujian dan syahadah.",
       "acceptance": [
@@ -434,9 +434,9 @@
         "Permission admin-sekolah & ustadz-tahfidz; ustadz hanya melihat/mencatat setoran dan ujian halaqah yang diampu (scope, policy, Action), anggota hanya diatur pemegang update:halaqah; cakupan unit_user",
         "Data demo tahfidz sesuai manhaj; progres hafalan di portal wali menyusul setelah portal wali dibangun ulang (issue terpisah)"
       ],
-      "owner": "batch-mfa-wali-tahfidz",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "commit 00a8b5a (skema + 114 surah), d112346 (modul/permission/policy), 47e1ba1 (Action), bf36e89 (resource admin), 8ee9e20 (demo), fix trim syahadah. Test RED+VERIFY F023 (117 test) lulus; suite penuh PHP 8.4 5027 test, 5022 lulus, 5 skipped MySQL; Pint lulus. Belum dicek visual (.env worktree tidak bisa diakses sesi ini).",
       "notes": "Jalur penuh. Fase 3. Keputusan user 16 Okt 2026: mushaf Madinah 15 baris; target hafalan diatur admin (tahfidz_targets). Rencana: docs/plans/F023-plan.md"
     },
     {

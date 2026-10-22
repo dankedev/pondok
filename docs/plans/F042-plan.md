@@ -138,7 +138,7 @@ Tanpa permission Shield baru (role `super-admin`, pola `Modules`); tanpa saklar 
 - Jalur MySQL `DumpDatabase` (quote, header FK, transaksi) tidak dites otomatis (CI SQLite); uji manual sekali di MySQL
   lokal sebelum rilis dan catat di evidence.
 - Impor besar lewat phpMyAdmin bisa kena batas unggah; docs menyarankan zip atau `mysql` di Terminal.
-- Untuk user (tidak menghalangi): berapa tahun masa simpan surat untuk Ma'had Al-Khair.
+- Untuk user (tidak menghalangi): berapa tahun masa simpan surat untuk lembaga pengguna.
 - Usulan issue lanjutan: pembersihan activity log dengan allowlist `log_name`; hapus data atas permintaan santri/wali.
 
 ## Riwayat revisi

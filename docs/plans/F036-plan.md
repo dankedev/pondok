@@ -4,7 +4,7 @@ Status rencana: APPROVED
 
 ## Ringkasan & tujuan
 
-Profil sekolah F016 hanya punya 10 field (`school.name`, `tagline`, `address`, `phone`, `whatsapp`, `email`, tiga URL media sosial, `logo_path`). Itu cukup untuk Al-Khair, tetapi tidak untuk lembaga lain yang memakai Pondok. F036 mengganti field tersebut dengan profil lembaga generik yang diisi dari panel tanpa mengubah kode:
+Profil sekolah F016 hanya punya 10 field (`school.name`, `tagline`, `address`, `phone`, `whatsapp`, `email`, tiga URL media sosial, `logo_path`). Itu cukup untuk lembaga pengguna, tetapi tidak untuk lembaga lain yang memakai Pondok. F036 mengganti field tersebut dengan profil lembaga generik yang diisi dari panel tanpa mengubah kode:
 
 - identitas dengan logo cetak, logo desktop, logo mobile, dan favicon;
 - kontak dan media sosial berupa daftar berlabel, ditambah tautan peta;
@@ -37,7 +37,7 @@ Alasan pemisahan: F037 mengubah routing `/{page}` dan skema `pages`. F038 membac
 
   Semuanya kolom isian admin dengan nilai awal `null`. Bagian yang kosong tidak dirender.
 - Yang tetap dari `lang/id` hanya **teks antarmuka generik**: navigasi, tombol, label form, label aksesibilitas, nama platform media sosial, judul seksi modul yang deskriptif, dan pesan kosong/error.
-- Isi khas Al-Khair (basmalah, "Ahlan wa Sahlan", QS. Ali 'Imran: 104, keunggulan dari brosur) **hanya** diisi DemoSeeder sebagai contoh. `SettingSeeder`, `InstallSeeder`, dan migrasi tidak mengisinya.
+- Isi khas lembaga pengguna (basmalah, "Ahlan wa Sahlan", QS. Ali 'Imran: 104, keunggulan dari brosur) **hanya** diisi DemoSeeder sebagai contoh. `SettingSeeder`, `InstallSeeder`, dan migrasi tidak mengisinya.
 - Fallback ke **nama** dan **tagline** lembaga tetap boleh, karena keduanya data isian admin, bukan teks aplikasi.
 - Placeholder dan helper text di form admin tidak memuat contoh Arab, ayat, atau salam. Helper hanya menjelaskan pemakaian field.
 - F038 wajib memakai prinsip yang sama (sudah tertulis di acceptance F038).
@@ -77,7 +77,7 @@ Termasuk:
   - `portal/partials/footer.blade.php` dan `portal/partials/contact-list.blade.php`;
   - `portal/pages/show.blade.php`: `$hasContact` halaman `kontak` saat ini membaca `$school['whatsapp']` (temuan review);
   - `lang/id/pondok.php` (audit di atas).
-- DemoSeeder: field baru diisi contoh Al-Khair, termasuk logo dari `docs/brand/` (AC-59).
+- DemoSeeder: field baru diisi contoh lembaga pengguna, termasuk logo dari `docs/brand/` (AC-59).
 - `docs/erd.md` bagian Konten: daftar key profil dan hubungan logo cetak dengan logo desktop.
 
 Tidak termasuk (eksplisit):
@@ -425,8 +425,8 @@ Wajib: baca `docs/design-guide.md`, jalankan alur §13 (anti-ui-slop), dan check
   - `portal.hero_album_id` dan `portal.psb_video_id` menunjuk data demo.
 
   Logo diunggah lewat `UpdateSchoolProfile`:
-  - `logo_desktop_path` berisi salinan `docs/brand/logo-mahad-lengkap.jpg` (JPG 42 KB);
-  - `logo_mobile_path` dan `favicon_path` berisi salinan `docs/brand/logo-mahad-simbol.png` (PNG 197 KB, 500×500, di bawah batas favicon 256 KB, tanpa konversi).
+  - `logo_desktop_path` berisi salinan logo lembaga (berkas dihapus di F083) (JPG 42 KB);
+  - `logo_mobile_path` dan `favicon_path` berisi salinan logo lembaga (berkas dihapus di F083) (PNG 197 KB, 500×500, di bawah batas favicon 256 KB, tanpa konversi).
 
   Hasilnya tiga berkas berbeda di `public/school/`. Bila berkas sumber tidak ada, langkah logo dilewati tanpa gagal. Seeder dijalankan dua kali → nilai sama, tanpa berkas logo tambahan. Settings tidak memuat nomor asli brosur (`085832333725`, `085669941929`) maupun nomor rekening.
 

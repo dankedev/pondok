@@ -13,7 +13,7 @@ use App\Models\Setting;
 
 beforeEach(function () {
     portalBoot();
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
     Setting::set('modules.psb.enabled', false);
     Setting::set('modules.dokumen.enabled', false);
 });
@@ -25,7 +25,7 @@ function footerFill(): void
 {
     profilSet([
         'school.contacts' => [profilContact(['label' => 'Panitia Uji', 'phone' => '081234567890'])],
-        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair']],
+        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/pondokcontoh']],
     ]);
     ftrSet([
         ftr('text', ['body' => '<p>Deskripsi lembaga uji</p>', 'show_logo' => true]),
@@ -47,11 +47,11 @@ it('AC-6: renders the widgets in order with their headings, then the copyright',
     $text = profilVisibleText($footer);
     $positions = array_map(fn (string $needle): int|false => strpos($text, $needle), ['Deskripsi lembaga uji', 'Hubungi', 'Panitia Uji', 'Ikuti', 'Tautan', 'Berita Pilihan']);
 
-    expect($text)->toContain("Ma'had Al-Khair")->toContain('0812-3456-7890')->toContain(__('pondok.portal.social.instagram'))->toContain('Situs Mitra')
-        ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
+    expect($text)->toContain("Ma'had Al-Kitab")->toContain('0812-3456-7890')->toContain(__('pondok.portal.social.instagram'))->toContain('Situs Mitra')
+        ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Kitab"]))
         ->and($positions)->each->not->toBeFalse()
         ->and($positions)->toBe(collect($positions)->sort()->values()->all())
-        ->and($footer)->toMatch('#<h2\b[^>]*>\s*Hubungi\s*</h2>#')->toContain('href="/berita"')->toContain('href="https://contoh.test/mitra"')->toContain('href="https://instagram.com/alkhair"');
+        ->and($footer)->toMatch('#<h2\b[^>]*>\s*Hubungi\s*</h2>#')->toContain('href="/berita"')->toContain('href="https://contoh.test/mitra"')->toContain('href="https://instagram.com/pondokcontoh"');
 });
 
 it('AC-6: shows the logo tile only when the text widget asks for it', function (bool $showLogo) {
@@ -102,15 +102,15 @@ it('AC-6: sizes the grid by the number of shown widgets with literal classes', f
 
 it('AC-6: the contacts and social widgets always show all current Kontak & sosial data', function () {
     profilSet([
-        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@alkhair.sch.id',
+        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@pondokcontoh.sch.id',
         'school.contacts' => [profilContact(['key' => 'aaaa1111', 'label' => 'Panitia', 'phone' => '081234567890']), profilContact(['key' => 'bbbb2222', 'label' => 'Kantor', 'phone' => '0735000170', 'is_whatsapp' => false])],
-        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair'], ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test']],
+        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/pondokcontoh'], ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test']],
     ]);
     ftrSet([ftr('contacts'), ftr('social')]);
 
     $text = profilVisibleText(footerHtml());
 
-    expect($text)->toContain('Jl. Pesantren No. 1')->toContain('info@alkhair.sch.id')->toContain('Panitia')->toContain('Kantor')
+    expect($text)->toContain('Jl. Pesantren No. 1')->toContain('info@pondokcontoh.sch.id')->toContain('Panitia')->toContain('Kantor')
         ->toContain(__('pondok.portal.social.instagram'))->toContain('Blog Kami');
 
     profilSet(['school.contacts' => [profilContact(['key' => 'cccc3333', 'label' => 'Baru Saja', 'phone' => '081200000009'])]]);
@@ -123,7 +123,7 @@ it('AC-6: the contacts and social widgets always show all current Kontak & sosia
 it('AC-6: without widgets the full footer only has the copyright line', function () {
     $footer = footerHtml();
 
-    expect(profilVisibleText($footer))->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
+    expect(profilVisibleText($footer))->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Kitab"]))
         ->and($footer)->not->toMatch('#<(ul|nav|h2)\b#');
 });
 
@@ -174,8 +174,8 @@ it('AC-7: uses the compact footer on the psb pages and the 404 page', function (
     $text = profilVisibleText($footer);
 
     expect($footer)->not->toBe('')
-        ->and($text)->toContain("Ma'had Al-Khair")->toContain('Berita Pilihan')->toContain('Situs Mitra')
-        ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Khair"]))
+        ->and($text)->toContain("Ma'had Al-Kitab")->toContain('Berita Pilihan')->toContain('Situs Mitra')
+        ->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Kitab"]))
         ->not->toContain('Deskripsi lembaga uji')->not->toContain('Panitia Uji')->not->toContain('0812-3456-7890')->not->toContain('Semua Hilang')->not->toContain('Tentang')->not->toContain('Hubungi');
 })->with([['/psb', 200], ['/psb/status', 200], ['/halaman-yang-tidak-ada', 404]]);
 
@@ -192,7 +192,7 @@ it('AC-3: after the migration the footer shows the same name, logo, description,
     Setting::set('school.logo_mobile_path', 'school/logo-uji.png');
     profilSet([
         'school.contacts' => [profilContact(['label' => 'Panitia Uji', 'phone' => '081234567890'])],
-        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair']],
+        'school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/pondokcontoh']],
     ]);
     ftrLegacy();
 
@@ -203,7 +203,7 @@ it('AC-3: after the migration the footer shows the same name, logo, description,
     $text = profilVisibleText($footer);
     $positions = array_map(fn (string $needle): int|false => strpos($text, $needle), ['Deskripsi lembaga uji', 'Jam Layanan', 'Senin sampai Jumat', 'Panitia Uji', __('pondok.portal.social.instagram'), 'Berita Pilihan', 'Situs Mitra']);
 
-    expect($text)->toContain("Ma'had Al-Khair")->toContain('0812-3456-7890')->toContain('08.00 sampai 15.00')
+    expect($text)->toContain("Ma'had Al-Kitab")->toContain('0812-3456-7890')->toContain('08.00 sampai 15.00')
         ->and($footer)->toContain('school/logo-uji.png')->toContain('href="/berita"')->toContain('href="https://contoh.test/mitra"')
         ->and($positions)->each->not->toBeFalse()
         ->and(strpos($text, 'Berita Pilihan'))->toBeLessThan(strpos($text, 'Situs Mitra'));

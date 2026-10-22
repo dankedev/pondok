@@ -17,12 +17,12 @@ it('AC-34: creates a scholarship from the panel', function () {
     $this->actingAs(keuanganUser('bendahara'));
 
     Livewire::test(ManageScholarships::class)
-        ->callAction('create', keringananScholarshipData(['sponsor' => 'Yayasan Al-Khair']))
+        ->callAction('create', keringananScholarshipData(['sponsor' => 'Yayasan Contoh']))
         ->assertHasNoFormErrors();
 
     $scholarship = Scholarship::query()->sole();
 
-    expect($scholarship)->name->toBe('Beasiswa Tahfidz')->mode->toBe('persen')->default_value->toBe(50)->sponsor->toBe('Yayasan Al-Khair');
+    expect($scholarship)->name->toBe('Beasiswa Tahfidz')->mode->toBe('persen')->default_value->toBe(50)->sponsor->toBe('Yayasan Contoh');
 
     Livewire::test(ManageScholarships::class)
         ->assertCanSeeTableRecords([$scholarship])

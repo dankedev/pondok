@@ -18,7 +18,7 @@ it('AC-38 (F044): receipt reads the name from Identity and the address and print
 
     $this->actingAs(keuanganUser('admin-sekolah'));
     Livewire::test(Identity::class)
-        ->fillForm(['name' => 'Pondok Al-Khair'])
+        ->fillForm(['name' => 'Pondok Contoh'])
         ->call('save')
         ->assertHasNoFormErrors();
     Livewire::test(Contacts::class)
@@ -31,5 +31,5 @@ it('AC-38 (F044): receipt reads the name from Identity and the address and print
 
     $text = bayarHtmlText($this->actingAs($officer)->get("/admin/receipts/{$payment->id}")->assertOk()->getContent());
 
-    expect($text)->toContain('Pondok Al-Khair')->toContain('Jl. Baru No. 99')->toContain('081200001111');
+    expect($text)->toContain('Pondok Contoh')->toContain('Jl. Baru No. 99')->toContain('081200001111');
 });

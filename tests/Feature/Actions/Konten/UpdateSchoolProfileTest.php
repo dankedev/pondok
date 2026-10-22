@@ -19,13 +19,13 @@ beforeEach(function () {
 function kontenProfileData(array $overrides = []): array
 {
     return [
-        'name' => "Ma'had Al-Khair",
+        'name' => "Ma'had Al-Kitab",
         'tagline' => '',
         'address' => 'Jl. Pesantren No. 1',
         'phone' => '0812-3456-7890',
         'whatsapp' => '+62 812 3456 7890',
-        'email' => 'info@alkhair.sch.id',
-        'instagram_url' => 'https://instagram.com/alkhair',
+        'email' => 'info@pondokcontoh.sch.id',
+        'instagram_url' => 'https://instagram.com/pondokcontoh',
         ...$overrides,
     ];
 }
@@ -41,7 +41,7 @@ function kontenUpdateProfile(array $overrides = []): void
 it('AC-33: writes the identity keys and no longer writes address, phone or email (F044)', function () {
     kontenUpdateProfile();
 
-    expect(Setting::get('school.name'))->toBe("Ma'had Al-Khair")
+    expect(Setting::get('school.name'))->toBe("Ma'had Al-Kitab")
         ->and(Setting::get('school.phone'))->toBeNull()
         ->and(Setting::get('school.whatsapp'))->toBeNull()
         ->and(Setting::get('school.email'))->toBeNull()
@@ -55,7 +55,7 @@ it('AC-33: writes the identity keys and no longer writes address, phone or email
 it('AC-5: identity save with or without address, phone and email leaves address, email and contacts untouched', function (bool $withContactFields) {
     $contacts = [profilContact(['key' => 'aaaa1111', 'is_print' => true])];
     Setting::set('school.address', 'Alamat tersimpan');
-    Setting::set('school.email', 'lama@alkhair.sch.id');
+    Setting::set('school.email', 'lama@pondokcontoh.sch.id');
     Setting::set('school.contacts', $contacts);
     $payload = ['name' => 'Nama Baru'];
 
@@ -67,7 +67,7 @@ it('AC-5: identity save with or without address, phone and email leaves address,
 
     expect(Setting::get('school.name'))->toBe('Nama Baru')
         ->and(Setting::get('school.address'))->toBe('Alamat tersimpan')
-        ->and(Setting::get('school.email'))->toBe('lama@alkhair.sch.id')
+        ->and(Setting::get('school.email'))->toBe('lama@pondokcontoh.sch.id')
         ->and(Setting::get('school.contacts'))->toBe($contacts)
         ->and(Setting::get('school.phone'))->toBeNull();
 })->with(['without contact fields' => [false], 'with contact fields (ignored, even invalid)' => [true]]);
@@ -169,7 +169,7 @@ it('AC-36: logs one activity with only the changed keys', function () {
 
     expect(array_keys($changed))->toContain('school.name')
         ->not->toContain('school.tagline', 'school.phone', 'school.address', 'school.email')
-        ->and($changed['school.name']['new'])->toBe("Ma'had Al-Khair");
+        ->and($changed['school.name']['new'])->toBe("Ma'had Al-Kitab");
 });
 
 it('AC-36: records old and new values and skips unchanged keys on the next save', function () {
@@ -231,11 +231,11 @@ function profilPng(string $name = 'a.png', int $kb = 100): UploadedFile
 
 it('AC-12: saves the identity fields and logs only the changed keys', function () {
     kontenUpdateProfile([
-        'short_name' => 'Al-Khair', 'arabic_name' => 'معهد الخير', 'tagline' => 'Motto uji',
+        'short_name' => 'Al-Kitab', 'arabic_name' => 'معهد الكتاب', 'tagline' => 'Motto uji',
     ]);
 
-    expect(Setting::get('school.short_name'))->toBe('Al-Khair')
-        ->and(Setting::get('school.arabic_name'))->toBe('معهد الخير')
+    expect(Setting::get('school.short_name'))->toBe('Al-Kitab')
+        ->and(Setting::get('school.arabic_name'))->toBe('معهد الكتاب')
         ->and(Setting::get('school.tagline'))->toBe('Motto uji')
         ->and(Setting::get('school.phone'))->toBeNull();
 
@@ -250,8 +250,8 @@ it('AC-12: saves the identity fields and logs only the changed keys', function (
 });
 
 it('AC-13: does not log data that is sent again unchanged', function () {
-    kontenUpdateProfile(['short_name' => 'Al-Khair', 'arabic_name' => 'معهد الخير']);
-    kontenUpdateProfile(['short_name' => 'Al-Khair', 'arabic_name' => 'معهد الخير']);
+    kontenUpdateProfile(['short_name' => 'Al-Kitab', 'arabic_name' => 'معهد الكتاب']);
+    kontenUpdateProfile(['short_name' => 'Al-Kitab', 'arabic_name' => 'معهد الكتاب']);
 
     expect(kontenActivities()->where('description', 'school_profile_updated'))->toHaveCount(1);
 });

@@ -26,7 +26,7 @@ it('AC-11: totals subsidies per scholarship program', function () {
         ['Yatim', 300000, 1, 1],
         ['Anak Ustadz', 100000, 1, 1],
     ])
-        ->and($result['programs'][0]['sponsor'])->toBe('Yayasan Al-Khair')
+        ->and($result['programs'][0]['sponsor'])->toBe('Yayasan Contoh')
         ->and($result['programs'][2]['sponsor'])->toBeNull()
         ->and($result['total_subsidy'])->toBe(1150000);
 });
@@ -59,7 +59,7 @@ it('AC-12: groups subsidies per sponsor', function () {
     $rows = array_map(fn (array $row): array => [$row['sponsor'], $row['subsidy'], $row['program_count'], $row['beneficiary_count']], $sponsors);
 
     expect($rows)->toBe([
-        ['Yayasan Al-Khair', 1050000, 2, 2],
+        ['Yayasan Contoh', 1050000, 2, 2],
         [null, 100000, 1, 1],
     ]);
 });

@@ -67,13 +67,13 @@ it('AC-34/AC-7: saves address, email and contacts with the print flag through th
     Livewire::test(Contacts::class)
         ->fillForm([
             'address' => 'Jl. Pesantren No. 1',
-            'email' => 'info@alkhair.sch.id',
+            'email' => 'info@pondokcontoh.sch.id',
             'map_url' => 'https://maps.app.goo.gl/abc',
             'contacts' => [
                 ['label' => 'Panitia PSB', 'phone' => '0812-0000-0001', 'is_whatsapp' => true, 'is_print' => false],
                 ['label' => 'Sekretariat', 'phone' => '081200000002', 'is_whatsapp' => false, 'is_print' => true],
             ],
-            'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/alkhair']],
+            'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/pondokcontoh']],
         ])
         ->call('save')
         ->assertHasNoFormErrors()
@@ -83,7 +83,7 @@ it('AC-34/AC-7: saves address, email and contacts with the print flag through th
         ->and(array_column(Setting::get('school.contacts'), 'phone'))->toBe(['081200000001', '081200000002'])
         ->and(array_column(Setting::get('school.contacts'), 'is_print'))->toBe([false, true])
         ->and(Setting::get('school.address'))->toBe('Jl. Pesantren No. 1')
-        ->and(Setting::get('school.email'))->toBe('info@alkhair.sch.id')
+        ->and(Setting::get('school.email'))->toBe('info@pondokcontoh.sch.id')
         ->and(Setting::get('school.map_url'))->toBe('https://maps.app.goo.gl/abc')
         ->and(Setting::get('school.social_links'))->toHaveCount(1);
 });
@@ -143,12 +143,12 @@ it('AC-7: shows two print contacts as an error on the contacts field and saves n
 it('AC-7: fills Contacts from the settings and Identity has no address, phone or email field', function () {
     $this->actingAs(kontenUser('admin-konten'));
     profilSet([
-        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@alkhair.sch.id',
+        'school.address' => 'Jl. Pesantren No. 1', 'school.email' => 'info@pondokcontoh.sch.id',
         'school.contacts' => [profilContact(['key' => 'aaaa1111', 'is_print' => true])],
     ]);
 
     Livewire::test(Contacts::class)
-        ->assertFormSet(['address' => 'Jl. Pesantren No. 1', 'email' => 'info@alkhair.sch.id']);
+        ->assertFormSet(['address' => 'Jl. Pesantren No. 1', 'email' => 'info@pondokcontoh.sch.id']);
 
     Livewire::test(Identity::class)
         ->assertFormFieldDoesNotExist('address')

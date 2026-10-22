@@ -39,7 +39,7 @@ it('AC-18: prints a letter from its snapshot', function () {
 
     expect(__('pondok.letter.titles.keterangan_aktif'))->not->toBe('pondok.letter.titles.keterangan_aktif')
         ->and($response->headers->get('Content-Type'))->toContain('text/html')
-        ->and($text)->toContain("Ma'had Al-Khair")
+        ->and($text)->toContain("Ma'had Al-Kitab")
         ->toContain(__('pondok.letter.titles.keterangan_aktif'))
         ->toContain('001/MAK/SKA/X/2026')
         ->toContain('15 Oktober 2026')

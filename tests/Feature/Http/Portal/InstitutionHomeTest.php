@@ -8,17 +8,17 @@ use App\Models\Setting;
 
 beforeEach(function () {
     portalBoot();
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
 });
 
 it('AC-8: shows the institution name and tagline without hero and never renders the arabic name on the home', function () {
-    Setting::set('school.arabic_name', 'معهد الخير');
+    Setting::set('school.arabic_name', 'معهد الكتاب');
 
     $html = $this->get('/')->assertOk()->getContent();
 
-    expect($html)->toMatch('/<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Khair"), '/').'\s*<\/h1>/')
+    expect($html)->toMatch('/<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Kitab"), '/').'\s*<\/h1>/')
         ->and(profilVisibleText($html))->toContain("Mencetak generasi Qur'ani")
-        ->and($html)->not->toContain('معهد الخير');
+        ->and($html)->not->toContain('معهد الكتاب');
 });
 
 it('AC-5: escapes the free text fields of the home page', function () {

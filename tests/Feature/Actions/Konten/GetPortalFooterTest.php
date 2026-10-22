@@ -30,7 +30,7 @@ function ftrResolve(): array
 
 it('AC-6: returns only the shown, non-empty widgets in the stored order with their resolved links', function () {
     $draft = staticPage(['status' => 'draft']);
-    profilSet(['school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/alkhair']]]);
+    profilSet(['school.social_links' => [['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.com/pondokcontoh']]]);
     ftrSet([
         ftr('text', ['heading' => 'Tentang', 'body' => '<p>Isi</p>', 'show_logo' => false]),
         ftr('contacts', ['heading' => 'Kosong karena tanpa data']),

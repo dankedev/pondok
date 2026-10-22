@@ -113,7 +113,7 @@ describe('AC-7: forgot password', function () {
     it('sends one Laravel reset notification with a wali-portal URL to an active wali', function () {
         Notification::fake();
 
-        Livewire::test(PortalForgotPassword::class)->set('email', $this->f->wali->email)->call('send')->assertSee(__('passwords.sent'));
+        Livewire::test(PortalForgotPassword::class)->set('email', $this->f->wali->email)->call('send')->assertSee(__('pondok.portal_wali.forgot_sent'));
 
         Notification::assertSentToTimes($this->f->wali, ResetPasswordNotification::class, 1);
         Notification::assertSentTo($this->f->wali, ResetPasswordNotification::class, fn (ResetPasswordNotification $n): bool => str_starts_with(
@@ -131,7 +131,7 @@ describe('AC-7: forgot password', function () {
             'unknown' => 'tidak.ada@contoh.test',
         };
 
-        Livewire::test(PortalForgotPassword::class)->set('email', $email)->call('send')->assertSee(__('passwords.sent'))->assertHasNoErrors();
+        Livewire::test(PortalForgotPassword::class)->set('email', $email)->call('send')->assertSee(__('pondok.portal_wali.forgot_sent'))->assertHasNoErrors();
 
         Notification::assertNothingSent();
     })->with(['staff', 'inactive wali', 'unknown']);

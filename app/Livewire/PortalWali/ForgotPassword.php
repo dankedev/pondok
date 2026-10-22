@@ -12,7 +12,7 @@ use Livewire\Component;
 
 /**
  * Lupa password portal wali (F079). Tautan hanya dikirim ke wali aktif; pesan layar selalu
- * `passwords.sent` apa pun hasilnya agar keberadaan akun tidak bocor. 5 permintaan per IP per menit.
+ * `pondok.portal_wali.forgot_sent` apa pun hasilnya agar keberadaan akun tidak bocor. 5 permintaan per IP per menit.
  */
 #[Layout('layouts.public', ['noindex' => true])]
 class ForgotPassword extends Component
@@ -49,7 +49,7 @@ class ForgotPassword extends Component
         }
 
         $this->reset('email');
-        $this->status = __('passwords.sent');
+        $this->status = __('pondok.portal_wali.forgot_sent');
     }
 
     public function render(): View

@@ -55,12 +55,12 @@ it('AC-1: closes the resources and hides the menu when the module is off, but ke
         ->and(MemorizationRecord::query()->count())->toBe(1);
 });
 
-it('AC-1: seeds nine module switches on a fresh install, including tahfidz', function () {
+it('AC-1: seeds a switch for every module on a fresh install, including tahfidz', function () {
     Setting::query()->delete();
 
     $this->seed(SettingSeeder::class);
 
-    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(9)
+    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(count(Module::cases()))
         ->and(Setting::query()->find('modules.tahfidz.enabled')?->value)->toBeTrue();
 });
 

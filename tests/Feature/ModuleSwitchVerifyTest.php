@@ -91,7 +91,7 @@ it('keeps students and invoices intact after switching every module off and on a
     $invoices = Invoice::query()->count();
     $admin = kontenUser('super-admin');
     $action = app(SetModuleEnabled::class);
-    $order = [Module::Psb, Module::Tahfidz, Module::Asrama, Module::Keuangan, Module::Prestasi, Module::PortalWali, Module::Akademik, Module::Dokumen, Module::Konten];
+    $order = [Module::Kesehatan, Module::Psb, Module::Tahfidz, Module::Asrama, Module::Keuangan, Module::Prestasi, Module::PortalWali, Module::Akademik, Module::Dokumen, Module::Konten];
 
     foreach ($order as $module) {
         $action->handle($admin, $module, false);

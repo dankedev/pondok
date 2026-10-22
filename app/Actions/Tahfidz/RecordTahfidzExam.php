@@ -27,6 +27,7 @@ class RecordTahfidzExam
     {
         $this->authorize($actor, 'create:tahfidz-exam');
         $halaqah = $this->visibleActiveHalaqah($actor, $data['halaqah_id'] ?? null);
+        $data['certificate_no'] = filled($data['certificate_no'] ?? null) ? trim((string) $data['certificate_no']) : null;
 
         $valid = $this->validate($data, [
             'kind' => ['required', Rule::in(TahfidzExam::KINDS)],
@@ -56,7 +57,7 @@ class RecordTahfidzExam
                 'halaqah_id' => $halaqah->id,
                 'exam_on' => $examOn,
                 'examiner_staff_id' => $examinerId,
-                'certificate_no' => filled($valid['certificate_no'] ?? null) ? trim($valid['certificate_no']) : null,
+                'certificate_no' => $valid['certificate_no'] ?? null,
             ])->save();
 
             $this->refresh->handle($student);

@@ -32,7 +32,7 @@ class FinanceOverviewWidget extends StatsOverviewWidget implements HasActions
 
     protected ?string $pollingInterval = null;
 
-    protected int|array|null $columns = ['@xl' => 4, '!@lg' => 4];
+    protected int|array|null $columns = ['@md' => 2, '@4xl' => 4, '!@md' => 2, '!@xl' => 4];
 
     public static function getDashboardPermission(): string
     {

@@ -32,7 +32,12 @@
                 @if ($code === 419)
                     <x-ui.button :href="url()->current()">{{ __('pondok.http_errors.reload') }}</x-ui.button>
                 @elseif ($code !== 503)
-                    <x-ui.button :href="url('/')">{{ __('pondok.portal.errors.back_home') }}</x-ui.button>
+                    @if ($portalWaliUrl ?? null)
+                        <x-ui.button :href="$portalWaliUrl">{{ __('pondok.portal_wali.open_portal') }}</x-ui.button>
+                        <x-ui.button variant="secondary" :href="url('/')">{{ __('pondok.portal.errors.back_home') }}</x-ui.button>
+                    @else
+                        <x-ui.button :href="url('/')">{{ __('pondok.portal.errors.back_home') }}</x-ui.button>
+                    @endif
                 @endif
             </x-error-message>
         </div>

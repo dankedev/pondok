@@ -71,8 +71,7 @@ class UserForm
                         CheckboxList::make('units')
                             ->label(__('pondok.user.units'))
                             ->helperText(__('pondok.user.units_helper'))
-                            ->relationship('units', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->orderBy('sort_order'))
-                            ->columns(3),
+                            ->relationship('units', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->orderBy('sort_order')),
                     ]),
             ]);
     }

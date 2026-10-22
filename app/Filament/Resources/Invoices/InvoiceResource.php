@@ -113,7 +113,8 @@ class InvoiceResource extends Resource
                             ->label(__('pondok.invoice.period'))
                             ->formatStateUsing(fn (CarbonInterface $state): string => static::periodLabel($state)),
                         TextEntry::make('billing_group')
-                            ->label(__('pondok.invoice.billing_group')),
+                            ->label(__('pondok.invoice.billing_group'))
+                            ->formatStateUsing(fn (string $state): string => Invoice::billingGroupLabel($state)),
                         TextEntry::make('due_on')
                             ->label(__('pondok.invoice.due_on'))
                             ->date('j M Y'),
@@ -197,7 +198,8 @@ class InvoiceResource extends Resource
                     ->formatStateUsing(fn (CarbonInterface $state): string => static::periodLabel($state))
                     ->sortable(),
                 TextColumn::make('billing_group')
-                    ->label(__('pondok.invoice.billing_group')),
+                    ->label(__('pondok.invoice.billing_group'))
+                    ->formatStateUsing(fn (string $state): string => Invoice::billingGroupLabel($state)),
                 TextColumn::make('total')
                     ->label(__('pondok.invoice.total'))
                     ->money('IDR', locale: 'id', decimalPlaces: 0)
@@ -249,11 +251,7 @@ class InvoiceResource extends Resource
                         ->all()),
                 SelectFilter::make('billing_group')
                     ->label(__('pondok.invoice.billing_group'))
-                    ->options(fn (): array => Invoice::query()
-                        ->distinct()
-                        ->orderBy('billing_group')
-                        ->pluck('billing_group', 'billing_group')
-                        ->all()),
+                    ->options(fn (): array => Invoice::billingGroupOptions()),
             ])
             ->emptyStateIcon(Heroicon::OutlinedBanknotes)
             ->emptyStateHeading(__('pondok.invoice.empty'))

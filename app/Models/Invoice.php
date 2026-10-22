@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Str;
 use LogicException;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -106,6 +108,37 @@ class Invoice extends Model
             ->orWhere(fn (Builder $query) => $query
                 ->whereNull("{$table}.student_id")
                 ->whereIn("{$table}.applicant_id", Applicant::withoutGlobalScopes()->whereIn('unit_id', $unitIds)->select('id'))));
+    }
+
+    /**
+     * Label kelompok tagihan untuk tampilan. Kode umum berlabel di
+     * `pondok.invoice.billing_groups`; kode buatan admin dibuat terbaca
+     * (`PSB_KITAB` menjadi "Psb kitab"). Nilai tersimpan tetap kode.
+     */
+    public static function billingGroupLabel(string $billingGroup): string
+    {
+        $key = "pondok.invoice.billing_groups.{$billingGroup}";
+
+        if (Lang::has($key)) {
+            return __($key);
+        }
+
+        return Str::ucfirst(Str::lower(str_replace('_', ' ', $billingGroup)));
+    }
+
+    /**
+     * Opsi filter kelompok tagihan dari tagihan yang terlihat, urut label.
+     *
+     * @return array<string, string> kode => label
+     */
+    public static function billingGroupOptions(): array
+    {
+        return static::query()
+            ->distinct()
+            ->pluck('billing_group')
+            ->mapWithKeys(fn (string $billingGroup): array => [$billingGroup => static::billingGroupLabel($billingGroup)])
+            ->sort()
+            ->all();
     }
 
     public function student(): BelongsTo

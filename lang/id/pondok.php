@@ -560,6 +560,13 @@ return [
         'academic_year' => 'Tahun ajaran',
         'period' => 'Periode',
         'billing_group' => 'Kelompok tagihan',
+        'billing_groups' => [
+            'BULANAN' => 'Bulanan',
+            'PSB_DAFTAR' => 'Pendaftaran PSB',
+            'PSB_TERIMA' => 'Penerimaan PSB',
+            'DAFTAR_ULANG' => 'Daftar ulang',
+            'SALDO_AWAL' => 'Saldo awal',
+        ],
         'total' => 'Total',
         'paid_total' => 'Terbayar',
         'due_on' => 'Jatuh tempo',

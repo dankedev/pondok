@@ -189,11 +189,7 @@ class FinanceReport extends Page
                         Select::make('billing_group')
                             ->label(__('pondok.finance_report.filters.billing_group'))
                             ->placeholder(__('pondok.finance_report.filters.all_groups'))
-                            ->options(fn (): array => Invoice::query()
-                                ->distinct()
-                                ->orderBy('billing_group')
-                                ->pluck('billing_group', 'billing_group')
-                                ->all())
+                            ->options(fn (): array => Invoice::billingGroupOptions())
                             ->live(),
                     ]),
             ]);

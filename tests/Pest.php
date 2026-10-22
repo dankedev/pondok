@@ -64,6 +64,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Database\Seeders\StaticPageSeeder;
 use Database\Seeders\UnitSeeder;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
@@ -4778,4 +4779,43 @@ function retentionPretendPgsql(): void
         $property->setValue($connection, $original);
         config(["database.connections.{$name}.driver" => $original['driver']]);
     });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper MFA & verifikasi email (F055)
+|--------------------------------------------------------------------------
+|
+| Berawalan `mfa`. Memakai kontrak `HasAppAuthentication` dan `HasAppAuthenticationRecovery`
+| milik Filament pada `User`, persis seperti alur profil.
+|
+*/
+
+/**
+ * Aktifkan MFA aplikasi untuk user lewat provider Filament (secret dan recovery code tersimpan terenkripsi/hash).
+ *
+ * @return array{secret: string, codes: list<string>}
+ */
+function mfaEnable(User $user): array
+{
+    $provider = AppAuthentication::make()->recoverable();
+    $secret = $provider->generateSecret();
+    $codes = $provider->generateRecoveryCodes();
+
+    $provider->saveSecret($user, $secret);
+    $provider->saveRecoveryCodes($user, $codes);
+
+    return ['secret' => $secret, 'codes' => $codes];
+}
+
+/**
+ * Kolom MFA mentah di database (tanpa cast), untuk memastikan data benar-benar kosong atau terenkripsi.
+ *
+ * @return array{secret: ?string, codes: ?string}
+ */
+function mfaRaw(User $user): array
+{
+    $row = DB::table('users')->where('id', $user->id)->first(['app_authentication_secret', 'app_authentication_recovery_codes']);
+
+    return ['secret' => $row->app_authentication_secret, 'codes' => $row->app_authentication_recovery_codes];
 }

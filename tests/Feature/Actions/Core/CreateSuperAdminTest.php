@@ -48,3 +48,16 @@ it('throws when the super-admin role has not been seeded', function () {
 
     expect(fn () => app(CreateSuperAdmin::class)->handle('Admin', 'a@pondok.sch.id', 'rahasia123'))->toThrow(RuntimeException::class);
 });
+
+it('F055 AC-14: verifies an existing unverified account when it is promoted', function () {
+    $user = User::factory()->unverified()->create(['email' => 'belum@pondok.sch.id', 'name' => 'Belum', 'password' => 'lamaaaaa1']);
+
+    app(CreateSuperAdmin::class)->handle('Baru', 'belum@pondok.sch.id', 'baru12345');
+
+    $user->refresh();
+
+    expect($user->email_verified_at)->not->toBeNull()
+        ->and($user->hasRole('super-admin'))->toBeTrue()
+        ->and($user->name)->toBe('Belum')
+        ->and(Hash::check('lamaaaaa1', $user->password))->toBeTrue();
+});

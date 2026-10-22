@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F080",
+  "next_id": "F082",
   "features": [
     {
       "id": "F001",
@@ -1498,7 +1498,7 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": "commit 79aa9ac (label kelompok tagihan). Test F078 di FinanceReportTest lulus; Invoices resource 61 test lulus. Suite penuh PHP 8.4 4798 test: 4796 lulus, 5 skipped MySQL; 2 gagal karena .env worktree (APP_URL localhost:8000, password super-admin uji tanpa angka) dan lulus saat diulang dengan env yang benar. Pint lulus. Belum dicek visual (hanya teks opsi Select).",
+      "evidence": "commit 79aa9ac (label kelompok tagihan). Test F078 di FinanceReportTest lulus; Invoices resource 61 test lulus. Suite penuh PHP 8.4 4798 test: 4796 lulus, 5 skipped MySQL; 2 gagal karena .env worktree (APP_URL localhost:8000, password super-admin uji tanpa angka) dan lulus saat diulang dengan env yang benar. Pint lulus. Dicek visual 22 Okt 2026 (filter Tagihan dan Laporan keuangan, 360px/1440px).",
       "notes": "Jalur cepat. Disetujui user 22 Okt 2026 (batch orkestrator). Rencana: docs/plans/F078-plan.md."
     },
     {
@@ -1508,7 +1508,7 @@
       "name": "Portal wali: tulis ulang tampilan dengan Blade + Livewire (ganti panel Filament /wali)",
       "phase": 2,
       "module": "Portal wali",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F022"
       ],
@@ -1525,10 +1525,58 @@
         "Buat akun portal dari admin mengirim tautan atur password ke /wali/atur-password",
         "design-guide §0/§2/§6 kembali ke keputusan Blade; dicek 360px, 1024px, desktop"
       ],
-      "owner": "batch-mfa-wali-tahfidz",
+      "owner": null,
       "handoff": null,
-      "evidence": "commit 63e9827 (middleware + URL notifikasi), 9cd5382 (portal Blade + Livewire), 24614d4 (hapus panel /wali), 7ba9383 (design-guide). Test RED+VERIFY F079 lulus; suite penuh PHP 8.4 5077 test, 5072 lulus, 5 skipped MySQL; Pint lulus. BELUM dicek visual 360px/1024px/desktop (akses .env worktree ditolak) — kriteria issue #76 ini masih terbuka.",
+      "evidence": "commit 63e9827 (middleware + URL notifikasi), 9cd5382 (portal Blade + Livewire), 24614d4 (hapus panel /wali), 7ba9383 (design-guide). Test RED+VERIFY F079 lulus; suite penuh PHP 8.4 5077 test, 5072 lulus, 5 skipped MySQL; Pint lulus. Dicek visual 22 Okt 2026 (sesi qa-tampilan, pondok-qa.test, SQLite demo) di 360px, 1024px, 1440px: login, lupa/atur ulang password, verifikasi email, beranda, rincian santri, tagihan, unduh dokumen, lintas wali 404, modul portal-wali/keuangan/dokumen dimatikan bergantian. Bug kecil diperbaiki di F080 (#79).",
       "notes": "Jalur penuh (auth + data pribadi). Disetujui user 22 Okt 2026 (issue #76). Rencana: docs/plans/F079-plan.md"
+    },
+    {
+      "id": "F080",
+      "key": "inti-perbaikan-cek-visual-batch",
+      "issue": 79,
+      "name": "Perbaikan tampilan hasil cek visual F023/F055/F078/F079",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": [
+        "F023",
+        "F055",
+        "F078",
+        "F079"
+      ],
+      "description": "Bug kecil dari cek tampilan 360px/1024px/1440px atas UI yang merge tanpa cek visual: label Tahfidz huruf kecil, tombol modal Kirim, kartu dasbor keuangan terpotong di 1024px, checkbox cakupan jenjang terpotong, nominal portal wali terpecah di 360px, pesan lupa password vendor, nama aksesibel tautan berulang, ejaan Silahkan.",
+      "acceptance": [
+        "Header kolom dan label form Setoran/Ujian diawali huruf kapital; pesan validasi tetap benar",
+        "Modal Catat setoran, Catat ujian, Tambah anggota bertombol Simpan",
+        "Dasbor 1024px: nominal kartu keuangan tidak terpotong; 1440px tetap 4 kolom",
+        "Form pengguna 1024px: nama jenjang tidak terpotong",
+        "Portal wali 360px: nominal rincian tagihan tidak terpecah",
+        "Pesan lupa password portal sama untuk email terdaftar dan tidak",
+        "Tidak ada Silahkan di lang/id",
+        "Test terdampak dan suite penuh lulus; Pint"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit 4e58588, 9f71ea4 (tahfidz), 844f062 (kartu dasbor), af5f8af (cakupan jenjang), 494d371, 1c24804, 3c39fcb (portal wali), 6ae15d9 (ejaan). Test Tahfidz 117, PortalWali 103 lulus; suite penuh PHP 8.4 5077 test, 5072 lulus, 5 skipped MySQL; Pint lulus. Dicek visual 360px/1024px/1440px di pondok-qa.test.",
+      "notes": "Jalur cepat (teks, Blade, susunan Filament). Rencana: docs/plans/F080-plan.md"
+    },
+    {
+      "id": "F081",
+      "key": "portal-wali-email-akun-baru",
+      "issue": 80,
+      "name": "Email akun portal wali baru memakai teks reset password dan kedaluwarsa 60 menit",
+      "phase": 2,
+      "module": "Portal wali",
+      "status": "deferred",
+      "depends_on": [
+        "F079"
+      ],
+      "description": "CreateGuardianPortalAccount mengirim notifikasi reset password bawaan: teks seperti permintaan reset dan tautan kedaluwarsa 60 menit untuk wali baru.",
+      "acceptance": [],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Ditunda menunggu keputusan user atas opsi di issue #80 (notifikasi khusus, broker undangan terpisah, atau dibiarkan)."
     }
   ]
 }

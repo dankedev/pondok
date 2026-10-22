@@ -11,6 +11,7 @@ use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Filament\Resources\Students\RelationManagers\AchievementsRelationManager;
 use App\Filament\Resources\Students\RelationManagers\EnrollmentsRelationManager;
 use App\Filament\Resources\Students\RelationManagers\GuardiansRelationManager;
+use App\Filament\Resources\Students\RelationManagers\HealthVisitsRelationManager;
 use App\Filament\Resources\Students\Schemas\StudentForm;
 use App\Filament\Resources\Students\Tables\StudentsTable;
 use App\Models\Cohort;
@@ -80,6 +81,7 @@ class StudentResource extends Resource
             EnrollmentsRelationManager::class,
             GuardiansRelationManager::class,
             AchievementsRelationManager::class,
+            HealthVisitsRelationManager::class,
         ];
     }
 

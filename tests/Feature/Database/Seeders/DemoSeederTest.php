@@ -716,7 +716,8 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
     $demoHome = $this->get('/')->assertOk()->getContent();
     $demoNav = portalNavTexts($demoHome);
     expect($demoNav[0])->toBe('Beranda')->and($demoNav)->toContain('Tentang Yayasan', 'Pengurus Al-Khair', 'Selayang Pandang')
-        ->and(substr_count(navHtml($demoHome, 'desktop'), '<details'))->toBe(1)
+        // Satu grup menu demo + grup Masuk (Wali santri/Staf pondok) karena portal wali aktif (F082).
+        ->and(substr_count(navHtml($demoHome, 'desktop'), '<details'))->toBe(2)
         ->and(profilFooter($demoHome))->not->toContain('<blockquote')->not->toContain('lang="ar"');
     $demoFooterText = mb_strtolower(json_encode([Setting::get('portal.footer_widgets'), Setting::get('portal.header_button'), $groups->first()['label']], JSON_UNESCAPED_UNICODE));
     expect($demoFooterText)->not->toMatch('/\p{Arabic}/u')->not->toMatch('/maulid|haul|tahlilan|harlah|hadrah|shalawatan/');

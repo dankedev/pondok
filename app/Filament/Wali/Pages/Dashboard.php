@@ -3,7 +3,8 @@
 namespace App\Filament\Wali\Pages;
 
 use App\Enums\Module;
-use App\Models\Setting;
+use App\Filament\Concerns\BelongsToPortalWali;
+use App\Models\Invoice;
 use App\Models\Student;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -12,26 +13,18 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Beranda portal wali (F022): daftar santri yang terhubung dengan akun wali login.
- * Data hanya lewat `User::portalStudents()`.
+ * Beranda portal wali (F022): kartu per santri yang terhubung dengan akun wali login,
+ * dengan sisa tagihan bila Keuangan aktif.
  */
 class Dashboard extends Page
 {
+    use BelongsToPortalWali;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
 
     protected static ?int $navigationSort = -2;
 
     protected string $view = 'filament.wali.pages.dashboard';
-
-    public static function getModule(): string
-    {
-        return Module::PortalWali->value;
-    }
-
-    public static function canAccess(): bool
-    {
-        return Setting::moduleEnabled(static::getModule());
-    }
 
     public static function getRoutePath(Panel $panel): string
     {
@@ -49,10 +42,33 @@ class Dashboard extends Page
     }
 
     /**
-     * @return Collection<int, Student>
+     * @return array<string, mixed>
      */
-    public function getStudents(): Collection
+    protected function getViewData(): array
     {
-        return auth()->user()->portalStudents()->orderBy('name')->get(['students.id', 'name', 'nis']);
+        $user = auth()->user();
+        $students = static::withPortalSummary($user->portalStudents())->orderBy('name')->get();
+
+        return [
+            'students' => $students,
+            'outstanding' => Module::Keuangan->isEnabled() ? $this->outstanding($students) : null,
+        ];
+    }
+
+    /**
+     * Sisa tagihan non-batal per santri (satu query per santri lewat `portalInvoices()`; wali hanya punya sedikit santri).
+     *
+     * @param  Collection<int, Student>  $students
+     * @return array<int, int>
+     */
+    private function outstanding(Collection $students): array
+    {
+        $user = auth()->user();
+
+        return $students->mapWithKeys(fn (Student $student): array => [
+            $student->id => $user->portalInvoices($student)
+                ->get(['id', 'total', 'paid_total'])
+                ->sum(fn (Invoice $invoice): int => $invoice->remainingAmount()),
+        ])->all();
     }
 }

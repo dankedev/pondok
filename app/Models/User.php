@@ -137,6 +137,18 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     }
 
     /**
+     * Pembayaran `diterima` atas tagihan portal (hasil `portalInvoice()`).
+     *
+     * @return Builder<Payment>
+     */
+    public function portalPayments(Invoice $invoice): Builder
+    {
+        return Payment::withoutUnitScope()
+            ->where('invoice_id', $invoice->id)
+            ->where('status', Payment::STATUS_RECEIVED);
+    }
+
+    /**
      * Dokumen terkini berjenis non-rahasia milik santri portal.
      *
      * @return Builder<Document>

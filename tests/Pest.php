@@ -17,6 +17,9 @@ use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
 use App\Actions\Psb\ReRegisterApplicant;
 use App\Actions\Psb\SubmitApplication;
+use App\Actions\Tahfidz\RecordMemorization;
+use App\Actions\Tahfidz\RecordTahfidzExam;
+use App\Actions\Tahfidz\RefreshJuzProgress;
 use App\Enums\Module;
 use App\Filament\Resources\Applicants\Pages\ViewApplicant;
 use App\Models\AcademicYear;
@@ -38,9 +41,12 @@ use App\Models\FeeOverride;
 use App\Models\FeeRate;
 use App\Models\FeeType;
 use App\Models\Guardian;
+use App\Models\Halaqah;
+use App\Models\HalaqahMember;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\IssuedLetter;
+use App\Models\MemorizationRecord;
 use App\Models\Payment;
 use App\Models\Photo;
 use App\Models\Post;
@@ -51,6 +57,7 @@ use App\Models\Setting;
 use App\Models\Staff;
 use App\Models\StaticPage;
 use App\Models\Student;
+use App\Models\TahfidzExam;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Video;
@@ -4943,4 +4950,249 @@ function waliAssertRejected(Closure $callback, string $field = 'email'): void
     }
 
     test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| F023 tahfidz
+|--------------------------------------------------------------------------
+|
+| Berawalan `tahfidz`. Baris model dibuat dengan `forceCreate` (tanpa Action) agar test Action bisa
+| menyiapkan data tanpa bergantung pada aturan yang sedang diuji. Tanggal "hari ini" = 2026-10-15.
+|
+*/
+
+/**
+ * Seeder, saklar modul, tahun ajaran aktif 2026/2027, dan waktu tetap.
+ *
+ * @return object{year: AcademicYear, sltp: Unit, slta: Unit}
+ */
+function tahfidzBoot(): object
+{
+    test()->seed([RolePermissionSeeder::class, SettingSeeder::class, UnitSeeder::class]);
+    Setting::set('modules.tahfidz.enabled', true);
+    Filament::setCurrentPanel('admin');
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+
+    return (object) [
+        'year' => AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']),
+        'sltp' => Unit::query()->where('code', 'SLTP')->firstOrFail(),
+        'slta' => Unit::query()->where('code', 'SLTA')->firstOrFail(),
+    ];
+}
+
+/**
+ * Akun ustadz-tahfidz beserta baris staff aktif miliknya (`$user->staff`).
+ *
+ * @param  list<string>  $unitCodes
+ * @param  array<string, mixed>  $staffAttributes
+ */
+function tahfidzUstadz(array $unitCodes = [], array $staffAttributes = []): User
+{
+    $user = asramaUser('ustadz-tahfidz', $unitCodes);
+    Staff::factory()->create(['user_id' => $user->id, 'gender' => 'L', 'position' => 'ustadz', ...$staffAttributes]);
+
+    return User::query()->findOrFail($user->id);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function tahfidzStaff(array $attributes = []): Staff
+{
+    return Staff::factory()->create(['gender' => 'L', 'position' => 'ustadz', ...$attributes]);
+}
+
+/**
+ * Halaqah putra aktif di tahun ajaran aktif, jenjang SLTP. `unit_id => null` = lintas jenjang.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function tahfidzHalaqah(object $f, ?Staff $teacher = null, array $attributes = []): Halaqah
+{
+    return Halaqah::query()->forceCreate([
+        'academic_year_id' => $f->year->id,
+        'unit_id' => $f->sltp->id,
+        'teacher_staff_id' => ($teacher ?? tahfidzStaff())->id,
+        'name' => 'Halaqah '.fake()->unique()->lexify('?????'),
+        'gender' => 'L',
+        'schedule' => null,
+        'is_active' => true,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function tahfidzStudent(object $f, string $gender = 'L', ?Unit $unit = null, array $attributes = []): Student
+{
+    $cohort = Cohort::factory()->create(['unit_id' => ($unit ?? $f->sltp)->id]);
+
+    return Student::factory()->forCohort($cohort)->create(['gender' => $gender, ...$attributes]);
+}
+
+function tahfidzMember(Halaqah $halaqah, Student $student, string $joinedOn = '2026-07-01', ?string $leftOn = null): HalaqahMember
+{
+    return HalaqahMember::query()->forceCreate([
+        'halaqah_id' => $halaqah->id,
+        'student_id' => $student->id,
+        'joined_on' => $joinedOn,
+        'left_on' => $leftOn,
+    ]);
+}
+
+/**
+ * Halaqah putra SLTP dengan satu santri anggota sejak awal tahun ajaran.
+ *
+ * @return array{0: Halaqah, 1: Student}
+ */
+function tahfidzHalaqahWithMember(object $f, ?Staff $teacher = null): array
+{
+    $halaqah = tahfidzHalaqah($f, $teacher);
+    $student = tahfidzStudent($f);
+    tahfidzMember($halaqah, $student);
+
+    return [$halaqah, $student];
+}
+
+function tahfidzAdmin(): User
+{
+    return asramaUser('super-admin');
+}
+
+/**
+ * Data `RecordMemorization`: ziyadah An-Naba' 1-5 kemarin, penyimak = pengampu halaqah.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function tahfidzRecordData(Halaqah $halaqah, Student $student, array $overrides = []): array
+{
+    return [
+        'student_id' => $student->id,
+        'halaqah_id' => $halaqah->id,
+        'recorded_on' => '2026-10-14',
+        'session' => 'subuh',
+        'type' => 'ziyadah',
+        'from_surah_id' => 78,
+        'from_ayah' => 1,
+        'to_surah_id' => 78,
+        'to_ayah' => 5,
+        'pages' => 0.5,
+        'grade' => 'jayyid',
+        'mistakes' => 1,
+        'note' => null,
+        'listener_staff_id' => $halaqah->teacher_staff_id,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Setoran lewat Action.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function tahfidzRecord(User $actor, Halaqah $halaqah, Student $student, array $overrides = []): MemorizationRecord
+{
+    return app(RecordMemorization::class)->handle($actor, tahfidzRecordData($halaqah, $student, $overrides));
+}
+
+/**
+ * Setoran langsung ke tabel (tanpa validasi) lalu kembalikan barisnya.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function tahfidzRawRecord(Halaqah $halaqah, Student $student, array $overrides = []): MemorizationRecord
+{
+    return MemorizationRecord::query()->forceCreate(tahfidzRecordData($halaqah, $student, $overrides));
+}
+
+/**
+ * Data `RecordTahfidzExam`: kenaikan juz 30 lulus.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function tahfidzExamData(Halaqah $halaqah, Student $student, array $overrides = []): array
+{
+    return [
+        'student_id' => $student->id,
+        'halaqah_id' => $halaqah->id,
+        'kind' => 'kenaikan_juz',
+        'juz_from' => 30,
+        'juz_to' => 30,
+        'exam_on' => '2026-10-14',
+        'score' => 85,
+        'result' => 'lulus',
+        'certificate_no' => null,
+        'examiner_staff_id' => $halaqah->teacher_staff_id,
+        ...$overrides,
+    ];
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ */
+function tahfidzExam(User $actor, Halaqah $halaqah, Student $student, array $overrides = []): TahfidzExam
+{
+    return app(RecordTahfidzExam::class)->handle($actor, tahfidzExamData($halaqah, $student, $overrides));
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ */
+function tahfidzRawExam(Halaqah $halaqah, Student $student, array $overrides = []): TahfidzExam
+{
+    return TahfidzExam::query()->forceCreate(tahfidzExamData($halaqah, $student, $overrides));
+}
+
+/**
+ * Capaian juz santri: juz => [status, completed_on (Y-m-d atau null)].
+ *
+ * @return array<int, array{0: string, 1: ?string}>
+ */
+function tahfidzProgress(Student $student): array
+{
+    return DB::table('student_juz_progress')->where('student_id', $student->id)->orderBy('juz')->get()
+        ->mapWithKeys(fn (object $row): array => [(int) $row->juz => [$row->status, $row->completed_on === null ? null : substr((string) $row->completed_on, 0, 10)]])
+        ->all();
+}
+
+function tahfidzRefresh(Student $student): void
+{
+    app(RefreshJuzProgress::class)->handle($student);
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan error pada salah satu field `$fields`.
+ *
+ * @param  string|list<string>  $fields
+ */
+function tahfidzRejected(Closure $callback, string|array $fields): void
+{
+    $fields = (array) $fields;
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $keys = array_keys($exception->errors());
+
+        expect(array_intersect($fields, $keys))->not->toBe([], 'Error pada '.implode('/', $keys).', diharapkan salah satu dari '.implode('/', $fields));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Kelas halaman daftar sebuah resource (apa pun namanya: List/Manage).
+ *
+ * @param  class-string  $resource
+ * @return class-string
+ */
+function tahfidzIndexPage(string $resource): string
+{
+    return $resource::getPages()['index']->getPage();
 }

@@ -3,9 +3,9 @@
 use App\Enums\Module;
 use App\Models\Setting;
 
-it('AC-1: lists exactly the eight modules with translated labels and descriptions', function () {
+it('AC-1: lists exactly the nine modules with translated labels and descriptions', function () {
     expect(array_map(fn (Module $m): string => $m->value, Module::cases()))
-        ->toBe(['akademik', 'asrama', 'keuangan', 'psb', 'dokumen', 'konten', 'prestasi', 'portal-wali']);
+        ->toBe(['akademik', 'asrama', 'keuangan', 'psb', 'dokumen', 'konten', 'prestasi', 'portal-wali', 'tahfidz']);
 
     expectTranslatedKeys(fn (): array => collect(Module::cases())->flatMap(fn (Module $m): array => [
         "pondok.modules.{$m->value}.label",
@@ -23,7 +23,7 @@ it('AC-1: declares the dependency graph and derives dependents from it', functio
     $requires = [
         'akademik' => [], 'asrama' => ['akademik'], 'keuangan' => ['akademik'],
         'psb' => ['akademik', 'keuangan'], 'dokumen' => [], 'prestasi' => ['akademik'], 'konten' => [],
-        'portal-wali' => ['akademik'],
+        'portal-wali' => ['akademik'], 'tahfidz' => ['akademik'],
     ];
 
     foreach (Module::cases() as $module) {
@@ -31,7 +31,7 @@ it('AC-1: declares the dependency graph and derives dependents from it', functio
     }
 
     expect($keys(Module::Keuangan->dependents()))->toBe(['psb'])
-        ->and($keys(Module::Akademik->dependents()))->toEqualCanonicalizing(['asrama', 'keuangan', 'psb', 'prestasi', 'portal-wali'])
+        ->and($keys(Module::Akademik->dependents()))->toEqualCanonicalizing(['asrama', 'keuangan', 'psb', 'prestasi', 'portal-wali', 'tahfidz'])
         ->and($keys(Module::Konten->dependents()))->toBe([])
         ->and($keys(Module::Dokumen->requires()))->toBe([]);
 });

@@ -2,6 +2,7 @@
 
 use App\Actions\Konten\FormatPhoneForDisplay;
 use App\Actions\Konten\StorePublicImage;
+use App\Actions\Tahfidz\RefreshJuzProgress;
 use App\Models\AcademicYear;
 use App\Models\AdmissionWave;
 use App\Models\Album;
@@ -56,7 +57,8 @@ function demoTableCounts(): array
         'dormitory_supervisors', 'fee_types', 'fee_rates', 'scholarships', 'fee_overrides', 'invoices', 'invoice_items',
         'payments', 'payment_allocations', 'admission_waves', 'admission_tracks', 'admission_track_fee_type',
         'admission_requirements', 'applicants', 'applicant_documents', 'documents', 'issued_letters', 'achievements',
-        'achievement_student', 'categories', 'posts', 'albums', 'photos', 'videos', 'pages'];
+        'achievement_student', 'categories', 'posts', 'albums', 'photos', 'videos', 'pages',
+        'halaqahs', 'halaqah_members', 'memorization_records', 'student_juz_progress', 'tahfidz_exams'];
 
     $counts = [];
     foreach ($tables as $table) {
@@ -948,6 +950,28 @@ it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri 
     Auth::forgetGuards();
     $this->get('/')->assertOk();
     $this->get('/berita')->assertOk()->assertSee('Penerimaan Santri Baru');
+
+    // F023 AC-13: demo tahfidz, tanpa membaca konstanta aplikasi.
+    $todayString = '2026-10-16';
+    $ustadzStaffId = DB::table('staff')->where('user_id', demoUser('ustadz-tahfidz')->id)->value('id');
+    $halaqahs = DB::table('halaqahs')->get();
+    $abuHurairah = $halaqahs->firstWhere('name', 'Halaqah Abu Hurairah');
+    demoCheck($halaqahs->count() >= 2 && $abuHurairah !== null && (int) $abuHurairah->teacher_staff_id === (int) $ustadzStaffId, 'F023 Halaqah Abu Hurairah diampu akun demo ustadz-tahfidz');
+    demoCheck($halaqahs->contains('gender', 'P') && $halaqahs->contains('gender', 'L'), 'F023 ada halaqah putri dan putra');
+    demoCheck(Setting::get('modules.tahfidz.enabled') === true, 'F023 modul tahfidz aktif');
+    $demoRecords = DB::table('memorization_records')->get();
+    demoCheck($demoRecords->where('halaqah_id', $abuHurairah->id)->pluck('recorded_on')->map(fn ($d) => substr((string) $d, 0, 10))->unique()->count() >= 3, 'F023 setoran beberapa hari');
+    demoCheck($demoRecords->every(fn (object $r): bool => substr((string) $r->recorded_on, 0, 10) <= $todayString), 'F023 tanpa setoran masa depan');
+    $demoExams = DB::table('tahfidz_exams')->get();
+    demoCheck($demoExams->contains(fn (object $e): bool => $e->kind === 'kenaikan_juz' && $e->result === 'lulus' && filled($e->certificate_no)), 'F023 satu ujian kenaikan juz lulus bersyahadah');
+    $juzSnapshot = DB::table('student_juz_progress')->orderBy('student_id')->orderBy('juz')->get(['student_id', 'juz', 'status', 'completed_on'])->toArray();
+    demoCheck($juzSnapshot !== [], 'F023 progres juz terisi');
+    foreach (Student::withoutUnitScope()->whereIn('id', $demoRecords->pluck('student_id')->merge($demoExams->pluck('student_id'))->unique())->get() as $demoStudent) {
+        app(RefreshJuzProgress::class)->handle($demoStudent);
+    }
+    expect(DB::table('student_juz_progress')->orderBy('student_id')->orderBy('juz')->get(['student_id', 'juz', 'status', 'completed_on'])->toArray())->toEqual($juzSnapshot);
+    $tahfidzText = mb_strtolower(json_encode([DB::table('halaqahs')->get(['name', 'schedule']), DB::table('memorization_records')->pluck('note')], JSON_UNESCAPED_UNICODE));
+    expect(array_values(array_filter($forbidden, fn (string $word): bool => str_contains($tahfidzText, $word))))->toBe([]);
 
     // Cakupan jenjang kesantrian (hanya TSN/SMA): tidak melihat SLTP, lebih sedikit dari total.
     $this->actingAs(demoUser('kesantrian'));

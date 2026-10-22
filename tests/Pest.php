@@ -4819,3 +4819,128 @@ function mfaRaw(User $user): array
 
     return ['secret' => $row->app_authentication_secret, 'codes' => $row->app_authentication_recovery_codes];
 }
+
+/*
+|--------------------------------------------------------------------------
+| Helper portal wali (F022)
+|--------------------------------------------------------------------------
+|
+| Berawalan `wali`. Memakai `keuanganUser`, `asramaResident`, `asramaRoom`, `dokumenCreate`,
+| `dokumenType`, `bayarHtmlText`. Saklar `portal-wali` diatur dengan key string (bukan enum)
+| agar test tidak bergantung pada seeder. Waktu uji: 2026-10-15 10:00 Asia/Jakarta.
+|
+*/
+
+/**
+ * Fixture portal wali: seeder, saklar semua modul aktif (termasuk `portal-wali`), disk private palsu,
+ * tahun ajaran aktif, jenjang SLTP/SD, santri bersaudara `s1` (Ahmad Satu, NIS 1001) dan `s2` (Budi Dua, NIS 1002)
+ * milik wali `wali` (user berperan wali, verified), serta santri `o1` (Citra Lain) milik wali lain `other`.
+ *
+ * @return object{year: AcademicYear, sltp: Unit, sd: Unit, cohort: Cohort, wali: User, guardian: Guardian, s1: Student, s2: Student, other: User, otherGuardian: Guardian, o1: Student}
+ */
+function waliBoot(): object
+{
+    test()->seed([UnitSeeder::class, DocumentTypeSeeder::class, RolePermissionSeeder::class, SettingSeeder::class]);
+
+    foreach (['akademik', 'asrama', 'keuangan', 'dokumen', 'portal-wali'] as $module) {
+        Setting::set("modules.{$module}.enabled", true);
+    }
+
+    test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
+    Storage::fake('private');
+    Storage::fake('public');
+
+    $sltp = Unit::query()->where('code', 'SLTP')->firstOrFail();
+    $cohort = Cohort::factory()->create(['unit_id' => $sltp->id, 'entry_year' => 2026]);
+
+    $wali = User::factory()->create(['email' => 'wali.satu@contoh.test'])->assignRole('wali');
+    $guardian = waliGuardianFor($wali, 'Wali Satu');
+    $other = User::factory()->create(['email' => 'wali.lain@contoh.test'])->assignRole('wali');
+    $otherGuardian = waliGuardianFor($other, 'Wali Lain');
+
+    $s1 = Student::factory()->forCohort($cohort)->create(['name' => 'Ahmad Satu', 'nis' => '1001']);
+    $s2 = Student::factory()->forCohort($cohort)->create(['name' => 'Budi Dua', 'nis' => '1002']);
+    $o1 = Student::factory()->forCohort($cohort)->create(['name' => 'Citra Lain', 'nis' => '1003']);
+    $s1->guardians()->attach($guardian->id, ['relation' => 'ayah', 'is_billing_contact' => true]);
+    $s2->guardians()->attach($guardian->id, ['relation' => 'ayah', 'is_billing_contact' => true]);
+    $o1->guardians()->attach($otherGuardian->id, ['relation' => 'ayah', 'is_billing_contact' => true]);
+
+    return (object) [
+        'year' => AcademicYear::factory()->active()->create(['name' => '2026/2027', 'starts_on' => '2026-07-01', 'ends_on' => '2027-06-30']),
+        'sltp' => $sltp,
+        'sd' => Unit::query()->where('code', 'SD')->firstOrFail(),
+        'cohort' => $cohort,
+        'wali' => $wali,
+        'guardian' => $guardian,
+        's1' => $s1,
+        's2' => $s2,
+        'other' => $other,
+        'otherGuardian' => $otherGuardian,
+        'o1' => $o1,
+    ];
+}
+
+/**
+ * Wali yang tertaut ke user (`user_id` diisi lewat forceFill, seperti Action produksi).
+ */
+function waliGuardianFor(User $user, string $name): Guardian
+{
+    $guardian = Guardian::factory()->create(['name' => $name]);
+    $guardian->forceFill(['user_id' => $user->id])->save();
+
+    return $guardian->fresh();
+}
+
+/**
+ * Tagihan aktif santri dengan satu item (base 500.000, diskon 100.000, amount 400.000) kecuali `$attributes` menimpa.
+ * Total/paid_total/status diatur lewat `$attributes` (bawaan: total 400.000, belum bayar).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function waliInvoice(object $f, Student $student, array $attributes = [], string $period = '2026-10-01'): Invoice
+{
+    $invoice = Invoice::factory()->create([
+        'student_id' => $student->id,
+        'academic_year_id' => $f->year->id,
+        'period' => CarbonImmutable::parse($period, 'Asia/Jakarta')->startOfMonth(),
+        'total' => 400000,
+        'paid_total' => 0,
+        'status' => Invoice::STATUS_UNPAID,
+        'due_on' => '2026-11-10',
+        ...$attributes,
+    ]);
+
+    InvoiceItem::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_type_id' => FeeType::factory()->create(['name' => 'SPP '.$invoice->id])->id,
+        'base_amount' => 500000,
+        'discount_amount' => 100000,
+        'amount' => 400000,
+    ]);
+
+    return $invoice;
+}
+
+/**
+ * Teks polos halaman panel `/wali...` untuk user (harus 200).
+ */
+function waliText(User $user, string $path = '/wali'): string
+{
+    return bayarHtmlText(test()->actingAs($user)->get($path)->assertOk()->getContent());
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan error pada `$field`.
+ */
+function waliAssertRejected(Closure $callback, string $field = 'email'): void
+{
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey($field);
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}

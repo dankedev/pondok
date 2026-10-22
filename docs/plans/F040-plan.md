@@ -15,7 +15,7 @@ Ganti syarat persen `psb.min_paid_percent` dengan nominal minimal rupiah per jen
 Pesan penolakan menampilkan nominal syarat dan jumlah terbayar dalam format `Rp 1.250.000` (design-guide §5).
 
 ## Ruang lingkup
-- Termasuk: kolom `units.min_reregistration_amount`; migrasi hapus setting persen; ubah `CheckReRegistrationPayment`, pesan `ReRegisterApplicant`, infolist `ApplicantResource`; halaman pengaturan "Syarat daftar ulang" + permission; seeder (setting, permission, demo); dokumen ERD dan `docs/pertanyaan-mahad-al-khair.md`.
+- Termasuk: kolom `units.min_reregistration_amount`; migrasi hapus setting persen; ubah `CheckReRegistrationPayment`, pesan `ReRegisterApplicant`, infolist `ApplicantResource`; halaman pengaturan "Syarat daftar ulang" + permission; seeder (setting, permission, demo); dokumen ERD dan daftar pertanyaan untuk lembaga (berkas dihapus di F083).
 - Tidak termasuk (eksplisit): nominal per gelombang/jalur; konversi persen lama; field di form `UnitResource`; kolom baru di tabel jenjang; tampilan syarat di portal pendaftar; akses bendahara ke halaman ini (bisa jadi issue baru bila diminta).
 
 ## Model data
@@ -93,7 +93,7 @@ Pesan penolakan menampilkan nominal syarat dan jumlah terbayar dalam format `Rp 
 8. `DemoAdmissions`/`DemoData`: isi nominal jenjang demo (mis. SLTP dan SLTA Rp 5.000.000) agar alur demo 60% tetap lolos dan 30% tetap belum.
 
 **Paket 3 — dokumen**
-9. `docs/erd.md`: kolom di diagram `units`, baris ~579 dan ~612 (nominal per jenjang, null = lunas, 0 = tanpa syarat, cukup lunas bila total lebih kecil); `docs/ERD Pondok.html` baris ~631; `docs/pertanyaan-mahad-al-khair.md` no. 5 "Sudah: nominal per jenjang (F040)". PRD tidak perlu diubah (tidak menyebut persen).
+9. `docs/erd.md`: kolom di diagram `units`, baris ~579 dan ~612 (nominal per jenjang, null = lunas, 0 = tanpa syarat, cukup lunas bila total lebih kecil); `docs/ERD Pondok.html` baris ~631; daftar pertanyaan untuk lembaga (berkas dihapus di F083) no. 5 "Sudah: nominal per jenjang (F040)". PRD tidak perlu diubah (tidak menyebut persen).
 
 ## Risiko & pertanyaan terbuka
 - Catatan rilis: setelah `pondok:upgrade`, semua jenjang `null` → wajib lunas sampai admin-psb/super-admin mengisi nominal di halaman "Syarat daftar ulang" (sesuai keputusan 2–3). Permission halaman ikut terpasang oleh `pondok:upgrade` (SystemSeeder); bila admin memperbarui tanpa perintah itu, jalankan `php artisan db:seed --class=SystemSeeder --force`.

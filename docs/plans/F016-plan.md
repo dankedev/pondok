@@ -438,7 +438,7 @@ Fixture bersama (helper `konten*` di **akhir** `tests/Pest.php`, bagian terpisah
 
 ### Profil sekolah
 
-- AC-33: `UpdateSchoolProfile` dengan name "Ma'had Al-Khair", phone "0812-3456-7890", whatsapp "+62 812 3456 7890", email "info@alkhair.sch.id", address, instagram `https://instagram.com/alkhair` → `Setting::get('school.name')` "Ma'had Al-Khair", `school.phone` "081234567890", `school.whatsapp` "+6281234567890", key lain sesuai; tagline kosong → `Setting::get('school.tagline')` NULL.
+- AC-33: `UpdateSchoolProfile` dengan name "Ma'had Al-Kitab", phone "0812-3456-7890", whatsapp "+62 812 3456 7890", email "info@pondokcontoh.sch.id", address, instagram `https://instagram.com/pondokcontoh` → `Setting::get('school.name')` "Ma'had Al-Kitab", `school.phone` "081234567890", `school.whatsapp` "+6281234567890", key lain sesuai; tagline kosong → `Setting::get('school.tagline')` NULL.
 - AC-34: Ditolak dan **tidak ada key yang berubah** (nilai sebelumnya tetap): name kosong → `name`/`name_required`; email "bukan-email" → `email`/`email_invalid`; instagram `javascript:alert(1)` atau `ftp://x.test` → `instagram_url`/`url_invalid`; phone "abc" atau "123" → `phone`/`phone_invalid`; address 501 karakter → `address`/`too_long`.
 - AC-35: `logo` png 300 KB → `school.logo_path` diawali `school/`, file di disk `public`; mengganti logo menghapus file lama; `remove_logo` → `school.logo_path` NULL dan file hilang. `logo` SVG atau png 1025 KB → `logo`/`image_invalid`, `school.logo_path` lama tetap.
 - AC-36: Perubahan profil mencatat satu activity (log name `konten`, causer = user, properti `changed` hanya berisi key yang berubah). Menyimpan tanpa perubahan tidak menambah activity.

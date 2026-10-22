@@ -4,7 +4,7 @@ Status rencana: APPROVED
 
 ## Ringkasan & tujuan
 
-Saat ini F016/F017 hanya punya tiga halaman statis tetap: `profil`, `visi-misi`, dan `kontak`. Route `/{page}` dibatasi `whereIn(StaticPage::SLUGS)`, resource Filament tidak bisa membuat atau menghapus halaman, dan menu header di `portal/partials/nav-links.blade.php` ditulis langsung di kode. Akibatnya lembaga lain tidak bisa menyusun menu seperti contoh brief Al-Khair (Beranda, Tentang Yayasan, Pengurus Al-Khair, Selayang Pandang, Info PSB, Kontak) tanpa mengubah kode.
+Saat ini F016/F017 hanya punya tiga halaman statis tetap: `profil`, `visi-misi`, dan `kontak`. Route `/{page}` dibatasi `whereIn(StaticPage::SLUGS)`, resource Filament tidak bisa membuat atau menghapus halaman, dan menu header di `portal/partials/nav-links.blade.php` ditulis langsung di kode. Akibatnya lembaga lain tidak bisa menyusun menu seperti contoh brief lembaga pengguna (Beranda, Tentang Yayasan, Pengurus Yayasan, Selayang Pandang, Info PSB, Kontak) tanpa mengubah kode.
 
 F037 menambahkan:
 1. **Halaman bebas.** Admin konten bisa membuat, mengubah, menerbitkan atau menarik (draf), dan menghapus halaman dengan slug bebas. Slug tidak boleh bentrok dengan slug sistem maupun route yang dicadangkan.
@@ -237,7 +237,7 @@ Wajib: baca `docs/design-guide.md`, jalankan alur §13 (anti-ui-slop), dan check
   - field sama dengan halaman Buat. Untuk halaman sistem, slug `disabled` dengan helper "Alamat halaman sistem tidak bisa diubah.";
   - aksi header Hapus dengan `hidden(isSystem)` eksplisit, seperti aksi tabel;
   - memanggil `UpdateStaticPage`.
-- Notifikasi sukses menyebut objek, misalnya "Halaman Pengurus Al-Khair dihapus."
+- Notifikasi sukses menyebut objek, misalnya "Halaman Pengurus Yayasan dihapus."
 
 **Cluster Profil lembaga, halaman baru "Menu"** (`Clusters/InstitutionProfile/Pages/Menu.php`, slug `menu`, `navigationSort` 5, turunan `InstitutionProfilePage`):
 - Section "Menu utama":
@@ -374,11 +374,11 @@ Catatan umum: "nav" berarti **kedua** `<nav>` header (desktop `aria-label` `pond
 
 - **AC-38** `db:seed --class=DemoSeeder` → halaman terbit:
   - `profil` berjudul "Tentang Yayasan";
-  - `pengurus` berjudul "Pengurus Al-Khair";
+  - `pengurus` berjudul "Pengurus Yayasan";
   - `selayang-pandang` berjudul "Selayang Pandang";
   - `visi-misi` dan `kontak`.
 
-  `portal.menu_items` → nav: Beranda, Tentang Yayasan, Pengurus Al-Khair, Selayang Pandang, Kontak, Masuk(, Daftar). Info PSB ikut tampil setelah F038. Berita, Galeri, dan Video disembunyikan dari header. `portal.footer_links` memuat tautan halaman `visi-misi`. Isi tidak memuat istilah terlarang manhaj CLAUDE.md (Maulid, Isra' Mi'raj, Nuzulul Qur'an, Tahun Baru Hijriah, Nisfu Sya'ban, haul, tahlilan, harlah, hadrah, shalawatan). Seeder dijalankan dua kali → jumlah halaman dan isi menu sama.
+  `portal.menu_items` → nav: Beranda, Tentang Yayasan, Pengurus Yayasan, Selayang Pandang, Kontak, Masuk(, Daftar). Info PSB ikut tampil setelah F038. Berita, Galeri, dan Video disembunyikan dari header. `portal.footer_links` memuat tautan halaman `visi-misi`. Isi tidak memuat istilah terlarang manhaj CLAUDE.md (Maulid, Isra' Mi'raj, Nuzulul Qur'an, Tahun Baru Hijriah, Nisfu Sya'ban, haul, tahlilan, harlah, hadrah, shalawatan). Seeder dijalankan dua kali → jumlah halaman dan isi menu sama.
 - **AC-39** Instalasi baru tanpa DemoSeeder → tabel `pages` hanya berisi tiga halaman sistem, `portal.menu_items` null, dan semua label nav berasal dari `lang/id`. Pemindaian nilai `lang/id/pondok.php` (F036 AC-55) tetap hijau dengan kunci baru F037.
 
 ## Rencana test
@@ -464,7 +464,7 @@ Risiko:
 
 - **D1. Halaman profil, visi-misi, dan kontak: DIKONFIRMASI USER (16 Okt 2026, "pertahankan").** Ketiganya tetap halaman sistem: tidak bisa dihapus, slug terkunci, tetapi bisa draf (K1). Di instalasi baru, `profil` dan `visi-misi` mulai sebagai draf dan `kontak` terbit, dengan aturan Kontak. Instalasi lama tetap terbit. Bukan lagi keputusan sementara.
 - **D2. Tombol header (default, sementara).** "Daftar" (PSB) bisa disembunyikan lewat halaman Menu. "Masuk" selalu tampil.
-- **D3. Menu demo (default, sementara).** Mengikuti brief (Beranda, Tentang Yayasan, Pengurus Al-Khair, Selayang Pandang, Info PSB, Kontak). Berita, Galeri, dan Video disembunyikan dari header tetapi tetap terjangkau dari beranda dan footer.
+- **D3. Menu demo (default, sementara).** Mengikuti brief (Beranda, Tentang Yayasan, Pengurus Yayasan, Selayang Pandang, Info PSB, Kontak). Berita, Galeri, dan Video disembunyikan dari header tetapi tetap terjangkau dari beranda dan footer.
 - **D4. Aturan Kontak (keputusan orkestrator).** Halaman dan item Kontak hanya tampil bila profil punya data kontak (K1).
 - **D5. Batas 50 halaman per instalasi (K7).** Usulan product-manager atas Review #1 temuan 8.
 

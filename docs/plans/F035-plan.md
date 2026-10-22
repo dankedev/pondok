@@ -1,12 +1,12 @@
-# F035 portal-identitas-visual — Identitas visual portal (warna logo Al-Khair, gaya modern ringan)
+# F035 portal-identitas-visual — Identitas visual portal (warna logo lembaga, gaya modern ringan)
 
 Status rencana: APPROVED
 
 ## Ringkasan & tujuan
 
-Portal publik dan halaman PSB masih memakai emerald, gaya awal F017. F035 mengganti tampilannya ke warna logo Al-Khair, yaitu navy `#000A3C` sebagai primer dan emas `#F8B800` sebagai aksen. Gayanya mengikuti acuan `docs/brand/referensi-gaya-coursex.md`: ruang kosong lega, bayangan sangat tipis, tombol dan input pill, hiasan cincin dan pola titik, latar section berselang-seling, serta judul besar dan tebal.
+Portal publik dan halaman PSB masih memakai emerald, gaya awal F017. F035 mengganti tampilannya ke warna logo lembaga, yaitu navy `#000A3C` sebagai primer dan emas `#F8B800` sebagai aksen. Gayanya mengikuti acuan `docs/brand/referensi-gaya-coursex.md`: ruang kosong lega, bayangan sangat tipis, tombol dan input pill, hiasan cincin dan pola titik, latar section berselang-seling, serta judul besar dan tebal.
 
-Permintaan user (17 Okt 2026): "Lanjutkan F035 (identitas visual) dengan acuan docs/brand/referensi-gaya-coursex.md, warna dari logo Al-Khair, sekaligus catatan tampilan dari pengecekan F036." Instruksi user sebelumnya: "warnanya aja, layoutnya tetap, tambah sentuhan modern agar tidak kaku dan kotak-kotak."
+Permintaan user (17 Okt 2026): "Lanjutkan F035 (identitas visual) dengan acuan docs/brand/referensi-gaya-coursex.md, warna dari logo lembaga, sekaligus catatan tampilan dari pengecekan F036." Instruksi user sebelumnya: "warnanya aja, layoutnya tetap, tambah sentuhan modern agar tidak kaku dan kotak-kotak."
 
 Hasilnya:
 - token `primary-*`, `accent-*`, `gray-*`, font, dan bayangan di `resources/css/app.css` berubah;
@@ -524,7 +524,7 @@ Semua test HTML memakai `portalBoot()` (sudah memalsukan Vite dan direktori buil
 
 Setiap langkah bisa menjadi micro-commit dan menjaga test hijau.
 
-1. `vite.config.js` dan `app.css`: font (K2), token warna (K1), bayangan (K3), kelas hiasan (K4), `.ui-input` (K8), `.portal-prose` (AC-1, 8, 16). Commit: `feat(konten): token warna dan font identitas al-khair`.
+1. `vite.config.js` dan `app.css`: font (K2), token warna (K1), bayangan (K3), kelas hiasan (K4), `.ui-input` (K8), `.portal-prose` (AC-1, 8, 16). Commit: `feat(konten): token warna dan font identitas portal`.
 2. Komponen `x-ui.*`: button, badge, card, alert, empty-state, field, steps (AC-6, 7, 18).
 3. Komponen `x-portal.*` dan partial nav-links, pagination (AC-7).
 4. Layout publik: body, header/logo K6a, menu lipat, `<main>` `flex-1` + `bg-gray-50` non-bare (AC-15).
@@ -533,7 +533,7 @@ Setiap langkah bisa menjadi micro-commit dan menjaga test hijau.
 7. Halaman dalam dan 404: skala `h1`, spasi, radius (AC-2).
 8. Form PSB Livewire: `.ui-input`, ubin pilihan, tautan (AC-7, 18).
 9. Test sumber AC-32 diperluas dan test baru hijau. Pint untuk berkas PHP test (tidak ada PHP aplikasi yang berubah).
-10. `docs/design-guide.md` dan `docs/brand/referensi-gaya-coursex.md` (AC-19). Commit: `docs(konten): panduan warna dan bentuk portal al-khair`.
+10. `docs/design-guide.md` dan `docs/brand/referensi-gaya-coursex.md` (AC-19). Commit: `docs(konten): panduan warna dan bentuk portal`.
 11. Orkestrator: satu `npm run build` lalu verifikasi visual AC-20. Bila ada perbaikan visual, kembali ke langkah terkait.
 
 ## Risiko & pertanyaan terbuka
@@ -549,7 +549,7 @@ Risiko:
   - Noto Naskh Arabic (subset arabic, ±2 berkas) tidak di-preload dan hanya diunduh di halaman yang memuat teks Arab.
   - Untuk HP kelas bawah ini masih wajar. Alternatifnya mengurangi bobot 500 bila tidak terpakai (cek saat GREEN: pakai `font-medium` atau tidak).
 - **Build font butuh jaringan.** `bunny()` mengunduh font saat `npm run build`. Build di mesin tanpa internet gagal atau jatuh ke font sistem. Paket rilis cPanel tetap aman karena `public/build` ikut paket. Ketersediaan "Plus Jakarta Sans" dan "Noto Naskh Arabic" di Bunny sudah dicek orkestrator. Rencana ini tidak menambah dependensi npm.
-- **Logo melebar di 1024px.** Logo desktop Al-Khair (simbol dan teks) pada `md:h-14` bisa selebar ±250px. Dengan 8 item menu plus Masuk/Daftar, header di 1024px bisa sesak. Mitigasinya `md:max-w-64` dan `min-w-0` (logo menyusut), lalu dicek visual AC-20. Bila tetap sesak, turunkan ke `md:h-12`.
+- **Logo melebar di 1024px.** Logo desktop lembaga pengguna (simbol dan teks) pada `md:h-14` bisa selebar ±250px. Dengan 8 item menu plus Masuk/Daftar, header di 1024px bisa sesak. Mitigasinya `md:max-w-64` dan `min-w-0` (logo menyusut), lalu dicek visual AC-20. Bila tetap sesak, turunkan ke `md:h-12`.
 - **Footer navy dan `contact-list`.** Partial dipakai di dua latar. Parameter `$onDark` menambah percabangan kelas. Risiko regresi kecil, dan test kontak F036 tetap berlaku.
 - **`<hgroup>`.** Semantik `hgroup` versi living standard didukung pembaca layar modern sebagai pembungkus biasa. Tidak ada risiko fungsional.
 - **Konflik merge.** F036 dan F037 sudah `done` dan ada di cabang ini (commit `a1c7aa2`), sehingga tidak ada konflik dengan fitur yang sedang berjalan. F038 (`psb-info-publik`), bila dikerjakan paralel, akan menyentuh `nav-links`/layout. Merge F035 dulu, lalu F038 mengikuti token baru.

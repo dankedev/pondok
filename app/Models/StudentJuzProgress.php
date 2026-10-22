@@ -13,6 +13,16 @@ class StudentJuzProgress extends Model
 {
     public const STATUSES = ['proses', 'hafal', 'lulus_ujian'];
 
+    /** Warna badge capaian juz (design-guide §4); juz tanpa baris (belum) memakai `gray`. */
+    public const STATUS_COLORS = [
+        'proses' => 'warning',
+        'hafal' => 'info',
+        'lulus_ujian' => 'success',
+    ];
+
+    /** Status yang dihitung sebagai juz hafal. */
+    public const MEMORIZED = ['hafal', 'lulus_ujian'];
+
     protected $table = 'student_juz_progress';
 
     protected $primaryKey = 'student_id';

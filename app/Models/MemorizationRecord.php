@@ -55,4 +55,19 @@ class MemorizationRecord extends Model
     {
         return $this->belongsTo(User::class, 'recorded_by');
     }
+
+    /**
+     * "Al-Baqarah 1–5" atau "An-Naba' 1 – An-Nazi'at 46". Butuh relasi `fromSurah` dan `toSurah`.
+     */
+    public function rangeLabel(): string
+    {
+        if ($this->from_surah_id === $this->to_surah_id) {
+            return __('pondok.tahfidz.record.range_same', ['surah' => $this->fromSurah->name, 'from' => $this->from_ayah, 'to' => $this->to_ayah]);
+        }
+
+        return __('pondok.tahfidz.record.range_cross', [
+            'from_surah' => $this->fromSurah->name, 'from' => $this->from_ayah,
+            'to_surah' => $this->toSurah->name, 'to' => $this->to_ayah,
+        ]);
+    }
 }

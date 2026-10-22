@@ -21,6 +21,12 @@ class TahfidzExam extends Model
 
     public const RESULT_PASSED = 'lulus';
 
+    /** Warna badge hasil ujian (design-guide §4). */
+    public const RESULT_COLORS = [
+        'lulus' => 'success',
+        'ulang' => 'warning',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -34,5 +40,12 @@ class TahfidzExam extends Model
     public function examiner(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'examiner_staff_id');
+    }
+
+    public function juzLabel(): string
+    {
+        return $this->juz_from === $this->juz_to
+            ? __('pondok.tahfidz.exam.juz_single', ['from' => $this->juz_from])
+            : __('pondok.tahfidz.exam.juz_range', ['from' => $this->juz_from, 'to' => $this->juz_to]);
     }
 }

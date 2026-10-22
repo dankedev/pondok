@@ -228,9 +228,8 @@ erDiagram
   quran_surahs {
     smallint id PK "1 sampai 114, data seed"
     string name "Al-Baqarah"
-    string name_arabic
-    smallint ayah_count
-    tinyint juz_start
+    smallint ayah_count "Hafs, penomoran mushaf Madinah"
+    tinyint juz_start "juz yang memuat ayat 1"
   }
   halaqahs {
     bigint id PK
@@ -248,6 +247,7 @@ erDiagram
     bigint student_id FK
     date joined_on
     date left_on "nullable = masih aktif"
+    tinyint active_marker "generated: 1 bila left_on NULL"
   }
   memorization_records {
     bigint id PK
@@ -261,15 +261,16 @@ erDiagram
     smallint from_ayah
     smallint to_surah_id FK
     smallint to_ayah
-    decimal pages "jumlah halaman, mushaf 15 baris"
+    decimal pages "diisi penyimak, satu desimal"
     enum grade "mumtaz | jayyid_jiddan | jayyid | maqbul | ulang"
     tinyint mistakes "jumlah kesalahan"
-    text note "nullable"
+    string note "nullable"
+    bigint recorded_by FK "users, nullable"
   }
   student_juz_progress {
     bigint student_id PK,FK
     tinyint juz PK "1 sampai 30"
-    enum status "belum | proses | hafal | lulus_ujian"
+    enum status "proses | hafal | lulus_ujian; belum = tanpa baris"
     date completed_on "nullable"
   }
   tahfidz_targets {
@@ -278,11 +279,12 @@ erDiagram
     bigint unit_id FK
     tinyint grade "nullable = semua tingkat"
     decimal target_juz "target per tahun"
-    decimal target_pages_weekly "nullable"
+    tinyint grade_key "generated: COALESCE(grade, 0)"
   }
   tahfidz_exams {
     bigint id PK
     bigint student_id FK
+    bigint halaqah_id FK "halaqah santri saat ujian"
     tinyint juz_from
     tinyint juz_to
     enum kind "kenaikan_juz | tasmi_5_juz | khataman"
@@ -300,16 +302,21 @@ erDiagram
   quran_surahs ||--o{ memorization_records : "rentang ayat"
   students ||--o{ student_juz_progress : ""
   students ||--o{ tahfidz_exams : ""
+  halaqahs ||--o{ tahfidz_exams : ""
   staff ||--o{ tahfidz_exams : "penguji"
+  academic_years ||--o{ tahfidz_targets : ""
+  units ||--o{ tahfidz_targets : ""
   
 ```
 
-- **Setoran harian** dicatat sebagai rentang surah dan ayat, bukan teks bebas. Dengan begitu total halaman, capaian juz, dan grafik kemajuan bisa dihitung otomatis. `quran_surahs` adalah data tetap yang diisi saat instalasi.
+- **Setoran harian** dicatat sebagai rentang surah dan ayat, bukan teks bebas, sehingga capaian juz bisa dihitung otomatis. Satu setoran boleh lintas surah asal maju (indeks global ayat `from` ≤ `to`); hafalan mundur dicatat sebagai beberapa setoran. Setoran dan ujian tidak diubah: koreksi = hapus lalu catat ulang. `quran_surahs` adalah data tetap 114 surah yang ditulis migration (ikut `migrate` di instance lama); awal 30 juz ada di konstanta `QuranSurah::JUZ_STARTS`.
 - **Ziyadah, murajaah, dan tasmi'** dibedakan lewat `type`. Laporan ke wali bisa menampilkan hafalan baru dan pengulangan secara terpisah.
-- `student_juz_progress` adalah ringkasan per juz yang diperbarui setiap ada setoran atau ujian, supaya dashboard dan portal wali tidak perlu menghitung ulang dari seluruh riwayat setoran.
+- `student_juz_progress` adalah ringkasan per juz yang hanya ditulis Action `RefreshJuzProgress` (hitung ulang penuh, idempoten) setiap ada setoran atau ujian dicatat/dihapus. `hafal` = gabungan ziyadah bernilai selain `ulang` menutup seluruh juz; `lulus_ujian` = tercakup ujian `lulus`; `proses` = sebagian. Juz tanpa baris berarti belum. Baris ikut terhapus bila santri dihapus permanen (cascade).
 - `tahfidz_targets` membandingkan capaian dengan target per jenjang dan tingkat, sehingga santri yang tertinggal bisa terlihat lebih awal.
-- Anggota halaqah punya riwayat, jadi santri yang pindah halaqah tetap terlacak pengampunya di setiap periode.
-- `pages` mengacu pada mushaf standar 15 baris. Kalau pondok memakai standar lain, cukup diatur di `settings`.
+- Anggota halaqah punya riwayat dengan interval [`joined_on`, `left_on`), jadi santri yang pindah halaqah tetap terlacak pengampunya di setiap periode. Satu keanggotaan aktif per santri dijaga unique (`student_id`, `active_marker`). Setoran dan ujian hanya untuk anggota halaqah yang dikirim pada tanggalnya.
+- `tahfidz_exams.halaqah_id` menyimpan halaqah santri saat ujian, sehingga ustadz pengampu hanya melihat setoran dan ujian halaqah yang ia ampu (sama dengan setoran). `certificate_no` (nomor syahadah) diisi manual, opsional, hanya untuk hasil `lulus`.
+- `tahfidz_targets` unik per (`academic_year_id`, `unit_id`, `grade_key`); target tingkat didahulukan, lalu target semua tingkat (`grade` NULL).
+- `pages` diisi penyimak (satu desimal, mushaf 15 baris); belum dihitung otomatis dari peta halaman mushaf.
 
 ## Perizinan, Kepulangan & Kunjungan
 
@@ -952,7 +959,9 @@ foreach (students aktif as $s) {
 | `room_assignments` | generated column stored `active_marker = CASE WHEN end_on IS NULL THEN 1 END`; unique (`student_id`, `active_marker`) | Satu penempatan aktif per santri. Baris riwayat bernilai NULL sehingga tidak saling bentrok (pola sama dengan catatan NULL di bawah) |
 | `rooms` | unique (`dormitory_id`, `name`) | Nama kamar unik per asrama |
 | `memorization_records` | index (`student_id`, `recorded_on`), (`halaqah_id`, `recorded_on`) | Riwayat setoran per santri dan rekap harian per halaqah |
-| `halaqah_members` | index (`student_id`, `left_on`) | Cari halaqah aktif santri |
+| `halaqah_members` | index (`student_id`, `left_on`); generated column stored `active_marker = CASE WHEN left_on IS NULL THEN 1 END`; unique (`student_id`, `active_marker`) | Cari halaqah aktif santri; satu keanggotaan aktif per santri |
+| `halaqahs` | unique (`academic_year_id`, `name`) | Nama halaqah unik per tahun ajaran |
+| `tahfidz_targets` | generated column stored `grade_key = COALESCE(grade, 0)`; unique (`academic_year_id`, `unit_id`, `grade_key`) | Satu target per tahun, jenjang, dan tingkat (termasuk "semua tingkat") |
 | `leave_requests` | index (`status`, `return_due`), (`student_id`, `status`) | Daftar santri yang sedang di luar dan yang terlambat kembali |
 | `leave_requests` | unique (`student_id`, `homecoming_period_id`) | Satu izin pulang massal per santri per periode |
 | `documents` | index (`documentable_type`, `documentable_id`, `document_type_id`), (`expires_on`); FK `source_applicant_document_id` → `applicant_documents` (`restrictOnDelete`) | Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa; berkas PSB yang sudah disalin tidak bisa dihapus |

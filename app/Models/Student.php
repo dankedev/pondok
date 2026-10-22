@@ -106,6 +106,22 @@ class Student extends Model
         return $this->hasMany(IssuedLetter::class);
     }
 
+    /**
+     * Riwayat keanggotaan halaqah tahfidz (F023).
+     */
+    public function halaqahMembers(): HasMany
+    {
+        return $this->hasMany(HalaqahMember::class);
+    }
+
+    /**
+     * Capaian hafalan per juz; juz tanpa baris berarti belum (F023).
+     */
+    public function juzProgress(): HasMany
+    {
+        return $this->hasMany(StudentJuzProgress::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);

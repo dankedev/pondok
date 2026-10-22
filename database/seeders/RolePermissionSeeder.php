@@ -51,6 +51,7 @@ class RolePermissionSeeder extends Seeder
         'Category', 'Post', 'Album', 'Video', 'StaticPage',
         'Achievement',
         'Halaqah', 'MemorizationRecord', 'TahfidzExam', 'TahfidzTarget',
+        'HealthVisit',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -250,11 +251,15 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Document', $readOnly),
                 // Mencatat prestasi santri (F015); verifikasi oleh admin sekolah.
                 ...self::resourcePermissions('Achievement', ['viewAny', 'view', 'create', 'update', 'delete']),
+                // Kesehatan santri (F031): mencatat dan mengoreksi; hapus hanya super-admin.
+                ...self::resourcePermissions('HealthVisit', ['viewAny', 'view', 'create', 'update']),
             ],
-            // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi.
+            // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi. Mencatat kesehatan
+            // santri binaannya (`HealthVisit::visibleStudents`); koreksi oleh kesantrian.
             'musyrif' => [
                 'view-dashboard',
                 ...self::resourcePermissions('RoomAssignment', $readOnly),
+                ...self::resourcePermissions('HealthVisit', ['viewAny', 'view', 'create']),
             ],
             // Pengampu melihat halaqah yang ia ampu (`Halaqah::visibleTo`), mencatat setoran dan ujian
             // anggotanya, dan menghapus setoran yang salah. Anggota halaqah dikelola admin sekolah.

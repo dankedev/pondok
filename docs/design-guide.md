@@ -234,6 +234,13 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Surat keluar | batal | `danger` |
 | Prestasi | terverifikasi | `success` |
 | Prestasi | belum diverifikasi | `warning` |
+| Capaian juz (tahfidz) | proses | `warning` |
+| Capaian juz (tahfidz) | hafal | `info` |
+| Capaian juz (tahfidz) | lulus ujian | `success` |
+| Capaian juz (tahfidz) | belum (tanpa baris) | `gray` |
+| Ujian tahfidz | lulus | `success` |
+| Ujian tahfidz | ulang | `warning` |
+| Anggota halaqah | di bawah target (dihitung, bukan status) | `warning` |
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |

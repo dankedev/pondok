@@ -43,7 +43,7 @@ it('AC-7: refuses a non super-admin, the user themself, and a user without MFA',
     ];
 
     foreach ($attempts as $case => [$actor, $subject, $exception]) {
-        expect(fn () => app(ResetUserMultiFactor::class)->handle($actor, $subject))->toThrow($exception, $case);
+        expect(fn () => app(ResetUserMultiFactor::class)->handle($actor, $subject))->toThrow($exception, null, $case);
     }
 
     expect(mfaRaw($this->target)['secret'])->not->toBeNull()

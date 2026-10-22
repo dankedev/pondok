@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\Guardians\Schemas;
 
-use Filament\Forms\Components\Select;
+use App\Models\Guardian;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
 class GuardianForm
@@ -14,11 +15,12 @@ class GuardianForm
         return $schema
             ->components([
                 ...self::fields(),
-                Select::make('user_id')
-                    ->label(__('pondok.guardian.user'))
-                    ->relationship('user', 'name')
-                    ->searchable(['name', 'email'])
-                    ->unique(ignoreRecord: true),
+                // Akun portal hanya ditautkan lewat aksi "Buat akun portal" (F022); di sini baca saja.
+                TextEntry::make('linked_account')
+                    ->label(__('pondok.portal_wali.linked_account'))
+                    ->state(fn (?Guardian $record): ?string => $record?->user?->email)
+                    ->placeholder(__('pondok.portal_wali.no_linked_account'))
+                    ->visibleOn('edit'),
             ]);
     }
 

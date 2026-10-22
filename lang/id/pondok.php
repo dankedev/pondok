@@ -2208,6 +2208,32 @@ return [
             'label' => 'Prestasi',
             'description' => 'Pencatatan dan verifikasi prestasi santri beserta rekapnya.',
         ],
+        'portal-wali' => [
+            'label' => 'Portal wali',
+            'description' => 'Wali santri masuk ke portal untuk melihat data santri, tagihan, dan dokumen.',
+        ],
+    ],
+
+    'portal_wali' => [
+        'home' => 'Beranda',
+        'no_students_heading' => 'Belum ada santri',
+        'no_students' => 'Belum ada santri yang terhubung dengan akun Anda. Hubungi admin pondok.',
+        'linked_account' => 'Akun portal wali',
+        'no_linked_account' => 'Belum punya akun portal.',
+        'create_account' => 'Buat akun portal',
+        'create_account_email' => 'Email wali',
+        'create_account_email_helper' => 'Tautan untuk mengatur password dikirim ke email ini.',
+        'create_account_confirm_heading' => 'Buat akun portal untuk :name?',
+        'create_account_confirm' => 'Tautan atur password dikirim ke email yang Anda isi. Pastikan email benar, karena siapa pun yang membuka tautan itu bisa masuk sebagai wali ini.',
+        'create_account_submit' => 'Buat akun dan kirim tautan',
+        'account_created' => 'Akun portal dibuat. Tautan atur password dikirim ke :email.',
+        'activity_account_created' => 'Akun portal wali dibuat',
+        'errors' => [
+            'module_disabled' => 'Modul Portal wali belum aktif.',
+            'invalid_email' => 'Isi alamat email yang valid.',
+            'email_taken' => 'Email ini sudah dipakai akun lain.',
+            'already_linked' => 'Wali ini sudah punya akun portal.',
+        ],
     ],
 
     'module_settings' => [

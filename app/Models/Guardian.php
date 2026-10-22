@@ -12,8 +12,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * Wali santri. Satu wali bisa terhubung ke beberapa santri bersaudara.
+ * `user_id` (akun portal wali) sengaja tidak fillable: hanya diisi `CreateGuardianPortalAccount`.
  */
-#[Fillable(['name', 'phone', 'occupation', 'address', 'user_id'])]
+#[Fillable(['name', 'phone', 'occupation', 'address'])]
 class Guardian extends Model
 {
     /** @use HasFactory<GuardianFactory> */

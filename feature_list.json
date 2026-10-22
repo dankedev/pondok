@@ -1031,14 +1031,25 @@
       "name": "MFA/2FA & verifikasi email (audit ISO 27001)",
       "phase": 1,
       "module": "Inti",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F001"],
       "description": "Aktifkan autentikasi dua faktor (email OTP atau aplikasi TOTP) untuk akun privilese dan verifikasi email. Keduanya menunggu email produksi (SMTP) terkonfigurasi.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "Migrasi data: user lama dengan email_verified_at NULL ditandai terverifikasi; kolom app_authentication_secret (encrypted) dan app_authentication_recovery_codes (encrypted:array) ditambahkan",
+        "MFA aplikasi (TOTP) Filament opsional untuk semua pengguna panel; secret terenkripsi di DB, recovery code di-hash",
+        "Login dengan MFA meminta kode; kode salah ditolak; recovery code bekerja sekali",
+        "Pengaturan MFA lewat halaman profil Filament; email OTP tidak diaktifkan",
+        "Banner peringatan hanya untuk super-admin dan bendahara tanpa MFA, hilang setelah MFA aktif",
+        "Super-admin mereset MFA pengguna lain lewat ResetUserMultiFactor (konfirmasi, activity log pengaturan tanpa secret); bukan untuk diri sendiri atau pengguna tanpa MFA",
+        "Operator server mereset MFA lewat artisan pondok:reset-mfa {email} (activity log pengaturan, tanpa causer)",
+        "Verifikasi email wajib (termasuk route kustom panel); user baru dan user yang emailnya diubah admin belum terverifikasi; super-admin bisa menandai email terverifikasi (MarkUserEmailVerified)",
+        "Ganti email di profil memakai email change verification Filament",
+        "CreateSuperAdmin menghasilkan akun terverifikasi, termasuk akun lama yang dipromosikan"
+      ],
+      "owner": "batch-mfa-wali-tahfidz",
       "handoff": null,
       "evidence": "",
-      "notes": "MFA email butuh SMTP; MFA aplikasi butuh dependensi QR/TOTP baru. Verifikasi email butuh MustVerifyEmail dan berisiko mengunci user bila email tidak terkirim. Sumber: docs/audits/iso-27001-annex-a-audit.md."
+      "notes": "Jalur penuh. Keputusan (22 Okt 2026): MFA aplikasi opsional, tanpa email OTP; verifikasi email wajib dengan migrasi data user lama dan aksi super-admin tandai terverifikasi; reset MFA khusus super-admin tanpa permission baru. Rencana: docs/plans/F055-plan.md"
     },
     {
       "id": "F056",

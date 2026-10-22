@@ -2344,6 +2344,22 @@ return [
         ],
     ],
 
+    'health_visit' => [
+        'fields' => [
+            'student_id' => 'Santri',
+            'visited_at' => 'Waktu kunjungan',
+            'complaint' => 'Keluhan',
+            'treatment' => 'Tindakan/obat',
+            'note' => 'Catatan',
+            'needs_referral' => 'Perlu rujukan',
+            'needs_leave' => 'Perlu izin pulang',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengelola catatan kesehatan ini.',
+            'student_unavailable' => 'Santri tidak ditemukan, tidak berstatus aktif, atau di luar cakupan Anda.',
+        ],
+    ],
+
     'modules' => [
         'akademik' => [
             'label' => 'Akademik',

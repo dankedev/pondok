@@ -1455,7 +1455,7 @@
       "name": "Label kelompok tagihan yang mudah dibaca di laporan keuangan",
       "phase": 1,
       "module": "Keuangan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [],
       "description": "Filter Kelompok tagihan di Laporan Keuangan dan daftar Tagihan menampilkan kode mentah billing_group (BULANAN, PSB_DAFTAR). Tampilkan label dari lang/id dengan fallback terbaca untuk kode buatan admin.",
       "acceptance": [
@@ -1465,9 +1465,9 @@
         "Kolom dan rincian tagihan memakai label yang sama",
         "Tanpa migration dan tanpa perubahan nilai tersimpan"
       ],
-      "owner": "batch-mfa-wali-tahfidz",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "commit 79aa9ac (label kelompok tagihan). Test F078 di FinanceReportTest lulus; Invoices resource 61 test lulus. Suite penuh PHP 8.4 4798 test: 4796 lulus, 5 skipped MySQL; 2 gagal karena .env worktree (APP_URL localhost:8000, password super-admin uji tanpa angka) dan lulus saat diulang dengan env yang benar. Pint lulus. Belum dicek visual (hanya teks opsi Select).",
       "notes": "Jalur cepat. Disetujui user 22 Okt 2026 (batch orkestrator). Rencana: docs/plans/F078-plan.md."
     }
   ]

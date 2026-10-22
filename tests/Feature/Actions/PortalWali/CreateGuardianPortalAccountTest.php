@@ -4,9 +4,12 @@ use App\Actions\PortalWali\CreateGuardianPortalAccount;
 use App\Filament\Resources\Guardians\Pages\CreateGuardian;
 use App\Filament\Resources\Guardians\Pages\EditGuardian;
 use App\Models\Guardian;
+use App\Models\Setting;
 use App\Models\User;
+use App\Notifications\GuardianPortalInvitation;
 use Filament\Facades\Filament;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -19,7 +22,7 @@ beforeEach(function () {
     $this->guardian = Guardian::factory()->create(['name' => 'Wali Baru']);
 });
 
-it('AC-11: the admin action creates a wali user, links it and sends one Laravel reset notification pointing at the wali portal', function () {
+it('AC-11: the admin action creates a wali user, links it and sends one portal invitation (not the Laravel reset notification) pointing at the wali portal', function () {
     Notification::fake();
     Filament::setCurrentPanel('admin');
     $this->actingAs($this->admin);
@@ -37,15 +40,18 @@ it('AC-11: the admin action creates a wali user, links it and sends one Laravel 
         ->and($user->name)->toBe('Wali Baru')
         ->and($this->guardian->fresh()->user_id)->toBe($user->id);
 
-    Notification::assertSentToTimes($user, ResetPasswordNotification::class, 1);
+    Notification::assertSentToTimes($user, GuardianPortalInvitation::class, 1);
+    Notification::assertNotSentTo($user, ResetPasswordNotification::class);
     $url = null;
-    Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $n) use ($user, &$url): bool {
+    Notification::assertSentTo($user, GuardianPortalInvitation::class, function (GuardianPortalInvitation $n) use ($user, &$url): bool {
         $url = $n->toMail($user)->actionUrl;
 
         return str_starts_with($url, route('portal-wali.password.reset', ['token' => $n->token]));
     });
 
-    expect($url)->toContain('/wali/atur-password/');
+    expect($url)->toContain('/wali/atur-password/')->toContain('undangan=1')->toContain('email=');
+    expect(DB::table('guardian_invitation_tokens')->where('email', 'wali@contoh.test')->count())->toBe(1)
+        ->and(DB::table('password_reset_tokens')->where('email', 'wali@contoh.test')->exists())->toBeFalse();
     $this->get($url)->assertOk();
 
     $activity = Activity::query()->where('log_name', 'akademik')->latest('id')->firstOrFail();
@@ -139,3 +145,39 @@ it('AC-14: a wrong token leaves the email unverified, a valid one verifies it; a
     expect($unverified->fresh()->email_verified_at)->not->toBeNull()
         ->and($verified->fresh()->email_verified_at->toDateTimeString())->toBe('2024-03-01 08:00:00');
 });
+
+it('AC-3: the invitation mail uses portal wording and the 72-hour validity', function () {
+    Notification::fake();
+    $user = app(CreateGuardianPortalAccount::class)->handle($this->guardian, 'wali@contoh.test', $this->admin);
+
+    Notification::assertSentTo($user, GuardianPortalInvitation::class, function (GuardianPortalInvitation $n) use ($user): bool {
+        $mail = $n->toMail($user);
+        $text = mb_strtolower($mail->subject.' '.implode(' ', array_map('strval', array_merge($mail->introLines, $mail->outroLines))).' '.$mail->actionText.' '.$mail->render());
+
+        expect($mail->subject)->toBe(__('pondok.portal_wali.invitation.subject'))
+            ->and($text)->toContain('password')->toContain('72 jam')->toContain('/wali/lupa-password')
+            ->not->toContain('surel')->not->toContain('kata sandi')->not->toContain('atur ulang kata sandi');
+
+        return true;
+    });
+});
+
+it('AC-10: failed account creation sends nothing and stores no invitation token', function (string $case) {
+    Notification::fake();
+    User::factory()->create(['email' => 'dipakai@contoh.test']);
+
+    match ($case) {
+        'used' => waliAssertRejected(fn () => app(CreateGuardianPortalAccount::class)->handle($this->guardian, 'dipakai@contoh.test', $this->admin)),
+        'invalid' => waliAssertRejected(fn () => app(CreateGuardianPortalAccount::class)->handle($this->guardian, 'bukan-email', $this->admin)),
+        'already linked' => waliAssertRejected(fn () => app(CreateGuardianPortalAccount::class)->handle($this->f->guardian, 'baru@contoh.test', $this->admin)),
+        'module off' => (function () {
+            Setting::set('modules.portal-wali.enabled', false);
+            Filament::setCurrentPanel('admin');
+            $this->actingAs($this->admin);
+            Livewire::test(EditGuardian::class, ['record' => $this->guardian->id])->assertActionHidden('createPortalAccount');
+        })(),
+    };
+
+    Notification::assertNothingSent();
+    expect(DB::table('guardian_invitation_tokens')->count())->toBe(0);
+})->with(['used', 'invalid', 'already linked', 'module off']);

@@ -4940,8 +4940,12 @@ function waliText(User $user, string $path = '/wali'): string
 /**
  * Atur ulang password lewat komponen Livewire portal wali (token dari broker, email diisi manual).
  */
-function waliReset(User $user, string $token, string $password, ?string $confirmation = null): Testable
+function waliReset(User $user, string $token, string $password, ?string $confirmation = null, bool $invitation = false): Testable
 {
+    if ($invitation) {
+        Livewire::withQueryParams(['undangan' => 1]);
+    }
+
     return Livewire::test(PortalResetPassword::class, ['token' => $token])
         ->set('email', $user->email)->set('password', $password)->set('password_confirmation', $confirmation ?? $password)
         ->call('resetPassword');

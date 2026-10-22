@@ -1,6 +1,4 @@
 <x-filament-panels::page>
-    @php($students = $this->getStudents())
-
     @if ($students->isEmpty())
         <x-filament::empty-state
             :heading="__('pondok.portal_wali.no_students_heading')"
@@ -11,10 +9,11 @@
         <ul class="grid gap-4" role="list">
             @foreach ($students as $student)
                 <li>
-                    <x-filament::section>
-                        <p class="text-base font-semibold text-gray-950">{{ $student->name }}</p>
-                        <p class="text-sm text-gray-600">{{ __('pondok.student.nis') }} {{ $student->nis }}</p>
-                    </x-filament::section>
+                    @include('filament.wali.partials.student-summary', [
+                        'student' => $student,
+                        'outstanding' => $outstanding[$student->id] ?? null,
+                        'link' => \App\Filament\Wali\Pages\ShowStudent::getUrl(['student' => $student->id]),
+                    ])
                 </li>
             @endforeach
         </ul>

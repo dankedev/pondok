@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Controllers\PortalWali\DownloadStudentDocument;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -17,6 +18,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /**
@@ -60,6 +62,11 @@ class WaliPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // Unduh dokumen santri: login panel wali, email terverifikasi, saklar Dokumen; hak akses di controller.
+            ->authenticatedRoutes(fn (Panel $panel) => Route::middleware([$panel->getEmailVerifiedMiddleware(), EnsureModuleIsEnabled::class.':dokumen,404'])
+                ->get('documents/{document}/download', DownloadStudentDocument::class)
+                ->whereNumber('document')
+                ->name('dokumen.download'));
     }
 }

@@ -158,7 +158,8 @@ it('AC-11: every non-core scheduled event is skipped when modules are off and ru
     $isCore = fn (Event $event): bool => $event->description === 'pondok:scheduler-heartbeat'
         || str_contains((string) $event->command, 'queue:work')
         || str_contains((string) $event->command, 'pondok:backup')
-        || str_contains((string) $event->command, 'pondok:redact-letter-snapshots');
+        || str_contains((string) $event->command, 'pondok:redact-letter-snapshots')
+        || str_contains((string) $event->command, 'pondok:prune-activity-log');
     $events = collect(app(Schedule::class)->events())->reject($isCore);
     $label = fn (Event $event): string => (string) ($event->command ?: $event->description);
 

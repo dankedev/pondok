@@ -52,3 +52,29 @@ it('AC-5: schedules the letter snapshot redaction at 03:00 Jakarta time, always,
         ->and($event->expiresAt)->toBe(120)
         ->and($event->filtersPass(app()))->toBeTrue();
 });
+
+it('F076 AC-8: schedules the activity log pruning at 03:30 Jakarta time only when a retention is set', function () {
+    $event = retentionScheduled('pondok:prune-activity-log');
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('30 3 * * *')
+        ->and((string) $event->timezone)->toBe('Asia/Jakarta')
+        ->and($event->withoutOverlapping)->toBeTrue()
+        ->and($event->expiresAt)->toBe(120)
+        ->and($event->filtersPass(app()))->toBeFalse();
+
+    Setting::set('retention.activity_log_months', null);
+    expect($event->filtersPass(app()))->toBeFalse();
+
+    Setting::set('retention.activity_log_months', 24);
+    expect($event->filtersPass(app()))->toBeTrue();
+});
+
+it('F076 AC-8: never schedules the unfiltered spatie activitylog:clean', function () {
+    Artisan::call('schedule:list');
+
+    $found = collect(app(Schedule::class)->events())
+        ->contains(fn (Event $event): bool => str_contains((string) $event->command, 'activitylog:clean'));
+
+    expect($found)->toBeFalse();
+});

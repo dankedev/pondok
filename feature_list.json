@@ -1450,16 +1450,21 @@
       "name": "Pembersihan activity log lama per periode (allowlist log_name)",
       "phase": 1,
       "module": "Inti",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": [
         "F042"
       ],
       "description": "Pecahan F042: masa simpan activity log dengan allowlist log_name; keuangan, sistem, pengaturan, dokumen, psb tidak pernah dihapus.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "Setting retention.activity_log_months kosong = tidak ada log dihapus; diisi minimal 24 bulan (maks 1200) di Pengaturan → Backup & masa simpan, perubahan tercatat di log sistem",
+        "Hanya log_name akademik dan konten (konstanta PruneActivityLog::PRUNABLE_LOG_NAMES) yang lebih tua dari masa simpan dihapus; keuangan, sistem, pengaturan, dokumen, psb, default, null, dan nama lain tidak pernah dihapus",
+        "Hapus ber-chunk portabel (chunkById + whereIn), idempoten, satu activity sistem/prune berisi jumlah bila ada yang dihapus",
+        "pondok:prune-activity-log terjadwal 03:30 WIB tanpa overlap hanya bila setting diisi; activitylog:clean tidak dijadwalkan"
+      ],
+      "owner": "batch-f076-f031",
       "handoff": null,
       "evidence": null,
-      "notes": "Ditunda menunggu keputusan user (perlu tidaknya, log_name dan masa simpan). Usulan dari batch malam 22 Okt 2026, issue #67."
+      "notes": "Jalur penuh. Disetujui user 23 Okt 2026 (komentar #67): default kosong, minimum 24 bulan, allowlist akademik dan konten."
     },
     {
       "id": "F077",

@@ -420,14 +420,24 @@
       "name": "Tahfidz",
       "phase": 3,
       "module": "Tahfidz",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F002"],
       "description": "Halaqah, setoran ziyadah/murajaah/tasmi' berbasis rentang surah-ayat, student_juz_progress, ujian dan syahadah.",
-      "acceptance": [],
-      "owner": null,
+      "acceptance": [
+        "Modul tahfidz (requires Akademik) dengan saklar; resource BelongsToModule; baris lama modules.tahfidz.enabled tidak ditimpa",
+        "quran_surahs 114 surah (total 6236 ayat) + peta awal 30 juz, jumlah ayat per juz terverifikasi test",
+        "Halaqah per tahun ajaran dengan pengampu; anggota berriwayat (pindah = tutup baris lama + baris baru), gender/jenjang cocok",
+        "Setoran ziyadah/murajaah/tasmi' rentang surah-ayat tervalidasi (lintas surah maju), santri anggota halaqah pada tanggal setoran, halaman diisi penyimak",
+        "student_juz_progress dihitung ulang Action dari ziyadah non-ulang dan ujian lulus (proses/hafal/lulus_ujian), idempoten",
+        "Ujian kenaikan_juz/tasmi_5_juz/khataman dengan nomor syahadah unik untuk hasil lulus",
+        "Target hafalan per tahun ajaran, jenjang, tingkat (fallback semua tingkat) dan penanda di bawah target",
+        "Permission admin-sekolah & ustadz-tahfidz; ustadz hanya melihat/mencatat setoran dan ujian halaqah yang diampu (scope, policy, Action), anggota hanya diatur pemegang update:halaqah; cakupan unit_user",
+        "Data demo tahfidz sesuai manhaj; progres hafalan di portal wali menyusul setelah portal wali dibangun ulang (issue terpisah)"
+      ],
+      "owner": "batch-mfa-wali-tahfidz",
       "handoff": null,
       "evidence": "",
-      "notes": "Fase 3. Keputusan user 16 Okt 2026: mushaf Madinah 15 baris; target hafalan diatur admin (tahfidz_targets)."
+      "notes": "Jalur penuh. Fase 3. Keputusan user 16 Okt 2026: mushaf Madinah 15 baris; target hafalan diatur admin (tahfidz_targets). Rencana: docs/plans/F023-plan.md"
     },
     {
       "id": "F024",

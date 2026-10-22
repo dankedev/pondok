@@ -105,8 +105,12 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:dormitory-supervisor', 'view:dormitory-supervisor', 'create:dormitory-supervisor', 'update:dormitory-supervisor',
         'view-any:document', 'view:document',
         'view-any:achievement', 'view:achievement', 'create:achievement', 'update:achievement', 'delete:achievement',
+        'view-any:health-visit', 'view:health-visit', 'create:health-visit', 'update:health-visit',
     ]],
-    'musyrif' => ['musyrif', ['view-dashboard', 'view-any:room-assignment', 'view:room-assignment']],
+    'musyrif' => ['musyrif', [
+        'view-dashboard', 'view-any:room-assignment', 'view:room-assignment',
+        'view-any:health-visit', 'view:health-visit', 'create:health-visit',
+    ]],
     'ustadz-tahfidz' => ['ustadz-tahfidz', [
         'view-dashboard',
         'view-any:halaqah', 'view:halaqah',

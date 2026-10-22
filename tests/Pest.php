@@ -2,6 +2,7 @@
 
 use App\Actions\Dokumen\IssueLetter;
 use App\Actions\Dokumen\LetterNumbering;
+use App\Actions\Kesehatan\RecordHealthVisit;
 use App\Actions\Keuangan\CancelPayment;
 use App\Actions\Keuangan\FinanceReportFilter;
 use App\Actions\Keuangan\GenerateAnnualInvoices;
@@ -37,6 +38,7 @@ use App\Models\Cohort;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Dormitory;
+use App\Models\DormitorySupervisor;
 use App\Models\Enrollment;
 use App\Models\FeeOverride;
 use App\Models\FeeRate;
@@ -44,6 +46,7 @@ use App\Models\FeeType;
 use App\Models\Guardian;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
+use App\Models\HealthVisit;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\IssuedLetter;
@@ -74,6 +77,7 @@ use Database\Seeders\StaticPageSeeder;
 use Database\Seeders\UnitSeeder;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
@@ -5208,4 +5212,144 @@ function tahfidzRejected(Closure $callback, string|array $fields): void
 function tahfidzIndexPage(string $resource): string
 {
     return $resource::getPages()['index']->getPage();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper modul Kesehatan (F031)
+|--------------------------------------------------------------------------
+|
+| Berawalan `kesehatan`. Waktu dibekukan di 15 Okt 2026 10.00 WIB.
+|
+*/
+
+/**
+ * Seeder, saklar modul, tahun ajaran aktif, dan akun per peran.
+ *
+ * Santri: s1 SLTP penghuni Kamar A, s2 SLTP penghuni Kamar B, s3 SLTP nonmukim, s4 SLTA penghuni Kamar C.
+ * `musyrif` mengawasi asrama Kamar A; `idle` pernah mengawasi tetapi penugasannya sudah berakhir.
+ *
+ * @return object{year: AcademicYear, sltp: Unit, slta: Unit, admin: User, kes: User, kesSltp: User, musyrif: User, idle: User, s1: Student, s2: Student, s3: Student, s4: Student, roomA: Room, roomB: Room, roomC: Room}
+ */
+function kesehatanFixture(): object
+{
+    $f = tahfidzBoot();
+    Setting::set('modules.kesehatan.enabled', true);
+    Setting::set('modules.asrama.enabled', true);
+
+    $f->admin = asramaUser('super-admin');
+    $f->kes = asramaUser('kesantrian');
+    $f->kesSltp = asramaUser('kesantrian', ['SLTP']);
+
+    $f->roomA = asramaRoom();
+    $f->roomB = asramaRoom();
+    $f->roomC = asramaRoom();
+
+    $f->s1 = tahfidzStudent($f, 'L', null, ['name' => 'Santri Satu']);
+    $f->s2 = tahfidzStudent($f, 'L', null, ['name' => 'Santri Dua']);
+    $f->s3 = tahfidzStudent($f, 'L', null, ['name' => 'Santri Tiga']);
+    $f->s4 = tahfidzStudent($f, 'L', $f->slta, ['name' => 'Santri Empat']);
+    asramaResident($f->s1, $f->roomA);
+    asramaResident($f->s2, $f->roomB);
+    asramaResident($f->s4, $f->roomC);
+
+    $f->musyrif = asramaUser('musyrif');
+    $staff = Staff::factory()->create(['user_id' => $f->musyrif->id, 'gender' => 'L', 'position' => 'musyrif']);
+    DormitorySupervisor::factory()->create([
+        'dormitory_id' => $f->roomA->dormitory_id, 'room_id' => null, 'staff_id' => $staff->id, 'academic_year_id' => $f->year->id,
+    ]);
+
+    $f->idle = asramaUser('musyrif');
+    $idleStaff = Staff::factory()->create(['user_id' => $f->idle->id, 'gender' => 'L', 'position' => 'musyrif']);
+    DormitorySupervisor::factory()->ended()->create([
+        'dormitory_id' => $f->roomA->dormitory_id, 'room_id' => null, 'staff_id' => $idleStaff->id, 'academic_year_id' => $f->year->id,
+    ]);
+
+    return $f;
+}
+
+/**
+ * Data valid untuk `RecordHealthVisit` (santri `s1`, kemarin sore).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function kesehatanData(object $f, array $overrides = []): array
+{
+    return [
+        'student_id' => $f->s1->id,
+        'visited_at' => '2026-10-14 16:30',
+        'complaint' => 'Demam dan sakit kepala sejak semalam',
+        'treatment' => 'Istirahat dan parasetamol',
+        'note' => 'Dipantau musyrif malam ini',
+        'needs_referral' => false,
+        'needs_leave' => false,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Catatan langsung lewat model (tanpa Action dan tanpa activity log).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function kesehatanRaw(Student $student, array $attributes = []): HealthVisit
+{
+    return HealthVisit::query()->forceCreate([
+        'student_id' => $student->id,
+        'visited_at' => '2026-10-14 16:30',
+        'complaint' => 'Batuk pilek',
+        'treatment' => null,
+        'note' => null,
+        'needs_referral' => false,
+        'needs_leave' => false,
+        'recorded_by' => null,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Catat lewat Action sebagai `$actor` (user ikut login karena Action memakai Gate).
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function kesehatanRecord(object $f, User $actor, array $overrides = []): HealthVisit
+{
+    test()->actingAs($actor);
+
+    return app(RecordHealthVisit::class)->handle($actor, kesehatanData($f, $overrides));
+}
+
+/**
+ * @return Collection<int, Activity>
+ */
+function kesehatanActivities(?string $event = null): Collection
+{
+    return Activity::query()
+        ->where('log_name', 'kesehatan')
+        ->when($event, fn ($query) => $query->where('event', $event))
+        ->orderBy('id')
+        ->get();
+}
+
+/**
+ * Select santri pada form catat (opsi statis ditambah hasil pencarian `$search`).
+ *
+ * @return list<int>
+ */
+function kesehatanStudentOptions(Testable $component, string $search = ''): array
+{
+    $select = collect($component->instance()->form->getFlatComponents(withHidden: true))
+        ->first(fn ($child, $key): bool => $child instanceof Select && str_ends_with((string) $key, 'student_id'));
+
+    expect($select)->toBeInstanceOf(Select::class, 'Select student_id tidak ditemukan');
+
+    $options = $select->getOptions();
+
+    try {
+        $options += $select->getSearchResults($search);
+    } catch (Throwable) {
+    }
+
+    return array_map('intval', array_keys($options));
 }

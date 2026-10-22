@@ -107,9 +107,10 @@ it('VERIFY: hiding Daftar keeps Masuk, and page items disappear when the konten 
     expect($texts)->toContain(__('pondok.portal.nav.register'));
 
     navSet([navItem('home'), navPage($page)], false);
-    $texts = array_column(portalNavLinks($this->get('/')->getContent())['desktop'], 'text');
-    expect($texts)->not->toContain(__('pondok.portal.nav.register'))
-        ->and(collect($texts)->contains(fn ($t) => str_contains(mb_strtolower($t), 'masuk')))->toBeTrue();
+    $links = portalNavLinks($this->get('/')->getContent())['desktop'];
+    // F082: Masuk bisa berupa grup (portal wali aktif); yang dijaga adalah tautan login admin tetap ada.
+    expect(array_column($links, 'text'))->not->toContain(__('pondok.portal.nav.register'))
+        ->and(array_column($links, 'href'))->toContain(route('filament.admin.auth.login'));
 });
 
 it('VERIFY: nav and footer do not run per-link queries on pages (no N+1)', function () {

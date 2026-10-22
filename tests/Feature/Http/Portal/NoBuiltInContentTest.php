@@ -137,7 +137,7 @@ it('AC-39: a fresh install has only the three system pages and interface labels'
         ->and(Setting::get('portal.footer_widgets'))->toBeNull();
 
     $labels = portalNavTexts($this->get('/')->assertOk()->getContent());
-    $interface = [__('pondok.portal.nav.home'), __('pondok.portal.nav.news'), __('pondok.portal.nav.gallery'), __('pondok.portal.nav.videos'), __('pondok.portal.nav.psb_info'), __('pondok.portal.nav.login'), __('pondok.portal.nav.register')];
+    $interface = [__('pondok.portal.nav.home'), __('pondok.portal.nav.news'), __('pondok.portal.nav.gallery'), __('pondok.portal.nav.videos'), __('pondok.portal.nav.psb_info'), __('pondok.portal.nav.login'), __('pondok.portal.nav.login_wali'), __('pondok.portal.nav.login_staff'), __('pondok.portal.nav.register')];
 
     expect(array_values(array_diff($labels, $interface)))->toBe([]);
 });

@@ -16,6 +16,8 @@ use App\Models\StaticPage;
 beforeEach(function () {
     portalBoot();
     Setting::set('modules.psb.enabled', false);
+    // F082: dengan portal wali aktif, Masuk menjadi grup pilihan; test menu ini tentang susunan menu.
+    Setting::set('modules.portal-wali.enabled', false);
 });
 
 it('AC-3: the default menu matches the previous header when the keys are missing', function () {

@@ -15,7 +15,7 @@ Kartunya justru bersudut tajam (radius 0). Kesan lembutnya datang dari:
 
 ## Token asli → token Pondok
 
-| Peran | Course X | Pondok (logo Al-Khair) |
+| Peran | Course X | Pondok |
 |---|---|---|
 | Primer (tombol, ikon, aksen) | hijau `#079561` | navy logo `#000A3C` (sampel dominan `#000840`) |
 | Aksen | hijau yang sama | emas logo `#F8B800` |

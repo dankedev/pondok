@@ -22,7 +22,7 @@ it('AC-10: lists only current non-confidential documents of own students', funct
 });
 
 it('AC-10: downloads an own document as a private attachment from the private disk', function () {
-    $response = $this->actingAs($this->f->wali)->get("/wali/documents/{$this->own->id}/download")->assertOk();
+    $response = $this->actingAs($this->f->wali)->get("/wali/dokumen/{$this->own->id}/unduh")->assertOk();
 
     expect($response->streamedContent())->toBe('isi-ijazah')
         ->and($response->headers->get('Content-Disposition'))->toContain('attachment')
@@ -38,10 +38,10 @@ it('AC-10: refuses replaced, confidential, guardian and missing-file documents w
         'missing file' => tap(dokumenCreate($this->f->s1, $this->oldType), fn ($d) => Storage::disk('private')->delete($d->file_path)),
     };
 
-    $this->actingAs($this->f->wali)->get("/wali/documents/{$this->own->id}/download")->assertOk();
-    $this->get("/wali/documents/{$document->id}/download")->assertNotFound();
+    $this->actingAs($this->f->wali)->get("/wali/dokumen/{$this->own->id}/unduh")->assertOk();
+    $this->get("/wali/dokumen/{$document->id}/unduh")->assertNotFound();
 })->with(['replaced', 'confidential', 'guardian', 'missing file']);
 
 it('AC-10: guests cannot download', function () {
-    $this->get("/wali/documents/{$this->own->id}/download")->assertRedirect('/wali/login');
+    $this->get("/wali/dokumen/{$this->own->id}/unduh")->assertRedirect('/wali/masuk');
 });

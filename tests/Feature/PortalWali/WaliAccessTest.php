@@ -10,25 +10,31 @@ beforeEach(function () {
     $this->f = waliBoot();
 });
 
-it('AC-3: lets an active wali into the wali panel but not into the admin panel', function () {
+it('AC-3: lets an active wali into the wali portal but not into the admin panel', function () {
     $this->actingAs($this->f->wali);
 
     $this->get('/wali')->assertOk();
     $this->get('/admin')->assertForbidden();
 });
 
-it('AC-3: keeps built-in non-wali roles out of the wali panel', function (string $role) {
-    $this->actingAs(keuanganUser($role))->get('/wali')->assertForbidden();
+it('AC-3: keeps built-in non-wali roles out of the wali portal with the admin-login hint', function (string $role) {
+    $this->actingAs(keuanganUser($role))->get('/wali')->assertForbidden()->assertSee('masuk lewat halaman admin');
 })->with(['super-admin', 'bendahara', 'admin-konten', 'admin-sekolah', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos']);
 
 it('AC-3: keeps an inactive wali out and sends guests to the wali login', function () {
     $this->f->wali->forceFill(['is_active' => false])->save();
 
-    $this->get('/wali')->assertRedirect('/wali/login');
+    $this->get('/wali')->assertRedirect(route('portal-wali.login'));
     $this->actingAs($this->f->wali)->get('/wali')->assertForbidden();
+    $this->get('/wali/masuk')->assertRedirect(route('portal-wali.home'));
 });
 
-it('AC-3: lets a bendahara who is also a wali into both panels, seeing only linked students in the wali panel', function () {
+it('AC-3: a signed-in staff user without the wali role opening the wali login lands on a 403 that points to the admin login', function () {
+    $this->actingAs(keuanganUser('bendahara'))->get('/wali/masuk')->assertRedirect(route('portal-wali.home'));
+    $this->get('/wali')->assertForbidden()->assertSee('Staf pondok masuk lewat halaman admin');
+});
+
+it('AC-3: lets a bendahara who is also a wali into both areas, seeing only linked students in the wali portal', function () {
     $user = User::factory()->create()->assignRole(['bendahara', 'wali']);
     $this->f->guardian->forceFill(['user_id' => $user->id])->save();
 
@@ -55,8 +61,8 @@ it('AC-7: a wali scoped to another unit still sees own student, class, room, inv
     expect(waliText($f->wali, "/wali/santri/{$f->s1->id}"))->toContain($invoice->invoice_no)->toContain('Ijazah Terbuka');
     expect(waliText($f->wali, "/wali/tagihan/{$invoice->id}"))->toContain('Rp 150.000');
 
-    $this->get("/wali/documents/{$document->id}/download")->assertOk();
+    $this->get("/wali/dokumen/{$document->id}/unduh")->assertOk();
     $this->get("/wali/santri/{$f->o1->id}")->assertNotFound();
     $this->get("/wali/tagihan/{$otherInvoice->id}")->assertNotFound();
-    $this->get("/wali/documents/{$otherDocument->id}/download")->assertNotFound();
+    $this->get("/wali/dokumen/{$otherDocument->id}/unduh")->assertNotFound();
 });

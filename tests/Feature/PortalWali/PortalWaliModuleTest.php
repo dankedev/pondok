@@ -3,10 +3,12 @@
 use App\Actions\PortalWali\CreateGuardianPortalAccount;
 use App\Enums\Module;
 use App\Filament\Resources\Guardians\Pages\EditGuardian;
+use App\Livewire\PortalWali\ForgotPassword as PortalForgotPassword;
+use App\Livewire\PortalWali\Login as PortalLogin;
+use App\Livewire\PortalWali\ResetPassword as PortalResetPassword;
 use App\Models\Guardian;
 use App\Models\Setting;
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -24,29 +26,51 @@ it('AC-1: declares the portal-wali module that requires Akademik with Indonesian
 it('AC-2: answers 404 on every wali route when the module is off, even for a signed-in wali', function () {
     $invoice = waliInvoice($this->f, $this->f->s1);
     $document = dokumenCreate($this->f->s1, dokumenType(['name' => 'Ijazah Terbuka']));
-    $this->get('/wali/login')->assertOk();
+    $this->get('/wali/masuk')->assertOk();
     $this->actingAs($this->f->wali)->get('/wali')->assertOk();
     Setting::set('modules.portal-wali.enabled', false);
 
-    $this->get('/wali/login')->assertNotFound();
+    $paths = ['/wali', '/wali/masuk', '/wali/lupa-password', '/wali/atur-password/token-apa-saja', '/wali/email/verifikasi',
+        "/wali/santri/{$this->f->s1->id}", "/wali/tagihan/{$invoice->id}", "/wali/dokumen/{$document->id}/unduh"];
 
-    foreach (['/wali', "/wali/santri/{$this->f->s1->id}", "/wali/tagihan/{$invoice->id}", "/wali/documents/{$document->id}/download"] as $path) {
+    foreach ($paths as $path) {
         $this->get($path)->assertNotFound();
     }
+
+    $this->post('/wali/email/verifikasi')->assertNotFound();
+    $this->post('/wali/keluar')->assertNotFound();
 });
 
-it('AC-2: closes every wali page via canAccess when the module is off', function () {
-    Filament::setCurrentPanel('wali');
-    $this->actingAs($this->f->wali);
-    $pages = Filament::getPanel('wali')->getPages();
-
-    expect($pages)->not->toBeEmpty();
-
+it('AC-2: answers 404, not a login redirect, to a guest on every wali route when the module is off', function (string $route) {
+    $invoice = waliInvoice($this->f, $this->f->s1);
+    $document = dokumenCreate($this->f->s1, dokumenType(['name' => 'Ijazah Terbuka']));
     Setting::set('modules.portal-wali.enabled', false);
 
-    foreach ($pages as $page) {
-        expect($page::canAccess())->toBeFalse("{$page} masih terbuka saat portal-wali mati");
-    }
+    $path = match ($route) {
+        'masuk' => '/wali/masuk',
+        'beranda' => '/wali',
+        'santri' => "/wali/santri/{$this->f->s1->id}",
+        'tagihan' => "/wali/tagihan/{$invoice->id}",
+        'unduh' => "/wali/dokumen/{$document->id}/unduh",
+    };
+
+    $this->get($path)->assertNotFound();
+})->with(['masuk', 'beranda', 'santri', 'tagihan', 'unduh']);
+
+it('AC-2: a login, forgot-password and reset component loaded before the module is switched off answers 404 on its action', function () {
+    Notification::fake();
+    $login = Livewire::test(PortalLogin::class);
+    $forgot = Livewire::test(PortalForgotPassword::class);
+    $reset = Livewire::test(PortalResetPassword::class, ['token' => 'token-apa-saja']);
+    Setting::set('modules.portal-wali.enabled', false);
+
+    $login->set('email', $this->f->wali->email)->set('password', 'password')->call('authenticate')->assertNotFound();
+    $forgot->set('email', $this->f->wali->email)->call('send')->assertNotFound();
+    $reset->set('email', $this->f->wali->email)->set('password', 'Password-Baru-123!')->set('password_confirmation', 'Password-Baru-123!')
+        ->call('resetPassword')->assertNotFound();
+
+    $this->assertGuest();
+    Notification::assertNothingSent();
 });
 
 it('AC-2: hides the create-account action and the Action refuses when the module is off', function () {

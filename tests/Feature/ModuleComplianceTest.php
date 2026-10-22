@@ -177,13 +177,27 @@ it('AC-11: every non-core scheduled event is skipped when modules are off and ru
         ->toBe([], 'Event jadwal terblokir saat semua modul aktif');
 });
 
-it('AC-9: every wali panel page declares portal-wali and the panel is guarded by the module middleware', function () {
-    $panel = Filament::getPanel('wali');
-    $wrong = collect($panel->getPages())
-        ->reject(fn (string $page): bool => componentModule($page) === Module::PortalWali)
-        ->values()->all();
+it('AC-9: portal wali has no Filament panel and every portal-wali route is module guarded', function () {
+    $guard = EnsureModuleIsEnabled::class;
+    $routes = collect(Route::getRoutes()->getRoutes())->filter(fn ($route): bool => str_starts_with((string) $route->getName(), 'portal-wali.'));
+    $extra = ['portal-wali.invoices.show' => 'keuangan', 'portal-wali.documents.download' => 'dokumen'];
 
-    expect($panel->getPages())->not->toBeEmpty()
-        ->and($wrong)->toBe([], 'Halaman panel wali tanpa modul portal-wali: '.implode(', ', $wrong))
-        ->and($panel->getMiddleware())->toContain(EnsureModuleIsEnabled::class.':portal-wali,404');
+    expect(Filament::getPanels())->not->toHaveKey('wali')
+        ->and(collect(Route::getRoutes()->getRoutes())->filter(fn ($route): bool => str_starts_with((string) $route->getName(), 'filament.wali.')))->toBeEmpty()
+        ->and(file_get_contents(base_path('bootstrap/providers.php')))->not->toContain('WaliPanelProvider')
+        ->and($routes->map(fn ($route): string => $route->getName())->all())->toContain(
+            'portal-wali.login', 'portal-wali.password.request', 'portal-wali.password.reset', 'portal-wali.verification.notice',
+            'portal-wali.verification.verify', 'portal-wali.verification.send', 'portal-wali.logout', 'portal-wali.home',
+            'portal-wali.students.show', 'portal-wali.invoices.show', 'portal-wali.documents.download',
+        );
+
+    foreach ($routes as $route) {
+        $middleware = $route->gatherMiddleware();
+
+        expect($middleware)->toContain($guard.':portal-wali,404', "{$route->getName()} tanpa saklar portal-wali");
+
+        if (isset($extra[$route->getName()])) {
+            expect($middleware)->toContain($guard.':'.$extra[$route->getName()].',404', "{$route->getName()} tanpa saklar {$extra[$route->getName()]}");
+        }
+    }
 });

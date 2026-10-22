@@ -51,11 +51,13 @@ it('AC-5: a wali gets 404 on student, invoice and document of another wali, and 
     $this->get("/wali/santri/{$f->s1->id}")->assertOk();
     $this->get("/wali/santri/{$f->o1->id}")->assertNotFound();
     $this->get("/wali/tagihan/{$invoice->id}")->assertNotFound();
-    $this->get("/wali/documents/{$document->id}/download")->assertNotFound();
+    $this->get("/wali/dokumen/{$document->id}/unduh")->assertNotFound();
     $this->get('/wali/santri/999999')->assertNotFound();
     $this->get('/wali/tagihan/999999')->assertNotFound();
-    $this->get('/wali/documents/999999/download')->assertNotFound();
-    $this->get('/wali/documents/abc/download')->assertNotFound();
+    $this->get('/wali/dokumen/999999/unduh')->assertNotFound();
+    $this->get('/wali/dokumen/abc/unduh')->assertNotFound();
+    $this->get('/wali/santri/abc')->assertNotFound();
+    $this->get('/wali/tagihan/abc')->assertNotFound();
 });
 
 it('AC-6: an archived student or a detached link disappears from home and every page', function (string $case) {
@@ -72,8 +74,29 @@ it('AC-6: an archived student or a detached link disappears from home and every 
 
     $this->get("/wali/santri/{$f->s1->id}")->assertNotFound();
     $this->get("/wali/tagihan/{$invoice->id}")->assertNotFound();
-    $this->get("/wali/documents/{$document->id}/download")->assertNotFound();
+    $this->get("/wali/dokumen/{$document->id}/unduh")->assertNotFound();
 })->with(['archived', 'detached']);
+
+it('AC-13: more than ten invoices are paginated', function () {
+    $f = $this->f;
+
+    foreach (range(1, 11) as $month) {
+        waliInvoice($f, $f->s1, [], sprintf('2025-%02d-01', $month));
+    }
+
+    $text = waliText($f->wali, "/wali/santri/{$f->s1->id}");
+    $invoices = Invoice::query()->where('student_id', $f->s1->id)->get();
+
+    expect($invoices->filter(fn (Invoice $i): bool => str_contains($text, $i->invoice_no)))->toHaveCount(10)
+        ->and(bayarHtmlText($this->get("/wali/santri/{$f->s1->id}?page=2")->assertOk()->getContent()))->toContain('Ahmad Satu');
+});
+
+it('AC-1: the wali pages render inside the public portal layout and are not indexable', function () {
+    $response = $this->actingAs($this->f->wali)->get('/wali')->assertOk();
+
+    $response->assertSee(config('app.name'))->assertSee(__('pondok.portal.nav.skip_to_content'));
+    expect($response->getContent())->toContain('noindex');
+});
 
 it('AC-8: the student page shows non-cancelled invoices with total, remaining and status but never NISN or address', function () {
     $f = $this->f;

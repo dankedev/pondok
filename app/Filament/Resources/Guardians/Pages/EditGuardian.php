@@ -15,6 +15,7 @@ class EditGuardian extends EditRecord
     {
         return [
             GuardianResource::createPortalAccountAction(),
+            GuardianResource::resendPortalInvitationAction(),
             // Pemilik dokumen tidak dihapus (relasi polymorphic tanpa FK); dicek tanpa cakupan jenjang.
             DeleteAction::make()
                 ->hidden(fn (Guardian $record): bool => $record->hasAnyDocuments()),

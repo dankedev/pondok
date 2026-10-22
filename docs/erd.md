@@ -2,7 +2,7 @@
 
 > Sumber: diskusi desain Pondok (pondok.org), Oktober 2026. Diagram Mermaid tampil langsung di GitHub. Kolom `created_at`/`updated_at` ada di semua tabel dan tidak ditulis di diagram.
 
-Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Dokumen, Prestasi, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.
+Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Dokumen, Prestasi, Kesehatan, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.
 
 ## Ringkasan relasi antar modul
 
@@ -44,6 +44,7 @@ erDiagram
   achievements ||--o{ achievement_student : "peserta"
   students ||--o{ achievement_student : "prestasi"
   achievements |o--o| posts : "dipublikasikan"
+  students ||--o{ health_visits : "kunjungan kesehatan"
   admission_waves ||--o{ applicants : "gelombang"
   applicants |o--o| students : "diterima jadi"
   applicants ||--o{ applicant_documents : "berkas"
@@ -501,6 +502,34 @@ erDiagram
 - **Publikasi ke website:** prestasi dengan `is_public` bisa diterbitkan menjadi berita lewat `posts.achievement_id`. Data prestasi tetap satu sumber, dan widget prestasi di dashboard serta halaman publik mengambil dari tabel yang sama.
 - Kelulusan ujian khataman di modul tahfidz bisa otomatis diusulkan sebagai prestasi kategori tahfidz tingkat pondok.
 - Nanti, modul kedisiplinan bisa memakai prestasi ini sebagai poin positif yang mengimbangi poin pelanggaran.
+
+## Kesehatan
+
+```mermaid
+erDiagram
+  health_visits {
+    bigint id PK
+    bigint student_id FK
+    datetime visited_at "Asia/Jakarta"
+    text complaint "encrypted"
+    text treatment "encrypted, nullable"
+    text note "encrypted, nullable"
+    boolean needs_referral "default false"
+    boolean needs_leave "default false"
+    bigint recorded_by FK "users, nullable"
+  }
+  students ||--o{ health_visits : ""
+  users ||--o{ health_visits : "petugas"
+
+```
+
+- **Kunjungan/keluhan kesehatan santri** (UKS/poskestren, F031): kapan, keluhan, tindakan/obat, perlu rujukan, perlu izin pulang. Dicatat, diubah, dan dihapus hanya lewat `App\Actions\Kesehatan\*`.
+- **Data sensitif:** `complaint`, `treatment`, `note` memakai cast `encrypted`, sehingga tidak bisa dicari atau diurutkan. Pencarian hanya nama/NIS santri; filter tanggal, jenjang, dan rujukan. `APP_KEY` yang berganti membuat teks ini tidak terbaca.
+- **Activity log `kesehatan`** ditulis manual di Action (`created`, `updated`, `deleted`) dan hanya memuat `student_id`, `visited_at`, dua flag, dan untuk `updated` daftar **nama** kolom yang berubah. Isi keluhan/tindakan/catatan tidak pernah masuk log. Log ini tidak dipangkas `PruneActivityLog`.
+- **Catat** hanya untuk santri berstatus `aktif`; `visited_at` tidak boleh di masa depan; teks maksimal 1.000 karakter. **Ubah** tidak mengganti santri maupun `recorded_by`, dan tetap boleh untuk santri yang sudah lulus/keluar. Salah santri: hapus lalu catat ulang.
+- **Hapus** hanya super-admin, satu per satu, tanpa soft delete dan tanpa hapus massal. FK `student_id` `cascadeOnDelete` (hanya terjadi saat force delete santri); `recorded_by` `nullOnDelete`. Index (`student_id`, `visited_at`) dan (`visited_at`).
+- **Cakupan:** jenjang dibaca lewat santri (termasuk yang terarsip). Pemegang `view-any:student` (super-admin, kesantrian) melihat semua santri dalam cakupan jenjangnya; selain itu (musyrif) hanya santri dengan penempatan kamar aktif di asrama/kamar yang ia awasi (`HealthVisit::visibleStudents`). Catatan santri yang pindah kamar tidak lagi terlihat oleh musyrif lamanya.
+- **Peran:** kesantrian lihat/catat/ubah; musyrif lihat/catat untuk santri binaannya; peran lain tanpa akses.
 
 ## Penerimaan Santri Baru (PSB)
 

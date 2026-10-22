@@ -78,7 +78,7 @@ it('AC-2: setting seeder creates the seven enum modules enabled and no tahfidz o
         expect(Setting::query()->find("modules.{$module->value}.enabled")?->value)->toBeTrue("modul {$module->value}");
     }
 
-    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(7)
+    expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(8)
         ->and(Setting::query()->whereKey('modules.tahfidz.enabled')->exists())->toBeFalse()
         ->and(Setting::query()->whereKey('modules.perizinan.enabled')->exists())->toBeFalse();
 });

@@ -11,7 +11,8 @@ use Spatie\Permission\Models\Role;
 
 /**
  * Membuat akun super-admin, atau memberi peran super-admin ke akun yang
- * emailnya sudah ada tanpa mengubah nama dan passwordnya.
+ * emailnya sudah ada tanpa mengubah nama dan passwordnya. Akun itu dijamin
+ * terverifikasi emailnya (F055).
  */
 class CreateSuperAdmin
 {
@@ -38,6 +39,11 @@ class CreateSuperAdmin
                 'is_active' => true,
                 'email_verified_at' => now(),
             ])->save();
+        }
+
+        // Jalan keluar bila SMTP belum bisa mengirim email verifikasi.
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
         }
 
         if (! $user->hasRole(RolePermissionSeeder::SUPER_ADMIN)) {

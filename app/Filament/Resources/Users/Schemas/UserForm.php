@@ -30,7 +30,14 @@ class UserForm
                             ->email()
                             ->required()
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->unique(ignoreRecord: true)
+                            // Email sendiri diubah lewat profil agar alur verifikasi ganti email berlaku (F055).
+                            ->disabled(fn (?User $record): bool => $record?->is(auth()->user()) ?? false)
+                            ->helperText(fn (string $operation, ?User $record): ?string => match (true) {
+                                $operation === 'create' => __('pondok.user.email_create_helper'),
+                                $record?->is(auth()->user()) ?? false => __('pondok.user.email_self_helper'),
+                                default => null,
+                            }),
                         TextInput::make('password')
                             ->label(__('pondok.user.password'))
                             ->password()

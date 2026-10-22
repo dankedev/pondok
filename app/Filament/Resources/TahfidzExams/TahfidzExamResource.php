@@ -126,6 +126,7 @@ class TahfidzExamResource extends Resource
         return Action::make('create')
             ->label(__('pondok.tahfidz.exam.create'))
             ->icon(Heroicon::OutlinedPlus)
+            ->modalSubmitActionLabel(__('pondok.tahfidz.save'))
             ->authorize(fn (): bool => static::canCreate())
             ->schema([
                 Section::make()

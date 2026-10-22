@@ -40,8 +40,8 @@ Dua permukaan, nama semantik yang sama:
 
 | Peran | Filament (`AdminPanelProvider`) | Tailwind (`resources/css/app.css`) | Pakai untuk |
 |---|---|---|---|
-| Primary | `Color::Emerald` | `primary-*` navy logo Al-Khair (skala di bawah, 950 = `#000A3C`) | Tombol utama, link, elemen aktif |
-| Accent | — | `accent-*` emas logo Al-Khair (500 = `#F8B800`) | Portal/PSB: latar badge "Pendaftaran dibuka", garis aksen footer, `blockquote`, hiasan. Bukan warna teks. |
+| Primary | `Color::Emerald` | `primary-*` navy (skala di bawah, 950 = `#000A3C`) | Tombol utama, link, elemen aktif |
+| Accent | — | `accent-*` emas (500 = `#F8B800`) | Portal/PSB: latar badge "Pendaftaran dibuka", garis aksen footer, `blockquote`, hiasan. Bukan warna teks. |
 | Netral | `gray` (bawaan) | `gray-*` (alias slate) | Teks, border, latar |
 | Success | `success` | `success-*` (green) | Lunas, aktif, disetujui, diterima |
 | Warning | `warning` | `warning-*` (amber) | Belum lunas sebagian, menunggu, akan jatuh tempo |

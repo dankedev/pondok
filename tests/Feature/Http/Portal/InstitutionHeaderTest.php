@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     portalBoot();
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
 });
 
 /**
@@ -34,7 +34,7 @@ it('AC-38: renders a picture for desktop and mobile logos', function () {
 
     expect($header)->toContain('<picture')
         ->and(profilTag($header, 'source', ['media="(min-width: 768px)"', 'srcset="'.$urls['school.logo_desktop_path'].'"']))->not->toBeNull()
-        ->and(profilTag($header, 'img', ['src="'.$urls['school.logo_mobile_path'].'"', 'alt="'.e("Ma'had Al-Khair").'"']))->not->toBeNull()
+        ->and(profilTag($header, 'img', ['src="'.$urls['school.logo_mobile_path'].'"', 'alt="'.e("Ma'had Al-Kitab").'"']))->not->toBeNull()
         ->and(substr_count($header, '<img'))->toBe(1);
 });
 
@@ -43,10 +43,10 @@ it('AC-39: renders only the desktop logo when there is no mobile logo', function
 
     $header = profilHeader($this->get('/')->assertOk()->getContent());
 
-    expect(profilTag($header, 'img', ['src="'.$urls['school.logo_desktop_path'].'"', 'alt="'.e("Ma'had Al-Khair").'"']))->not->toBeNull()
+    expect(profilTag($header, 'img', ['src="'.$urls['school.logo_desktop_path'].'"', 'alt="'.e("Ma'had Al-Kitab").'"']))->not->toBeNull()
         ->and($header)->not->toContain('<source')->not->toContain('<picture')
         ->and(substr_count($header, '<img'))->toBe(1)
-        ->and($header)->toMatch('/<[a-z]+\b[^>]*'.profilClassPattern(['sr-only']).'[^>]*>\s*'.preg_quote(e("Ma'had Al-Khair"), '/').'\s*</');
+        ->and($header)->toMatch('/<[a-z]+\b[^>]*'.profilClassPattern(['sr-only']).'[^>]*>\s*'.preg_quote(e("Ma'had Al-Kitab"), '/').'\s*</');
 });
 
 it('AC-40: wraps a lone mobile logo in md:hidden and shows the name from md up', function () {
@@ -55,7 +55,7 @@ it('AC-40: wraps a lone mobile logo in md:hidden and shows the name from md up',
     $header = profilHeader($this->get('/')->assertOk()->getContent());
 
     expect($header)->toMatch('/<[a-z]+\b[^>]*'.profilClassPattern(['md:hidden']).'[^>]*>\s*<img\b[^>]*src="'.preg_quote($urls['school.logo_mobile_path'], '/').'"/')
-        ->and($header)->toMatch('/<[a-z]+\b[^>]*'.profilClassPattern(['hidden', 'md:inline']).'[^>]*>\s*'.preg_quote(e("Ma'had Al-Khair"), '/').'/')
+        ->and($header)->toMatch('/<[a-z]+\b[^>]*'.profilClassPattern(['hidden', 'md:inline']).'[^>]*>\s*'.preg_quote(e("Ma'had Al-Kitab"), '/').'/')
         ->and($header)->not->toContain('<picture')->not->toContain('<source');
 });
 
@@ -66,13 +66,13 @@ it('AC-41: falls back to the name and never to the print logo in the header', fu
     $header = profilHeader($this->get('/')->assertOk()->getContent());
 
     expect($header)->not->toContain('<img')->not->toContain($urls['school.logo_path'])->not->toContain('school/cetak.png')
-        ->and(profilVisibleText($header))->toContain("Ma'had Al-Khair")->toContain('MAK');
+        ->and(profilVisibleText($header))->toContain("Ma'had Al-Kitab")->toContain('MAK');
 });
 
 it('AC-41: shows the full name when there is no short name and no logo at all', function () {
     $header = profilHeader($this->get('/')->assertOk()->getContent());
 
-    expect($header)->not->toContain('<img')->and(profilVisibleText($header))->toContain("Ma'had Al-Khair");
+    expect($header)->not->toContain('<img')->and(profilVisibleText($header))->toContain("Ma'had Al-Kitab");
 });
 
 it('AC-42: uses the favicon when it is set and favicon.ico otherwise', function () {

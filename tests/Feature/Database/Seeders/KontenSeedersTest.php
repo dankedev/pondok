@@ -117,7 +117,7 @@ it('AC-2 (F048): seeds kontak as a contact page and the others as default, witho
  */
 function oldDemoContactBody(): string
 {
-    return '<p>Jl. Raya Belitang–Martapura, Mojosari, Belitang, OKU Timur, Sumatera Selatan</p><ul><li>Telepon: 0735 000 0170</li><li>WhatsApp: 0812 0000 0170</li><li>Email: info@alkhair-belitang.test</li></ul><h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>';
+    return '<p>Jl. Pendidikan No. 1, Desa Contoh, Kecamatan Contoh, Sumatera Selatan</p><ul><li>Telepon: 0735 000 0170</li><li>WhatsApp: 0812 0000 0170</li><li>Email: info@pondok-contoh.test</li></ul><h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>';
 }
 
 it('AC-8 (F044): the demo contact page holds only the service hours and never retypes address, phone or email', function () {
@@ -129,7 +129,7 @@ it('AC-8 (F044): the demo contact page holds only the service hours and never re
     $body = (string) StaticPage::findBySlug('kontak')->body;
 
     expect($body)->toContain('Jam layanan')
-        ->not->toContain('Mojosari')->not->toContain('0735')->not->toContain('0812 0000 0170')->not->toContain('info@alkhair-belitang.test');
+        ->not->toContain('Desa Contoh')->not->toContain('0735')->not->toContain('0812 0000 0170')->not->toContain('info@pondok-contoh.test');
 });
 
 it('AC-8 (F044): repairs the old demo contact page, stays idempotent, and leaves an admin-written contact page alone', function () {
@@ -142,7 +142,7 @@ it('AC-8 (F044): repairs the old demo contact page, stays idempotent, and leaves
     $repaired = (string) $page->fresh()->body;
     (new DemoContent(new DemoContext))->profile();
 
-    expect($repaired)->toContain('Jam layanan')->not->toContain('Mojosari')->not->toContain('info@alkhair-belitang.test')->not->toContain('0735')
+    expect($repaired)->toContain('Jam layanan')->not->toContain('Desa Contoh')->not->toContain('info@pondok-contoh.test')->not->toContain('0735')
         ->and((string) $page->fresh()->body)->toBe($repaired);
 
     $custom = '<p>Datang langsung ke kantor kami di Jl. Mawar 5. Telepon 0711 123 456.</p>';

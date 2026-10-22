@@ -1,6 +1,6 @@
 # PRD Pondok — Sistem Informasi Pesantren & Sekolah Terpadu
 
-Versi 2.0 · Oktober 2026 · Pengguna pertama: Ma'had Al-Khair
+Versi 2.0 · Oktober 2026
 
 ## 1. Ringkasan
 
@@ -136,11 +136,11 @@ Skema lengkap ada di `docs/erd.md`.
 | 3 | Tahfidz, Perizinan, absensi, kedisiplinan |
 | 4 | Rapor diniyah, tabungan/uang saku, kas umum, kepegawaian & honor, kesehatan, alumni & donasi |
 
-Fase 1 dipakai penuh di Ma'had Al-Khair selama satu siklus PSB sebelum prioritas fase berikutnya ditetapkan.
+Fase 1 dipakai penuh di satu lembaga pengguna selama satu siklus PSB sebelum prioritas fase berikutnya ditetapkan.
 
 ## 7. Pertanyaan terbuka
 
-- Payment gateway dan bank mana yang dipakai Ma'had Al-Khair?
+- Payment gateway dan bank mana yang dipakai lembaga pengguna?
 - WhatsApp: gateway resmi (berbayar per percakapan) atau tidak resmi?
 - Format nomor induk santri, nomor kuitansi, dan nomor surat yang berlaku saat ini.
 - Standar mushaf untuk hitungan halaman tahfidz (default 15 baris).

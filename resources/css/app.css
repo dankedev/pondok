@@ -13,7 +13,7 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-arabic: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', serif;
 
-    /* primary → navy logo Al-Khair, 950 = warna logo (docs/design-guide.md §2) */
+    /* primary → navy, 950 = warna dasar primer (docs/design-guide.md §2) */
     --color-primary-50: #eef2fb;
     --color-primary-100: #dde4f6;
     --color-primary-200: #bbc8ec;
@@ -32,7 +32,7 @@
     --color-on-brand: var(--color-white);
     --color-brand-text: var(--color-primary-950);
 
-    /* accent → emas logo Al-Khair, 500 = warna logo; tidak pernah jadi warna teks (docs/design-guide.md §2) */
+    /* accent → emas, 500 = warna dasar aksen; tidak pernah jadi warna teks (docs/design-guide.md §2) */
     --color-accent-50: #fff9e5;
     --color-accent-100: #fff0bf;
     --color-accent-200: #ffe28a;

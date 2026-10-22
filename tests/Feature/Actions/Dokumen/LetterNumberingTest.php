@@ -28,7 +28,7 @@ it('AC-6: formats default letter numbers', function (string $type, string $date,
 it('AC-6: derives the school code from the school name', function (string $name, string $expected) {
     expect($this->numbering->defaultSchoolCode($name))->toBe($expected);
 })->with([
-    "Ma'had Al-Khair" => ["Ma'had Al-Khair", 'MAK'],
+    "Ma'had Al-Kitab" => ["Ma'had Al-Kitab", 'MAK'],
     'four words' => ['Pondok Pesantren Al Ikhlas', 'PPAI'],
     'only symbols' => ["'''", 'PONDOK'],
     'empty' => ['', 'PONDOK'],

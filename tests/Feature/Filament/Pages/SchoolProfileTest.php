@@ -8,7 +8,7 @@ beforeEach(function () {
     $this->f = kontenBoot();
     Setting::set('school.name', 'Pondok Lama');
     Setting::set('school.address', 'Alamat lama');
-    Setting::set('school.email', 'lama@alkhair.sch.id');
+    Setting::set('school.email', 'lama@pondokcontoh.sch.id');
     $this->actingAs(kontenUser('admin-sekolah'));
 });
 
@@ -20,15 +20,15 @@ it('AC-38: fills the form from the settings', function () {
 
 it('AC-38/AC-5: saves the identity from the page and leaves address, email and phone untouched', function () {
     Livewire::test(Identity::class)
-        ->fillForm(['name' => "Ma'had Al-Khair", 'tagline' => 'Motto uji'])
+        ->fillForm(['name' => "Ma'had Al-Kitab", 'tagline' => 'Motto uji'])
         ->call('save')
         ->assertHasNoFormErrors()
         ->assertNotified();
 
-    expect(Setting::get('school.name'))->toBe("Ma'had Al-Khair")
+    expect(Setting::get('school.name'))->toBe("Ma'had Al-Kitab")
         ->and(Setting::get('school.tagline'))->toBe('Motto uji')
         ->and(Setting::get('school.address'))->toBe('Alamat lama')
-        ->and(Setting::get('school.email'))->toBe('lama@alkhair.sch.id')
+        ->and(Setting::get('school.email'))->toBe('lama@pondokcontoh.sch.id')
         ->and(Setting::get('school.phone'))->toBeNull();
 });
 

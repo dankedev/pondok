@@ -1,10 +1,10 @@
-# F034 inti-seeder-demo — Seeder data demo Ma'had Al-Khair Belitang
+# F034 inti-seeder-demo — Seeder data demo Pondok Pesantren Contoh
 
 Status rencana: APPROVED
 
 ## Ringkasan & tujuan
 
-User meminta data contoh yang terasa seperti data pondok sungguhan (bukan faker acak) agar panel admin dan portal publik bisa dicek secara visual. Nama lembaga: **Ma'had Al-Khair Belitang** (Belitang, Kabupaten Ogan Komering Ulu Timur, Sumatera Selatan).
+User meminta data contoh yang terasa seperti data pondok sungguhan (bukan faker acak) agar panel admin dan portal publik bisa dicek secara visual. Nama lembaga: **Pondok Pesantren Contoh** (fiktif; semula nama lembaga pengguna pertama, dinetralkan di F083).
 
 F034 menyediakan `Database\Seeders\DemoSeeder` yang:
 
@@ -56,7 +56,7 @@ Aturan yang tetap berlaku: uang `unsignedBigInteger` rupiah kelipatan 1.000; tag
 
 Nama orang fiktif bergaya Muslim Indonesia; tempat lahir dan alamat memakai nama kecamatan/desa sekitar Belitang (mis. Belitang, Belitang II, Belitang III, Gumawang, Martapura, Buay Madang, Semendawai Suku III), Kab. OKU Timur. Tidak memakai nama tokoh, lembaga, sekolah, atau perusahaan nyata selain nama pondok yang diminta; nama penyelenggara lomba ditulis generik ("Panitia MTQ tingkat kabupaten"). Nomor telepon berpola jelas fiktif (mis. `0812-0000-0xxx`), email memakai domain `.test`.
 
-**Profil sekolah** (via `UpdateSchoolProfile`, hanya bila `school.address` masih kosong): `name` "Ma'had Al-Khair Belitang", `tagline` (mis. "Mendidik generasi Qur'ani yang berakhlak dan mandiri"), `address` fiktif di Kec. Belitang, Kab. OKU Timur, Sumatera Selatan, `phone`, `whatsapp`, `email` (`info@alkhair-belitang.test`). Sosial media null.
+**Profil sekolah** (via `UpdateSchoolProfile`, hanya bila `school.address` masih kosong): `name` "Pondok Pesantren Contoh", `tagline` (mis. "Mendidik generasi Qur'ani yang berakhlak dan mandiri"), `address` fiktif di Kec. Belitang, Kab. OKU Timur, Sumatera Selatan, `phone`, `whatsapp`, `email` (`info@pondok-contoh.test`). Sosial media null.
 
 **Halaman statis** (via `UpdateStaticPage`, hanya bila `body` kosong): `profil` (sejarah singkat fiktif, jenjang SD/SLTP/SLTA, asrama putra/putri), `visi-misi` (visi + 4–6 butir misi), `kontak` (alamat, telepon, jam layanan TU). HTML sederhana (`<p>`, `<ul>`, `<h2>`), bahasa Indonesia wajar, tanpa lorem ipsum.
 
@@ -81,7 +81,7 @@ Nama orang fiktif bergaya Muslim Indonesia; tempat lahir dan alamat memakai nama
 | ustadz-tahfidz | `ustadz-tahfidz@demo.test` | semua |
 | petugas-pos | `petugas-pos@demo.test` | semua |
 
-Password = `config('pondok.demo.password')` (env `DEMO_PASSWORD`); bila kosong memakai konstanta `DemoSeeder::DEFAULT_PASSWORD = 'demo-alkhair-belitang'` yang ditulis di `docs/demo.md`, dan seeder menampilkan `__('pondok.demo.default_password_warning')` lewat `$this->command?->warn(...)`. `User.password` bercast `hashed`: berikan **password teks biasa** ke model (jangan `Hash::make`, agar tidak ter-hash dua kali). `email_verified_at` diisi waktu pembuatan. Password hanya di-set saat akun dibuat; akun yang sudah ada tidak diubah (nama, password, peran, cakupan). Akun super-admin dari `SuperAdminSeeder` tidak disentuh.
+Password = `config('pondok.demo.password')` (env `DEMO_PASSWORD`); bila kosong memakai konstanta `DemoSeeder::DEFAULT_PASSWORD = 'demo-pondok-contoh'` yang ditulis di `docs/demo.md`, dan seeder menampilkan `__('pondok.demo.default_password_warning')` lewat `$this->command?->warn(...)`. `User.password` bercast `hashed`: berikan **password teks biasa** ke model (jangan `Hash::make`, agar tidak ter-hash dua kali). `email_verified_at` diisi waktu pembuatan. Password hanya di-set saat akun dibuat; akun yang sudah ada tidak diubah (nama, password, peran, cakupan). Akun super-admin dari `SuperAdminSeeder` tidak disentuh.
 
 **Rombel** (tingkat 1–12, nama `<tingkat><huruf>`). Struktur sama di `P` dan `A`:
 - SD: `4A`, `5A`, `6A` gender `campur`.
@@ -135,7 +135,7 @@ Catatan `ChangeStudentUnit`: Action hanya mengganti `unit_id`/`cohort_id`; enrol
 - UANG_PANGKAL: SD 2.000.000; SLTP 3.500.000; SLTA 4.000.000.
 - SERAGAM: semua jenjang 850.000. KITAB: semua jenjang 400.000.
 
-**Beasiswa** (`SaveScholarship`, kunci `name`, sponsor fiktif "Donatur Yayasan Al-Khair Belitang"):
+**Beasiswa** (`SaveScholarship`, kunci `name`, sponsor fiktif "Donatur Yayasan Pendidikan Islam Contoh"):
 - "Beasiswa Yatim": `nominal`, 0.
 - "Beasiswa Tahfidz": `persen`, 50.
 - "Keringanan Anak Ustadz": `potongan`, 100.000.
@@ -181,7 +181,7 @@ Tanggal bayar PSB: antara `wave.opens_on` dan `D` (offset tetap, tidak melewati 
 - 1 santri: KK lama diganti `ReplaceDocument` (KK baru), sehingga 1 dokumen punya `replaced_by_id`.
 - Dokumen pendaftar yang `valid` ikut tersalin saat daftar ulang (efek `ReRegisterApplicant`).
 - 1 dokumen `SERTIFIKAT` untuk prestasi MTQ.
-- Berkas: PDF placeholder kecil (< 2 KB, header `%PDF-1.4`, berisi teks "Dokumen contoh - data demo Ma'had Al-Khair Belitang"), dibuat sebagai `UploadedFile` dari berkas sementara (mode test `true`) sehingga validasi MIME Action lulus.
+- Berkas: PDF placeholder kecil (< 2 KB, header `%PDF-1.4`, berisi teks "Dokumen contoh - data demo Pondok Pesantren Contoh"), dibuat sebagai `UploadedFile` dari berkas sementara (mode test `true`) sehingga validasi MIME Action lulus.
 
 **Surat keluar** (`IssueLetter`, penerbit admin-sekolah, penandatangan Mudir; kunci santri + jenis + `purpose`, lihat tabel kunci idempotensi): 2 `keterangan_aktif` untuk dua santri berbeda (keperluan "Persyaratan pengajuan beasiswa", "Pendaftaran BPJS"), 1 `rekomendasi` (keperluan "Pendaftaran lomba tingkat provinsi"), 1 `kartu_santri` (`purpose` null), dan 1 `keterangan_aktif` dengan keperluan "Pengajuan beasiswa daerah" untuk **santri kelima yang tidak menerima surat lain**, lalu dibatalkan `CancelIssuedLetter` (alasan "Salah keperluan"). Profil sekolah sudah terisi sebelum surat diterbitkan.
 
@@ -203,7 +203,7 @@ Berita prestasi dari `PublishAchievementAsPost` (draft) lalu diterbitkan lewat `
 **Konten** (aktor admin-konten):
 - Kategori berita `SaveCategory` tipe `post`: "Kegiatan Santri", "Pengumuman", "Tahfidz". Kategori album bawaan (Fasilitas, Kegiatan) dipakai.
 - Berita `SavePost` (kunci `slug` eksplisit): 7 terbit + 1 draft, ditambah berita prestasi di atas.
-  - Terbit: "Penerimaan Santri Baru Tahun Ajaran {N} Dibuka" (berita, Pengumuman), "Pembukaan Tahun Ajaran {A} dan Masa Ta'aruf Santri" (kegiatan), "Kerja Bakti Santri Bersama Warga Desa" (kegiatan), "Wisuda Tahfidz Santri Ma'had Al-Khair Belitang" (kegiatan, Tahfidz), "Jadwal Libur Akhir Semester Ganjil" (berita, Pengumuman), "Kajian Kitab Bulanan Bersama Wali Santri" (kegiatan), "Santri SLTA Belajar di Perpustakaan Daerah" (kegiatan, `unit_id` SLTA). `published_at` berurutan `D − 2`, `D − 6`, … (≤ `D`).
+  - Terbit: "Penerimaan Santri Baru Tahun Ajaran {N} Dibuka" (berita, Pengumuman), "Pembukaan Tahun Ajaran {A} dan Masa Ta'aruf Santri" (kegiatan), "Kerja Bakti Santri Bersama Warga Desa" (kegiatan), "Wisuda Tahfidz Santri Pondok Pesantren Contoh" (kegiatan, Tahfidz), "Jadwal Libur Akhir Semester Ganjil" (berita, Pengumuman), "Kajian Kitab Bulanan Bersama Wali Santri" (kegiatan), "Santri SLTA Belajar di Perpustakaan Daerah" (kegiatan, `unit_id` SLTA). `published_at` berurutan `D − 2`, `D − 6`, … (≤ `D`).
   - Draft: "Rencana Pembangunan Asrama Putri Tahap II".
   - Isi 2–4 paragraf HTML bahasa Indonesia; 4 berita memakai sampul placeholder PNG.
 - Album `SaveAlbum` + `AddAlbumPhotos` (kunci `slug`; foto ditambah hanya bila album belum punya foto): "Asrama dan Masjid" (Fasilitas, 4 foto), "Masa Ta'aruf Santri Baru" (Kegiatan, 5 foto), "Wisuda Tahfidz" (Kegiatan, 4 foto). Keterangan foto bahasa Indonesia.
@@ -302,7 +302,7 @@ Tanggal uji utama `T1 = 2026-10-16 10:00 Asia/Jakarta` (`Y` = 2026, `A` = 2026/2
 - **AC-2 Tidak ikut seeder instalasi.** Kondisi: `SUPER_ADMIN_*` terisi. Aksi: `$this->seed(DatabaseSeeder::class)`. Hasil: `students`, `staff`, `posts` kosong; tidak ada user `@demo.test`. Sumber `DatabaseSeeder`, `InstallSeeder`, `SystemSeeder` tidak menyebut `DemoSeeder`.
 - **AC-3 Jalan di database kosong.** Kondisi: hanya migrasi (tanpa seeder lain). Aksi: `DemoSeeder` pada `T1`. Hasil: tanpa exception; `units` berisi SD/SLTP/SLTA; peran bawaan ada; `modules.*.enabled` Fase 1 bernilai true.
 - **AC-4 Tahun ajaran.** Hasil: ada `2025/2026` (2025-07-01–2026-06-30), `2026/2027` (aktif, satu-satunya yang aktif), `2027/2028`.
-- **AC-5 Profil & halaman.** Hasil: `Setting::get('school.name')` = "Ma'had Al-Khair Belitang"; `school.address` memuat "Belitang" dan "Ogan Komering Ulu Timur" (atau "OKU Timur"); `school.phone` dan `school.email` terisi. Halaman `profil`, `visi-misi`, `kontak` ber-`body` tidak kosong. Tidak ada `posts.body`, `posts.title`, `pages.body` yang mengandung "lorem" (case-insensitive). Bila `school.address` sudah terisi sebelum seeding, nilainya tidak diubah.
+- **AC-5 Profil & halaman.** Hasil: `Setting::get('school.name')` = "Pondok Pesantren Contoh"; `school.address` memuat "Belitang" dan "Ogan Komering Ulu Timur" (atau "OKU Timur"); `school.phone` dan `school.email` terisi. Halaman `profil`, `visi-misi`, `kontak` ber-`body` tidak kosong. Tidak ada `posts.body`, `posts.title`, `pages.body` yang mengandung "lorem" (case-insensitive). Bila `school.address` sudah terisi sebelum seeding, nilainya tidak diubah.
 - **AC-6 Akun demo.** Hasil: 9 user sesuai tabel, masing-masing punya tepat satu peran yang sesuai, `is_active` true, dan `email_verified_at` terisi. admin-sekolah `scopedUnitIds()` = [id SLTP]; kesantrian = [SLTP, SLTA]; lainnya []. Akun musyrif, ustadz-tahfidz, bendahara terhubung ke satu `staff`. Setelah seluruh seeding selesai, saat `actingAs(admin-sekolah)`, `Student::query()->count()` = jumlah santri SLTP (semua status), dan lebih kecil dari `Student::withoutUnitScope()->count()`.
 - **AC-7 Password demo.** (a) Dengan `config(['pondok.demo.password' => 'rahasia-uji-123'])`, `Hash::check('rahasia-uji-123', $user->password)` true untuk semua akun demo. (b) Dengan config kosong, `Hash::check(DemoSeeder::DEFAULT_PASSWORD, …)` true dan keluaran konsol memuat `__('pondok.demo.default_password_warning')`; dengan config terisi, peringatan itu tidak muncul. (c) Bila password akun demo diubah lalu seeder dijalankan ulang, password tidak dikembalikan.
 - **AC-8 Staff & rombel.** Hasil: staff aktif ≥ 22, `position` mencakup "ustadz", "musyrif", "TU"; tepat 15 rombel `A` (SD 3 `campur`, SLTP 3 `L` + 3 `P`, SLTA 3 `L` + 3 `P`) dan 15 rombel `P`; setiap rombel `A` punya `homeroom_staff_id`, wali kelas setiap rombel bergender putri (`gender` = `P`) berjenis kelamin P.
@@ -317,7 +317,7 @@ Tanggal uji utama `T1 = 2026-10-16 10:00 Asia/Jakarta` (`Y` = 2026, `A` = 2026/2
 - **AC-17 Dokumen.** Hasil: dokumen santri `valid` ≥ 20, `menunggu` ≥ 5, `ditolak` ≥ 1; ≥ 1 dokumen ber-`replaced_by_id`; ≥ 1 dokumen `expires_on` antara `T1` dan `T1 + 60 hari`; setiap `documents.file_path` dan `applicant_documents.file_path` ada di disk `private` dan tidak ada di disk `public`; nilai mentah kolom `documents.number` (query builder) tidak sama dengan nilai yang terbaca model (terenkripsi); ≥ 1 dokumen milik prestasi.
 - **AC-18 Surat keluar.** Hasil: surat `terbit` tepat 4 dan `batal` tepat 1; santri pemilik surat `batal` tidak punya surat lain; tidak ada dua surat dengan (`student_id`, `type`, `purpose`) sama; jenis mencakup `keterangan_aktif`, `rekomendasi`, `kartu_santri`; penandatangan semua surat = staff Mudir yang aktif; `letter_no` unik.
 - **AC-19 Prestasi.** Hasil: 6 prestasi; ≥ 2 beregu dengan ≥ 3 peserta, ≥ 1 punya peran "ketua tim"; terverifikasi tepat 4, belum 2; tepat 1 prestasi punya `posts` (tipe `prestasi`, status `terbit`, `published_at` ≤ `T1`); setiap peserta prestasi ber-`entered_on` ≤ `achieved_on`.
-- **AC-20 Konten & portal.** Hasil: kategori `post` ≥ 3; posts `terbit` dengan `published_at` ≤ `T1` ≥ 8 (termasuk berita prestasi), `draft` ≥ 1; 3 album masing-masing ≥ 4 foto yang berkasnya ada di disk `public`; ≥ 4 posts ber-`cover_path` yang berkasnya ada; 3 video, tepat 1 `is_featured`. `GET route('portal.home')`, `portal.posts.index`, `portal.albums.index`, `portal.videos.index`, `portal.pages.show` (`profil`) masing-masing 200 dan beranda memuat teks "Ma'had Al-Khair Belitang".
+- **AC-20 Konten & portal.** Hasil: kategori `post` ≥ 3; posts `terbit` dengan `published_at` ≤ `T1` ≥ 8 (termasuk berita prestasi), `draft` ≥ 1; 3 album masing-masing ≥ 4 foto yang berkasnya ada di disk `public`; ≥ 4 posts ber-`cover_path` yang berkasnya ada; 3 video, tepat 1 `is_featured`. `GET route('portal.home')`, `portal.posts.index`, `portal.albums.index`, `portal.videos.index`, `portal.pages.show` (`profil`) masing-masing 200 dan beranda memuat teks "Pondok Pesantren Contoh".
 - **AC-21 Panel tetap render.** `actingAs(super-admin@demo.test)` lalu `GET` dashboard panel admin → 200 tanpa exception.
 - **AC-22 Idempotent.** Kondisi: setelah seed pertama, test `actingAs(admin-sekolah)` (user bercakupan SLTP sedang login). Aksi: jalankan `DemoSeeder` kedua kali pada `T1`. Hasil: tanpa exception; `Auth::check()` false setelah seeding (login dilepas oleh seeder); jumlah baris semua tabel di bagian Model data (kecuali `activity_log`, `sessions`, `cache`) sama persis dengan setelah jalan pertama; `SUM(invoices.total)`, `SUM(payments.amount)` sama; jumlah berkas di disk `private` dan `public` sama.
 - **AC-23 Relatif terhadap hari ini.** Kondisi: database baru, `T2 = 2027-07-03 08:00 Asia/Jakarta`. Aksi: `DemoSeeder`. Hasil: `2027/2028` aktif (satu-satunya), `2026/2027` ada dan tidak aktif; ada tagihan bulanan periode 2027-04-01 dan 2027-07-01; tidak ada `payments.paid_on` > 2027-07-03; gelombang tahun `2028/2029` menerima pendaftaran pada `T2`; tidak ada `posts.published_at` atau `achievements.achieved_on` setelah `T2`.
@@ -363,7 +363,7 @@ Helper lokal di file test (bukan `tests/Pest.php`): `demoTableCounts()` untuk sn
 Pertanyaan terbuka (butuh keputusan user; bawaan di bawah dipakai bila tidak dijawab):
 
 1. **ID video YouTube.** ID nyata akan menampilkan konten pihak lain (melanggar arahan "tanpa nama orang/lembaga nyata"); ID fiktif membuat embed dan thumbnail kosong. Bawaan: ID fiktif, dicatat di `docs/demo.md` agar admin menggantinya.
-2. **Password bawaan** `demo-alkhair-belitang` terdokumentasi publik. Aman karena seeder menolak production, tetapi instance staging yang `APP_ENV`-nya bukan production akan punya akun dengan password diketahui. Bawaan: tetap dipakai dengan peringatan di `docs/demo.md` agar mengisi `DEMO_PASSWORD`.
+2. **Password bawaan** `demo-pondok-contoh` terdokumentasi publik. Aman karena seeder menolak production, tetapi instance staging yang `APP_ENV`-nya bukan production akan punya akun dengan password diketahui. Bawaan: tetap dipakai dengan peringatan di `docs/demo.md` agar mengisi `DEMO_PASSWORD`.
 3. **Pengaman tambahan**: apakah seeder juga harus menolak bila database sudah berisi santri yang bukan data demo (mencegah data demo tercampur dengan data sekolah sungguhan di instance non-production)? Bawaan: tidak (hanya penjaga `APP_ENV`), diusulkan sebagai perbaikan bila user menginginkan.
 
 Risiko:
@@ -378,27 +378,27 @@ Risiko:
 
 ## Revisi 2 — sesuai brosur PSB
 
-Permintaan user (diteruskan orkestrator, 16 Okt 2026): "Ya, sesuaikan seeder demo dengan brosur: khusus putra, tanpa jenjang SD, dan tarif mengikuti brosur." Klarifikasi: "brosur ... hanya sebagai referensi bukan sebagai pengganti informasi yang sudah ada". Sumber: `docs/brand/brosur-psb-2027-2028.md`, `docs/brief-awal.txt`. Implementasi sebelumnya sudah ter-commit (`ac9b141`, `f5070f9`). Ini revisi F034 (bukan ID baru).
+Permintaan user (diteruskan orkestrator, 16 Okt 2026): "Ya, sesuaikan seeder demo dengan brosur: khusus putra, tanpa jenjang SD, dan tarif mengikuti brosur." Klarifikasi: "brosur ... hanya sebagai referensi bukan sebagai pengganti informasi yang sudah ada". Sumber: brosur PSB lembaga (berkas dihapus di F083), brief awal (berkas dihapus di F083). Implementasi sebelumnya sudah ter-commit (`ac9b141`, `f5070f9`). Ini revisi F034 (bukan ID baru).
 
-**Urutan prioritas sumber:** instruksi user > `docs/brief-awal.txt` dan PRD/ERD > brosur > rencana di atas. Bila bagian di atas bertentangan dengan Revisi 2, **Revisi 2 yang berlaku**. Yang tidak disebut di sini tetap seperti di atas: penjaga production, Auth/UnitScope, kunci idempotensi, akun demo, pola pembayaran, dokumen, surat, dan `travelTo`.
+**Urutan prioritas sumber:** instruksi user > brief awal (berkas dihapus di F083) dan PRD/ERD > brosur > rencana di atas. Bila bagian di atas bertentangan dengan Revisi 2, **Revisi 2 yang berlaku**. Yang tidak disebut di sini tetap seperti di atas: penjaga production, Auth/UnitScope, kunci idempotensi, akun demo, pola pembayaran, dokumen, surat, dan `travelTo`.
 
 ### Larangan dari brosur (tetap fiktif)
 
 - **Tidak dipakai:**
-  - nomor telepon brosur (`0858-3233-3725`, `0856-6994-1929`);
-  - nomor rekening (`7286406461`) dan nama bank pada rekening itu;
+  - nomor telepon brosur;
+  - nomor rekening dan nama bank pada rekening itu;
   - nama orang di brosur (pembina, panitia);
   - nama perguruan tinggi tujuan alumni;
   - nama usaha di sekitar alamat (penanda lokasi di sebelah alamat);
   - akun media sosial (`school.*_url` tetap null).
 - **Boleh dipakai dari brosur:**
   - nama lembaga;
-  - alamat (`Jl. Raya Belitang–Martapura, Mojosari, Belitang, OKU Timur, Sumatera Selatan`);
-  - tagar sebagai `tagline` ("Generasi Beradab Bersama Al-Qur'an");
+  - alamat (`Jl. Pendidikan No. 1, Desa Contoh, Kecamatan Contoh, Sumatera Selatan`);
+  - tagar sebagai `tagline` ("Berilmu, beramal, dan beradab");
   - program (tahfidz, bahasa Arab, studi Islam);
   - fasilitas, ekstrakurikuler, nominal biaya, dan tanggal gelombang.
-- **Kontak tetap fiktif:** telepon dan WhatsApp memakai pola `0812-0000-0xxx` / `0735 000 0xxx`, email `@alkhair-belitang.test`. Pengurus dan staff memakai nama fiktif.
-- **Nama yayasan:** dari brief ("Yayasan Islam Al-Khair Belitang"). Boleh dipakai karena satu lembaga dengan pondok yang diminta user.
+- **Kontak tetap fiktif:** telepon dan WhatsApp memakai pola `0812-0000-0xxx` / `0735 000 0xxx`, email `@pondok-contoh.test`. Pengurus dan staff memakai nama fiktif.
+- **Nama yayasan:** dari brief ("Yayasan Pendidikan Islam Contoh"). Sejak F083 diganti nama fiktif.
 
 ### Jenjang
 
@@ -512,14 +512,14 @@ Total 79 santri: 69 aktif, termasuk 3 hasil daftar ulang.
 
 | Kolom | Isi |
 |---|---|
-| `name` | "Ma'had Al-Khair Belitang" |
-| `tagline` | "Generasi Beradab Bersama Al-Qur'an" |
+| `name` | "Pondok Pesantren Contoh" |
+| `tagline` | "Berilmu, beramal, dan beradab" |
 | `address` | alamat brosur, tanpa penanda usaha |
 | `phone`, `whatsapp`, `email` | fiktif |
 
 **Kategori berita** (`SaveCategory` tipe `post`), tepat mengikuti brief:
-- Kegiatan Al-Khair
-- Prestasi Al-Khair
+- Kegiatan Pondok
+- Prestasi Pondok
 - Info Kajian
 - Akidah & Manhaj
 - Tafsir & Hadits
@@ -533,15 +533,15 @@ Kategori lama hasil versi sebelumnya ("Kegiatan Santri", "Pengumuman", "Tahfidz"
 | Judul | Tipe | Kategori | Catatan |
 |---|---|---|---|
 | Penerimaan Santri Baru Tahun Ajaran {S} Dibuka | berita | Umum | memuat "pendaftaran dibuka sepanjang tahun selama kuota tersedia" |
-| Masa Ta'aruf Santri Baru | kegiatan | Kegiatan Al-Khair | |
-| Santri Ikut Kerja Bakti Bersama Warga Mojosari | kegiatan | Kegiatan Al-Khair | |
+| Masa Ta'aruf Santri Baru | kegiatan | Kegiatan Pondok | |
+| Santri Ikut Kerja Bakti Bersama Warga Sekitar | kegiatan | Kegiatan Pondok | |
 | Jadwal Kajian Kitab Pekanan untuk Wali Santri | berita | Info Kajian | |
 | Ringkasan Kajian: Pentingnya Menuntut Ilmu Sebelum Beramal | berita | Akidah & Manhaj | |
 | Program Hafalan Matan dan Hadits Arba'in Santri | kegiatan | Tafsir & Hadits | |
 | Santri Belajar Praktik Penyembelihan Hewan Kurban saat Idul Adha | kegiatan | Fiqh | |
 | Rencana Pembangunan Ruang Kelas Tahap II | berita | Umum | draft |
 
-- Berita prestasi masuk kategori "Prestasi Al-Khair".
+- Berita prestasi masuk kategori "Prestasi Pondok".
 - Isi kajian ditulis sebagai pengumuman atau ringkasan umum. **Tidak mengutip teks ayat atau hadits baru** selain QS. Ali 'Imran: 104 yang sudah ada di brief, untuk menghindari kutipan keliru.
 - Manhaj tetap: tidak ada konten perayaan selain Idul Fitri dan Idul Adha (tanpa maulid, isra mi'raj, haul, nisfu sya'ban, tahun baru).
 - Judul dan isi berita disaring dengan konstanta `DemoData::FORBIDDEN_CONTENT_TERMS`, yang dipakai juga oleh test.
@@ -550,20 +550,20 @@ Kategori lama hasil versi sebelumnya ("Kegiatan Santri", "Pengumuman", "Tahfidz"
 
 | Slug | Isi |
 |---|---|
-| `profil` "Profil Ma'had" | bagian `<h2>` "Tentang Yayasan" (Yayasan Islam Al-Khair Belitang, fiktif wajar), "Selayang Pandang" (fokus tahfidz, bahasa Arab, studi Islam; jenjang MTW/SMP dan TSN/SMA khusus putra; fasilitas dari brosur), "Pengurus Al-Khair" (jabatan + nama fiktif) |
+| `profil` "Profil Ma'had" | bagian `<h2>` "Tentang Yayasan" (Yayasan Pendidikan Islam Contoh, fiktif wajar), "Selayang Pandang" (fokus tahfidz, bahasa Arab, studi Islam; jenjang MTW/SMP dan TSN/SMA khusus putra; fasilitas dari brosur), "Pengurus Yayasan" (jabatan + nama fiktif) |
 | `visi-misi` | visi dan misi sesuai fokus brief, tanpa mutu lulusan berangka yang belum dikonfirmasi |
 | `kontak` | alamat brosur, kontak fiktif, jam layanan |
 
 Info PSB tetap lewat `/psb` yang sudah ada.
 
-**Usulan pekerjaan lanjutan di luar F034** (entri baru, ID ditentukan orkestrator/user, tidak diselipkan): menu portal mengikuti brief (Tentang Yayasan, Pengurus Al-Khair, Selayang Pandang, Info PSB, Kontak) sebagai halaman statis terpisah. Ini butuh perubahan `StaticPage::SLUGS`, route, dan navigasi portal.
+**Usulan pekerjaan lanjutan di luar F034** (entri baru, ID ditentukan orkestrator/user, tidak diselipkan): menu portal mengikuti brief (Tentang Yayasan, Pengurus Yayasan, Selayang Pandang, Info PSB, Kontak) sebagai halaman statis terpisah. Ini butuh perubahan `StaticPage::SLUGS`, route, dan navigasi portal.
 
 **Album** (kunci `slug`):
 - "Fasilitas Ma'had" (kategori Fasilitas), 6 foto dengan keterangan sesuai slide brief: bangunan luar masjid, bagian dalam masjid, asrama, kelas, ruang rapat, kantor yayasan.
 - "Masa Ta'aruf Santri Baru" (Kegiatan), 5 foto.
 - "Ekstrakurikuler Santri" (Kegiatan), 4 foto: futsal, karate, tenis meja, berenang.
 
-**Video:** 3 video dengan ID fiktif. Yang `is_featured` adalah "Video Info PSB Ma'had Al-Khair Belitang" (brief: Video PSB), sisanya video terbaru kegiatan.
+**Video:** 3 video dengan ID fiktif. Yang `is_featured` adalah "Video Info PSB Pondok Pesantren Contoh" (brief: Video PSB), sisanya video terbaru kegiatan.
 
 ### Akun demo
 
@@ -584,11 +584,11 @@ Seeder idempotent berdasarkan kunci alami. Database yang sudah berisi data demo 
 AC yang tidak disebut di sini tetap berlaku seperti di atas, yaitu AC-1–AC-4, AC-7, AC-13 kecuali bagian yang diganti, AC-17, AC-18, AC-21, AC-22, dan AC-24. Penanda: **[ubah]** mengganti AC lama, **[baru]** tambahan.
 
 - **AC-5 [ubah] Profil & halaman.**
-  - `school.name` = "Ma'had Al-Khair Belitang", `school.tagline` = "Generasi Beradab Bersama Al-Qur'an".
-  - `school.address` memuat "Mojosari", "Belitang", dan "OKU Timur".
+  - `school.name` = "Pondok Pesantren Contoh", `school.tagline` = "Berilmu, beramal, dan beradab".
+  - `school.address` memuat "Jl. Pendidikan No. 1", "Desa Contoh", dan "Kecamatan Contoh".
   - `school.phone` dan `school.email` terisi dan fiktif.
-  - Body `profil` memuat "Tentang Yayasan", "Selayang Pandang", "Pengurus Al-Khair", dan "khusus putra".
-  - Body `kontak` memuat "Mojosari".
+  - Body `profil` memuat "Tentang Yayasan", "Selayang Pandang", "Pengurus Yayasan", dan "khusus putra".
+  - Body `kontak` memuat "Desa Contoh".
   - Body `visi-misi` tidak kosong.
   - Tidak ada "lorem".
   - Bila `school.address` sudah terisi sebelumnya, nilainya tidak diubah.
@@ -665,14 +665,14 @@ AC yang tidak disebut di sini tetap berlaku seperti di atas, yaitu AC-1–AC-4, 
   - Sama seperti sebelumnya: 6 prestasi, 4 terverifikasi, 1 jadi berita, peserta ber-`entered_on` ≤ `achieved_on`.
   - Semua peserta berjenis kelamin L.
   - Tidak ada judul yang memuat "Putri".
-  - Berita prestasi berkategori "Prestasi Al-Khair".
+  - Berita prestasi berkategori "Prestasi Pondok".
 - **AC-20 [ubah] Konten & portal.**
   - Kategori `post` yang dibuat seeder tepat 7 nama brief, dan ≥ 6 di antaranya punya berita.
   - Posts `terbit` ≥ 8 (termasuk prestasi) dengan `published_at` ≤ `T1`, `draft` ≥ 1.
   - Album "Fasilitas Ma'had" punya 6 foto. Album lain ≥ 4 foto. Berkas foto ada di disk `public`.
   - ≥ 4 posts bersampul.
   - 3 video, tepat 1 `is_featured` yang judulnya memuat "PSB".
-  - Route portal yang sama mengembalikan 200, dan beranda memuat "Ma'had Al-Khair Belitang".
+  - Route portal yang sama mengembalikan 200, dan beranda memuat "Pondok Pesantren Contoh".
 - **AC-23 [ubah] Relatif terhadap hari ini** (database baru, `T2 = 2027-07-03 08:00 Asia/Jakarta`).
   - `2027/2028` aktif (satu-satunya), dan `2026/2027` ada dan tidak aktif.
   - Ada tagihan periode 2027-04-01 dan 2027-07-01.
@@ -691,7 +691,7 @@ AC yang tidak disebut di sini tetap berlaku seperti di atas, yaitu AC-1–AC-4, 
     - `guardians.name`, `guardians.phone`;
     - `applicants.guardian_phone`;
     - `users.name`.
-  - Daftar string: `0858-3233-3725`, `085832333725`, `0856-6994-1929`, `085669941929`, `7286406461`, `Wujud`, `Said Yai`, `Rendi Sulistiawan`, `Arwitra`, `Waterboom`.
+  - Daftar string: nomor telepon, nomor rekening, serta nama orang dan usaha dari brosur (daftar asli dihapus dari dokumen ini di F083).
   - Daftar string tersebut didefinisikan di test, bukan di kode aplikasi.
 - **AC-27 [baru] Manhaj konten.**
   - Tidak ada `posts.title`/`posts.body`, `pages.body`, `albums.title`/`description`, `photos.caption`, atau `videos.title`/`description` yang memuat (case-insensitive) salah satu istilah di `DemoData::FORBIDDEN_CONTENT_TERMS`.
@@ -717,7 +717,7 @@ AC yang tidak disebut di sini tetap berlaku seperti di atas, yaitu AC-1–AC-4, 
 
 ### Risiko & pertanyaan Revisi 2
 
-- **Nominal daftar ulang tahunan** (1.500.000) adalah contoh. Konfirmasi ke pondok sudah tercatat di `docs/pertanyaan-mahad-al-khair.md` bila ada; bila belum, orkestrator menambahkannya.
+- **Nominal daftar ulang tahunan** (1.500.000) adalah contoh. Konfirmasi ke pondok sudah tercatat di daftar pertanyaan untuk lembaga (berkas dihapus di F083) bila ada; bila belum, orkestrator menambahkannya.
 - **Unit SD tetap ada** dan masih bisa dipilih di formulir PSB publik, karena tidak ada saklar per unit. Menyembunyikan jenjang yang tidak dipakai adalah usulan pekerjaan lanjutan di luar F034.
 - **Menonaktifkan jalur bawaan** (`PRESTASI`, `TAHFIDZ`, `YATIM`) mengubah data instalasi di database demo. Ini disengaja dan dicatat di `docs/demo.md`.
 - **Tanpa tagihan multi-item,** data demo tidak lagi memperlihatkan alokasi cicilan per prioritas. Fungsi itu tetap teruji di test F007.
@@ -773,7 +773,7 @@ Yang diperiksa terhadap kode nyata: `UnitSeeder::UNITS`, `SaveAdmissionWave` (va
 
 | # | Tingkat | Bagian | Temuan | Saran |
 |---|---|---|---|---|
-| 1 | minor | AC-26 | String "Wujud" (huruf besar W) bisa cocok palsu dengan awal kalimat Indonesia ("Wujudkan ..."). | Cocokkan nama lengkap dari brosur, atau pencocokan kata utuh (`\b`) peka huruf besar. |
+| 1 | minor | AC-26 | Salah satu string nama dari brosur bisa cocok palsu dengan awal kalimat Indonesia. | Cocokkan nama lengkap dari brosur, atau pencocokan kata utuh (`\b`) peka huruf besar. |
 | 2 | minor | Asrama `UMR` | 30 santri TSN di 4 kamar berkapasitas 8 (32): muat, tetapi pindah kamar hanya mungkin ke kamar yang tidak penuh. | Distribusi 8/8/7/7, pindah kamar ke kamar berisi 7. |
 | 3 | minor | AC-13 | "Pemilik berbeda" pendaftar yang sudah jadi santri memiliki override ber-`applicant_id` dan `student_id` sekaligus. | Hitung pemilik sebagai `COALESCE(student_id, applicant_id)` atau satu orang per `students.applicant_id`. |
 | 4 | minor | Jalur PSB | `SaveAdmissionTrack` memperbarui seluruh field dari `$data` (mis. `scholarship_id` tanpa nilai menjadi null). Menonaktifkan jalur bawaan harus mengirim ulang `code`, `name`, `terms`, dan `scholarship_id` yang ada. | Catatan untuk green-coder. |

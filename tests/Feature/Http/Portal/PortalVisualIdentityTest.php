@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 /**
- * F035: identitas visual portal (navy dan emas dari logo Al-Khair, gaya modern ringan).
+ * F035: identitas visual portal (navy dan emas, gaya modern ringan).
  * Hampir semua perubahan bersifat visual, jadi test hanya mengunci perilaku bermakna:
  * token logo, tanpa aset eksternal, struktur nama Arab, hiasan aman, section kosong tetap tersembunyi,
  * dan Filament tetap emerald. Kelas warna murni tidak dikunci.
@@ -111,7 +111,7 @@ function identitasFullHome(): object
     kontenVideo(['title' => 'Video Unggulan Uji', 'youtube_id' => 'AAAAAAAAAAA', 'is_featured' => true]);
     portalPost(['title' => 'Berita Uji']);
     portalAchievementPost(['title' => 'Prestasi Uji']);
-    profilSet(['school.arabic_name' => 'معهد الخير', 'school.contacts' => [profilContact()]]);
+    profilSet(['school.arabic_name' => 'معهد الكتاب', 'school.contacts' => [profilContact()]]);
     blkSet([
         blk('hero', ['eyebrow' => 'Sambutan uji', 'title' => 'Judul hero uji', 'text' => 'Subjudul hero uji', 'album_id' => $slider->id]),
         blk('features', ['heading' => 'Judul keunggulan uji', 'items' => [['title' => 'Kartu Satu', 'text' => 'Deskripsi satu']]]),
@@ -367,7 +367,7 @@ describe('layout dan struktur', function () {
     it('AC-12: renders only the institution name heading for a new institution', function () {
         profilFreshInstall();
         Setting::set('modules.konten.enabled', true);
-        Setting::set('school.name', "Ma'had Al-Khair");
+        Setting::set('school.name', "Ma'had Al-Kitab");
 
         // Kondisi data kosong dinyatakan eksplisit: tanpa berita, prestasi, album, video, dan halaman profil terbit (satu-satunya halaman yang tampil di beranda).
         expect(Post::query()->count())->toBe(0)
@@ -380,7 +380,7 @@ describe('layout dan struktur', function () {
 
         expect($main[1] ?? '')->not->toBe('')
             ->and(preg_match_all('/<h1[\s>]/i', $main[1]))->toBe(1)
-            ->and($main[1])->toMatch('/<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Khair"), '/').'\s*<\/h1>/')
+            ->and($main[1])->toMatch('/<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Kitab"), '/').'\s*<\/h1>/')
             ->and($main[1])->not->toContain('<h2');
     });
 });
@@ -392,9 +392,9 @@ describe('nama Arab dan logo', function () {
 
     // F045 (C3): nama Arab tidak lagi ditampilkan otomatis di beranda; isi hero sepenuhnya dari blok.
     it('AC-14 (F045): does not show the arabic name automatically on the home page', function () {
-        Setting::set('school.arabic_name', 'معهد الخير');
+        Setting::set('school.arabic_name', 'معهد الكتاب');
 
-        expect($this->get('/')->assertOk()->getContent())->not->toContain('معهد الخير');
+        expect($this->get('/')->assertOk()->getContent())->not->toContain('معهد الكتاب');
     });
 
     it('AC-14: renders the hgroup without arabic markup when the name is empty', function () {

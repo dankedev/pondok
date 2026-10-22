@@ -52,7 +52,7 @@ it('AC-7: returns no blocks and no hero for an install without blocks, even when
 
     $data = blkHomeData();
 
-    expect($data['blocks'])->toBe([])->and($data['hasHero'])->toBeFalse()->and($data['school']['name'])->toBe("Ma'had Al-Khair");
+    expect($data['blocks'])->toBe([])->and($data['hasHero'])->toBeFalse()->and($data['school']['name'])->toBe("Ma'had Al-Kitab");
 });
 
 it('AC-7: leaves out content blocks when the content module is off but keeps the others', function () {

@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 beforeEach(function () {
     portalBoot();
     kontenBoot();
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
 });
 
 it('VERIFY: escapes every free text field in header, home and footer', function () {

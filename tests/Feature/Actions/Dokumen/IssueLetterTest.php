@@ -54,7 +54,7 @@ it('AC-10: issues a letter with a snapshot', function () {
         ])
         ->and($stored->snapshot['signers'])->toEqual([['label' => 'Penandatangan', 'name' => 'Ust. Hasan', 'position' => 'Kepala Sekolah', 'nip' => '1987']])
         ->and($stored->snapshot)->not->toHaveKey('signer')
-        ->and($stored->snapshot['school']['name'])->toBe("Ma'had Al-Khair");
+        ->and($stored->snapshot['school']['name'])->toBe("Ma'had Al-Kitab");
 });
 
 it('AC-10: logs one activity without personal data', function () {
@@ -156,7 +156,7 @@ it('AC-12: freezes letter content', function () {
     $text = suratText($html);
 
     expect(IssuedLetter::withoutGlobalScopes()->find($letter->id)->snapshot)->toEqual($snapshot)
-        ->and($text)->toContain('Muhammad Fauzan Akbar')->toContain('2026000123')->toContain('Ust. Hasan')->toContain('Kepala Sekolah')->toContain("Ma'had Al-Khair")
+        ->and($text)->toContain('Muhammad Fauzan Akbar')->toContain('2026000123')->toContain('Ust. Hasan')->toContain('Kepala Sekolah')->toContain("Ma'had Al-Kitab")
         ->not->toContain('Zainal')->not->toContain('Ust. Baru')->not->toContain('Pondok Lain');
 });
 
@@ -362,7 +362,7 @@ it('AC-40: freezes the school address and phone when they are set', function () 
 
     $letter = suratIssue($this->f);
 
-    expect($letter->fresh()->snapshot['school'])->toEqual(['name' => "Ma'had Al-Khair", 'address' => 'Jl. Pesantren No. 1', 'phone' => '0812-0000-1111']);
+    expect($letter->fresh()->snapshot['school'])->toEqual(['name' => "Ma'had Al-Kitab", 'address' => 'Jl. Pesantren No. 1', 'phone' => '0812-0000-1111']);
 });
 
 it('AC-41: leaves the classroom empty for a student without a classroom this year', function () {

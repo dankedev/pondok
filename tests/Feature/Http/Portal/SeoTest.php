@@ -14,7 +14,7 @@ it('AC-23: sets home meta tags', function () {
     $html = $this->get('/')->assertOk()->getContent();
 
     expect($html)
-        ->toContain('<title>Ma&#039;had Al-Khair — Mencetak generasi Qur&#039;ani</title>')
+        ->toContain('<title>Ma&#039;had Al-Kitab — Mencetak generasi Qur&#039;ani</title>')
         ->toMatch('/<meta name="description" content="Mencetak generasi Qur(&#039;|\')ani"/')
         ->toContain('<link rel="canonical" href="'.url('/').'"')
         ->toContain('property="og:site_name"')->toContain('property="og:title"')
@@ -31,31 +31,31 @@ it('AC-23: sets home meta tags', function () {
 });
 
 it('AC-24: sets article meta tags', function () {
-    Storage::fake('public', ['url' => 'https://alkhair.sch.id/storage']);
+    Storage::fake('public', ['url' => 'https://pondokcontoh.sch.id/storage']);
     portalPost(['title' => 'Wisuda Akbar', 'excerpt' => 'Ringkasan wisuda', 'cover_path' => 'posts/covers/w.jpg']);
     portalPost(['title' => 'Tanpa Excerpt', 'excerpt' => null, 'body' => '<p>Halo</p><p>Dunia</p>']);
 
     $html = $this->get('/berita/wisuda-akbar?utm_source=x')->assertOk()->getContent();
 
     expect($html)
-        ->toContain('<title>Wisuda Akbar — Ma&#039;had Al-Khair</title>')
+        ->toContain('<title>Wisuda Akbar — Ma&#039;had Al-Kitab</title>')
         ->toContain('name="description" content="Ringkasan wisuda"')
         ->toContain('content="article"')
-        ->toContain('property="og:image" content="https://alkhair.sch.id/storage/posts/covers/w.jpg"')
+        ->toContain('property="og:image" content="https://pondokcontoh.sch.id/storage/posts/covers/w.jpg"')
         ->toContain('<link rel="canonical" href="'.route('portal.posts.show', 'wisuda-akbar').'"')
         ->not->toContain('utm_source');
 
     expect($this->get('/berita/tanpa-excerpt')->getContent())->toContain('name="description" content="Halo Dunia"');
 
-    config(['app.url' => 'https://alkhair.sch.id']);
+    config(['app.url' => 'https://pondokcontoh.sch.id']);
     $evil = $this->withHeader('Host', 'evil.test')->get('/berita/wisuda-akbar')->assertOk()->getContent();
-    expect($evil)->toContain('<link rel="canonical" href="https://alkhair.sch.id/berita/wisuda-akbar"')
-        ->toContain('property="og:url" content="https://alkhair.sch.id/berita/wisuda-akbar"')
+    expect($evil)->toContain('<link rel="canonical" href="https://pondokcontoh.sch.id/berita/wisuda-akbar"')
+        ->toContain('property="og:url" content="https://pondokcontoh.sch.id/berita/wisuda-akbar"')
         ->not->toContain('evil.test');
 });
 
 it('AC-24a: builds pagination and canonical urls from APP_URL', function () {
-    config(['app.url' => 'https://alkhair.sch.id']);
+    config(['app.url' => 'https://pondokcontoh.sch.id']);
     $category = kontenCategory('post', 'Pengumuman');
     foreach (range(1, 10) as $i) {
         portalPost(['title' => "Kabar {$i}", 'category_id' => $category->id]);
@@ -63,18 +63,18 @@ it('AC-24a: builds pagination and canonical urls from APP_URL', function () {
     portalAlbumWithPhotos(30, ['title' => 'Album Besar']);
 
     $posts = $this->withHeader('Host', 'evil.test')->get('/berita?kategori=pengumuman')->assertOk();
-    expect(portalDecoded($posts))->toContain('https://alkhair.sch.id/berita?kategori=pengumuman&page=2');
+    expect(portalDecoded($posts))->toContain('https://pondokcontoh.sch.id/berita?kategori=pengumuman&page=2');
     expect($posts->getContent())->not->toContain('evil.test');
 
     $album = $this->withHeader('Host', 'evil.test')->get('/galeri/album-besar')->assertOk();
-    expect(portalDecoded($album))->toContain('https://alkhair.sch.id/galeri/album-besar?page=2');
+    expect(portalDecoded($album))->toContain('https://pondokcontoh.sch.id/galeri/album-besar?page=2');
     expect($album->getContent())->not->toContain('evil.test');
 });
 
 it('AC-24a: tolerates APP_URL without scheme', function () {
-    config(['app.url' => 'alkhair.sch.id']);
+    config(['app.url' => 'pondokcontoh.sch.id']);
 
-    $this->get('/')->assertOk()->assertSee('<link rel="canonical" href="http://alkhair.sch.id"', false);
+    $this->get('/')->assertOk()->assertSee('<link rel="canonical" href="http://pondokcontoh.sch.id"', false);
     $this->get('/berita')->assertOk();
 });
 
@@ -121,17 +121,17 @@ it('AC-25: reduces the sitemap when konten is off and adds psb when on', functio
 
 it('AC-25: builds sitemap and robots urls from APP_URL regardless of Host', function () {
     portalSeedContent();
-    config(['app.url' => 'https://alkhair.sch.id']);
+    config(['app.url' => 'https://pondokcontoh.sch.id']);
 
     $sitemap = $this->withHeader('Host', 'evil.test')->get('/sitemap.xml')->assertOk()->getContent();
     $xml = simplexml_load_string($sitemap);
     foreach ($xml->url as $url) {
-        expect((string) $url->loc)->toStartWith('https://alkhair.sch.id');
+        expect((string) $url->loc)->toStartWith('https://pondokcontoh.sch.id');
     }
     expect($sitemap)->not->toContain('evil.test');
 
     $robots = $this->withHeader('Host', 'evil.test')->get('/robots.txt')->assertOk();
-    expect($robots->getContent())->toContain('Sitemap: https://alkhair.sch.id/sitemap.xml')->not->toContain('evil.test');
+    expect($robots->getContent())->toContain('Sitemap: https://pondokcontoh.sch.id/sitemap.xml')->not->toContain('evil.test');
 });
 
 it('AC-26: serves robots.txt', function () {

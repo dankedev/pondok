@@ -979,10 +979,10 @@ function laporanInvoiceWithItems(object $f, Student $student, array $amounts, st
  */
 function laporanSubsidyFixture(object $f): object
 {
-    $tahfidz = laporanScholarship('Beasiswa Tahfidz', 'Yayasan Al-Khair');
-    $yatim = laporanScholarship('Yatim', 'Yayasan Al-Khair');
+    $tahfidz = laporanScholarship('Beasiswa Tahfidz', 'Yayasan Contoh');
+    $yatim = laporanScholarship('Yatim', 'Yayasan Contoh');
     $ustadz = laporanScholarship('Anak Ustadz');
-    laporanScholarship('Program Kosong', 'Yayasan Al-Khair');
+    laporanScholarship('Program Kosong', 'Yayasan Contoh');
 
     $a = laporanStudent($f);
     $b = laporanStudent($f);
@@ -2594,7 +2594,7 @@ function kontenArabicBody(int $letters): string
 */
 
 /**
- * Fixture: seeder (jenjang, peran, settings), modul `dokumen` aktif, `school.name` "Ma'had Al-Khair", panel admin,
+ * Fixture: seeder (jenjang, peran, settings), modul `dokumen` aktif, `school.name` "Ma'had Al-Kitab", panel admin,
  * waktu dibekukan, disk palsu, tahun ajaran aktif 2026/2027, santri `s1` (SD, aktif, rombel 4A, NIS 2026000123,
  * "Muhammad Fauzan Akbar") dan `s2` (SLTP, aktif, rombel 7A), staff `t1` (aktif, Kepala Sekolah, NIP 1987) dan `t2`
  * (nonaktif), user admin-sekolah tanpa cakupan `admin` dan bercakupan SLTP `scoped`.
@@ -2605,7 +2605,7 @@ function suratFixture(): object
 {
     test()->seed([UnitSeeder::class, RolePermissionSeeder::class, SettingSeeder::class]);
     Setting::set('modules.dokumen.enabled', true);
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
     Filament::setCurrentPanel('admin');
     test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
     Storage::fake('public');
@@ -3489,7 +3489,7 @@ function portalBoot(bool $freshPages = false): object
         StaticPage::query()->update(['status' => 'terbit']);
     }
     Setting::set('modules.konten.enabled', true);
-    Setting::set('school.name', "Ma'had Al-Khair");
+    Setting::set('school.name', "Ma'had Al-Kitab");
     Setting::set('school.tagline', "Mencetak generasi Qur'ani");
     test()->travelTo(CarbonImmutable::parse('2026-10-15 10:00', 'Asia/Jakarta'));
     Storage::fake('public');

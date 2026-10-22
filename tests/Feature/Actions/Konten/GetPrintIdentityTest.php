@@ -15,11 +15,11 @@ beforeEach(function () {
 
 it('AC-2: returns the name, address and the print contact phone', function () {
     profilSet([
-        'school.name' => "Ma'had Al-Khair", 'school.address' => 'Jl. Pesantren No. 1',
+        'school.name' => "Ma'had Al-Kitab", 'school.address' => 'Jl. Pesantren No. 1',
         'school.contacts' => [profilContact(['key' => 'aaaa1111', 'phone' => '081200000001']), profilContact(['key' => 'bbbb2222', 'phone' => '0735000170', 'is_print' => true])],
     ]);
 
-    expect(app(GetPrintIdentity::class)->handle())->toEqual(['name' => "Ma'had Al-Khair", 'address' => 'Jl. Pesantren No. 1', 'phone' => '0735000170']);
+    expect(app(GetPrintIdentity::class)->handle())->toEqual(['name' => "Ma'had Al-Kitab", 'address' => 'Jl. Pesantren No. 1', 'phone' => '0735000170']);
 });
 
 it('AC-2: falls back to the app name and null address and phone', function () {

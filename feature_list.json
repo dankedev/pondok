@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F083",
+  "next_id": "F084",
   "features": [
     {
       "id": "F001",
@@ -604,12 +604,12 @@
     {
       "id": "F034",
       "key": "inti-seeder-demo",
-      "name": "Seeder data demo Ma'had Al-Khair Belitang",
+      "name": "Seeder data demo Pondok Pesantren Contoh",
       "phase": 1,
       "module": "Inti",
       "status": "done",
       "depends_on": ["F002", "F003", "F007", "F008", "F012", "F014", "F015", "F017", "F018", "F019"],
-      "description": "DemoSeeder terpisah (db:seed --class=DemoSeeder, tidak dipanggil DatabaseSeeder/InstallSeeder) berisi data dikurasi dan deterministik untuk pondok fiktif Ma'had Al-Khair Belitang: akademik, asrama, keuangan (tarif, beasiswa, tagihan, pembayaran), PSB semua status, dokumen, surat, prestasi, konten portal, dan satu akun demo per peran. Dibuat lewat Action yang ada.",
+      "description": "DemoSeeder terpisah (db:seed --class=DemoSeeder, tidak dipanggil DatabaseSeeder/InstallSeeder) berisi data dikurasi dan deterministik untuk pondok fiktif Pondok Pesantren Contoh: akademik, asrama, keuangan (tarif, beasiswa, tagihan, pembayaran), PSB semua status, dokumen, surat, prestasi, konten portal, dan satu akun demo per peran. Dibuat lewat Action yang ada.",
       "acceptance": [
         "Menolak berjalan di APP_ENV=production tanpa menulis data",
         "Idempotent: jalan dua kali tidak menggandakan data",
@@ -639,7 +639,7 @@
         "Bagian beranda dan footer kosong tidak dirender; slider dan video mengikuti saklar modul konten (dan psb untuk video PSB)",
         "Profil lembaga dibaca dengan satu query settings per request",
         "Tanpa teks konten bawaan: instalasi baru tanpa DemoSeeder tidak menampilkan basmalah, salam, ayat, sambutan, atau judul seksi konten di beranda dan footer; semua isian berawal kosong dan bagian kosong tidak dirender",
-        "DemoSeeder mengisi field baru dengan contoh fiktif Al-Khair tanpa kontak asli brosur"
+        "DemoSeeder mengisi field baru dengan contoh fiktif lembaga pengguna tanpa kontak asli brosur"
       ],
       "owner": null,
       "handoff": null,
@@ -708,7 +708,7 @@
       "owner": null,
       "handoff": null,
       "evidence": "Test F039 lulus: ConfiguredNumberFormatTest (kuitansi/tagihan), GenerateStudentNumberFormatTest (NIS), DocumentNumberingTest (halaman). Suite penuh 4110 lulus; 1 kegagalan lama di PortalVisualIdentityTest (soal tema panel Filament, di luar F039). RolePermissionSeederTest diperbarui untuk dua permission baru. Belum di-commit.",
-      "notes": "Keputusan user 16 Okt 2026 (docs/pertanyaan-mahad-al-khair.md, Jawaban user no. 1–3): format diatur admin, bukan ditentukan aplikasi. Selesai 17 Okt 2026: generator NIS/kuitansi/tagihan membaca setting (students.nis_format, keuangan.invoice_format, keuangan.receipt_format) dengan default identik format sebelumnya; halaman Pengaturan Penomoran (view:student-numbering, view:finance-numbering) dengan pratinjau. Rencana: .commandcode/plans/F039-document-numbering.md."
+      "notes": "Keputusan user 16 Okt 2026 (daftar pertanyaan untuk lembaga yang dihapus di F083, Jawaban user no. 1–3): format diatur admin, bukan ditentukan aplikasi. Selesai 17 Okt 2026: generator NIS/kuitansi/tagihan membaca setting (students.nis_format, keuangan.invoice_format, keuangan.receipt_format) dengan default identik format sebelumnya; halaman Pengaturan Penomoran (view:student-numbering, view:finance-numbering) dengan pratinjau. Rencana: .commandcode/plans/F039-document-numbering.md."
     },
     {
       "id": "F040",
@@ -772,12 +772,12 @@
     {
       "id": "F035",
       "key": "portal-identitas-visual",
-      "name": "Identitas visual portal (warna logo Al-Khair, gaya modern ringan)",
+      "name": "Identitas visual portal (warna logo lembaga, gaya modern ringan)",
       "phase": 1,
       "module": "Konten",
       "status": "done",
       "depends_on": ["F017", "F036", "F037"],
-      "description": "Mengganti warna portal publik dan PSB dari emerald ke warna logo Al-Khair (navy #000A3C primer, emas #F8B800 aksen) dengan gaya acuan docs/brand/referensi-gaya-coursex.md: ruang kosong lega, bayangan sangat tipis, tombol/input pill, hiasan cincin dan pola titik di belakang foto, selang-seling latar section, judul besar tebal. Layout portal yang ada dipertahankan; tanpa konten bawaan dan tanpa animasi muncul-saat-scroll. Panel admin Filament tidak berubah.",
+      "description": "Mengganti warna portal publik dan PSB dari emerald ke warna logo lembaga (navy #000A3C primer, emas #F8B800 aksen) dengan gaya acuan docs/brand/referensi-gaya-coursex.md: ruang kosong lega, bayangan sangat tipis, tombol/input pill, hiasan cincin dan pola titik di belakang foto, selang-seling latar section, judul besar tebal. Layout portal yang ada dipertahankan; tanpa konten bawaan dan tanpa animasi muncul-saat-scroll. Panel admin Filament tidak berubah.",
       "acceptance": [
         "Token primary (navy) dan accent (emas) di resources/css/app.css mengikuti logo; tidak ada sisa emerald di portal publik dan PSB",
         "Emas tidak dipakai sebagai warna teks di atas putih; teks isi lolos kontras 4.5:1",
@@ -1610,6 +1610,27 @@
       "handoff": null,
       "evidence": "commit 3730266 (header), f97b49e (login admin), 888fa75 (403), a93dbb5 + test demo (test). WaliEntryPointsTest 5 lulus; Http/Portal, PortalWali, ErrorPages, ModuleCompliance lulus; suite penuh PHP 8.4 5082 test: 5076 lulus, 5 skipped MySQL, 1 gagal (DemoSeederTest hitung <details> header) lalu diperbaiki dan lulus. Pint lulus. Dicek visual 360px/1024px/1440px di Herd link sementara.",
       "notes": "Jalur cepat. Keputusan user 22 Okt 2026 (Opsi A tinjauan URL login wali). Rencana: docs/plans/F082-plan.md"
+    },
+    {
+      "id": "F083",
+      "key": "inti-hapus-jejak-lembaga",
+      "issue": 84,
+      "name": "Hapus jejak lembaga pengguna pertama dari repo",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": [],
+      "description": "Repo open source masih memuat nama, logo, brosur, dan dokumen milik lembaga pengguna pertama. Aset dan dokumen lembaga dihapus; nama lembaga di data demo, test, dan dokumen diganti nama fiktif.",
+      "acceptance": [
+        "Pencarian case-insensitive nama lembaga (semua varian) di nama dan isi berkas yang di-track git tidak menemukan apa pun",
+        "prd.md, erd.md, dan design-guide.md tetap ada; hanya isinya yang dinetralkan",
+        "DemoSeeder berjalan tanpa logo dengan lembaga fiktif Pondok Pesantren Contoh",
+        "Test terdampak dan suite penuh lulus; Pint"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit c82d27f (hapus aset), f171dbb (data demo), abab85e (test), b8daf5a (css), b718ff9 + 80ea1ec (dokumen). Test terdampak 603 lulus; suite penuh PHP 8.4 5082 test: 5077 lulus, 5 skipped MySQL. Pint lulus.",
+      "notes": "Jalur cepat. Permintaan user 22 Okt 2026. Rencana: docs/plans/F083-plan.md. Riwayat git publik tetap memuat berkas lama; penulisan ulang riwayat tidak dilakukan."
     }
   ]
 }

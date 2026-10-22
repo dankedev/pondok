@@ -28,8 +28,8 @@ function profilContactsInput(): array
             ['label' => 'Sekretariat', 'phone' => '(0735) 000 0170', 'is_whatsapp' => false],
         ],
         'social_links' => [
-            ['platform' => 'instagram', 'url' => 'https://instagram.com/alkhair'],
-            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.com/@alkhair'],
+            ['platform' => 'instagram', 'url' => 'https://instagram.com/pondokcontoh'],
+            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.com/@pondokcontoh'],
             ['platform' => 'lainnya', 'label' => 'Blog Kami', 'url' => 'https://blog.contoh.test'],
         ],
     ];
@@ -49,7 +49,7 @@ it('AC-20: saves ordered contacts and socials', function () {
         ->and($contacts[0]['key'])->toMatch('/^[a-z0-9]{8}$/')->and($contacts[1]['key'])->toMatch('/^[a-z0-9]{8}$/')
         ->and($contacts[0]['key'])->not->toBe($contacts[1]['key'])
         ->and(array_column($socials, 'platform'))->toBe(['instagram', 'youtube', 'lainnya'])
-        ->and(array_column($socials, 'url'))->toBe(['https://instagram.com/alkhair', 'https://youtube.com/@alkhair', 'https://blog.contoh.test'])
+        ->and(array_column($socials, 'url'))->toBe(['https://instagram.com/pondokcontoh', 'https://youtube.com/@pondokcontoh', 'https://blog.contoh.test'])
         ->and($socials[2]['label'])->toBe('Blog Kami')
         ->and(Setting::get('school.map_url'))->toBe('https://maps.app.goo.gl/abc');
 });
@@ -200,7 +200,7 @@ it('AC-4: saves address, email and the print flag and keeps the keys of resent c
 
     profilSaveContacts([
         'address' => 'Jl. Pesantren No. 1',
-        'email' => 'info@alkhair.sch.id',
+        'email' => 'info@pondokcontoh.sch.id',
         'contacts' => [
             profilContact(['key' => 'abcd1234', 'is_print' => true]),
             ['label' => 'Panitia', 'phone' => '081200000002', 'is_whatsapp' => true],
@@ -210,14 +210,14 @@ it('AC-4: saves address, email and the print flag and keeps the keys of resent c
     $contacts = Setting::get('school.contacts');
 
     expect(Setting::get('school.address'))->toBe('Jl. Pesantren No. 1')
-        ->and(Setting::get('school.email'))->toBe('info@alkhair.sch.id')
+        ->and(Setting::get('school.email'))->toBe('info@pondokcontoh.sch.id')
         ->and($contacts[0])->toMatchArray(['key' => 'abcd1234', 'is_print' => true])
         ->and($contacts[1]['is_print'])->toBeFalse()
         ->and(kontenActivities()->where('description', 'school_contacts_updated'))->not->toBeEmpty();
 });
 
 it('AC-4: rejects invalid address, email or two print contacts on the right field and changes nothing', function (array $input, string $field) {
-    profilSaveContacts(['address' => 'Alamat lama', 'email' => 'lama@alkhair.sch.id', 'contacts' => [profilContact(['key' => 'abcd1234'])]]);
+    profilSaveContacts(['address' => 'Alamat lama', 'email' => 'lama@pondokcontoh.sch.id', 'contacts' => [profilContact(['key' => 'abcd1234'])]]);
     $before = profilSettingsSnapshot();
     $activities = kontenActivities()->count();
 

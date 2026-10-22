@@ -5,10 +5,10 @@ namespace Database\Seeders\Demo;
 use App\Models\StaticPage;
 
 /**
- * Data kurasi demo Ma'had Al-Khair Belitang (F034, revisi brosur PSB):
+ * Data kurasi demo Pondok Pesantren Contoh (F034), lembaga fiktif:
  * khusus putra, jenjang MTW/SMP (kode SLTP) dan TSN/SMA (kode SLTA).
- * Nama lembaga, alamat, tagline, program, dan nominal biaya mengikuti
- * brosur; semua nama orang, nomor telepon, dan email fiktif. Tidak ada
+ * Nama lembaga, alamat, semua nama orang, nomor telepon, dan email
+ * fiktif; demo tidak memuat logo (portal menampilkan nama). Tidak ada
  * tahun absolut: tahun masuk santri disimpan sebagai offset terhadap tahun
  * ajaran aktif (lihat `DemoCalendar`).
  */
@@ -16,10 +16,10 @@ final class DemoData
 {
     /** Identitas (lewat `UpdateSchoolProfile`) dan alamat/email (lewat `UpdateSchoolContacts`, F044). */
     public const SCHOOL = [
-        'name' => "Ma'had Al-Khair Belitang",
-        'tagline' => "Generasi Beradab Bersama Al-Qur'an",
-        'address' => 'Jl. Raya Belitang–Martapura, Mojosari, Belitang, OKU Timur, Sumatera Selatan',
-        'email' => 'info@alkhair-belitang.test',
+        'name' => 'Pondok Pesantren Contoh',
+        'tagline' => 'Berilmu, beramal, dan beradab',
+        'address' => 'Jl. Pendidikan No. 1, Desa Contoh, Kecamatan Contoh, Sumatera Selatan',
+        'email' => 'info@pondok-contoh.test',
     ];
 
     /**
@@ -28,24 +28,24 @@ final class DemoData
      *
      * @var list<string>
      */
-    public const OLD_CONTACT_PAGE_VALUES = ['info@alkhair-belitang.test', '0735 000 0170', '0812 0000 0170'];
+    public const OLD_CONTACT_PAGE_VALUES = ['info@pondok-contoh.test', '0735 000 0170', '0812 0000 0170'];
 
     /**
      * Profil lembaga demo (F036): contoh isian admin, bukan teks bawaan aplikasi.
      * Nomor dan tautan fiktif; nomor asli brosur tidak dipakai.
      */
     public const INSTITUTION = [
-        'short_name' => 'Al-Khair',
-        'arabic_name' => 'معهد الخير',
+        'short_name' => 'Pondok Contoh',
+        'arabic_name' => 'معهد المثال',
         'contacts' => [
             ['label' => 'Kantor', 'name' => null, 'phone' => '07350000170', 'is_whatsapp' => false, 'is_print' => true, 'is_psb' => false],
             ['label' => 'Panitia PSB', 'name' => null, 'phone' => '081200000171', 'is_whatsapp' => true, 'is_print' => false, 'is_psb' => true],
             ['label' => 'Sekretariat', 'name' => null, 'phone' => '081200000170', 'is_whatsapp' => true, 'is_print' => false, 'is_psb' => false],
         ],
         'social_links' => [
-            ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.contoh.test/alkhair.belitang'],
-            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.contoh.test/@alkhair.belitang'],
-            ['platform' => 'telegram', 'label' => null, 'url' => 'https://telegram.contoh.test/alkhair.belitang'],
+            ['platform' => 'instagram', 'label' => null, 'url' => 'https://instagram.contoh.test/pondokcontoh'],
+            ['platform' => 'youtube', 'label' => null, 'url' => 'https://youtube.contoh.test/@pondokcontoh'],
+            ['platform' => 'telegram', 'label' => null, 'url' => 'https://telegram.contoh.test/pondokcontoh'],
         ],
         /**
          * Blok beranda demo (F045), tanpa blok video (video demo tidak dibuat). Tombol: tujuan
@@ -61,7 +61,7 @@ final class DemoData
                 'secondary' => ['page:selayang-pandang', 'Kenali kami'],
             ]],
             ['type' => 'features', 'data' => [
-                'heading' => "Mengapa memilih Ma'had Al-Khair",
+                'heading' => 'Mengapa memilih Pondok Pesantren Contoh',
                 'items' => [
                     ['title' => 'Kurikulum terintegrasi', 'text' => "Ilmu syar'i, tahfizh Al-Qur'an, bahasa Arab, pendidikan umum, dan pembentukan karakter dalam Jurnal Adab dan Akhlak."],
                     ['title' => 'Pengajar berkompeten', 'text' => 'Ustaz berlatar pendidikan Islam dari dalam dan luar negeri.'],
@@ -71,7 +71,7 @@ final class DemoData
             ]],
             ['type' => 'text_image', 'data' => [
                 'heading' => 'Tentang yayasan',
-                'text' => "<p>Yayasan Islam Al-Khair Belitang berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan <strong>berasrama khusus putra</strong>.</p><p>Santri dibina untuk berilmu, beramal, dan beradab sesuai Al-Qur'an dan Sunnah.</p>",
+                'text' => "<p>Yayasan Pendidikan Islam Contoh berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan <strong>berasrama khusus putra</strong>.</p><p>Santri dibina untuk berilmu, beramal, dan beradab sesuai Al-Qur'an dan Sunnah.</p>",
                 'button' => ['page:profil', 'Baca profil lengkap'],
             ]],
             ['type' => 'feed', 'data' => ['source' => 'posts']],
@@ -79,7 +79,7 @@ final class DemoData
             ['type' => 'feed', 'data' => ['source' => 'albums']],
             ['type' => 'cta', 'data' => [
                 'eyebrow' => 'Penerimaan santri baru',
-                'heading' => "Bergabung bersama Ma'had Al-Khair",
+                'heading' => 'Bergabung bersama Pondok Pesantren Contoh',
                 'text' => 'Pendaftaran dibuka setiap tahun ajaran untuk jenjang MTW/SMP dan TSN/SMA, khusus putra.',
                 'primary' => ['psb.register', 'Daftar sekarang'],
                 'secondary' => ['page:kontak', 'Hubungi kami'],
@@ -96,19 +96,12 @@ final class DemoData
         'footer_widgets' => [
             ['type' => 'text', 'data' => [
                 'heading' => null,
-                'body' => "<p>Ma'had Al-Khair Belitang: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.</p><p><strong>Jam layanan tata usaha</strong><br>Senin sampai Kamis dan Sabtu: 08.00 sampai 14.00<br>Jumat: 08.00 sampai 11.00</p>",
+                'body' => '<p>Pondok Pesantren Contoh: pendidikan Islam berasrama khusus putra dengan program tahfidz, bahasa Arab, dan studi Islam intensif.</p><p><strong>Jam layanan tata usaha</strong><br>Senin sampai Kamis dan Sabtu: 08.00 sampai 14.00<br>Jumat: 08.00 sampai 11.00</p>',
                 'show_logo' => true,
             ]],
             ['type' => 'contacts', 'data' => ['heading' => 'Hubungi kami']],
             ['type' => 'social', 'data' => ['heading' => 'Ikuti kami']],
             ['type' => 'links', 'data' => ['heading' => 'Tautan', 'items' => ['page:visi-misi', 'posts', 'psb.status', 'letters.verify']]],
-        ],
-        /** Logo merek dari `docs/brand/` (dilewati bila berkas tidak ada). */
-        'logos' => [
-            'logo' => 'docs/brand/logo-mahad-simbol.png',
-            'logo_desktop' => 'docs/brand/logo-mahad-horizontal.png',
-            'logo_mobile' => 'docs/brand/logo-mahad-simbol.png',
-            'favicon' => 'docs/brand/logo-mahad-simbol.png',
         ],
     ];
 
@@ -214,7 +207,7 @@ final class DemoData
         'Mudir Ma\'had' => 'Abdul Hamid Syukri',
     ];
 
-    public const FOUNDATION = 'Yayasan Islam Al-Khair Belitang';
+    public const FOUNDATION = 'Yayasan Pendidikan Islam Contoh';
 
     /**
      * Akun demo: peran => [nama, kode jenjang cakupan].
@@ -436,7 +429,7 @@ final class DemoData
     /** Tarif SPP lama yang terkunci untuk angkatan TSN/SMA dua tahun lalu (kelas 12). */
     public const COHORT_RATE = ['fee' => 'SPP', 'unit' => 'SLTA', 'entry_offset' => -2, 'amount' => 1500000];
 
-    public const SPONSOR = 'Donatur Yayasan Islam Al-Khair Belitang';
+    public const SPONSOR = 'Donatur Yayasan Pendidikan Islam Contoh';
 
     /** @var array<string, array{name: string, mode: string, default_value: int}> */
     public const SCHOLARSHIPS = [
@@ -510,11 +503,11 @@ final class DemoData
         ['title' => 'Juara 1 Cerdas Cermat Matematika', 'category' => 'akademik', 'level' => 'kecamatan', 'kind' => 'individu', 'offset' => 200, 'verified' => false, 'public' => false,
             'event' => 'Lomba cerdas cermat matematika tingkat kecamatan', 'organizer' => 'Kelompok kerja guru matematika kecamatan', 'participants' => [['Muhammad Irfan Hakiki', 'Juara 1', null]]],
         ['title' => 'Juara 1 Kaligrafi Musabaqah Internal', 'category' => 'seni', 'level' => 'pondok', 'kind' => 'individu', 'offset' => 260, 'verified' => false, 'public' => false,
-            'event' => 'Musabaqah internal santri', 'organizer' => "Bagian kesantrian Ma'had Al-Khair Belitang", 'participants' => [['Abdurrahman Hakim', 'Juara 1', null]]],
+            'event' => 'Musabaqah internal santri', 'organizer' => 'Bagian kesantrian Pondok Pesantren Contoh', 'participants' => [['Abdurrahman Hakim', 'Juara 1', null]]],
     ];
 
     /** Kategori berita sesuai brief. */
-    public const POST_CATEGORIES = ['Kegiatan Al-Khair', 'Prestasi', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
+    public const POST_CATEGORIES = ['Kegiatan Pondok', 'Prestasi', 'Info Kajian', 'Akidah & Manhaj', 'Tafsir & Hadits', 'Fiqh', 'Umum'];
 
     public const ACHIEVEMENT_CATEGORY = 'Prestasi';
 
@@ -527,22 +520,22 @@ final class DemoData
         [
             'slug' => 'penerimaan-santri-baru-dibuka', 'title' => 'Penerimaan Santri Baru Tahun Ajaran {S} Dibuka', 'category' => 'Umum', 'offset' => 2, 'cover' => true,
             'excerpt' => 'Pendaftaran santri baru MTW/SMP dan TSN/SMA khusus putra dibuka sepanjang tahun selama kuota tersedia.',
-            'body' => "<p>Ma'had Al-Khair Belitang menerima santri baru untuk tahun ajaran {S} pada jenjang MTW/SMP dan TSN/SMA, khusus putra. Pendaftaran dibuka sepanjang tahun selama kuota tersedia, terbagi dalam Gelombang I dan Gelombang II.</p><p>Program utama ma'had adalah tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum.</p><h2>Berkas yang disiapkan</h2><ul><li>Kartu Keluarga</li><li>Akta kelahiran</li><li>Rapor semester terakhir</li><li>Pas foto 3x4 latar biru</li></ul><p>Pendaftaran dilakukan melalui laman PSB. Calon santri akan dihubungi panitia untuk tes seleksi bersama orang tua atau wali.</p>",
+            'body' => "<p>Pondok Pesantren Contoh menerima santri baru untuk tahun ajaran {S} pada jenjang MTW/SMP dan TSN/SMA, khusus putra. Pendaftaran dibuka sepanjang tahun selama kuota tersedia, terbagi dalam Gelombang I dan Gelombang II.</p><p>Program utama ma'had adalah tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum.</p><h2>Berkas yang disiapkan</h2><ul><li>Kartu Keluarga</li><li>Akta kelahiran</li><li>Rapor semester terakhir</li><li>Pas foto 3x4 latar biru</li></ul><p>Pendaftaran dilakukan melalui laman PSB. Calon santri akan dihubungi panitia untuk tes seleksi bersama orang tua atau wali.</p>",
         ],
         [
-            'slug' => 'masa-taaruf-santri-baru', 'title' => "Masa Ta'aruf Santri Baru", 'category' => 'Kegiatan Al-Khair', 'offset' => 6, 'cover' => true,
+            'slug' => 'masa-taaruf-santri-baru', 'title' => "Masa Ta'aruf Santri Baru", 'category' => 'Kegiatan Pondok', 'offset' => 6, 'cover' => true,
             'excerpt' => "Santri baru mengikuti masa ta'aruf untuk mengenal adab, jadwal harian, dan lingkungan ma'had.",
             'body' => "<p>Santri baru mengikuti masa ta'aruf selama lima hari setelah serah terima. Kegiatan meliputi pengenalan tata tertib asrama, jadwal harian, halaqah tahfidz, dan pembiasaan Jurnal Adab.</p><p>Setiap kamar didampingi seorang musyrif yang membimbing santri sejak bangun tidur hingga istirahat malam.</p>",
         ],
         [
-            'slug' => 'santri-ikut-kerja-bakti-bersama-warga-mojosari', 'title' => 'Santri Ikut Kerja Bakti Bersama Warga Mojosari', 'category' => 'Kegiatan Al-Khair', 'offset' => 10, 'cover' => true,
+            'slug' => 'santri-ikut-kerja-bakti-bersama-warga-sekitar', 'title' => 'Santri Ikut Kerja Bakti Bersama Warga Sekitar', 'category' => 'Kegiatan Pondok', 'offset' => 10, 'cover' => true,
             'excerpt' => 'Santri TSN/SMA membersihkan saluran air dan jalan desa bersama warga.',
-            'body' => '<p>Pada Ahad pagi, santri TSN/SMA bergabung dengan warga Mojosari membersihkan saluran air dan bahu jalan menjelang musim hujan.</p><p>Kegiatan ini melatih kepedulian santri kepada lingkungan dan masyarakat sekitar ma\'had.</p>',
+            'body' => '<p>Pada Ahad pagi, santri TSN/SMA bergabung dengan warga sekitar membersihkan saluran air dan bahu jalan menjelang musim hujan.</p><p>Kegiatan ini melatih kepedulian santri kepada lingkungan dan masyarakat sekitar ma\'had.</p>',
         ],
         [
             'slug' => 'jadwal-kajian-kitab-pekanan-wali-santri', 'title' => 'Jadwal Kajian Kitab Pekanan untuk Wali Santri', 'category' => 'Info Kajian', 'offset' => 14, 'cover' => true,
             'excerpt' => 'Kajian kitab untuk wali santri diadakan setiap Ahad pagi di masjid ma\'had.',
-            'body' => "<p>Ma'had Al-Khair Belitang mengadakan kajian kitab pekanan untuk wali santri dan masyarakat umum setiap Ahad pukul 08.00 sampai 09.30 di masjid ma'had.</p><p>Kajian membahas akidah, adab, dan fiqih ibadah sehari-hari secara berurutan. Peserta dipersilakan membawa catatan; kitab dapat dipinjam di perpustakaan.</p>",
+            'body' => "<p>Pondok Pesantren Contoh mengadakan kajian kitab pekanan untuk wali santri dan masyarakat umum setiap Ahad pukul 08.00 sampai 09.30 di masjid ma'had.</p><p>Kajian membahas akidah, adab, dan fiqih ibadah sehari-hari secara berurutan. Peserta dipersilakan membawa catatan; kitab dapat dipinjam di perpustakaan.</p>",
         ],
         [
             'slug' => 'ringkasan-kajian-menuntut-ilmu-sebelum-beramal', 'title' => 'Ringkasan Kajian: Pentingnya Menuntut Ilmu Sebelum Beramal', 'category' => 'Akidah & Manhaj', 'offset' => 18, 'cover' => false,
@@ -568,7 +561,7 @@ final class DemoData
 
     /** @var list<array{slug: string, title: string, category: string, description: string, captions: list<string>}> */
     public const ALBUMS = [
-        ['slug' => 'fasilitas-mahad', 'title' => "Fasilitas Ma'had", 'category' => 'Fasilitas', 'description' => "Masjid, asrama, ruang kelas, dan kantor Ma'had Al-Khair Belitang.",
+        ['slug' => 'fasilitas-mahad', 'title' => "Fasilitas Ma'had", 'category' => 'Fasilitas', 'description' => 'Masjid, asrama, ruang kelas, dan kantor Pondok Pesantren Contoh.',
             'captions' => ['Bangunan luar masjid', 'Bagian dalam masjid', 'Asrama santri', 'Ruang kelas ber-AC', 'Ruang rapat', 'Kantor yayasan']],
         ['slug' => 'masa-taaruf-santri-baru', 'title' => "Masa Ta'aruf Santri Baru", 'category' => 'Kegiatan', 'description' => "Dokumentasi masa ta'aruf santri baru di awal tahun ajaran.",
             'captions' => ['Pembukaan masa ta\'aruf', 'Pengenalan tata tertib asrama', 'Halaqah tahfidz perdana', 'Pengisian Jurnal Adab', 'Foto bersama musyrif']],
@@ -591,9 +584,9 @@ final class DemoData
         ));
 
         $pages = [
-            'profil' => ['title' => 'Tentang Yayasan', 'body' => '<p>'.self::FOUNDATION." menaungi Ma'had Al-Khair Belitang di Mojosari, Kecamatan Belitang, Kabupaten OKU Timur. Yayasan berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan berasrama.</p><p>Kenali lebih jauh lewat halaman Selayang Pandang dan Pengurus Al-Khair.</p>"],
-            'pengurus' => ['title' => 'Pengurus Al-Khair', 'body' => '<p>Pengurus '.self::FOUNDATION." dan pimpinan ma'had:</p><ul>{$board}</ul>"],
-            'selayang-pandang' => ['title' => 'Selayang Pandang', 'body' => "<p>Ma'had Al-Khair Belitang berfokus pada tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum dan pembinaan adab. Jenjang yang dibuka adalah MTW/SMP dan TSN/SMA, khusus putra.</p><ul><li>Masjid, asrama, dan ruang belajar ber-AC</li><li>Makan 3 kali sehari dan laundry setiap hari</li><li>Pendampingan musyrif di setiap kamar</li><li>Perpustakaan dan fasilitas olahraga</li></ul>"],
+            'profil' => ['title' => 'Tentang Yayasan', 'body' => '<p>'.self::FOUNDATION." menaungi Pondok Pesantren Contoh di Desa Contoh, Kecamatan Contoh. Yayasan berawal dari pengajian Al-Qur'an warga sekitar, lalu berkembang menjadi lembaga pendidikan berasrama.</p><p>Kenali lebih jauh lewat halaman Selayang Pandang dan Pengurus Yayasan.</p>"],
+            'pengurus' => ['title' => 'Pengurus Yayasan', 'body' => '<p>Pengurus '.self::FOUNDATION." dan pimpinan ma'had:</p><ul>{$board}</ul>"],
+            'selayang-pandang' => ['title' => 'Selayang Pandang', 'body' => "<p>Pondok Pesantren Contoh berfokus pada tahfidzul Qur'an, bahasa Arab, dan studi Islam intensif, dipadukan dengan pendidikan umum dan pembinaan adab. Jenjang yang dibuka adalah MTW/SMP dan TSN/SMA, khusus putra.</p><ul><li>Masjid, asrama, dan ruang belajar ber-AC</li><li>Makan 3 kali sehari dan laundry setiap hari</li><li>Pendampingan musyrif di setiap kamar</li><li>Perpustakaan dan fasilitas olahraga</li></ul>"],
             'visi-misi' => ['title' => 'Visi dan Misi', 'body' => "<h2>Visi</h2><p>Menjadi ma'had yang melahirkan generasi beradab bersama Al-Qur'an, berilmu syar'i, dan siap melanjutkan studi.</p><h2>Misi</h2><ul><li>Menyelenggarakan pembinaan tahsin dan tahfidz Al-Qur'an yang tertib dan bertahap.</li><li>Membiasakan bahasa Arab aktif dalam kegiatan harian.</li><li>Mengajarkan ilmu syar'i berdasarkan Al-Qur'an dan Sunnah dengan pemahaman yang lurus.</li><li>Membina adab dan akhlak santri melalui kehidupan berasrama.</li><li>Memadukan pendidikan agama dan pendidikan umum secara seimbang.</li></ul>"],
             // Alamat, nomor, dan email tampil dari Kontak & sosial di bawah isi halaman (F044); isi hanya keterangan.
             'kontak' => ['title' => 'Kontak', 'body' => '<h2>Jam layanan tata usaha</h2><p>Senin sampai Kamis dan Sabtu pukul 08.00 sampai 14.00. Jumat pukul 08.00 sampai 11.00.</p>'],

@@ -82,7 +82,7 @@ it('AC-7: shows only the institution ribbon and the footer when there are no blo
     $html = blkHome();
 
     expect(substr_count($html, '<h1'))->toBe(1)
-        ->and($html)->toMatch('#<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Khair"), '#').'\s*</h1>#')
+        ->and($html)->toMatch('#<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Kitab"), '#').'\s*</h1>#')
         ->and(profilVisibleText($html))->toContain("Mencetak generasi Qur'ani")
         ->and($html)->not->toContain('<h2')->not->toContain('<iframe')->not->toContain(__('pondok.portal.home.latest_news'))
         ->and(profilFooter($html))->not->toBe('');
@@ -113,7 +113,7 @@ it('AC-7: stored data that is not a list of blocks is treated as no blocks', fun
 });
 
 it('AC-8: renders the hero with eyebrow, title, text, image with alt, and the name fallback', function () {
-    Setting::set('school.arabic_name', 'معهد الخير');
+    Setting::set('school.arabic_name', 'معهد الكتاب');
     blkSet([blk('hero', [
         'eyebrow' => 'Label kecil uji', 'title' => 'Judul hero uji', 'text' => "Baris satu\nBaris dua",
         'image' => 'portal/blocks/hero.jpg', 'image_alt' => 'Gedung utama uji',
@@ -126,11 +126,11 @@ it('AC-8: renders the hero with eyebrow, title, text, image with alt, and the na
         ->and(profilVisibleText($hero))->toContain('Label kecil uji')->toContain('Judul hero uji')
         ->and($hero)->toMatch('/Baris satu(\n|<br\s*\/?>)\s*Baris dua/')
         ->and($hero)->toContain(Storage::disk('public')->url('portal/blocks/hero.jpg'))->toContain('alt="Gedung utama uji"')
-        ->and($html)->not->toContain('معهد الخير');
+        ->and($html)->not->toContain('معهد الكتاب');
 
     blkSet([blk('hero', ['eyebrow' => 'Label'])]);
 
-    expect(blkHome())->toMatch('#<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Khair"), '#').'\s*</h1>#');
+    expect(blkHome())->toMatch('#<h1\b[^>]*>\s*'.preg_quote(e("Ma'had Al-Kitab"), '#').'\s*</h1>#');
 });
 
 it('AC-8: renders the hero album as a slider of at most ten photos inside the hero', function () {

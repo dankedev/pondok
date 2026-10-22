@@ -46,7 +46,7 @@ it('AC-23: shows minimal data for a valid letter', function () {
 
     expect(__('pondok.letter_verification.valid_title'))->not->toBe('pondok.letter_verification.valid_title')
         ->and($text)->toContain(__('pondok.letter_verification.valid_title'))
-        ->toContain("Ma'had Al-Khair")
+        ->toContain("Ma'had Al-Kitab")
         ->toContain('001/MAK/SKA/X/2026')
         ->toContain(__('pondok.issued_letter.types.keterangan_aktif'))
         ->toContain('15 Okt 2026')

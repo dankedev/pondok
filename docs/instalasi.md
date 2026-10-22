@@ -177,6 +177,8 @@ Yang tidak ikut dipulihkan: antrean tugas yang belum selesai dan riwayat tugas g
 
 **Masa simpan surat.** Di halaman yang sama, isi **Masa simpan data pribadi surat** (1 sampai 100 tahun). Setiap hari pukul 03.00 WIB, surat keluar yang tanggal terbitnya sudah melewati masa simpan dihapus data pribadinya (nama lengkap, NIS, NISN, jenis kelamin, tempat dan tanggal lahir, jenjang, dan kelas). Surat tetap ada, nomor dan kode verifikasinya tetap berlaku, dan nama santri tampil termasker. Kosongkan isian bila data surat tidak perlu dihapus. Manual: `php artisan pondok:redact-letter-snapshots`. Batasan: isian bebas **keperluan** dan **alasan pembatalan** surat tidak ikut dihapus, jadi jangan menulis data pribadi di sana. Data keuangan tidak pernah dihapus.
 
+**Masa simpan log aktivitas.** Di halaman yang sama, isi **Masa simpan log akademik dan konten** dalam bulan (minimal 24, maksimal 1200). Setiap hari pukul 03.30 WIB, log aktivitas akademik dan konten yang lebih lama dari masa simpan dihapus. Log keuangan, PSB, dokumen, pengaturan, dan sistem tidak pernah dihapus. Kosongkan isian bila log tidak perlu dihapus (bawaan). Manual: `php artisan pondok:prune-activity-log`. Jangan menjalankan `php artisan activitylog:clean` bawaan paket: perintah itu menghapus semua log yang lebih dari setahun, termasuk log keuangan.
+
 ## 12. Masalah umum
 
 | Gejala | Penyebab dan solusi |

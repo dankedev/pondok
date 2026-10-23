@@ -4,9 +4,11 @@ namespace App\Filament\Pages\Settings;
 
 use App\Actions\Core\CreateBackup;
 use App\Actions\Core\UpdateDataRetentionSettings;
+use App\Enums\BackupFrequency;
 use App\Models\Setting;
 use App\Models\User;
 use BackedEnum;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Callout;
@@ -21,7 +23,7 @@ use Illuminate\Support\Number;
 
 /**
  * Pengaturan → Backup & masa simpan (F042, hanya super-admin seperti `Modules`):
- * saklar backup terjadwal, info arsip terakhir, masa simpan snapshot surat, dan
+ * saklar dan frekuensi backup terjadwal (F085), info arsip terakhir, masa simpan snapshot surat, dan
  * masa simpan log aktivitas (F076).
  * Disimpan lewat `UpdateDataRetentionSettings`. Unduh arsip sengaja tidak
  * disediakan di panel; arsip diambil lewat File Manager hosting.
@@ -80,7 +82,14 @@ class DataRetention extends NumberingSettingsPage
                         $pgsql ? Callout::make(__('pondok.backup.pgsql_unsupported'))->warning() : null,
                         Toggle::make('backup_enabled')
                             ->label(__('pondok.data_retention.backup_enabled'))
-                            ->helperText(__('pondok.data_retention.backup_enabled_helper', ['keep' => CreateBackup::KEEP]))
+                            ->helperText(__('pondok.data_retention.backup_enabled_helper'))
+                            ->disabled($pgsql),
+                        Radio::make('backup_frequency')
+                            ->label(__('pondok.data_retention.backup_frequency'))
+                            ->options(collect(BackupFrequency::cases())->mapWithKeys(fn (BackupFrequency $frequency): array => [$frequency->value => $frequency->label()]))
+                            ->descriptions(collect(BackupFrequency::cases())->mapWithKeys(fn (BackupFrequency $frequency): array => [$frequency->value => $frequency->description()]))
+                            ->helperText(__('pondok.data_retention.backup_frequency_helper', ['keep' => CreateBackup::KEEP]))
+                            ->required()
                             ->disabled($pgsql),
                         Text::make(fn (): string => $this->latestBackup()),
                         Text::make(__('pondok.data_retention.backup_hint')),
@@ -117,19 +126,21 @@ class DataRetention extends NumberingSettingsPage
     }
 
     /**
-     * @return array{backup_enabled: bool, letter_snapshot_years: mixed, activity_log_months: mixed}
+     * @return array{backup_enabled: bool, backup_frequency: string, letter_snapshot_years: mixed, activity_log_months: mixed}
      */
     protected function fillData(): array
     {
         return [
             'backup_enabled' => (bool) Setting::get('backup.enabled', false),
+            'backup_frequency' => BackupFrequency::current()->value,
             'letter_snapshot_years' => Setting::get('retention.letter_snapshot_years'),
             'activity_log_months' => Setting::get('retention.activity_log_months'),
         ];
     }
 
     /**
-     * Toggle yang nonaktif (PostgreSQL) tidak ikut state form; nilainya selalu mati.
+     * Field yang nonaktif (PostgreSQL) tidak ikut state form: toggle selalu mati,
+     * frekuensi tidak dikirim sehingga nilai lama dipertahankan.
      *
      * @param  array<string, mixed>  $data
      */
@@ -139,6 +150,7 @@ class DataRetention extends NumberingSettingsPage
             'backup_enabled' => (bool) ($data['backup_enabled'] ?? false),
             'letter_snapshot_years' => filled($data['letter_snapshot_years'] ?? null) ? $data['letter_snapshot_years'] : null,
             'activity_log_months' => filled($data['activity_log_months'] ?? null) ? $data['activity_log_months'] : null,
+            ...filled($data['backup_frequency'] ?? null) ? ['backup_frequency' => $data['backup_frequency']] : [],
         ], $user);
     }
 

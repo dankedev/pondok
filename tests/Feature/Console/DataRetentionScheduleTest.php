@@ -161,3 +161,24 @@ it('F085 AC-10: no seeder writes backup.frequency, so an old instance stays dail
 
     expect($written)->toBe([]);
 });
+
+it('VERIFY F085: weekly and monthly follow the Jakarta calendar just after midnight', function () {
+    $event = retentionScheduled('pondok:backup');
+    Setting::set('backup.enabled', true);
+
+    Setting::set('backup.frequency', 'weekly');
+    Carbon::setTestNow(Carbon::parse('2026-10-25 00:30', 'Asia/Jakarta')); // Sabtu 17:30 UTC
+    expect($event->filtersPass(app()))->toBeTrue('Ahad 00:30 WIB');
+
+    Carbon::setTestNow(Carbon::parse('2026-10-26 00:30', 'Asia/Jakarta')); // Ahad 17:30 UTC
+    expect($event->filtersPass(app()))->toBeFalse('Senin 00:30 WIB');
+
+    Setting::set('backup.frequency', 'monthly');
+    Carbon::setTestNow(Carbon::parse('2026-12-01 00:30', 'Asia/Jakarta')); // 30 Nov UTC
+    expect($event->filtersPass(app()))->toBeTrue('1 Des 00:30 WIB');
+
+    Carbon::setTestNow(Carbon::parse('2026-12-02 00:30', 'Asia/Jakarta')); // 1 Des UTC
+    expect($event->filtersPass(app()))->toBeFalse('2 Des 00:30 WIB');
+
+    Carbon::setTestNow();
+});

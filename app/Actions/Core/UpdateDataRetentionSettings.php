@@ -2,18 +2,21 @@
 
 namespace App\Actions\Core;
 
+use App\Enums\BackupFrequency;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Menyimpan pengaturan Backup & masa simpan (F042, hanya super-admin):
  * `backup.enabled` (backup terjadwal; tidak bisa dinyalakan di PostgreSQL)
  * `retention.letter_snapshot_years` (1–100 tahun, null = tanpa redaksi), dan
- * `retention.activity_log_months` (24–1200 bulan, null = log tidak dihapus, F076).
+ * `retention.activity_log_months` (24–1200 bulan, null = log tidak dihapus, F076), dan
+ * `backup.frequency` (opsional, F085; bila tidak dikirim nilai sekarang dipertahankan).
  * Perubahan dicatat di log `sistem` dengan nilai lama dan baru.
  */
 class UpdateDataRetentionSettings
@@ -25,7 +28,7 @@ class UpdateDataRetentionSettings
     public const MAX_ACTIVITY_LOG_MONTHS = 1200;
 
     /**
-     * @param  array{backup_enabled?: mixed, letter_snapshot_years?: mixed, activity_log_months?: mixed}  $data
+     * @param  array{backup_enabled?: mixed, letter_snapshot_years?: mixed, activity_log_months?: mixed, backup_frequency?: mixed}  $data
      */
     public function handle(array $data, User $by): void
     {
@@ -37,16 +40,21 @@ class UpdateDataRetentionSettings
             'backup_enabled' => ['required', 'boolean'],
             'letter_snapshot_years' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_YEARS],
             'activity_log_months' => ['nullable', 'integer', 'min:'.self::MIN_ACTIVITY_LOG_MONTHS, 'max:'.self::MAX_ACTIVITY_LOG_MONTHS],
+            'backup_frequency' => ['sometimes', 'required', Rule::enum(BackupFrequency::class)],
         ], attributes: [
             'backup_enabled' => __('pondok.data_retention.backup_enabled'),
             'letter_snapshot_years' => __('pondok.data_retention.letter_snapshot_years'),
             'activity_log_months' => __('pondok.data_retention.activity_log_months'),
+            'backup_frequency' => __('pondok.data_retention.backup_frequency'),
         ])->validate();
+
+        $frequency = BackupFrequency::current()->value;
 
         $new = [
             'backup_enabled' => (bool) $validated['backup_enabled'],
             'letter_snapshot_years' => filled($validated['letter_snapshot_years'] ?? null) ? (int) $validated['letter_snapshot_years'] : null,
             'activity_log_months' => filled($validated['activity_log_months'] ?? null) ? (int) $validated['activity_log_months'] : null,
+            'backup_frequency' => $validated['backup_frequency'] ?? $frequency,
         ];
 
         if ($new['backup_enabled'] && DB::connection()->getDriverName() === 'pgsql') {
@@ -57,6 +65,7 @@ class UpdateDataRetentionSettings
             'backup_enabled' => (bool) Setting::get('backup.enabled', false),
             'letter_snapshot_years' => Setting::get('retention.letter_snapshot_years'),
             'activity_log_months' => is_numeric($months = Setting::get('retention.activity_log_months')) ? (int) $months : null,
+            'backup_frequency' => $frequency,
         ];
 
         if ($old === $new) {
@@ -67,6 +76,10 @@ class UpdateDataRetentionSettings
             Setting::set('backup.enabled', $new['backup_enabled']);
             Setting::set('retention.letter_snapshot_years', $new['letter_snapshot_years']);
             Setting::set('retention.activity_log_months', $new['activity_log_months']);
+
+            if ($new['backup_frequency'] !== $old['backup_frequency']) {
+                Setting::set('backup.frequency', $new['backup_frequency']);
+            }
 
             activity('sistem')
                 ->causedBy($by)

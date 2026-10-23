@@ -31,10 +31,10 @@ it('AC-14: handles a missing active academic year', function () {
     expect(app(SummarizeSystemStatus::class)->handle()['active_academic_year'])->toBeNull();
 });
 
-it('AC-2: counts the modules of the enum and ignores a legacy perizinan row', function () {
+it('AC-2: counts the modules of the enum and ignores a legacy module row', function () {
     dashboardEnableThreeModules();
     Setting::set('school.name', 'Ma\'had Al-Kitab');
-    Setting::set('modules.perizinan.enabled', true);
+    Setting::set('modules.absensi.enabled', true);
 
     $summary = app(SummarizeSystemStatus::class)->handle();
 

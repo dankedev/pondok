@@ -71,6 +71,7 @@ demo-pondok-contoh
 - PSB: Gelombang I dan Gelombang II yang bersambung (pendaftaran dibuka sepanjang tahun selama kuota tersedia) dan 14 pendaftar di semua status.
 - Dokumen santri (berkas PDF placeholder di disk `private`), surat keluar, prestasi, berita dengan kategori contoh, dan album foto (gambar placeholder berpola netral tanpa teks). Demo tidak memuat logo: portal menampilkan nama lembaga, dan admin dapat mengunggah logo sendiri di Profil lembaga. Konten tidak memuat perayaan selain Idul Fitri dan Idul Adha.
 - Tahfidz: Halaqah Abu Hurairah (MTW/SMP, diampu akun `ustadz-tahfidz@demo.test`) dan Halaqah Zaid bin Tsabit (TSN/SMA) dengan setoran beberapa hari terakhir, satu ujian kenaikan juz 30 lulus bersyahadah, serta Halaqah Aisyah (putri, nonaktif) sebagai contoh halaqah putri. Capaian juz dihitung Action dari setoran dan ujian.
+- Perizinan: periode "Libur Idul Fitri 1448 H" (belum dibuatkan izin pulang massal; coba aksi "Buat izin pulang massal" dari panel), tujuh izin di semua status (menunggu, disetujui, ditolak, di luar, sudah kembali, batal) termasuk satu santri yang masih di luar melewati batas kembali dan satu yang kembali terlambat, serta tiga kunjungan wali dengan titipan barang. Izin santri MTW/SMP diajukan dan disetujui akun `musyrif@demo.test` (Kamar 101), izin santri TSN/SMA oleh `kesantrian@demo.test`, keluar dan kembali dicatat `petugas-pos@demo.test`.
 
 ## Keterbatasan
 

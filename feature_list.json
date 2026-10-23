@@ -558,7 +558,7 @@
       "name": "Kesehatan santri",
       "phase": 4,
       "module": "Kesehatan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002"],
       "description": "Catatan kesehatan santri.",
       "acceptance": [
@@ -571,9 +571,9 @@
         "Daftar dengan filter tanggal, jenjang, rujukan; riwayat per santri di tab StudentResource (hanya baca)",
         "Data demo singkat lewat Action, idempotent; ERD, PRD, dan design-guide diperbarui"
       ],
-      "owner": "batch-f076-f031",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 2a13d62..12a921c (feat/fix), 97bf65a (VERIFY). tests/Feature/Kesehatan 53 test lulus; suite penuh PHP 8.4 5209 test, 3 test jumlah modul hardcode diperbaiki lalu lulus. Cek tampilan 1440/1024/375 di data demo.",
       "notes": "Jalur penuh (data kesehatan = data pribadi sensitif). Disetujui user 23 Okt 2026 dengan lingkup minimum (komentar #12), dibangun sebagai modul (F066)."
     },
     {

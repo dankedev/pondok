@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F085",
+  "next_id": "F086",
   "features": [
     {
       "id": "F001",
@@ -1669,6 +1669,24 @@
       "handoff": null,
       "evidence": "commit 07cc750 (throttle broker), fd8340f (sendTo bersama), 0e28409 (Action + aksi admin), 79ba6e3/a663189/4503e0b (test). ResendGuardianPortalInvitationTest + ResendGuardianInvitationAdversarialTest; tests/Feature/PortalWali + Actions/PortalWali + ModuleComplianceTest 161 lulus; suite penuh PHP 8.4 5131 test: 5125 lulus, 5 skipped MySQL, 1 galat lingkungan (worktree tanpa .env: SUPER_ADMIN_*) yang lulus 10/10 saat diulang dengan env. Pint lulus. Cek tampilan 360/1024/1440 tidak dilakukan (izin menyiapkan .env worktree ditolak).",
       "notes": "Jalur: penuh (menyentuh auth/token). Rencana: docs/plans/F084-plan.md"
+    },
+    {
+      "id": "F085",
+      "key": "inti-frekuensi-backup",
+      "issue": 89,
+      "name": "Pilihan frekuensi backup terjadwal dengan saran bawaan",
+      "phase": 1,
+      "module": "Inti",
+      "status": "in-progress",
+      "depends_on": [
+        "F042"
+      ],
+      "description": "Backup terjadwal F042 harian dengan 3 arsip (riwayat ±3 hari). Admin memilih Harian/Mingguan/Bulanan dengan saran yang ditandai; jadwal dan rotasi mengikuti pilihan.",
+      "acceptance": [],
+      "owner": "batch-f076-f031",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh (setting yang mengubah jadwal dan rotasi backup). Disetujui user 23 Okt 2026 lewat orkestrator."
     }
   ]
 }

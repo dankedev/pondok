@@ -350,7 +350,7 @@ erDiagram
     datetime planned_departure
     datetime return_due
     enum status "diajukan | disetujui | ditolak | keluar | kembali | batal"
-    bigint approved_by FK "staff, nullable"
+    bigint approved_by FK "users, nullable; pemutus (setuju atau tolak)"
     datetime approved_at "nullable"
     string pickup_name "penjemput, nullable"
     string pickup_phone "nullable"
@@ -374,7 +374,7 @@ erDiagram
   leave_types ||--o{ leave_requests : ""
   students ||--o{ leave_requests : ""
   homecoming_periods ||--o{ leave_requests : ""
-  staff ||--o{ leave_requests : "menyetujui"
+  users ||--o{ leave_requests : "memutus"
   students ||--o{ visits : ""
   guardians ||--o{ visits : ""
   
@@ -385,6 +385,7 @@ erDiagram
 - **Pulang massal** (libur semester, Ramadhan): buat satu `homecoming_periods`, lalu sistem membuat izin untuk semua santri mukim sekaligus. Petugas cukup mencatat keluar dan kembali, dan rekap santri yang belum kembali tersedia per asrama.
 - **Notifikasi WA ke wali** dikirim saat izin disetujui, saat santri keluar dari pos, dan saat kembali.
 - `visits` mencatat kunjungan wali (sambangan) beserta titipan barang, berguna untuk keamanan dan menjawab pertanyaan wali.
+- **`approved_by` ke `users`** (F024 D2), bukan `staff`: sama dengan kolom pelaku lain (`verified_by`, `fee_overrides.approved_by`), dan kesantrian/super-admin yang memutus belum tentu punya baris `staff`. Kolom ini juga diisi saat izin ditolak.
 
 ## Dokumen
 
@@ -992,7 +993,8 @@ foreach (students aktif as $s) {
 | `halaqahs` | unique (`academic_year_id`, `name`) | Nama halaqah unik per tahun ajaran |
 | `tahfidz_targets` | generated column stored `grade_key = COALESCE(grade, 0)`; unique (`academic_year_id`, `unit_id`, `grade_key`) | Satu target per tahun, jenjang, dan tingkat (termasuk "semua tingkat") |
 | `leave_requests` | index (`status`, `return_due`), (`student_id`, `status`) | Daftar santri yang sedang di luar dan yang terlambat kembali |
-| `leave_requests` | unique (`student_id`, `homecoming_period_id`) | Satu izin pulang massal per santri per periode |
+| `leave_requests` | unique (`student_id`, `homecoming_period_id`) | Satu izin pulang massal per santri per periode. Izin biasa memakai `homecoming_period_id` NULL, dan NULL tidak saling bentrok di unique (SQLite/MySQL/Postgres), jadi tanpa generated column |
+| `visits` | index (`started_at`) | Daftar kunjungan terbaru dan per tanggal |
 | `documents` | index (`documentable_type`, `documentable_id`, `document_type_id`), (`expires_on`); FK `source_applicant_document_id` → `applicant_documents` (`restrictOnDelete`) | Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa; berkas PSB yang sudah disalin tidak bisa dihapus |
 | `achievements` | index (`academic_year_id`, `category`, `level`) | Rekap prestasi per tahun, kategori, dan tingkat |
 | `applicant_documents` | unique (`applicant_id`, `admission_requirement_id`) | Unggah ulang menimpa berkas lama, tidak menumpuk |

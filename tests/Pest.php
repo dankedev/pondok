@@ -13,6 +13,7 @@ use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalHome;
+use App\Actions\Perizinan\SubmitLeaveRequest;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
 use App\Actions\Psb\GenerateRegistrationInvoices;
@@ -47,9 +48,12 @@ use App\Models\Guardian;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
 use App\Models\HealthVisit;
+use App\Models\HomecomingPeriod;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\IssuedLetter;
+use App\Models\LeaveRequest;
+use App\Models\LeaveType;
 use App\Models\MemorizationRecord;
 use App\Models\Payment;
 use App\Models\Photo;
@@ -65,12 +69,14 @@ use App\Models\TahfidzExam;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Video;
+use App\Models\Visit;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Seeders\AdmissionTrackSeeder;
 use Database\Seeders\ContentCategorySeeder;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\InstallSeeder;
+use Database\Seeders\LeaveTypeSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Database\Seeders\StaticPageSeeder;
@@ -81,6 +87,7 @@ use Filament\Forms\Components\Select;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\Notification;
 use Filament\Notifications\NotificationMailbox;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -5343,6 +5350,290 @@ function kesehatanStudentOptions(Testable $component, string $search = ''): arra
         ->first(fn ($child, $key): bool => $child instanceof Select && str_ends_with((string) $key, 'student_id'));
 
     expect($select)->toBeInstanceOf(Select::class, 'Select student_id tidak ditemukan');
+
+    $options = $select->getOptions();
+
+    try {
+        $options += $select->getSearchResults($search);
+    } catch (Throwable) {
+    }
+
+    return array_map('intval', array_keys($options));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper modul Perizinan (F024)
+|--------------------------------------------------------------------------
+|
+| Berawalan `perizinan`. Waktu dibekukan di 15 Okt 2026 10.00 WIB (lewat `tahfidzBoot`).
+|
+*/
+
+/**
+ * User musyrif/kepala asrama beserta baris staff dan penugasan aktif (atau sudah berakhir) di kamar atau asrama.
+ * Peran Spatie bawaan `musyrif` (punya `approve:leave-request`), terlepas dari `$assignmentRole`.
+ */
+function perizinanSupervisor(object $f, Room|Dormitory $scope, string $assignmentRole = 'musyrif', bool $ended = false): User
+{
+    $user = asramaUser('musyrif');
+    $staff = Staff::factory()->create(['user_id' => $user->id, 'gender' => 'L', 'position' => 'musyrif']);
+
+    $attributes = [
+        'staff_id' => $staff->id,
+        'academic_year_id' => $f->year->id,
+        'role' => $assignmentRole,
+        ...($scope instanceof Room
+            ? ['dormitory_id' => $scope->dormitory_id, 'room_id' => $scope->id]
+            : ['dormitory_id' => $scope->id, 'room_id' => null]),
+    ];
+
+    $factory = DormitorySupervisor::factory();
+    ($ended ? $factory->ended() : $factory)->create($attributes);
+
+    return User::query()->findOrFail($user->id);
+}
+
+/**
+ * Seeder, saklar modul, jenis izin bawaan, dan akun per peran.
+ *
+ * Asrama `dorm1` berisi Kamar A dan B, asrama `dorm2` berisi Kamar C.
+ * Santri: s1 SLTP penghuni Kamar A, s2 SLTP penghuni Kamar B, s3 SLTP nonmukim, s4 SLTA penghuni Kamar C.
+ * Pengawas: `mA` musyrif Kamar A, `mDorm` musyrif tingkat asrama dorm1, `mB` musyrif Kamar B,
+ * `mOther` musyrif tingkat asrama dorm2, `head` kepala asrama dorm1, `idle` musyrif dorm1 yang penugasannya sudah berakhir.
+ *
+ * @return object{year: AcademicYear, sltp: Unit, slta: Unit, dorm1: Dormitory, dorm2: Dormitory, roomA: Room, roomB: Room, roomC: Room, admin: User, kes: User, kesSltp: User, bendahara: User, pos: User, mA: User, mDorm: User, mB: User, mOther: User, head: User, idle: User, s1: Student, s2: Student, s3: Student, s4: Student, keluar: LeaveType, pulang: LeaveType, sakit: LeaveType, keperluan: LeaveType}
+ */
+function perizinanFixture(): object
+{
+    $f = tahfidzBoot();
+    Setting::set('modules.perizinan.enabled', true);
+    Setting::set('modules.asrama.enabled', true);
+    test()->seed(LeaveTypeSeeder::class);
+
+    foreach (['keluar' => 'KELUAR', 'pulang' => 'PULANG', 'sakit' => 'SAKIT', 'keperluan' => 'KEPERLUAN'] as $key => $code) {
+        $f->{$key} = LeaveType::query()->where('code', $code)->firstOrFail();
+    }
+
+    $f->dorm1 = asramaDormitory();
+    $f->dorm2 = asramaDormitory();
+    $f->roomA = asramaRoom(10, 'L', [], $f->dorm1);
+    $f->roomB = asramaRoom(10, 'L', [], $f->dorm1);
+    $f->roomC = asramaRoom(10, 'L', [], $f->dorm2);
+
+    $f->admin = asramaUser('super-admin');
+    $f->kes = asramaUser('kesantrian');
+    $f->kesSltp = asramaUser('kesantrian', ['SLTP']);
+    $f->bendahara = asramaUser('bendahara');
+    $f->pos = asramaUser('petugas-pos');
+
+    $f->s1 = tahfidzStudent($f, 'L', null, ['name' => 'Santri Satu']);
+    $f->s2 = tahfidzStudent($f, 'L', null, ['name' => 'Santri Dua']);
+    $f->s3 = tahfidzStudent($f, 'L', null, ['name' => 'Santri Tiga']);
+    $f->s4 = tahfidzStudent($f, 'L', $f->slta, ['name' => 'Santri Empat']);
+    asramaResident($f->s1, $f->roomA);
+    asramaResident($f->s2, $f->roomB);
+    asramaResident($f->s4, $f->roomC);
+
+    $f->mA = perizinanSupervisor($f, $f->roomA);
+    $f->mDorm = perizinanSupervisor($f, $f->dorm1);
+    $f->mB = perizinanSupervisor($f, $f->roomB);
+    $f->mOther = perizinanSupervisor($f, $f->dorm2);
+    $f->head = perizinanSupervisor($f, $f->dorm1, 'kepala_asrama');
+    $f->idle = perizinanSupervisor($f, $f->dorm1, 'musyrif', true);
+
+    return $f;
+}
+
+/**
+ * Santri SLTP aktif penghuni `$room` (bukan santri bawaan fixture).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function perizinanResident(object $f, ?Room $room = null, array $attributes = []): Student
+{
+    $student = tahfidzStudent($f, 'L', null, $attributes);
+    asramaResident($student, $room ?? $f->roomA);
+
+    return $student;
+}
+
+/**
+ * Data valid untuk `SubmitLeaveRequest`: izin KELUAR santri `s1`, empat jam siang ini.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function perizinanData(object $f, array $overrides = []): array
+{
+    return [
+        'student_id' => $f->s1->id,
+        'leave_type_id' => $f->keluar->id,
+        'requested_via' => 'musyrif',
+        'reason' => 'Berobat ke dokter gigi',
+        'planned_departure' => '2026-10-15 13:00',
+        'return_due' => '2026-10-15 17:00',
+        'pickup_name' => null,
+        'pickup_phone' => null,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Ajukan izin lewat Action sebagai `$actor` (user ikut login karena cakupan data memakai user login).
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function perizinanSubmit(object $f, User $actor, array $overrides = []): LeaveRequest
+{
+    test()->actingAs($actor);
+
+    return app(SubmitLeaveRequest::class)->handle($actor, perizinanData($f, $overrides));
+}
+
+/**
+ * Izin langsung lewat model (tanpa Action dan tanpa activity log). Kolom waktu mengikuti `$status`.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function perizinanRaw(Student $student, LeaveType $type, string $status = 'diajukan', array $attributes = []): LeaveRequest
+{
+    $decided = in_array($status, ['disetujui', 'ditolak', 'keluar', 'kembali'], true);
+
+    return LeaveRequest::query()->forceCreate([
+        'student_id' => $student->id,
+        'leave_type_id' => $type->id,
+        'homecoming_period_id' => null,
+        'requested_via' => 'musyrif',
+        'requested_by' => null,
+        'reason' => 'Keperluan keluarga',
+        'planned_departure' => '2026-10-15 13:00',
+        'return_due' => '2026-10-15 17:00',
+        'status' => $status,
+        'approved_at' => $decided ? '2026-10-15 08:00' : null,
+        'departed_at' => in_array($status, ['keluar', 'kembali'], true) ? '2026-10-15 09:00' : null,
+        'returned_at' => $status === 'kembali' ? '2026-10-15 09:30' : null,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Baris izin terbaru tanpa cakupan apa pun (untuk assert, bukan untuk menguji cakupan).
+ */
+function perizinanFresh(LeaveRequest $request): LeaveRequest
+{
+    return LeaveRequest::withoutGlobalScopes()->findOrFail($request->id);
+}
+
+/**
+ * Nilai string sebuah kolom status/enum, baik disimpan sebagai string maupun enum.
+ */
+function perizinanValue(mixed $value): mixed
+{
+    return $value instanceof BackedEnum ? $value->value : $value;
+}
+
+/**
+ * Jumlah semua izin tanpa cakupan apa pun.
+ */
+function perizinanCount(): int
+{
+    return LeaveRequest::withoutGlobalScopes()->count();
+}
+
+/**
+ * @return Collection<int, Activity>
+ */
+function perizinanActivities(?string $event = null): Collection
+{
+    return Activity::query()
+        ->where('log_name', 'perizinan')
+        ->when($event, fn ($query) => $query->where('event', $event))
+        ->orderBy('id')
+        ->get();
+}
+
+/**
+ * Pastikan callback ditolak, baik karena validasi maupun karena otorisasi.
+ */
+function perizinanDenied(Closure $callback): void
+{
+    try {
+        $callback();
+    } catch (ValidationException|AuthorizationException) {
+        return;
+    }
+
+    test()->fail('ValidationException atau AuthorizationException diharapkan, tetapi tidak dilempar.');
+}
+
+/**
+ * Periode libur langsung lewat model (default 20-27 Okt 2026).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function perizinanPeriod(object $f, array $attributes = []): HomecomingPeriod
+{
+    return HomecomingPeriod::query()->forceCreate([
+        'academic_year_id' => $f->year->id,
+        'name' => 'Libur Semester Ganjil',
+        'depart_on' => '2026-10-20',
+        'return_on' => '2026-10-27',
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Data valid untuk `RecordVisit`: ayah santri `s1` berkunjung pukul 09.00 hari ini.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function perizinanVisitData(object $f, array $overrides = []): array
+{
+    return [
+        'student_id' => $f->s1->id,
+        'guardian_id' => null,
+        'visitor_name' => 'Bapak Ahmad',
+        'relation' => 'ayah',
+        'started_at' => '2026-10-15 09:00',
+        'ended_at' => null,
+        'items_note' => 'Titipan makanan ringan',
+        ...$overrides,
+    ];
+}
+
+/**
+ * Kunjungan langsung lewat model.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function perizinanRawVisit(Student $student, array $attributes = []): Visit
+{
+    return Visit::query()->forceCreate([
+        'student_id' => $student->id,
+        'guardian_id' => null,
+        'visitor_name' => 'Bapak Ahmad',
+        'relation' => 'ayah',
+        'started_at' => '2026-10-15 09:00',
+        'ended_at' => null,
+        'items_note' => null,
+        'recorded_by' => null,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Opsi sebuah Select pada form (opsi statis ditambah hasil pencarian `$search`).
+ *
+ * @return list<int>
+ */
+function perizinanSelectOptions(Testable $component, string $field, string $search = ''): array
+{
+    $select = collect($component->instance()->form->getFlatComponents(withHidden: true))
+        ->first(fn ($child, $key): bool => $child instanceof Select && str_ends_with((string) $key, $field));
+
+    expect($select)->toBeInstanceOf(Select::class, "Select {$field} tidak ditemukan");
 
     $options = $select->getOptions();
 

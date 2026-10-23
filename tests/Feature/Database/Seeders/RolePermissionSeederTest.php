@@ -106,10 +106,18 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:document', 'view:document',
         'view-any:achievement', 'view:achievement', 'create:achievement', 'update:achievement', 'delete:achievement',
         'view-any:health-visit', 'view:health-visit', 'create:health-visit', 'update:health-visit',
+        'view-leave-metrics',
+        'view-any:leave-type', 'view:leave-type', 'create:leave-type', 'update:leave-type',
+        'view-any:homecoming-period', 'view:homecoming-period', 'create:homecoming-period', 'update:homecoming-period', 'generate:homecoming-period',
+        'view-any:leave-request', 'view:leave-request', 'create:leave-request', 'approve:leave-request', 'approve-any:leave-request',
+        'check-in-out:leave-request', 'cancel:leave-request',
+        'view-any:visit', 'view:visit', 'create:visit', 'update:visit',
     ]],
     'musyrif' => ['musyrif', [
         'view-dashboard', 'view-any:room-assignment', 'view:room-assignment',
         'view-any:health-visit', 'view:health-visit', 'create:health-visit',
+        'view-leave-metrics',
+        'view-any:leave-request', 'view:leave-request', 'create:leave-request', 'approve:leave-request', 'cancel:leave-request',
     ]],
     'ustadz-tahfidz' => ['ustadz-tahfidz', [
         'view-dashboard',
@@ -117,7 +125,11 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:memorization-record', 'view:memorization-record', 'create:memorization-record', 'delete:memorization-record',
         'view-any:tahfidz-exam', 'view:tahfidz-exam', 'create:tahfidz-exam',
     ]],
-    'petugas-pos' => ['petugas-pos', ['view-dashboard']],
+    'petugas-pos' => ['petugas-pos', [
+        'view-dashboard', 'view-leave-metrics',
+        'view-any:leave-request', 'view:leave-request', 'check-in-out:leave-request',
+        'view-any:visit', 'view:visit', 'create:visit', 'update:visit',
+    ]],
     'wali' => ['wali', []],
     'admin-sekolah' => ['admin-sekolah', [
         'view-dashboard', 'view-student-metrics', 'view-settings-metrics',

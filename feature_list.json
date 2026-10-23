@@ -446,14 +446,14 @@
       "name": "Perizinan, kepulangan & kunjungan",
       "phase": 3,
       "module": "Perizinan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F003"],
       "description": "Jenis izin, approver otomatis dari musyrif, pos keluar-kembali, pulang massal, kunjungan wali.",
       "acceptance": [],
-      "owner": "feat-f024-perizinan",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Fase 3. Jalur penuh (migration, Action, permission)."
+      "evidence": "f592dd5; tests/Feature/Perizinan (77 test) hijau; suite penuh PHP 8.4 5316 test (3 gagal hanya karena env worktree, lulus setelah filament:assets + password uji); rencana docs/plans/F024-plan.md",
+      "notes": "Fase 3. Jalur penuh (migration, Action, permission). Modul perizinan wajib Akademik + Asrama. Belum termasuk: pengajuan lewat portal wali, notifikasi WhatsApp, kartu/QR izin."
     },
     {
       "id": "F025",

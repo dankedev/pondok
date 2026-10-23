@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Module;
 use App\Models\AcademicYear;
 use App\Models\User;
 
@@ -16,7 +17,7 @@ it('AC-14: renders system status', function () {
 
     expect($text)->toContain('Status sistem')
         ->and($text)->toContain('2026/2027')
-        ->and($text)->toContain('3 dari 9')
+        ->and($text)->toContain('3 dari '.count(Module::cases()))
         ->and($text)->not->toContain('Modul belum tersedia.');
 });
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Dashboard\SummarizeSystemStatus;
+use App\Enums\Module;
 use App\Models\AcademicYear;
 use App\Models\Setting;
 use App\Models\User;
@@ -19,7 +20,7 @@ it('AC-14: summarizes system status', function () {
     expect($summary)->toMatchArray([
         'active_academic_year' => '2026/2027',
         'enabled_module_count' => 3,
-        'module_count' => 9,
+        'module_count' => count(Module::cases()),
         'active_user_count' => 4,
     ])->and(array_keys($summary))->toHaveCount(4);
 });
@@ -37,6 +38,6 @@ it('AC-2: counts the modules of the enum and ignores a legacy perizinan row', fu
 
     $summary = app(SummarizeSystemStatus::class)->handle();
 
-    expect($summary['module_count'])->toBe(9)
+    expect($summary['module_count'])->toBe(count(Module::cases()))
         ->and($summary['enabled_module_count'])->toBe(3);
 });

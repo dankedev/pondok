@@ -354,3 +354,56 @@ it('F085 AC-11: the backup frequency language keys have text', function () {
 
     expectTranslatedKeys($keys);
 });
+
+it('VERIFY F085: on Postgres saving another field keeps the stored frequency', function () {
+    $this->actingAs(kontenUser('super-admin'));
+    Setting::set('backup.frequency', 'weekly');
+    retentionPretendPgsql();
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['letter_snapshot_years' => 6])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Setting::get('backup.frequency'))->toBe('weekly')
+        ->and(Setting::get('retention.letter_snapshot_years'))->toBe(6);
+});
+
+it('VERIFY F085: saving another field on an instance without the key does not write the frequency', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['letter_snapshot_years' => 4])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $activity = Activity::query()->where('event', 'updated')->latest('id')->firstOrFail();
+
+    expect(Setting::query()->where('key', 'backup.frequency')->exists())->toBeFalse()
+        ->and($activity->properties['old']['backup_frequency'])->toBe('daily')
+        ->and($activity->properties['attributes']['backup_frequency'])->toBe('daily');
+});
+
+it('VERIFY F085: a tampered Livewire payload with an unknown frequency is rejected and nothing is saved', function () {
+    $this->actingAs(kontenUser('super-admin'));
+    Setting::set('backup.frequency', 'weekly');
+
+    Livewire::test(DataRetention::class)
+        ->set('data.backup_frequency', 'yearly')
+        ->set('data.letter_snapshot_years', 9)
+        ->call('save');
+
+    expect(Setting::get('backup.frequency'))->toBe('weekly')
+        ->and(Setting::get('retention.letter_snapshot_years'))->not->toBe(9);
+});
+
+it('VERIFY F085: the action rejects a null frequency and keeps the setting', function () {
+    Setting::set('backup.frequency', 'monthly');
+
+    expect(fn () => app(UpdateDataRetentionSettings::class)->handle(
+        frequencyPayload(['backup_frequency' => null]),
+        kontenUser('super-admin'),
+    ))->toThrow(ValidationException::class);
+
+    expect(Setting::get('backup.frequency'))->toBe('monthly');
+});

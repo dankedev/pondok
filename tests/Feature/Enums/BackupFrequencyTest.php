@@ -54,3 +54,10 @@ it('AC-1: the description mentions the history range from the archive count', fu
         ->and(BackupFrequency::Weekly->description())->toContain('3 minggu')
         ->and(BackupFrequency::Monthly->description())->toContain('3 bulan');
 });
+
+it('VERIFY F085: an upper-case stored value is not recognised and falls back to daily', function () {
+    kontenBoot();
+    Setting::set('backup.frequency', 'WEEKLY');
+
+    expect(BackupFrequency::current())->toBe(BackupFrequency::Daily);
+});

@@ -130,6 +130,22 @@ class Student extends Model
         return $this->hasMany(HealthVisit::class);
     }
 
+    /**
+     * Izin keluar/pulang (F024).
+     */
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
+     * Kunjungan wali / sambangan (F024).
+     */
+    public function visits(): HasMany
+    {
+        return $this->hasMany(Visit::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);
@@ -167,6 +183,29 @@ class Student extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('status', self::STATUS_ACTIVE);
+    }
+
+    /**
+     * Santri yang boleh dilihat dan dicatat `$user` di modul pembinaan (kesehatan, perizinan), dalam
+     * cakupan jenjangnya `unit_user` (tanpa bergantung pada user login).
+     *
+     * Pemegang `view-any:student` (kesantrian, super-admin) melihat semua santri. Selain itu hanya
+     * santri dengan penempatan kamar aktif di asrama/kamar yang ia awasi (`RoomAssignment::visibleTo`;
+     * pemegang `view-any:dormitory` tanpa izin santri karenanya melihat semua santri mukim).
+     *
+     * @return Builder<Student>
+     */
+    public static function visibleStudentsFor(User $user): Builder
+    {
+        $unitIds = $user->scopedUnitIds();
+
+        $students = static::withoutUnitScope()->when($unitIds !== [], fn (Builder $query) => $query->whereIn('unit_id', $unitIds));
+
+        if ($user->can('view-any:student')) {
+            return $students;
+        }
+
+        return $students->whereIn('id', RoomAssignment::withoutUnitScope()->active()->visibleTo($user)->select('student_id'));
     }
 
     public function isActive(): bool

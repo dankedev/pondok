@@ -61,11 +61,7 @@ class HealthVisit extends Model
     }
 
     /**
-     * Santri yang catatan kesehatannya boleh dilihat dan dicatat `$user`, dalam cakupan jenjangnya.
-     *
-     * Pemegang `view-any:student` (kesantrian, super-admin) melihat semua santri. Selain itu hanya
-     * santri dengan penempatan kamar aktif di asrama/kamar yang ia awasi (`RoomAssignment::visibleTo`;
-     * pemegang `view-any:dormitory` tanpa izin santri karenanya melihat semua santri mukim).
+     * Santri yang catatan kesehatannya boleh dilihat dan dicatat `$user` (`Student::visibleStudentsFor`).
      * Kunci bypass sengaja `view-any:student`, bukan `view-any:dormitory` seperti `RoomAssignment`:
      * data kesehatan melekat pada santri, dan peran tanpa izin santri tetap terbatas (fail-closed).
      *
@@ -73,15 +69,7 @@ class HealthVisit extends Model
      */
     public static function visibleStudents(User $user): Builder
     {
-        $unitIds = $user->scopedUnitIds();
-
-        $students = Student::withoutUnitScope()->when($unitIds !== [], fn (Builder $query) => $query->whereIn('unit_id', $unitIds));
-
-        if ($user->can('view-any:student')) {
-            return $students;
-        }
-
-        return $students->whereIn('id', RoomAssignment::withoutUnitScope()->active()->visibleTo($user)->select('student_id'));
+        return Student::visibleStudentsFor($user);
     }
 
     /**

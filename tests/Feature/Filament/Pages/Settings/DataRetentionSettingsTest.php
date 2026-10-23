@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Core\CreateBackup;
 use App\Actions\Core\UpdateDataRetentionSettings;
 use App\Filament\Pages\Settings\DataRetention;
 use App\Models\Setting;
@@ -222,3 +223,134 @@ it('VERIFY F076: a non-integer or text retention is rejected by the action', fun
 
     expect(Setting::get('retention.activity_log_months'))->toBe(36);
 })->with(['abc', '24.5']);
+
+/*
+| F085: frekuensi backup terjadwal.
+*/
+
+/**
+ * @param  array<string, mixed>  $extra
+ * @return array<string, mixed>
+ */
+function frequencyPayload(array $extra = []): array
+{
+    return ['backup_enabled' => false, 'letter_snapshot_years' => null, ...$extra];
+}
+
+it('F085 AC-6: shows three frequency choices with the recommendation, history range and quota help', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)->assertFormFieldExists('backup_frequency');
+
+    $text = bayarHtmlText($this->get($this->url)->assertOk()->getContent());
+
+    expect($text)->toContain('Mingguan (disarankan)')
+        ->toContain('3 hari')->toContain('3 minggu')->toContain('3 bulan')
+        ->toContain(__('pondok.data_retention.backup_frequency_helper', ['keep' => CreateBackup::KEEP]))
+        ->and(mb_strtolower(__('pondok.data_retention.backup_enabled')))->not->toContain('harian');
+});
+
+it('F085 AC-6: fills the frequency with daily when unset and with the saved value otherwise', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)->assertFormSet(['backup_frequency' => 'daily']);
+
+    Setting::set('backup.frequency', 'weekly');
+
+    Livewire::test(DataRetention::class)->assertFormSet(['backup_frequency' => 'weekly']);
+});
+
+it('F085 AC-7: saves the chosen frequency and logs the old and new value', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_frequency' => 'weekly'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $activity = Activity::query()->where('log_name', 'sistem')->where('event', 'updated')->latest('id')->firstOrFail();
+
+    expect(Setting::get('backup.frequency'))->toBe('weekly')
+        ->and($activity->properties['old']['backup_frequency'])->toBe('daily')
+        ->and($activity->properties['attributes']['backup_frequency'])->toBe('weekly');
+});
+
+it('F085 AC-7: saving daily on an instance without the key writes no activity', function () {
+    $this->actingAs(kontenUser('super-admin'));
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_frequency' => 'daily'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Activity::query()->where('event', 'updated')->count())->toBe(0);
+});
+
+it('F085 AC-7: saving the same frequency again writes no extra activity', function () {
+    $this->actingAs(kontenUser('super-admin'));
+    Setting::set('backup.frequency', 'monthly');
+
+    Livewire::test(DataRetention::class)
+        ->fillForm(['backup_frequency' => 'monthly'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Activity::query()->where('event', 'updated')->count())->toBe(0)
+        ->and(Setting::get('backup.frequency'))->toBe('monthly');
+});
+
+it('F085 AC-8: the action rejects an unknown frequency and keeps the setting', function (mixed $value) {
+    Setting::set('backup.frequency', 'weekly');
+
+    expect(fn () => app(UpdateDataRetentionSettings::class)->handle(
+        frequencyPayload(['backup_frequency' => $value]),
+        kontenUser('super-admin'),
+    ))->toThrow(ValidationException::class);
+
+    expect(Setting::get('backup.frequency'))->toBe('weekly');
+})->with(['yearly', '', 1]);
+
+it('F085 AC-8: a legacy call without the key keeps the stored frequency, or leaves the key absent', function () {
+    $admin = kontenUser('super-admin');
+    Setting::set('backup.frequency', 'monthly');
+
+    app(UpdateDataRetentionSettings::class)->handle(frequencyPayload(['letter_snapshot_years' => 7]), $admin);
+
+    expect(Setting::get('backup.frequency'))->toBe('monthly')
+        ->and(Setting::get('retention.letter_snapshot_years'))->toBe(7);
+
+    Setting::query()->where('key', 'backup.frequency')->delete();
+    Setting::forget('backup.frequency');
+
+    app(UpdateDataRetentionSettings::class)->handle(frequencyPayload(['letter_snapshot_years' => 8]), $admin);
+
+    expect(Setting::query()->where('key', 'backup.frequency')->exists())->toBeFalse()
+        ->and(Setting::get('retention.letter_snapshot_years'))->toBe(8);
+});
+
+it('F085 AC-9: a non super-admin cannot change the frequency', function () {
+    expect(fn () => app(UpdateDataRetentionSettings::class)->handle(
+        frequencyPayload(['backup_frequency' => 'weekly']),
+        kontenUser('admin-sekolah'),
+    ))->toThrow(AuthorizationException::class);
+
+    expect(Setting::get('backup.frequency'))->toBeNull();
+});
+
+it('F085 AC-9: on Postgres the frequency field is disabled', function () {
+    $this->actingAs(kontenUser('super-admin'));
+    retentionPretendPgsql();
+
+    Livewire::test(DataRetention::class)->assertFormFieldIsDisabled('backup_frequency');
+});
+
+it('F085 AC-11: the backup frequency language keys have text', function () {
+    $keys = ['pondok.data_retention.backup_frequency', 'pondok.data_retention.backup_frequency_helper'];
+
+    foreach (['daily', 'weekly', 'monthly'] as $value) {
+        $keys[] = "pondok.backup_frequency.{$value}.label";
+        $keys[] = "pondok.backup_frequency.{$value}.description";
+    }
+
+    expectTranslatedKeys($keys);
+});

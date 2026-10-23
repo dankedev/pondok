@@ -446,14 +446,14 @@
       "name": "Perizinan, kepulangan & kunjungan",
       "phase": 3,
       "module": "Perizinan",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F003"],
       "description": "Jenis izin, approver otomatis dari musyrif, pos keluar-kembali, pulang massal, kunjungan wali.",
       "acceptance": [],
-      "owner": null,
+      "owner": "feat-f024-perizinan",
       "handoff": null,
       "evidence": "",
-      "notes": "Fase 3."
+      "notes": "Fase 3. Jalur penuh (migration, Action, permission)."
     },
     {
       "id": "F025",

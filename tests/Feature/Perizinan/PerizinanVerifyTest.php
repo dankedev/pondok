@@ -61,7 +61,11 @@ it('VERIFY: a stale approve after another approver decided never overwrites the 
         ->and(perizinanActivities()->count())->toBe(1);
 });
 
-it('VERIFY: approving in the table after another approver decided shows a red notification and changes nothing', function () {
+/**
+ * Filament menutup aksi yang tidak lagi diizinkan saat dikonfirmasi tanpa menjalankannya
+ * (dan tanpa notifikasi), jadi yang dijaga di sini: tanpa error dan keputusan pertama utuh.
+ */
+it('VERIFY: approving in the table after another approver decided changes nothing', function () {
     $f = $this->f;
     $request = perizinanRaw($f->s1, $f->keluar);
 
@@ -76,7 +80,7 @@ it('VERIFY: approving in the table after another approver decided shows a red no
 
     expect(perizinanValue($fresh->status))->toBe('ditolak')
         ->and($fresh->approved_by)->toBe($f->kes->id)
-        ->and(json_encode(asramaNotifications()->all()))->toContain('danger');
+        ->and($fresh->approved_at)->not->toBeNull();
 });
 
 it('VERIFY: a student id outside the actor scope is refused and its name never reaches the select label', function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Core\RecordSchedulerHeartbeat;
+use App\Enums\BackupFrequency;
 use App\Enums\Module;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Schedule;
@@ -64,11 +65,15 @@ Schedule::command('keuangan:prune-finance-exports')
     ->withoutOverlapping();
 
 /*
-| Backup harian inti (F042) pukul 01:30 WIB, hanya bila diaktifkan di
-| Pengaturan karena kuota shared hosting kecil. Manual: `pondok:backup`.
+| Backup inti (F042) pukul 01:30 WIB, hanya bila diaktifkan di Pengaturan
+| karena kuota shared hosting kecil, dan hanya pada hari yang sesuai frekuensi
+| di Pengaturan (F085: harian, mingguan tiap Ahad, bulanan tiap tanggal 1).
+| Cron yang mati pada hari itu melewatkan satu siklus (tanpa susulan).
+| Manual: `pondok:backup`, selalu membuat arsip apa pun frekuensinya.
 */
 Schedule::command('pondok:backup')
-    ->when(fn (): bool => (bool) Setting::get('backup.enabled', false))
+    ->when(fn (): bool => (bool) Setting::get('backup.enabled', false)
+        && BackupFrequency::current()->isDueOn(now('Asia/Jakarta')))
     ->dailyAt('01:30')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping(120);

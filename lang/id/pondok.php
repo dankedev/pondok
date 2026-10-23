@@ -2958,14 +2958,31 @@ return [
         'latest' => 'Backup terakhir: :file (:size), dibuat :datetime WIB.',
     ],
 
+    'backup_frequency' => [
+        'daily' => [
+            'label' => 'Harian',
+            'description' => 'Setiap hari pukul 01.30 WIB. Riwayat pendek, hanya ±:keep hari.',
+        ],
+        'weekly' => [
+            'label' => 'Mingguan (disarankan)',
+            'description' => 'Setiap Ahad pukul 01.30 WIB. Riwayat ±:keep minggu.',
+        ],
+        'monthly' => [
+            'label' => 'Bulanan',
+            'description' => 'Setiap tanggal 1 pukul 01.30 WIB. Riwayat ±:keep bulan, tetapi perubahan hingga sebulan terakhir bisa hilang.',
+        ],
+    ],
+
     'data_retention' => [
         'title' => 'Backup & masa simpan',
         'saved' => 'Pengaturan backup dan masa simpan disimpan.',
         'forbidden' => 'Hanya super-admin yang boleh mengubah pengaturan backup dan masa simpan.',
         'backup_heading' => 'Backup',
         'backup_description' => 'Arsip berisi database serta berkas unggahan (dokumen santri, foto, gambar portal).',
-        'backup_enabled' => 'Backup terjadwal harian',
-        'backup_enabled_helper' => 'Berjalan setiap hari pukul 01.30 WIB. Hanya :keep arsip terbaru yang disimpan.',
+        'backup_enabled' => 'Backup terjadwal',
+        'backup_enabled_helper' => 'Berjalan pukul 01.30 WIB sesuai frekuensi.',
+        'backup_frequency' => 'Frekuensi backup',
+        'backup_frequency_helper' => 'Selalu disimpan :keep arsip terbaru, jadi kuota hosting yang terpakai sama untuk semua pilihan. Makin jarang backup, makin panjang riwayat, tetapi perubahan sejak backup terakhir bisa hilang. Backup manual ikut dihitung.',
         'backup_hint' => 'Arsip tersimpan di folder storage/app/private/backups. Unduh lewat File Manager hosting dan simpan di luar hosting. Berkas .env (berisi APP_KEY) tidak ikut arsip, jadi simpan salinannya terpisah. Backup manual: php artisan pondok:backup.',
         'letter_heading' => 'Masa simpan surat',
         'letter_description' => 'Setelah masa simpan lewat, data pribadi pada salinan surat keluar dihapus. Nomor surat, status, dan verifikasi tetap berlaku dengan nama santri termasker.',

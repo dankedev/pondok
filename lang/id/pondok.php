@@ -17,6 +17,7 @@ return [
         'prestasi' => 'Prestasi',
         'tahfidz' => 'Tahfidz',
         'kesehatan' => 'Kesehatan',
+        'perizinan' => 'Perizinan',
         'pengaturan' => 'Pengaturan',
         'access' => 'Pengguna & Akses',
     ],
@@ -2393,6 +2394,105 @@ return [
         ],
     ],
 
+    'leave_request' => [
+        'label' => 'izin',
+        'plural' => 'Izin santri',
+        'statuses' => [
+            'diajukan' => 'Menunggu',
+            'disetujui' => 'Disetujui',
+            'ditolak' => 'Ditolak',
+            'keluar' => 'Di luar',
+            'kembali' => 'Sudah kembali',
+            'batal' => 'Batal',
+        ],
+        'via' => [
+            'wali' => 'Wali',
+            'santri' => 'Santri',
+            'musyrif' => 'Musyrif',
+        ],
+        'fields' => [
+            'student_id' => 'Santri',
+            'leave_type_id' => 'Jenis izin',
+            'requested_via' => 'Diminta oleh',
+            'reason' => 'Alasan',
+            'planned_departure' => 'Rencana keluar',
+            'return_due' => 'Batas kembali',
+            'pickup_name' => 'Nama penjemput',
+            'pickup_phone' => 'Telepon penjemput',
+            'note' => 'Catatan',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengelola izin ini.',
+            'student_unavailable' => 'Santri tidak ditemukan, tidak berstatus aktif, atau di luar cakupan Anda.',
+            'type_unavailable' => 'Jenis izin tidak ditemukan atau sudah nonaktif.',
+            'too_long' => 'Lama izin melebihi batas :hours jam untuk jenis izin ini.',
+            'pickup_required' => 'Nama penjemput wajib diisi untuk jenis izin ini.',
+            'ongoing' => 'Santri masih punya izin yang menunggu, disetujui, atau sedang di luar.',
+            'invalid_transition' => 'Izin berstatus :status tidak bisa diproses dengan cara ini.',
+        ],
+    ],
+
+    'leave_type' => [
+        'label' => 'jenis izin',
+        'plural' => 'Jenis izin',
+        'approvers' => [
+            'musyrif' => 'Musyrif',
+            'kepala_asrama' => 'Kepala asrama',
+            'kesantrian' => 'Kesantrian',
+        ],
+        'defaults' => [
+            'KELUAR' => 'Keluar sebentar',
+            'PULANG' => 'Pulang',
+            'SAKIT' => 'Sakit',
+            'KEPERLUAN' => 'Keperluan keluarga',
+        ],
+        'fields' => [
+            'code' => 'Kode',
+            'name' => 'Nama',
+            'max_hours' => 'Batas durasi (jam)',
+            'approver' => 'Penyetuju',
+            'requires_guardian' => 'Wajib dijemput wali',
+            'is_active' => 'Aktif',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengelola jenis izin.',
+        ],
+    ],
+
+    'homecoming_period' => [
+        'label' => 'periode pulang',
+        'plural' => 'Periode pulang',
+        'fields' => [
+            'academic_year_id' => 'Tahun ajaran',
+            'name' => 'Nama periode',
+            'depart_on' => 'Tanggal pulang',
+            'return_on' => 'Batas kembali',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengelola periode pulang.',
+            'type_unavailable' => 'Jenis izin PULANG tidak ada atau nonaktif. Aktifkan dulu di Jenis izin.',
+        ],
+    ],
+
+    'visit' => [
+        'label' => 'kunjungan',
+        'plural' => 'Kunjungan wali',
+        'fields' => [
+            'student_id' => 'Santri',
+            'guardian_id' => 'Wali',
+            'visitor_name' => 'Nama pengunjung',
+            'relation' => 'Hubungan',
+            'started_at' => 'Mulai berkunjung',
+            'ended_at' => 'Selesai berkunjung',
+            'items_note' => 'Titipan barang',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengelola kunjungan ini.',
+            'student_unavailable' => 'Santri tidak ditemukan, tidak berstatus aktif, atau di luar cakupan Anda.',
+            'guardian_mismatch' => 'Wali yang dipilih bukan wali santri ini.',
+        ],
+    ],
+
     'modules' => [
         'akademik' => [
             'label' => 'Akademik',
@@ -2433,6 +2533,10 @@ return [
         'kesehatan' => [
             'label' => 'Kesehatan',
             'description' => 'Catatan kunjungan dan keluhan kesehatan santri, rujukan, dan izin pulang.',
+        ],
+        'perizinan' => [
+            'label' => 'Perizinan',
+            'description' => 'Izin keluar dan pulang santri, catatan keluar-kembali di pos, pulang massal, dan kunjungan wali.',
         ],
     ],
 

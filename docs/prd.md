@@ -90,10 +90,13 @@ Akses diatur dua lapis:
 - Setoran ziyadah, murajaah, dan tasmi' berbasis rentang surah dan ayat, dengan nilai dan jumlah kesalahan.
 - Capaian per juz, target per jenjang dan tingkat, serta ujian dan syahadah.
 
-### 3.9 Perizinan (Fase 3, skema disiapkan)
-- Jenis izin dengan batas durasi dan pihak yang menyetujui. Persetujuan otomatis diarahkan ke musyrif santri.
-- Pencatatan keluar dan kembali di pos, serta daftar santri yang terlambat atau belum kembali.
-- Pulang massal per periode libur, dan kunjungan wali.
+### 3.9 Perizinan (Fase 3)
+- Jenis izin dengan batas durasi, pihak yang menyetujui (musyrif, kepala asrama, atau kesantrian), dan wajib dijemput wali. Persetujuan otomatis diarahkan ke musyrif atau kepala asrama santri menurut kamar aktifnya; kesantrian bisa memutus semua izin.
+- Alur status: menunggu → disetujui/ditolak/batal, disetujui → di luar/batal, di luar → sudah kembali. Satu santri hanya boleh punya satu izin yang berjalan.
+- Pencatatan keluar dan kembali oleh petugas pos, serta daftar dan widget dashboard santri yang terlambat atau belum kembali (terlambat dihitung dari batas kembali, bukan status).
+- Pulang massal per periode libur (mis. Idul Fitri, Idul Adha) membuat izin pulang untuk santri mukim aktif sekaligus, aman dijalankan ulang.
+- Kunjungan wali (sambangan) dengan catatan titipan barang.
+- Belum termasuk: pengajuan izin lewat portal wali, notifikasi WhatsApp ke wali, dan kartu/QR izin untuk pos.
 
 ### 3.10 Dashboard
 - Satu halaman yang menyesuaikan peran. Setiap widget dicek permission-nya: `view-content-metrics`, `view-psb-metrics`, `view-student-metrics`, `view-finance-metrics`, `view-settings-metrics`, dan `view-dashboard` untuk akses halaman.

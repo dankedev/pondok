@@ -14,7 +14,7 @@ beforeEach(function () {
     $this->f = perizinanFixture();
 });
 
-function perizinanList(): Livewire\Features\SupportTesting\Testable
+function perizinanList(): \Livewire\Features\SupportTesting\Testable
 {
     return Livewire::test(tahfidzIndexPage(LeaveRequestResource::class));
 }

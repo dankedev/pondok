@@ -1682,7 +1682,14 @@
         "F042"
       ],
       "description": "Backup terjadwal F042 harian dengan 3 arsip (riwayat ±3 hari). Admin memilih Harian/Mingguan/Bulanan dengan saran yang ditandai; jadwal dan rotasi mengikuti pilihan.",
-      "acceptance": [],
+      "acceptance": [
+        "Enum BackupFrequency (daily/weekly/monthly): Mingguan ditandai '(disarankan)'; setting kosong atau tidak dikenal = Harian",
+        "Satu event pondok:backup 01:30 WIB withoutOverlapping(120), jalan hanya bila backup.enabled dan hari cocok (harian; mingguan Ahad; bulanan tanggal 1), dihitung dalam zona Asia/Jakarta",
+        "Backup manual pondok:backup selalu jalan; rotasi tetap CreateBackup::KEEP = 3 arsip untuk semua frekuensi",
+        "Halaman Backup & masa simpan (super-admin): pilihan frekuensi dengan deskripsi rentang riwayat (3 hari/3 minggu/3 bulan) dan helper kuota; nonaktif di PostgreSQL",
+        "UpdateDataRetentionSettings menerima key opsional backup_frequency (divalidasi enum); perubahan tercatat di activity log sistem old/new; pemanggil lama tanpa key tetap valid dan tidak mengubah frekuensi",
+        "Instance lama tanpa backup.frequency tetap harian; seeder tidak menulis key ini; docs/instalasi.md dan ERD diperbarui"
+      ],
       "owner": "batch-f076-f031",
       "handoff": null,
       "evidence": null,

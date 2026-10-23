@@ -143,7 +143,15 @@ Bila situs error 500 setelah pembaruan, pilih ulang PHP 8.3 di **MultiPHP Manage
 
 Pondok bisa membuat arsip backup sendiri tanpa `mysqldump`, cukup dari cron `schedule:run` (langkah 8). Fitur ini mendukung MySQL, MariaDB, dan SQLite. Untuk PostgreSQL, pakai `pg_dump` atau fitur backup panel hosting.
 
-**Mengaktifkan backup terjadwal.** Masuk sebagai super-admin, buka **Pengaturan → Backup & masa simpan**, nyalakan **Backup terjadwal harian**, lalu simpan. Backup berjalan setiap hari pukul 01.30 WIB dan hanya 3 arsip terbaru yang disimpan, karena kuota hosting biasanya kecil. Backup manual kapan saja:
+**Mengaktifkan backup terjadwal.** Masuk sebagai super-admin, buka **Pengaturan → Backup & masa simpan**, nyalakan **Backup terjadwal**, pilih frekuensi (**Mingguan** disarankan), lalu simpan. Backup berjalan pukul 01.30 WIB pada hari yang sesuai frekuensi. Hanya 3 arsip terbaru yang disimpan, karena kuota hosting biasanya kecil, jadi kuota yang terpakai sama untuk semua pilihan; yang berbeda adalah rentang riwayatnya:
+
+| Frekuensi | Hari jalan | Rentang riwayat |
+|---|---|---|
+| Harian | setiap hari | ±3 hari |
+| Mingguan (disarankan) | setiap Ahad | ±3 minggu |
+| Bulanan | setiap tanggal 1 | ±3 bulan, tetapi perubahan hingga sebulan terakhir bisa hilang |
+
+Bila frekuensi belum pernah dipilih (termasuk instalasi lama), backup berjalan harian. Arsip dari backup manual ikut dihitung dalam 3 arsip itu, jadi satu backup manual menggeser satu arsip terjadwal tertua. Bila cron tidak berjalan pada hari jatuh tempo (mis. hosting mati pada hari Ahad), backup siklus itu terlewat dan baru dibuat pada jadwal berikutnya; jalankan backup manual bila perlu. Backup manual kapan saja, apa pun frekuensinya:
 
 ```
 php artisan pondok:backup

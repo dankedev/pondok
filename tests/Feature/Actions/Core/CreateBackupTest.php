@@ -2,6 +2,8 @@
 
 use App\Actions\Core\CreateBackup;
 use App\Actions\Core\DumpDatabase;
+use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -166,4 +168,22 @@ it('AC-4: a successful backup logs one sistem activity with the file and size', 
 
 it('AC-4: the backup language keys have text', function () {
     expectTranslatedKeys(['pondok.backup.pgsql_unsupported']);
+});
+
+it('F085 AC-5: the manual command always backs up and keeps the newest archives whatever the frequency', function () {
+    Setting::set('backup.frequency', 'monthly');
+    Setting::set('backup.enabled', false);
+    Carbon::setTestNow(Carbon::parse('2026-10-26 10:00', 'Asia/Jakarta')); // Senin, bukan tanggal 1
+
+    foreach ([1, 2, 3, 4] as $day) {
+        backupOldArchive($day);
+    }
+
+    $exit = Artisan::call('pondok:backup');
+    Carbon::setTestNow();
+
+    expect($exit)->toBe(0)
+        ->and(backupArchives())->toHaveCount(CreateBackup::KEEP)
+        ->and(Storage::disk('private')->exists('backups/pondok-20260101-000000.zip'))->toBeFalse()
+        ->and(Storage::disk('private')->exists('backups/pondok-20260104-000000.zip'))->toBeTrue();
 });

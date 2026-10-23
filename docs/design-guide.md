@@ -143,6 +143,8 @@ Aturan:
 | Rekap / laporan | `ChartBar` |
 | Tahfidz | `BookOpen` |
 | Perizinan | `ArrowRightStartOnRectangle` |
+| Jenis izin | `ListBullet` |
+| Kunjungan wali (sambangan) | `HandRaised` |
 | Masuk ke panel (login) | `ArrowRightEndOnRectangle` |
 | Konten / berita | `Newspaper` |
 | Pengaturan | `Cog6Tooth` |
@@ -224,7 +226,9 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Berkas PSB | ditolak | `danger` |
 | Perizinan | menunggu | `warning` |
 | Perizinan | disetujui, sudah kembali | `success` |
+| Perizinan | di luar (keluar) | `info` |
 | Perizinan | ditolak | `danger` |
+| Perizinan | batal | `gray` |
 | Perizinan | terlambat (dihitung, bukan status) | `danger` |
 | Dokumen | menunggu | `warning` |
 | Dokumen | valid | `success` |

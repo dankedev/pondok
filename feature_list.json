@@ -1677,7 +1677,7 @@
       "name": "Pilihan frekuensi backup terjadwal dengan saran bawaan",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F042"
       ],
@@ -1690,9 +1690,9 @@
         "UpdateDataRetentionSettings menerima key opsional backup_frequency (divalidasi enum); perubahan tercatat di activity log sistem old/new; pemanggil lama tanpa key tetap valid dan tidak mengubah frekuensi",
         "Instance lama tanpa backup.frequency tetap harian; seeder tidak menulis key ini; docs/instalasi.md dan ERD diperbarui"
       ],
-      "owner": "batch-f076-f031",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 1c1be0b, 96cbdfd, 79b988b (feat/docs), 95d1575 + 7959a59 (test). BackupFrequencyTest, DataRetentionScheduleTest, DataRetentionSettingsTest, CreateBackupTest, ModuleComplianceTest lulus; suite penuh PHP 8.4 5239 test: 5234 lulus, 5 skipped. Pint lulus. Cek tampilan 1440 dan 375 di data demo.",
       "notes": "Jalur penuh (setting yang mengubah jadwal dan rotasi backup). Disetujui user 23 Okt 2026 lewat orkestrator."
     }
   ]

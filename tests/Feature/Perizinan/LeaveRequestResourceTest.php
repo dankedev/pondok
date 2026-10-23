@@ -8,13 +8,14 @@ use App\Filament\Widgets\OverdueLeavesWidget;
 use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->f = perizinanFixture();
 });
 
-function perizinanList(): \Livewire\Features\SupportTesting\Testable
+function perizinanList(): Testable
 {
     return Livewire::test(tahfidzIndexPage(LeaveRequestResource::class));
 }

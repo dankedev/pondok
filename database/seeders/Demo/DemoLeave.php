@@ -93,7 +93,7 @@ final class DemoLeave
     private const VISITS = [
         ['Muhammad Fauzan Akbar', null, -11, '10:00', '11:30', 'Kurma 1 kg, susu UHT 1 dus, dan 5 buku tulis.'],
         ['Najmi Humaidi', null, -4, '09:30', '10:45', 'Pakaian ganti dan obat maag dari puskesmas.'],
-        ['Kamil Shalih', ['Hasan Effendi', 'paman'], -4, '13:15', '14:00', null],
+        ['Kamil Shalih', ['Hasan Effendi', 'Paman'], -4, '13:15', '14:00', null],
     ];
 
     public function __construct(private readonly DemoContext $context) {}

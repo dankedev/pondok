@@ -26,6 +26,8 @@ class RolePermissionSeeder extends Seeder
         'view-student-metrics',
         'view-finance-metrics',
         'view-settings-metrics',
+        // Widget santri terlambat kembali (F024).
+        'view-leave-metrics',
     ];
 
     /** Halaman Filament kustom, dengan format nama permission page Shield (`view:<slug>`). */
@@ -52,6 +54,7 @@ class RolePermissionSeeder extends Seeder
         'Achievement',
         'Halaqah', 'MemorizationRecord', 'TahfidzExam', 'TahfidzTarget',
         'HealthVisit',
+        'LeaveType', 'HomecomingPeriod', 'LeaveRequest', 'Visit',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -82,6 +85,12 @@ class RolePermissionSeeder extends Seeder
         // Halaman statis (F037): dibuat dan dihapus satu per satu (halaman sistem dijaga
         // policy dan `DeleteStaticPage`); tanpa hapus massal, sehingga tanpa `deleteAny`.
         'StaticPage' => ['viewAny', 'view', 'create', 'update', 'delete'],
+        // Perizinan (F024): tidak ada yang dihapus. Jenis izin dinonaktifkan; izin dibatalkan (status `batal`).
+        // `approve` = penyetuju sesuai `dormitory_supervisors` (musyrif), `approveAny` = semua izin (kesantrian).
+        'LeaveType' => ['viewAny', 'view', 'create', 'update'],
+        'HomecomingPeriod' => ['viewAny', 'view', 'create', 'update', 'generate'],
+        'LeaveRequest' => ['viewAny', 'view', 'create', 'approve', 'approveAny', 'checkInOut', 'cancel'],
+        'Visit' => ['viewAny', 'view', 'create', 'update'],
     ];
 
     public function run(): void
@@ -253,6 +262,12 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Achievement', ['viewAny', 'view', 'create', 'update', 'delete']),
                 // Kesehatan santri (F031): mencatat dan mengoreksi; hapus hanya super-admin.
                 ...self::resourcePermissions('HealthVisit', ['viewAny', 'view', 'create', 'update']),
+                // Perizinan (F024): seluruh izin, jenis izin, pulang massal, dan kunjungan.
+                'view-leave-metrics',
+                ...self::resourcePermissions('LeaveType'),
+                ...self::resourcePermissions('HomecomingPeriod'),
+                ...self::resourcePermissions('LeaveRequest'),
+                ...self::resourcePermissions('Visit'),
             ],
             // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi. Mencatat kesehatan
             // santri binaannya (`HealthVisit::visibleStudents`); koreksi oleh kesantrian.
@@ -260,6 +275,9 @@ class RolePermissionSeeder extends Seeder
                 'view-dashboard',
                 ...self::resourcePermissions('RoomAssignment', $readOnly),
                 ...self::resourcePermissions('HealthVisit', ['viewAny', 'view', 'create']),
+                // Mengajukan, memutus (sesuai penugasan), dan membatalkan izin santri binaannya.
+                'view-leave-metrics',
+                ...self::resourcePermissions('LeaveRequest', ['viewAny', 'view', 'create', 'approve', 'cancel']),
             ],
             // Pengampu melihat halaqah yang ia ampu (`Halaqah::visibleTo`), mencatat setoran dan ujian
             // anggotanya, dan menghapus setoran yang salah. Anggota halaqah dikelola admin sekolah.
@@ -269,7 +287,13 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('MemorizationRecord', ['viewAny', 'view', 'create', 'delete']),
                 ...self::resourcePermissions('TahfidzExam', ['viewAny', 'view', 'create']),
             ],
-            'petugas-pos' => ['view-dashboard'],
+            // Mencatat keluar-kembali santri berizin dan kunjungan wali di pos.
+            'petugas-pos' => [
+                'view-dashboard',
+                'view-leave-metrics',
+                ...self::resourcePermissions('LeaveRequest', ['viewAny', 'view', 'checkInOut']),
+                ...self::resourcePermissions('Visit', ['viewAny', 'view', 'create', 'update']),
+            ],
             // Portal wali (Fase 2) di luar panel admin.
             'wali' => [],
         };

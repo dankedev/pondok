@@ -1,4 +1,4 @@
-{{-- Rincian santri portal wali (F079): ringkasan, tagihan (Keuangan aktif), dokumen (Dokumen aktif). --}}
+{{-- Rincian santri portal wali (F079): ringkasan, kehadiran bulan ini (Absensi aktif, F025), tagihan (Keuangan aktif), dokumen (Dokumen aktif). --}}
 @php($rupiah = fn (int $amount): string => \App\Models\Payment::formatRupiah($amount))
 
 <x-layouts::public :title="$student->name" :noindex="true">
@@ -11,6 +11,37 @@
         </div>
 
         @include('portal-wali.partials.student-summary', ['student' => $student, 'showStatus' => true])
+
+        @if ($attendance !== null)
+            <x-ui.card :title="__('pondok.portal_wali.attendance.title', ['month' => $attendance['month']->translatedFormat('F Y')])">
+                @if (array_sum($attendance['counts']) === 0)
+                    <x-ui.empty-state icon="heroicon-o-clipboard-document-check">{{ __('pondok.portal_wali.attendance.no_records') }}</x-ui.empty-state>
+                @else
+                    <dl class="grid grid-cols-4 gap-2 text-center">
+                        @foreach (\App\Enums\AttendanceStatus::cases() as $status)
+                            <div class="flex flex-col-reverse gap-1 rounded-xl bg-gray-50 px-2 py-3">
+                                <dt class="text-sm text-gray-600">{{ $status->label() }}</dt>
+                                <dd class="text-2xl font-semibold tabular-nums text-gray-900">{{ $attendance['counts'][$status->value] }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+
+                    <h3 class="mt-6 mb-2 text-base font-semibold text-gray-900">{{ __('pondok.portal_wali.attendance.absences') }}</h3>
+                    @if ($attendance['absences']->isEmpty())
+                        <p class="text-sm text-gray-600">{{ __('pondok.portal_wali.attendance.all_present') }}</p>
+                    @else
+                        <ul class="flex flex-col divide-y divide-gray-200" role="list">
+                            @foreach ($attendance['absences'] as $record)
+                                <li class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                                    <span class="text-gray-900">{{ $record->session->held_on->translatedFormat('j M Y') }}</span>
+                                    <x-ui.badge :color="$record->status->color()">{{ $record->status->label() }}</x-ui.badge>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                @endif
+            </x-ui.card>
+        @endif
 
         @if ($invoices !== null)
             <x-ui.card :title="__('pondok.portal_wali.invoices')">

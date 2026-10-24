@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\Module;
 use App\Models\Scopes\UnitScope;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
@@ -141,6 +143,25 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         return Invoice::withoutUnitScope()
             ->where('student_id', $student->id)
             ->where('status', '!=', Invoice::STATUS_CANCELLED);
+    }
+
+    /**
+     * Baris absensi santri portal pada bulan `$month` (F025), tanpa cakupan jenjang maupun scope `visible`
+     * (wali bukan pencatat absensi). Pemanggil wajib memperoleh `$student` dari `portalStudents()`.
+     *
+     * @return Builder<AttendanceRecord>
+     */
+    public function portalAttendanceRecords(Student $student, CarbonInterface $month): Builder
+    {
+        $start = CarbonImmutable::parse($month->format('Y-m-01'), config('app.timezone'));
+
+        return AttendanceRecord::query()
+            ->where('student_id', $student->id)
+            ->whereIn('attendance_session_id', AttendanceSession::withoutGlobalScopes()
+                ->where('held_on', '>=', $start->toDateString())
+                ->where('held_on', '<', $start->addMonth()->toDateString())
+                ->select('id'))
+            ->with(['session' => fn (Relation $relation) => $relation->withoutGlobalScopes()]);
     }
 
     public function portalInvoice(int $id): Invoice

@@ -4,6 +4,7 @@ use App\Actions\Absensi\BuildAttendanceSheet;
 use App\Actions\Absensi\RecordClassroomAttendance;
 use App\Actions\Dokumen\IssueLetter;
 use App\Actions\Dokumen\LetterNumbering;
+use App\Actions\Kedisiplinan\RecordStudentViolation;
 use App\Actions\Kesehatan\RecordHealthVisit;
 use App\Actions\Keuangan\CancelPayment;
 use App\Actions\Keuangan\FinanceReportFilter;
@@ -40,6 +41,7 @@ use App\Models\AttendanceSession;
 use App\Models\Category;
 use App\Models\Classroom;
 use App\Models\Cohort;
+use App\Models\DisciplineLevel;
 use App\Models\Document;
 use App\Models\DocumentType;
 use App\Models\Dormitory;
@@ -69,10 +71,12 @@ use App\Models\Setting;
 use App\Models\Staff;
 use App\Models\StaticPage;
 use App\Models\Student;
+use App\Models\StudentViolation;
 use App\Models\TahfidzExam;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Video;
+use App\Models\ViolationType;
 use App\Models\Visit;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -5849,4 +5853,158 @@ function absensiRecapRow(Testable $component, string $name): ?array
     }
 
     return null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper modul Kedisiplinan (F026)
+|--------------------------------------------------------------------------
+|
+| Berawalan `disiplin`. Baris dibuat dengan `forceCreate` (tanpa Action dan tanpa factory) agar test
+| tidak bergantung pada aturan yang sedang diuji. Waktu dibekukan di 15 Okt 2026 10.00 WIB.
+|
+*/
+
+/**
+ * Fixture Kesehatan (santri s1-s4, kamar, musyrif, kesantrian) ditambah saklar Kedisiplinan, akun
+ * admin-sekolah/wali-kelas/bendahara, tahun ajaran sebelumnya 2025/2026, dan tiga jenis pelanggaran:
+ * `ringan` (5 poin), `sedang` (25 poin), `berat` (50 poin).
+ *
+ * @return object{year: AcademicYear, prevYear: AcademicYear, sltp: Unit, slta: Unit, admin: User, kes: User, kesSltp: User, musyrif: User, idle: User, adminSekolah: User, waliKelas: User, bendahara: User, s1: Student, s2: Student, s3: Student, s4: Student, ringan: ViolationType, sedang: ViolationType, berat: ViolationType}
+ */
+function disiplinFixture(): object
+{
+    $f = kesehatanFixture();
+    Setting::set('modules.kedisiplinan.enabled', true);
+
+    $f->prevYear = AcademicYear::factory()->create(['name' => '2025/2026', 'starts_on' => '2025-07-01', 'ends_on' => '2026-06-30']);
+    $f->adminSekolah = asramaUser('admin-sekolah');
+    $f->waliKelas = asramaUser('wali-kelas');
+    $f->bendahara = asramaUser('bendahara');
+
+    $f->ringan = disiplinType('Terlambat shalat berjamaah', 'ringan', 5);
+    $f->sedang = disiplinType('Keluar pondok tanpa izin', 'sedang', 25);
+    $f->berat = disiplinType('Berkelahi', 'berat', 50);
+
+    return $f;
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function disiplinType(string $name, string $category = 'ringan', int $points = 5, array $attributes = []): ViolationType
+{
+    return ViolationType::query()->forceCreate([
+        'name' => $name, 'category' => $category, 'points' => $points, 'is_active' => true, ...$attributes,
+    ]);
+}
+
+function disiplinLevel(string $name, int $minPoints): DisciplineLevel
+{
+    return DisciplineLevel::query()->forceCreate(['name' => $name, 'min_points' => $minPoints]);
+}
+
+/**
+ * Data valid untuk `RecordStudentViolation` (santri `s1`, jenis `ringan`, kemarin).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function disiplinData(object $f, array $overrides = []): array
+{
+    return [
+        'student_id' => $f->s1->id,
+        'violation_type_id' => $f->ringan->id,
+        'occurred_on' => '2026-10-14',
+        'description' => 'Terlambat ke masjid saat shalat subuh',
+        ...$overrides,
+    ];
+}
+
+/**
+ * Catatan langsung lewat model (tahun ajaran aktif, poin = poin jenis kecuali ditimpa).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function disiplinRaw(object $f, Student $student, ViolationType $type, array $attributes = []): StudentViolation
+{
+    return StudentViolation::query()->forceCreate([
+        'student_id' => $student->id,
+        'violation_type_id' => $type->id,
+        'academic_year_id' => $f->year->id,
+        'occurred_on' => '2026-10-10',
+        'points' => $type->points,
+        'description' => null,
+        'recorded_by' => null,
+        'cancelled_at' => null,
+        'cancelled_by' => null,
+        'cancel_reason' => null,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Catatan yang sudah dibatalkan, langsung lewat model.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function disiplinRawCancelled(object $f, Student $student, ViolationType $type, array $attributes = []): StudentViolation
+{
+    return disiplinRaw($f, $student, $type, [
+        'cancelled_at' => now(), 'cancelled_by' => $f->kes->id, 'cancel_reason' => 'Salah catat', ...$attributes,
+    ]);
+}
+
+/**
+ * Catat lewat Action sebagai `$actor` (ikut login karena cakupan data memakai user login).
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function disiplinRecord(object $f, User $actor, array $overrides = []): StudentViolation
+{
+    test()->actingAs($actor);
+
+    return app(RecordStudentViolation::class)->handle($actor, disiplinData($f, $overrides));
+}
+
+/**
+ * Semua catatan tanpa global scope (untuk menghitung baris apa pun yang login).
+ */
+function disiplinCount(): int
+{
+    return StudentViolation::withoutGlobalScopes()->count();
+}
+
+/**
+ * @return Collection<int, Activity>
+ */
+function disiplinActivities(?string $event = null): Collection
+{
+    return Activity::query()
+        ->where('log_name', 'kedisiplinan')
+        ->when($event, fn ($query) => $query->where('event', $event))
+        ->orderBy('id')
+        ->get();
+}
+
+/**
+ * Pilihan sebuah Select (`$field`) pada form Livewire, ditambah hasil pencarian `$search`.
+ *
+ * @return list<int>
+ */
+function disiplinOptions(Testable $component, string $field, string $search = ''): array
+{
+    $select = collect($component->instance()->form->getFlatComponents(withHidden: true))
+        ->first(fn ($child, $key): bool => $child instanceof Select && str_ends_with((string) $key, $field));
+
+    expect($select)->toBeInstanceOf(Select::class, "Select {$field} tidak ditemukan");
+
+    $options = $select->getOptions();
+
+    try {
+        $options += $select->getSearchResults($search);
+    } catch (Throwable) {
+    }
+
+    return array_map('intval', array_keys($options));
 }

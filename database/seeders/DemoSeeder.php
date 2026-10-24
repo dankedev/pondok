@@ -18,6 +18,7 @@ use Database\Seeders\Demo\DemoAttendance;
 use Database\Seeders\Demo\DemoContent;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoData;
+use Database\Seeders\Demo\DemoDiscipline;
 use Database\Seeders\Demo\DemoFinance;
 use Database\Seeders\Demo\DemoHealth;
 use Database\Seeders\Demo\DemoLeave;
@@ -73,6 +74,7 @@ class DemoSeeder extends Seeder
             (new DemoLeave($context))->run();
             // Setelah Perizinan: santri yang sedang izin keluar tercatat Izin.
             (new DemoAttendance($context))->run();
+            (new DemoDiscipline($context))->run();
         } finally {
             $context->files->cleanup();
         }

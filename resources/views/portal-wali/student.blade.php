@@ -50,7 +50,7 @@
                 @else
                     <div class="flex items-baseline justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">
                         <span class="text-sm text-gray-600">{{ __('pondok.portal_wali.discipline.total') }}</span>
-                        <span class="text-2xl font-semibold tabular-nums text-gray-900">{{ __('pondok.portal_wali.discipline.points', ['points' => $violations->sum('points')]) }}</span>
+                        <span class="shrink-0 whitespace-nowrap text-2xl font-semibold tabular-nums text-gray-900">{{ __('pondok.portal_wali.discipline.points', ['points' => $violations->sum('points')]) }}</span>
                     </div>
 
                     <ul class="mt-4 flex flex-col divide-y divide-gray-200" role="list">
@@ -62,7 +62,7 @@
                                 </div>
                                 <div class="flex shrink-0 flex-col items-end gap-1">
                                     <x-ui.badge :color="$violation->violationType->category->color()">{{ $violation->violationType->category->label() }}</x-ui.badge>
-                                    <span class="text-sm font-semibold tabular-nums text-gray-900">{{ __('pondok.portal_wali.discipline.points', ['points' => $violation->points]) }}</span>
+                                    <span class="whitespace-nowrap text-sm font-semibold tabular-nums text-gray-900">{{ __('pondok.portal_wali.discipline.points', ['points' => $violation->points]) }}</span>
                                 </div>
                             </li>
                         @endforeach

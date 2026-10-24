@@ -43,6 +43,34 @@
             </x-ui.card>
         @endif
 
+        @if ($violations !== null)
+            <x-ui.card :title="__('pondok.portal_wali.discipline.title')">
+                @if ($violations->isEmpty())
+                    <x-ui.empty-state icon="heroicon-o-shield-exclamation">{{ __('pondok.portal_wali.discipline.empty') }}</x-ui.empty-state>
+                @else
+                    <div class="flex items-baseline justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">
+                        <span class="text-sm text-gray-600">{{ __('pondok.portal_wali.discipline.total') }}</span>
+                        <span class="text-2xl font-semibold tabular-nums text-gray-900">{{ __('pondok.portal_wali.discipline.points', ['points' => $violations->sum('points')]) }}</span>
+                    </div>
+
+                    <ul class="mt-4 flex flex-col divide-y divide-gray-200" role="list">
+                        @foreach ($violations as $violation)
+                            <li class="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                                <div class="min-w-0">
+                                    <p class="text-gray-900">{{ $violation->violationType->name }}</p>
+                                    <p class="text-sm text-gray-600">{{ $violation->occurred_on->translatedFormat('j M Y') }}</p>
+                                </div>
+                                <div class="flex shrink-0 flex-col items-end gap-1">
+                                    <x-ui.badge :color="$violation->violationType->category->color()">{{ $violation->violationType->category->label() }}</x-ui.badge>
+                                    <span class="text-sm font-semibold tabular-nums text-gray-900">{{ __('pondok.portal_wali.discipline.points', ['points' => $violation->points]) }}</span>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-ui.card>
+        @endif
+
         @if ($invoices !== null)
             <x-ui.card :title="__('pondok.portal_wali.invoices')">
                 @if ($invoices->isEmpty())

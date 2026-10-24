@@ -2814,6 +2814,12 @@ return [
             'no_records' => 'Belum ada absensi bulan ini.',
             'all_present' => 'Hadir di semua hari yang tercatat bulan ini.',
         ],
+        'discipline' => [
+            'title' => 'Kedisiplinan',
+            'total' => 'Total poin tahun ajaran ini',
+            'points' => ':points poin',
+            'empty' => 'Tidak ada catatan pelanggaran tahun ajaran ini.',
+        ],
         'nis' => 'NIS :nis',
         'unit' => 'Jenjang',
         'classroom' => 'Rombel',

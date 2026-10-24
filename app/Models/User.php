@@ -164,6 +164,22 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             ->with(['session' => fn (Relation $relation) => $relation->withoutGlobalScopes()]);
     }
 
+    /**
+     * Pelanggaran santri portal yang dihitung (belum batal) pada tahun ajaran aktif (F026 D9), tanpa scope
+     * `visible` (wali bukan pencatat). Pemanggil wajib memperoleh `$student` dari `portalStudents()`.
+     * Tanpa tahun ajaran aktif hasilnya kosong.
+     *
+     * @return Builder<StudentViolation>
+     */
+    public function portalViolations(Student $student): Builder
+    {
+        return StudentViolation::withoutGlobalScope('visible')
+            ->where('student_id', $student->id)
+            ->countable()
+            ->whereIn('academic_year_id', AcademicYear::query()->active()->select('id'))
+            ->with('violationType');
+    }
+
     public function portalInvoice(int $id): Invoice
     {
         return Invoice::withoutUnitScope()

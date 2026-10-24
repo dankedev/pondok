@@ -15,7 +15,8 @@ use Illuminate\View\View;
 
 /**
  * Rincian santri portal wali (F079): ringkasan, tagihan non-batal berhalaman (Keuangan aktif),
- * kehadiran bulan berjalan (Absensi aktif, F025), dan dokumen terkini non-rahasia (Dokumen aktif).
+ * kehadiran bulan berjalan (Absensi aktif, F025), pelanggaran tahun ajaran aktif tanpa keterangan
+ * (Kedisiplinan aktif, F026), dan dokumen terkini non-rahasia (Dokumen aktif).
  * Santri bukan milik wali → 404.
  */
 class ShowStudent extends Controller
@@ -31,6 +32,9 @@ class ShowStudent extends Controller
                 ? $user->portalInvoices($student)->orderByDesc('period')->orderByDesc('id')->paginate(10)
                 : null,
             'attendance' => Module::Absensi->isEnabled() ? $this->attendance($user, $student) : null,
+            'violations' => Module::Kedisiplinan->isEnabled()
+                ? $user->portalViolations($student)->orderByDesc('occurred_on')->orderByDesc('id')->get()
+                : null,
             'documents' => Module::Dokumen->isEnabled()
                 ? $user->portalDocuments()->where('documentable_id', $student->id)->with('documentType')->latest('id')->get()
                 : null,

@@ -1760,7 +1760,7 @@
       "name": "Avatar lokal panel admin tanpa ui-avatars.com",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F086"],
       "description": "Ganti penyedia avatar bawaan Filament (ui-avatars.com) dengan avatar inisial lokal berupa SVG data URI, sehingga inisial nama pengguna admin tidak terkirim ke pihak ketiga dan pelanggaran img-src CSP report-only F086 hilang.",
       "acceptance": [
@@ -1769,9 +1769,9 @@
         "Kontras teks avatar minimal 4.5:1 dan nama tidak disisipkan sebagai markup",
         "Menu pengguna tampil benar di 360px, 1024px, desktop, tema terang dan gelap; tanpa pelanggaran CSP img-src avatar"
       ],
-      "owner": "feat-f088-avatar-lokal",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit e0848ef (provider), 2c5091e (test). tests/Feature/Filament/AdminAvatarTest.php dan AdminSecurityHeadersTest.php lulus; suite penuh PHP 8.4: 5430 lulus, 5 skipped, 1 galat KontenSeedersTest karena SUPER_ADMIN_* tidak diset di worktree (lulus saat diulang dengan env). Cek tampilan 360px, 1024px (tema gelap), desktop: avatar data URI, tanpa pelanggaran CSP img-src dan tanpa permintaan ke ui-avatars.com.",
       "notes": "Jalur cepat. Rencana: docs/plans/F088-plan.md."
     }
   ]

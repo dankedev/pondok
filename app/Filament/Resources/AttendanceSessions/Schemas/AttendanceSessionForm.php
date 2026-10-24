@@ -123,11 +123,11 @@ class AttendanceSessionForm
     public static function classroomLabels(Builder $query): array
     {
         return $query
-            ->with('unit')
+            ->with(['unit', 'academicYear'])
             ->orderBy('grade')
             ->orderBy('name')
             ->get()
-            ->mapWithKeys(fn (Classroom $classroom): array => [$classroom->id => "{$classroom->name} · {$classroom->unit?->name}"])
+            ->mapWithKeys(fn (Classroom $classroom): array => [$classroom->id => "{$classroom->name} · {$classroom->unit?->name} · {$classroom->academicYear?->name}"])
             ->all();
     }
 

@@ -131,6 +131,14 @@ class Student extends Model
     }
 
     /**
+     * Pelanggaran berpoin (F026), termasuk yang dibatalkan.
+     */
+    public function violations(): HasMany
+    {
+        return $this->hasMany(StudentViolation::class);
+    }
+
+    /**
      * Izin keluar/pulang (F024).
      */
     public function leaveRequests(): HasMany

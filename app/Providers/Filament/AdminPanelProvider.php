@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\AvatarProviders\InitialsAvatarProvider;
 use App\Http\Controllers\Dokumen\DownloadDocument;
 use App\Http\Controllers\Dokumen\PrintIssuedLetter;
 use App\Http\Controllers\Keuangan\DownloadFinanceExport;
@@ -64,6 +65,8 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling(null)
             ->lazyLoadedDatabaseNotifications(false)
             ->brandName(fn (): string => config('app.name'))
+            // F088: avatar inisial lokal; bawaan Filament mengirim inisial ke ui-avatars.com.
+            ->defaultAvatarProvider(InitialsAvatarProvider::class)
             ->colors([
                 'primary' => Color::Emerald,
             ])

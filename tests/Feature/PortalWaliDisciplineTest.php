@@ -43,7 +43,7 @@ it('AC-11: shows the total points and the list of the own child for the active y
         ->and(preg_match('/\b30\b/u', $text))->toBe(1)
         ->and(preg_match('/\b80\b/u', $text))->toBe(0)
         ->and(preg_match('/\b105\b/u', $text))->toBe(0)
-        ->not->toContain('Berkelahi')->not->toContain('Mencuri barang teman')->not->toContain('Pakaian tidak sesuai aturan')
+        ->and($text)->not->toContain('Berkelahi')->not->toContain('Mencuri barang teman')->not->toContain('Pakaian tidak sesuai aturan')
         ->not->toContain('13 Okt 2026')->not->toContain('2 Mar 2026');
 });
 

@@ -104,7 +104,7 @@ it('AC-10: saves a threshold and rejects a zero or duplicate minimum and an empt
             app(SaveDisciplineLevel::class)->handle($f->kes, $data);
             $this->fail("{$label}: ValidationException diharapkan");
         } catch (ValidationException $exception) {
-            expect($exception->errors())->toHaveKey($field, $label);
+            expect($exception->errors())->toHaveKey($field, message: $label);
         }
     }
 

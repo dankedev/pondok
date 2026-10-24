@@ -124,7 +124,7 @@ it('AC-5: rejects invalid input without writing a row', function () {
             app(RecordStudentViolation::class)->handle($f->kes, disiplinData($f, $overrides));
             $this->fail("{$label}: ValidationException diharapkan");
         } catch (ValidationException $exception) {
-            expect($exception->errors())->toHaveKey($field, $label);
+            expect($exception->errors())->toHaveKey($field, message: $label);
         }
     }
 

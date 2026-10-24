@@ -2649,6 +2649,19 @@ return [
             'outside_academic_year' => 'Tanggal kejadian harus berada di dalam salah satu tahun ajaran.',
             'already_cancelled' => 'Catatan pelanggaran ini sudah dibatalkan dan tidak bisa diubah.',
         ],
+        'defaults' => [
+            'types' => [
+                'late_prayer' => 'Terlambat shalat berjamaah',
+                'skip_study' => 'Tidak mengikuti kajian tanpa izin',
+                'improper_dress' => 'Berpakaian tidak sesuai aturan',
+                'late_return' => 'Terlambat kembali dari izin',
+                'phone' => 'Membawa telepon genggam tanpa izin',
+                'leave_without_permission' => 'Keluar pondok tanpa izin',
+                'fighting' => 'Berkelahi',
+                'stealing' => 'Mencuri',
+            ],
+            'level' => 'Peringatan :number',
+        ],
         'violation_type' => [
             'label' => 'jenis pelanggaran',
             'plural' => 'Jenis pelanggaran',

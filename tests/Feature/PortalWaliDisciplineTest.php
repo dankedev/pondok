@@ -87,3 +87,20 @@ it('AC-1: hides the discipline section when the module is off, keeps the page op
     expect(waliText($f->wali, "/wali/santri/{$f->s1->id}"))->not->toContain('Kedisiplinan')->not->toContain('Terlambat shalat berjamaah')->toContain('Ahmad Satu')
         ->and(disiplinCount())->toBe(5);
 });
+
+it('VERIFY: returns 404 for an archived child of the wali', function () {
+    $f = $this->f;
+    waliDisciplineData($f);
+    $f->s1->delete();
+
+    $this->actingAs($f->wali)->get("/wali/santri/{$f->s1->id}")->assertNotFound();
+});
+
+it('VERIFY: shows the empty message for a child with only cancelled records', function () {
+    $f = $this->f;
+    disiplinRaw($f, $f->s1, $f->berat, ['cancelled_at' => now(), 'cancel_reason' => 'Salah catat']);
+
+    $text = waliText($f->wali, "/wali/santri/{$f->s1->id}");
+
+    expect($text)->toContain('Tidak ada catatan pelanggaran')->not->toContain('Berkelahi');
+});

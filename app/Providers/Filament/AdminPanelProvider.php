@@ -9,6 +9,7 @@ use App\Http\Controllers\Keuangan\DownloadPaymentProof;
 use App\Http\Controllers\Keuangan\ShowPaymentReceipt;
 use App\Http\Controllers\Psb\DownloadApplicantDocument;
 use App\Http\Middleware\EnsureModuleIsEnabled;
+use App\Http\Middleware\SetAdminSecurityHeaders;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Events\ServingFilament;
@@ -83,6 +84,8 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationGroup(fn (): string => __('pondok.navigation.access')),
             ])
             ->middleware([
+                // F086: paling luar agar respons tolak (403, 419) dari middleware lain juga membawa header.
+                SetAdminSecurityHeaders::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

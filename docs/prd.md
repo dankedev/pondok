@@ -24,12 +24,13 @@ Pondok (pondok.org) adalah aplikasi open source yang menggabungkan portal publik
 | Super Admin | Semua modul dan pengaturan |
 | Bendahara | Keuangan: tarif, beasiswa, tagihan, pembayaran, laporan |
 | Admin Konten | Berita, kegiatan, prestasi publik, galeri, video, halaman, profil lembaga |
-| Admin Sekolah | Data santri, kelas, staff, dokumen, pengaturan profil |
+| Admin Sekolah | Data santri, kelas, staff, dokumen, absensi, pengaturan profil |
 | Admin PSB | Gelombang, jalur, verifikasi pendaftar dan berkas |
 | Kesantrian | Asrama, perizinan, kepulangan, kunjungan, prestasi |
 | Musyrif | Santri di asrama/kamarnya, persetujuan izin |
 | Ustadz Tahfidz | Halaqah, setoran, ujian |
 | Petugas Pos | Mencatat keluar-masuk santri dan kunjungan |
+| Wali Kelas | Absensi harian rombel yang ia walikan |
 | Wali (Fase 2) | Portal wali: tagihan, pembayaran, perkembangan anak |
 
 Akses diatur dua lapis:
@@ -108,6 +109,15 @@ Akses diatur dua lapis:
 - Riwayat per santri (tab di halaman santri) dan daftar dengan filter tanggal, jenjang, dan rujukan.
 - Kesantrian mencatat dan mengoreksi; musyrif mencatat untuk santri binaannya; hapus hanya super-admin.
 - Belum termasuk: stok obat, rekam medis lengkap, integrasi ke Perizinan, tampilan di portal wali, dan notifikasi wali.
+
+### 3.12 Absensi (Fase 3)
+- Absensi harian per rombel: satu catatan per rombel per tanggal, status setiap santri aktif di rombel itu Hadir, Sakit, Izin, atau Alpa (bawaan Hadir). Tanggal tidak boleh di masa depan dan harus di dalam tahun ajaran rombel.
+- Disimpan ulang kapan saja tanpa data ganda; santri yang baru masuk rombel ikut muncul.
+- Admin Sekolah mencatat semua rombel dalam cakupan jenjangnya; Wali Kelas hanya rombel yang ia walikan; Kesantrian hanya melihat.
+- Bila modul Perizinan aktif, santri yang seharian penuh di luar pondok karena izin (setelah hari keluar dan sebelum hari kembali, atau masih di luar) otomatis Izin dan tidak bisa diubah. Hari keluar, hari kembali, dan izin yang belum keluar hanya diberi petunjuk.
+- Rekap bulanan per rombel (jumlah H/S/I/A per santri) di panel admin.
+- Portal wali menampilkan jumlah H/S/I/A bulan berjalan dan daftar hari tidak hadir per anak.
+- Belum termasuk: absensi per mata pelajaran atau kegiatan asrama, keterangan per santri, notifikasi WhatsApp, kalender hari efektif, ekspor, dan hapus catatan absensi.
 
 ## 4. Kebutuhan teknis
 

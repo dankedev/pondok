@@ -2,7 +2,7 @@
 
 > Sumber: diskusi desain Pondok (pondok.org), Oktober 2026. Diagram Mermaid tampil langsung di GitHub. Kolom `created_at`/`updated_at` ada di semua tabel dan tidak ditulis di diagram.
 
-Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Dokumen, Prestasi, Kesehatan, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.
+Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Absensi, Dokumen, Prestasi, Kesehatan, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.
 
 ## Ringkasan relasi antar modul
 
@@ -38,6 +38,9 @@ erDiagram
   students ||--o{ leave_requests : "izin"
   homecoming_periods ||--o{ leave_requests : "pulang massal"
   students ||--o{ visits : "kunjungan"
+  classrooms ||--o{ attendance_sessions : "absensi harian"
+  attendance_sessions ||--o{ attendance_records : "kehadiran"
+  students ||--o{ attendance_records : ""
   document_types ||--o{ documents : "jenis"
   students ||--o{ documents : "berkas santri"
   students ||--o{ issued_letters : "surat keluar"
@@ -386,6 +389,37 @@ erDiagram
 - **Notifikasi WA ke wali** dikirim saat izin disetujui, saat santri keluar dari pos, dan saat kembali.
 - `visits` mencatat kunjungan wali (sambangan) beserta titipan barang, berguna untuk keamanan dan menjawab pertanyaan wali.
 - **`approved_by` ke `users`** (F024 D2), bukan `staff`: sama dengan kolom pelaku lain (`verified_by`, `fee_overrides.approved_by`), dan kesantrian/super-admin yang memutus belum tentu punya baris `staff`. Kolom ini juga diisi saat izin ditolak.
+
+## Absensi
+
+```mermaid
+erDiagram
+  attendance_sessions {
+    bigint id PK
+    bigint classroom_id FK "rombel"
+    date held_on "tanggal absensi"
+    bigint recorded_by FK "users, nullable, pencatat terakhir"
+  }
+  attendance_records {
+    bigint id PK
+    bigint attendance_session_id FK
+    bigint student_id FK
+    string status "hadir|sakit|izin|alpa"
+  }
+  classrooms ||--o{ attendance_sessions : "absensi harian"
+  attendance_sessions ||--o{ attendance_records : "kehadiran santri"
+  students ||--o{ attendance_records : ""
+  users ||--o{ attendance_sessions : "pencatat"
+
+```
+
+- **Absensi harian per rombel** (F025): satu sesi = satu rombel + satu tanggal, unique (`classroom_id`, `held_on`). Bukan per mapel dan bukan kegiatan asrama. Dicatat lewat `App\Actions\Absensi\RecordClassroomAttendance`; simpan ulang sesi yang sama memperbarui status (idempotent), tanpa sesi atau baris ganda.
+- **Roster** = santri berstatus `aktif` dengan `enrollments.classroom_id` = rombel itu. Santri yang tidak diisi bernilai `hadir` (atau mempertahankan status tersimpan). Baris santri yang sudah pindah atau keluar dari rombel tetap disimpan sebagai riwayat.
+- **Status** hanya `hadir`, `sakit`, `izin`, `alpa`. Tidak ada kolom catatan (keterangan sakit termasuk data kesehatan). Tanggal tidak boleh di masa depan dan harus di dalam tahun ajaran rombel.
+- **Integrasi Perizinan** (hanya bila modul Perizinan aktif): status `izin` dikunci hanya untuk hari yang sepenuhnya di luar pondok, yaitu tanggal keluar (`departed_at`) < tanggal absensi < tanggal kembali (`returned_at`). Santri berstatus `keluar` tetap terkunci sampai dicek kembali, meski lewat `return_due`. Izin `disetujui` yang belum dicek keluar, hari keluar, hari kembali, dan izin sehari tidak dikunci: baris tetap bisa diubah (bawaan `hadir`) dengan petunjuk jenis izin. Dihitung ulang setiap sesi disimpan.
+- **Cakupan:** jenjang dibaca lewat `classrooms.unit_id`. Pemegang `view-any:student` (super-admin, admin-sekolah, kesantrian) melihat semua rombel dalam cakupan jenjangnya; peran `wali-kelas` hanya rombel dengan `homeroom_staff_id` = baris `staff` miliknya. Kesantrian hanya melihat.
+- **Tidak dihapus:** koreksi lewat ubah status. FK `classroom_id` `restrictOnDelete`; `attendance_session_id` dan `student_id` `cascadeOnDelete` (hanya terjadi saat force delete santri); `recorded_by` `nullOnDelete`.
+- **Portal wali** menampilkan jumlah hadir/sakit/izin/alpa bulan berjalan dan daftar hari tidak hadir per anak.
 
 ## Dokumen
 
@@ -893,7 +927,7 @@ erDiagram
   }
   roles {
     bigint id PK
-    string name "super-admin | bendahara | admin-konten | admin-sekolah | admin-psb | kesantrian | musyrif | ustadz-tahfidz | petugas-pos"
+    string name "super-admin | bendahara | admin-konten | admin-sekolah | admin-psb | kesantrian | musyrif | ustadz-tahfidz | petugas-pos | wali-kelas"
     string guard_name
   }
   permissions {
@@ -995,6 +1029,8 @@ foreach (students aktif as $s) {
 | `leave_requests` | index (`status`, `return_due`), (`student_id`, `status`) | Daftar santri yang sedang di luar dan yang terlambat kembali |
 | `leave_requests` | unique (`student_id`, `homecoming_period_id`) | Satu izin pulang massal per santri per periode. Izin biasa memakai `homecoming_period_id` NULL, dan NULL tidak saling bentrok di unique (SQLite/MySQL/Postgres), jadi tanpa generated column |
 | `visits` | index (`started_at`) | Daftar kunjungan terbaru dan per tanggal |
+| `attendance_sessions` | unique (`classroom_id`, `held_on`); index (`held_on`) | Satu sesi absensi per rombel per hari; daftar dan rekap per tanggal/bulan |
+| `attendance_records` | unique (`attendance_session_id`, `student_id`); index (`student_id`) | Satu status per santri per sesi; rekap per santri di portal wali |
 | `documents` | index (`documentable_type`, `documentable_id`, `document_type_id`), (`expires_on`); FK `source_applicant_document_id` → `applicant_documents` (`restrictOnDelete`) | Cek kelengkapan berkas dan dokumen yang akan kedaluwarsa; berkas PSB yang sudah disalin tidak bisa dihapus |
 | `achievements` | index (`academic_year_id`, `category`, `level`) | Rekap prestasi per tahun, kategori, dan tingkat |
 | `applicant_documents` | unique (`applicant_id`, `admission_requirement_id`) | Unggah ulang menimpa berkas lama, tidak menumpuk |

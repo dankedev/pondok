@@ -178,7 +178,7 @@ final class DemoData
      */
     public const STAFF = [
         ['nip' => 'MAK-2015-001', 'name' => 'Abdul Hamid Syukri', 'gender' => 'L', 'position' => 'Mudir'],
-        ['nip' => 'MAK-2016-002', 'name' => 'Fathur Rohman', 'gender' => 'L', 'position' => 'ustadz', 'homeroom' => 'SLTP:7A'],
+        ['nip' => 'MAK-2016-002', 'name' => 'Fathur Rohman', 'gender' => 'L', 'position' => 'ustadz', 'homeroom' => 'SLTP:7A', 'account' => 'wali-kelas'],
         ['nip' => 'MAK-2016-003', 'name' => 'Zainal Abidin Rasyid', 'gender' => 'L', 'position' => 'ustadz', 'homeroom' => 'SLTP:8A'],
         ['nip' => 'MAK-2017-004', 'name' => 'Hasanuddin Malik', 'gender' => 'L', 'position' => 'ustadz', 'homeroom' => 'SLTP:9A'],
         ['nip' => 'MAK-2017-005', 'name' => 'Mukhlisin Hadi', 'gender' => 'L', 'position' => 'ustadz', 'homeroom' => 'SLTA:10A'],
@@ -224,6 +224,7 @@ final class DemoData
         'musyrif' => ['name' => 'Rahmat Hidayat Saleh', 'units' => []],
         'ustadz-tahfidz' => ['name' => 'Abdullah Fikri Ramadhan', 'units' => []],
         'petugas-pos' => ['name' => 'Petugas Pos Demo', 'units' => []],
+        'wali-kelas' => ['name' => 'Fathur Rohman', 'units' => []],
     ];
 
     /**

@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveRequestVia;
 use App\Models\Concerns\HasUnitScope;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\LeaveRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -135,6 +137,60 @@ class LeaveRequest extends Model
                     ->whereColumn($this->qualifyColumn('returned_at'), '>', $this->qualifyColumn('return_due'));
             });
         });
+    }
+
+    /**
+     * Izin yang mengunci absensi `$date` menjadi `izin` (F025 D5): santri di luar pondok sepanjang hari itu.
+     * Status `keluar` yang berangkat sebelum hari itu (batas atas terbuka sampai dicek kembali, termasuk
+     * yang lewat `return_due`), atau `kembali` yang berangkat sebelum hari itu dan kembali sesudahnya.
+     *
+     * @param  Builder<LeaveRequest>  $query
+     */
+    public function scopeLockingDate(Builder $query, CarbonInterface $date): void
+    {
+        [$start, $next] = self::dayBounds($date);
+
+        $query->where($this->qualifyColumn('departed_at'), '<', $start)
+            ->where(function (Builder $status) use ($next): void {
+                $status->where($this->qualifyColumn('status'), LeaveRequestStatus::Out->value)
+                    ->orWhere(function (Builder $returned) use ($next): void {
+                        $returned->where($this->qualifyColumn('status'), LeaveRequestStatus::Returned->value)
+                            ->where($this->qualifyColumn('returned_at'), '>=', $next);
+                    });
+            });
+    }
+
+    /**
+     * Izin disetujui/keluar/kembali yang menyentuh `$date` (F025 D5), hanya sebagai petunjuk di lembar
+     * absensi: waktu keluar (atau rencana keluar) paling lambat hari itu, dan waktu kembali (atau batas
+     * kembali) paling awal hari itu; status `keluar` tanpa batas atas.
+     *
+     * @param  Builder<LeaveRequest>  $query
+     */
+    public function scopeTouchingDate(Builder $query, CarbonInterface $date): void
+    {
+        [$start, $next] = self::dayBounds($date);
+        $status = $this->qualifyColumn('status');
+
+        $query->whereIn($status, [LeaveRequestStatus::Approved->value, LeaveRequestStatus::Out->value, LeaveRequestStatus::Returned->value])
+            ->whereRaw("COALESCE({$this->qualifyColumn('departed_at')}, {$this->qualifyColumn('planned_departure')}) < ?", [$next])
+            ->where(function (Builder $until) use ($status, $start): void {
+                $until->where($status, LeaveRequestStatus::Out->value)
+                    ->orWhereRaw("COALESCE({$this->qualifyColumn('returned_at')}, {$this->qualifyColumn('return_due')}) >= ?", [$start]);
+            });
+    }
+
+    /**
+     * Awal hari `$date` dan awal hari berikutnya di zona aplikasi, sebagai string datetime yang
+     * dibandingkan langsung dengan kolom (portabel SQLite/MySQL/Postgres).
+     *
+     * @return array{string, string}
+     */
+    private static function dayBounds(CarbonInterface $date): array
+    {
+        $start = CarbonImmutable::parse($date->format('Y-m-d'), config('app.timezone'));
+
+        return [$start->format('Y-m-d H:i:s'), $start->addDay()->format('Y-m-d H:i:s')];
     }
 
     /**

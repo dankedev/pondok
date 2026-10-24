@@ -56,6 +56,7 @@ class RolePermissionSeeder extends Seeder
         'HealthVisit',
         'LeaveType', 'HomecomingPeriod', 'LeaveRequest', 'Visit',
         'AttendanceSession',
+        'ViolationType', 'DisciplineLevel', 'StudentViolation',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -94,6 +95,9 @@ class RolePermissionSeeder extends Seeder
         'Visit' => ['viewAny', 'view', 'create', 'update'],
         // Absensi (F025): koreksi lewat ubah status, sesi tidak dihapus.
         'AttendanceSession' => ['viewAny', 'view', 'create', 'update'],
+        // Kedisiplinan (F026): jenis dinonaktifkan, pelanggaran dibatalkan; keduanya tidak dihapus.
+        'ViolationType' => ['viewAny', 'view', 'create', 'update'],
+        'StudentViolation' => ['viewAny', 'view', 'create', 'update', 'cancel'],
     ];
 
     public function run(): void
@@ -239,6 +243,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('TahfidzTarget'),
                 // Absensi harian (F025): mencatat dan mengoreksi absensi semua rombel dalam cakupannya.
                 ...self::resourcePermissions('AttendanceSession'),
+                // Kedisiplinan (F026): lihat pelanggaran dan rekap poin saja.
+                ...self::resourcePermissions('StudentViolation', $readOnly),
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.
@@ -275,6 +281,10 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('Visit'),
                 // Absensi (F025): lihat saja, untuk memantau alpa santri dalam pembinaan.
                 ...self::resourcePermissions('AttendanceSession', $readOnly),
+                // Kedisiplinan (F026): jenis pelanggaran, ambang, dan catatan (catat, ubah, batal).
+                ...self::resourcePermissions('ViolationType'),
+                ...self::resourcePermissions('DisciplineLevel'),
+                ...self::resourcePermissions('StudentViolation'),
             ],
             // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi. Mencatat kesehatan
             // santri binaannya (`HealthVisit::visibleStudents`); koreksi oleh kesantrian.
@@ -285,6 +295,8 @@ class RolePermissionSeeder extends Seeder
                 // Mengajukan, memutus (sesuai penugasan), dan membatalkan izin santri binaannya.
                 'view-leave-metrics',
                 ...self::resourcePermissions('LeaveRequest', ['viewAny', 'view', 'create', 'approve', 'cancel']),
+                // Mencatat pelanggaran santri binaannya; ubah dan batal oleh kesantrian (F026).
+                ...self::resourcePermissions('StudentViolation', ['viewAny', 'view', 'create']),
             ],
             // Pengampu melihat halaqah yang ia ampu (`Halaqah::visibleTo`), mencatat setoran dan ujian
             // anggotanya, dan menghapus setoran yang salah. Anggota halaqah dikelola admin sekolah.

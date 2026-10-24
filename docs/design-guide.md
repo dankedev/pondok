@@ -145,6 +145,7 @@ Aturan:
 | Perizinan | `ArrowRightStartOnRectangle` |
 | Jenis izin | `ListBullet` |
 | Kunjungan wali (sambangan) | `HandRaised` |
+| Absensi | `ClipboardDocumentCheck` |
 | Masuk ke panel (login) | `ArrowRightEndOnRectangle` |
 | Konten / berita | `Newspaper` |
 | Pengaturan | `Cog6Tooth` |
@@ -246,6 +247,10 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Ujian tahfidz | ulang | `warning` |
 | Anggota halaqah | di bawah target (dihitung, bukan status) | `warning` |
 | Kesehatan | perlu rujukan, perlu izin pulang (penanda boolean, tampil hanya bila true) | `warning` |
+| Absensi | hadir | `success` |
+| Absensi | sakit | `warning` |
+| Absensi | izin | `info` |
+| Absensi | alpa | `danger` |
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |

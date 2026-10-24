@@ -146,6 +146,9 @@ Aturan:
 | Jenis izin | `ListBullet` |
 | Kunjungan wali (sambangan) | `HandRaised` |
 | Absensi | `ClipboardDocumentCheck` |
+| Pelanggaran santri (kedisiplinan) | `ShieldExclamation` |
+| Jenis pelanggaran | `ListBullet` (sama dengan jenis izin) |
+| Ambang poin kedisiplinan | `AdjustmentsHorizontal` |
 | Masuk ke panel (login) | `ArrowRightEndOnRectangle` |
 | Konten / berita | `Newspaper` |
 | Pengaturan | `Cog6Tooth` |
@@ -251,6 +254,11 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Absensi | sakit | `warning` |
 | Absensi | izin | `info` |
 | Absensi | alpa | `danger` |
+| Kategori pelanggaran | ringan | `info` |
+| Kategori pelanggaran | sedang | `warning` |
+| Kategori pelanggaran | berat | `danger` |
+| Pelanggaran santri | dibatalkan (tidak dihitung) | `gray` |
+| Rekap kedisiplinan | label ambang (mis. Peringatan 1) | `warning` |
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |

@@ -1723,11 +1723,11 @@
       "name": "Header keamanan panel admin (CSP report-only)",
       "phase": 1,
       "module": "Inti",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F001"],
       "description": "Pecahan F056: header keamanan untuk /admin (frame-ancestors, nosniff, Referrer-Policy, Permissions-Policy) dan CSP dalam mode report-only agar Filament/Livewire tidak rusak.",
       "acceptance": [],
-      "owner": null,
+      "owner": "sesi-f086-header-admin",
       "handoff": null,
       "evidence": "",
       "notes": "Jalur cepat. Sumber: docs/audits/iso-27001-annex-a-audit.md."

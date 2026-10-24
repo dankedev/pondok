@@ -1,6 +1,6 @@
 # Deploy Pondok dengan Docker Compose
 
-Compose menjalankan dua layanan: `app` (Laravel + Apache, PHP 8.4) dan `db` (MySQL 8.4). Tidak ada Redis, worker, atau scheduler yang berjalan terus; scheduler dipicu cron host setiap menit. Pasang reverse proxy dengan HTTPS di depan `app`. Port MySQL tidak dipublikasikan ke host.
+Compose menjalankan dua layanan: `app` (Laravel + Apache, PHP 8.4) dan `db` (MySQL 8.4). Tidak ada Redis atau worker terpisah; container `app` menjalankan scheduler sendiri di samping Apache (lihat [Scheduler](#scheduler)). Pasang reverse proxy dengan HTTPS di depan `app`. Port MySQL tidak dipublikasikan ke host.
 
 Data tersimpan di dua named volume: `mysql_data` (database) dan `pondok_storage` (unggahan, dokumen santri, log). Nama aslinya diawali nama project Compose, mis. `pondok_mysql_data`; lihat dengan `docker volume ls`.
 
@@ -39,21 +39,36 @@ unset DB_ROOT_PASSWORD
 docker compose ps
 ```
 
-Saat container `app` start, entrypoint menyiapkan folder storage, lalu menjalankan `pondok:install --skip-if-installed` (migrasi, data awal, super-admin, storage link; hanya sekali) dan `pondok:upgrade --force`, lalu Apache. Tunggu sampai kedua layanan `healthy` (`app` memakai endpoint `/up`). Log instalasi: `docker compose logs app`.
+Saat container `app` start, entrypoint menyiapkan folder storage, lalu menjalankan `pondok:install --skip-if-installed` (migrasi, data awal, super-admin, storage link; hanya sekali) dan `pondok:upgrade --force`, lalu scheduler dan Apache. Tunggu sampai kedua layanan `healthy` (`app` memakai endpoint `/up`). Log instalasi: `docker compose logs app`.
 
 Bila `db` gagal start pada instalasi pertama dengan pesan bahwa salah satu dari `MYSQL_ROOT_PASSWORD`, `MYSQL_ALLOW_EMPTY_PASSWORD`, atau `MYSQL_RANDOM_ROOT_PASSWORD` harus diisi, berarti `DB_ROOT_PASSWORD` belum diekspor. Ekspor lalu ulangi `docker compose up -d`.
 
 Setelah berhasil login di `/admin`, hapus nilai `SUPER_ADMIN_PASSWORD` dari `.env` lalu `docker compose up -d app`. Akun yang sudah dibuat tidak berubah.
 
-## Scheduler (cron host)
+## Scheduler
 
-Pondok memerlukan `schedule:run` setiap menit. Scheduler juga menjalankan worker antrean singkat (`queue:work --stop-when-empty`), jadi tidak perlu worker terpisah. Tambahkan ke crontab user yang boleh menjalankan Docker (`crontab -e`):
+Pondok memerlukan `schedule:run` setiap menit. Scheduler juga menjalankan worker antrean singkat (`queue:work --stop-when-empty`), jadi email yang antre (lupa password, undangan portal wali), backup terjadwal, dan tugas lain ikut berjalan. Tanpa scheduler, email tertahan di tabel `jobs` walau halaman menampilkan "email terkirim".
+
+Image sudah menjalankan scheduler sendiri: setelah install/upgrade, entrypoint menjalankan `php artisan schedule:work` sebagai `www-data` di background, di samping Apache. Bila prosesnya berhenti, entrypoint menjalankannya ulang setelah 5 detik dan mencatat `Scheduler (schedule:work) berhenti` di log container. Tidak perlu cron host.
+
+Saat start, entrypoint juga menjalankan `schedule:clear-cache` untuk menghapus kunci `withoutOverlapping` yang tertinggal bila container sebelumnya mati di tengah tugas. Job yang terputus karena container berhenti dikembalikan ke antrean dan dicoba lagi.
+
+**Memeriksa:**
+
+```sh
+docker compose exec -u www-data app php artisan pondok:doctor
+docker compose exec -u www-data app php artisan tinker --execute 'echo DB::table("jobs")->count();'
+```
+
+Baris scheduler di `pondok:doctor` menampilkan "Cron berjalan" bila scheduler berjalan dalam 5 menit terakhir (pesannya sama untuk cron cPanel). Jumlah baris `jobs` seharusnya kembali ke 0 dalam ±1 menit setelah ada email yang antre.
+
+**Mematikan** (mis. platform yang menjalankan `schedule:run` sendiri, atau replika container tambahan): isi environment `PONDOK_SCHEDULER=false`, lalu jalankan `schedule:run` tiap menit sebagai `www-data` dari luar, mis. cron host:
 
 ```cron
 * * * * * cd /srv/pondok && docker compose exec -T -u www-data app php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Ganti `/srv/pondok` dengan direktori yang berisi `docker-compose.yml` dan `.env`. Jalankan sebagai `www-data` agar berkas cache dan log tidak dimiliki root. Pada platform seperti Coolify atau Dokploy, buat *scheduled task* tiap menit dengan perintah `php artisan schedule:run` di container `app` sebagai `www-data`. Cek hasilnya dengan `docker compose exec -u www-data app php artisan pondok:doctor`.
+Jangan menjalankan keduanya sekaligus. Bila sebelumnya sudah ada cron host atau *scheduled task* panel untuk `schedule:run`, hapus setelah memakai image ini, atau isi `PONDOK_SCHEDULER=false`.
 
 Perintah artisan lain juga dijalankan dengan `docker compose exec -u www-data app php artisan ...`.
 
@@ -121,7 +136,7 @@ Panel seperti Easypanel, Coolify, atau Dokploy bisa membangun `Dockerfile` langs
 - **Environment runtime wajib:** `APP_ENV=production`, `APP_KEY`, `APP_URL`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, serta `SUPER_ADMIN_NAME`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` untuk instalasi pertama. Isi di menu environment panel, bukan sebagai build argument. Nilai lain dari `.env.production.example` (mis. `MAIL_*`) boleh ditambahkan. `DB_CONNECTION=mysql` sudah bawaan image.
 - **Database:** pakai layanan MySQL/MariaDB dari panel dengan volume persisten, dan isi `DB_HOST` dengan nama host internal layanan itu.
 - **Volume persisten:** pasang volume ke `/var/www/html/storage`. Tanpa volume ini, unggahan dan dokumen santri hilang setiap deploy.
-- **Scheduler:** buat cron/scheduled task panel setiap menit (`* * * * *`) yang menjalankan `php artisan schedule:run` di container aplikasi sebagai `www-data`. Bila panel tidak punya fitur cron, pakai cron di host: `docker exec -u www-data <nama-container> php artisan schedule:run`.
+- **Scheduler:** sudah berjalan di dalam container; tidak perlu cron panel. Bila sebelumnya ada cron/scheduled task panel untuk `schedule:run`, hapus, atau isi `PONDOK_SCHEDULER=false` bila ingin tetap memakai cron panel. Cek dengan `php artisan pondok:doctor` di console panel sebagai `www-data` (lihat [Scheduler](#scheduler)).
 - **Backup:** pakai fitur backup database panel, dan backup volume storage terpisah.
 
 ## Catatan healthcheck

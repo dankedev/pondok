@@ -1723,14 +1723,19 @@
       "name": "Header keamanan panel admin (CSP report-only)",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F001"],
       "description": "Pecahan F056: header keamanan untuk /admin (frame-ancestors, nosniff, Referrer-Policy, Permissions-Policy) dan CSP dalam mode report-only agar Filament/Livewire tidak rusak.",
-      "acceptance": [],
-      "owner": "sesi-f086-header-admin",
+      "acceptance": [
+        "Semua route /admin (termasuk login dan respons 403) mengirim nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, dan Content-Security-Policy-Report-Only",
+        "Panel admin tidak mengirim Content-Security-Policy yang memblokir",
+        "Header portal publik dan portal wali tidak berubah",
+        "Login, dasbor, form unggah, modal, dan notifikasi tetap berfungsi di 360px, 1024px, desktop"
+      ],
+      "owner": null,
       "handoff": null,
-      "evidence": "",
-      "notes": "Jalur cepat. Sumber: docs/audits/iso-27001-annex-a-audit.md."
+      "evidence": "Commit 1cc4053 (middleware), a40e5f1 (test). tests/Feature/Http/AdminSecurityHeadersTest.php lulus; suite penuh PHP 8.4 lulus (5421 lulus, 5 skipped).",
+      "notes": "Jalur cepat. Sumber: docs/audits/iso-27001-annex-a-audit.md. Pelanggaran report-only yang tersisa: img-src https://ui-avatars.com (avatar bawaan Filament), untuk CSP penuh di #22."
     },
     {
       "id": "F087",

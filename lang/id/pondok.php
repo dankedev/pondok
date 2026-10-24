@@ -2623,6 +2623,33 @@ return [
         ],
     ],
 
+    'kedisiplinan' => [
+        'categories' => [
+            'ringan' => 'Ringan',
+            'sedang' => 'Sedang',
+            'berat' => 'Berat',
+        ],
+        'fields' => [
+            'student_id' => 'Santri',
+            'violation_type_id' => 'Jenis pelanggaran',
+            'occurred_on' => 'Tanggal kejadian',
+            'description' => 'Keterangan',
+            'cancel_reason' => 'Alasan pembatalan',
+            'name' => 'Nama',
+            'category' => 'Kategori',
+            'points' => 'Poin',
+            'is_active' => 'Aktif',
+            'min_points' => 'Poin minimal',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengelola data kedisiplinan ini.',
+            'student_unavailable' => 'Santri tidak ditemukan, tidak aktif, atau di luar cakupan Anda.',
+            'type_unavailable' => 'Jenis pelanggaran tidak ditemukan atau sudah nonaktif.',
+            'outside_academic_year' => 'Tanggal kejadian tidak berada di dalam tahun ajaran mana pun.',
+            'already_cancelled' => 'Catatan pelanggaran ini sudah dibatalkan dan tidak bisa diubah.',
+        ],
+    ],
+
     'modules' => [
         'akademik' => [
             'label' => 'Akademik',
@@ -2671,6 +2698,10 @@ return [
         'absensi' => [
             'label' => 'Absensi',
             'description' => 'Absensi harian santri per rombel oleh wali kelas, rekap bulanan, dan kehadiran di portal wali.',
+        ],
+        'kedisiplinan' => [
+            'label' => 'Kedisiplinan',
+            'description' => 'Catatan pelanggaran santri berpoin, ambang peringatan, rekap poin per tahun ajaran, dan poin di portal wali.',
         ],
     ],
 

@@ -23,6 +23,7 @@ enum Module: string
     case Kesehatan = 'kesehatan';
     case Perizinan = 'perizinan';
     case Absensi = 'absensi';
+    case Kedisiplinan = 'kedisiplinan';
 
     public function label(): string
     {
@@ -42,7 +43,7 @@ enum Module: string
     public function requires(): array
     {
         return match ($this) {
-            self::Asrama, self::Keuangan, self::Prestasi, self::PortalWali, self::Tahfidz, self::Kesehatan, self::Absensi => [self::Akademik],
+            self::Asrama, self::Keuangan, self::Prestasi, self::PortalWali, self::Tahfidz, self::Kesehatan, self::Absensi, self::Kedisiplinan => [self::Akademik],
             self::Psb => [self::Akademik, self::Keuangan],
             self::Perizinan => [self::Akademik, self::Asrama],
             self::Akademik, self::Dokumen, self::Konten => [],

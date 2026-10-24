@@ -119,6 +119,15 @@ Akses diatur dua lapis:
 - Portal wali menampilkan jumlah H/S/I/A bulan berjalan dan daftar hari tidak hadir per anak.
 - Belum termasuk: absensi per mata pelajaran atau kegiatan asrama, keterangan per santri, notifikasi WhatsApp, kalender hari efektif, ekspor, dan hapus catatan absensi.
 
+### 3.13 Kedisiplinan (Fase 3)
+- Katalog jenis pelanggaran dengan kategori (ringan, sedang, berat) dan poin. Jenis yang tidak dipakai lagi dinonaktifkan, bukan dihapus. Instalasi baru sudah berisi beberapa jenis bawaan yang bisa diubah.
+- Pencatatan pelanggaran santri aktif: tanggal, jenis, dan deskripsi opsional. Poin disalin dari jenis saat dicatat, sehingga perubahan poin di katalog tidak mengubah catatan lama.
+- Poin dihitung per tahun ajaran. Pencatatan yang keliru dibatalkan dengan alasan dan tidak dihitung; catatan tidak dihapus.
+- Ambang poin yang bisa diatur (mis. Peringatan 1 pada 25 poin) tampil sebagai label di rekap poin per santri, tanpa sanksi otomatis.
+- Kesantrian mengelola katalog, ambang, dan catatan; musyrif mencatat untuk santri binaannya; Admin Sekolah hanya melihat.
+- Portal wali menampilkan total poin tahun ajaran aktif dan daftar pelanggaran per anak, tanpa deskripsi.
+- Belum termasuk: poin positif dari prestasi, surat peringatan atau sanksi tercetak, notifikasi WhatsApp, unggah bukti, banding, ekspor, dan pelanggaran otomatis dari Absensi atau Perizinan.
+
 ## 4. Kebutuhan teknis
 
 - Laravel 13, PHP 8.3+, Filament untuk panel admin, Blade + Livewire + Tailwind untuk halaman publik.

@@ -2,7 +2,7 @@
 
 > Sumber: diskusi desain Pondok (pondok.org), Oktober 2026. Diagram Mermaid tampil langsung di GitHub. Kolom `created_at`/`updated_at` ada di semua tabel dan tidak ditulis di diagram.
 
-Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Absensi, Dokumen, Prestasi, Kesehatan, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.
+Skema database untuk modul di PRD: Akademik & Santri, Asrama, Tahfidz, Perizinan, Absensi, Kedisiplinan, Dokumen, Prestasi, Kesehatan, PSB, Keuangan, Konten Publik, dan Pengguna & RBAC. Nama tabel memakai bahasa Inggris agar sesuai konvensi Eloquent; istilah domain dijelaskan di kolom komentar.
 
 ## Ringkasan relasi antar modul
 
@@ -41,6 +41,8 @@ erDiagram
   classrooms ||--o{ attendance_sessions : "absensi harian"
   attendance_sessions ||--o{ attendance_records : "kehadiran"
   students ||--o{ attendance_records : ""
+  students ||--o{ student_violations : "pelanggaran"
+  violation_types ||--o{ student_violations : "jenis"
   document_types ||--o{ documents : "jenis"
   students ||--o{ documents : "berkas santri"
   students ||--o{ issued_letters : "surat keluar"
@@ -420,6 +422,53 @@ erDiagram
 - **Cakupan:** jenjang dibaca lewat `classrooms.unit_id`. Pemegang `view-any:student` (super-admin, admin-sekolah, kesantrian) melihat semua rombel dalam cakupan jenjangnya; peran `wali-kelas` hanya rombel dengan `homeroom_staff_id` = baris `staff` miliknya. Kesantrian hanya melihat.
 - **Tidak dihapus:** koreksi lewat ubah status. FK `classroom_id` `restrictOnDelete`; `attendance_session_id` dan `student_id` `cascadeOnDelete` (hanya terjadi saat force delete santri); `recorded_by` `nullOnDelete`.
 - **Portal wali** menampilkan jumlah hadir/sakit/izin/alpa bulan berjalan dan daftar hari tidak hadir per anak.
+
+## Kedisiplinan
+
+```mermaid
+erDiagram
+  violation_types {
+    bigint id PK
+    string name UK "jenis pelanggaran"
+    string category "ringan|sedang|berat"
+    smallint points "poin, 1-1000"
+    boolean is_active "default true"
+  }
+  student_violations {
+    bigint id PK
+    bigint student_id FK
+    bigint violation_type_id FK
+    bigint academic_year_id FK "diturunkan dari occurred_on"
+    date occurred_on "tanggal kejadian"
+    smallint points "snapshot poin jenis"
+    text description "nullable, maks 1.000"
+    bigint recorded_by FK "users, nullable"
+    datetime cancelled_at "nullable"
+    bigint cancelled_by FK "users, nullable"
+    string cancel_reason "nullable, wajib saat batal"
+  }
+  discipline_levels {
+    bigint id PK
+    string name "label ambang, mis. Peringatan 1"
+    smallint min_points UK "poin minimal"
+  }
+  violation_types ||--o{ student_violations : "jenis"
+  students ||--o{ student_violations : "pelanggaran"
+  academic_years ||--o{ student_violations : ""
+  users ||--o{ student_violations : "pencatat"
+
+```
+
+- **Pelanggaran santri berpoin** (F026): dicatat dari katalog `violation_types` (kategori ringan/sedang/berat). Dicatat, diubah, dan dibatalkan hanya lewat `App\Actions\Kedisiplinan\*`. Tidak ada poin positif.
+- **Poin adalah snapshot:** `student_violations.points` disalin dari jenis saat dicatat. Mengubah poin di katalog tidak mengubah catatan lama; mengganti jenis pada catatan menyalin ulang poin jenis baru.
+- **Per tahun ajaran:** `academic_year_id` diturunkan dari `occurred_on` setiap simpan; bila lebih dari satu tahun ajaran memuat tanggal itu, dipilih yang `starts_on`-nya terbaru. Tanggal tidak boleh di masa depan dan harus di dalam salah satu tahun ajaran. Total poin = `SUM(points)` catatan yang belum dibatalkan dalam satu tahun ajaran, dihitung saat dibutuhkan dan tidak disimpan.
+- **Catat** hanya untuk santri berstatus `aktif`. **Ubah** tidak mengganti santri maupun `recorded_by`. Salah santri: batalkan lalu catat ulang.
+- **Tidak dihapus:** pencatatan keliru dibatalkan dengan alasan wajib (`cancelled_at`, `cancelled_by`, `cancel_reason`). Catatan batal tetap tampil, tidak dihitung, dan tidak bisa diubah atau dibatalkan ulang. Jenis pelanggaran juga tidak dihapus, cukup dinonaktifkan (tidak bisa dipilih untuk catatan baru). FK `violation_type_id` dan `academic_year_id` `restrictOnDelete`; `student_id` `cascadeOnDelete` (hanya terjadi saat force delete santri); `recorded_by` dan `cancelled_by` `nullOnDelete`. Index (`student_id`, `academic_year_id`) dan (`occurred_on`).
+- **Ambang (`discipline_levels`) hanya label:** level santri = baris dengan `min_points` terbesar yang ≤ total poinnya, tampil di rekap. Tidak disimpan dan tidak memicu sanksi, surat, atau notifikasi. Ambang boleh dihapus (lewat `DeleteDisciplineLevel`) karena tidak dirujuk tabel lain.
+- **Cakupan:** lewat `Student::visibleStudentsFor`. Pemegang `view-any:student` (super-admin, kesantrian, admin-sekolah) melihat semua santri dalam cakupan jenjangnya; musyrif hanya santri dengan penempatan kamar aktif di asrama/kamar yang ia awasi.
+- **Peran:** kesantrian mengelola jenis, ambang, dan catatan (catat, ubah, batal); musyrif melihat dan mencatat untuk santri binaannya, dan rekapnya hanya memuat santri binaan; admin-sekolah hanya melihat catatan dan rekap; wali kelas dan peran lain tanpa akses.
+- **Activity log `kedisiplinan`** ditulis manual di Action (`created`, `updated`, `cancelled`) dan memuat `student_id`, `violation_type_id`, `occurred_on`, `points` (serta alasan untuk `cancelled`). Teks deskripsi tidak masuk log.
+- **Portal wali** menampilkan total poin tahun ajaran aktif dan daftar pelanggaran (tanggal, jenis, kategori, poin) per anak, tanpa deskripsi dan tanpa catatan yang dibatalkan. Dibaca lewat `User::portalViolations` yang melewati scope `visible` (wali bukan pencatat) dan hanya untuk santri portal milik wali itu.
 
 ## Dokumen
 

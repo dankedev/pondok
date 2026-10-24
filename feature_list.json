@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F088",
+  "next_id": "F089",
   "features": [
     {
       "id": "F001",
@@ -1752,6 +1752,27 @@
       "handoff": null,
       "evidence": "",
       "notes": "Jalur penuh (migration data pribadi). Sumber: docs/audits/iso-27001-annex-a-audit.md."
+    },
+    {
+      "id": "F088",
+      "key": "inti-avatar-lokal",
+      "issue": 101,
+      "name": "Avatar lokal panel admin tanpa ui-avatars.com",
+      "phase": 1,
+      "module": "Inti",
+      "status": "in-progress",
+      "depends_on": ["F086"],
+      "description": "Ganti penyedia avatar bawaan Filament (ui-avatars.com) dengan avatar inisial lokal berupa SVG data URI, sehingga inisial nama pengguna admin tidak terkirim ke pihak ketiga dan pelanggaran img-src CSP report-only F086 hilang.",
+      "acceptance": [
+        "Panel admin tidak memuat ui-avatars.com; URL avatar berupa data:image/svg+xml",
+        "Inisial benar untuk nama satu kata, beberapa kata, non-ASCII, tanda baca di awal, dan nama tanpa huruf",
+        "Kontras teks avatar minimal 4.5:1 dan nama tidak disisipkan sebagai markup",
+        "Menu pengguna tampil benar di 360px, 1024px, desktop, tema terang dan gelap; tanpa pelanggaran CSP img-src avatar"
+      ],
+      "owner": "feat-f088-avatar-lokal",
+      "handoff": null,
+      "evidence": "",
+      "notes": "Jalur cepat. Rencana: docs/plans/F088-plan.md."
     }
   ]
 }

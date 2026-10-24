@@ -4,6 +4,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\Module;
 use App\Filament\Pages\AttendanceRecap;
 use App\Filament\Resources\AttendanceSessions\AttendanceSessionResource;
+use App\Models\AcademicYear;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSession;
 use App\Models\Classroom;
@@ -79,7 +80,7 @@ it('AC-13: seeds a wali-kelas demo account and attendance sessions through the A
 
     $user = User::query()->where('email', 'wali-kelas@demo.test')->firstOrFail();
     $staff = DB::table('staff')->where('user_id', $user->id)->first();
-    $room = Classroom::withoutUnitScope()->where('name', '7A')->firstOrFail();
+    $room = Classroom::query()->where('academic_year_id', AcademicYear::current()->id)->where('name', '7A')->firstOrFail();
     $admin = User::query()->where('email', 'admin-sekolah@demo.test')->firstOrFail();
 
     expect($user->hasRole('wali-kelas'))->toBeTrue()

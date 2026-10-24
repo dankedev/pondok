@@ -146,6 +146,14 @@ class Student extends Model
         return $this->hasMany(Visit::class);
     }
 
+    /**
+     * Kehadiran harian per rombel (F025).
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
     public function roomAssignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);

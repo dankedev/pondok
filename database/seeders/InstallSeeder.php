@@ -19,6 +19,7 @@ class InstallSeeder extends Seeder
             RolePermissionSeeder::class,
             DocumentTypeSeeder::class,
             LeaveTypeSeeder::class,
+            DisciplineSeeder::class,
             AdmissionTrackSeeder::class,
             StaticPageSeeder::class,
             ContentCategorySeeder::class,

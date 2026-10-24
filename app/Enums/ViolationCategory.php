@@ -7,9 +7,9 @@ namespace App\Enums;
  */
 enum ViolationCategory: string
 {
-    case Light = 'ringan';
-    case Moderate = 'sedang';
-    case Severe = 'berat';
+    case Ringan = 'ringan';
+    case Sedang = 'sedang';
+    case Berat = 'berat';
 
     public function label(): string
     {
@@ -19,9 +19,9 @@ enum ViolationCategory: string
     public function color(): string
     {
         return match ($this) {
-            self::Light => 'info',
-            self::Moderate => 'warning',
-            self::Severe => 'danger',
+            self::Ringan => 'info',
+            self::Sedang => 'warning',
+            self::Berat => 'danger',
         };
     }
 }

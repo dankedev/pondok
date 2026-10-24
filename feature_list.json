@@ -488,7 +488,7 @@
       "name": "Kedisiplinan: pelanggaran & poin",
       "phase": 3,
       "module": "Kedisiplinan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002"],
       "description": "Katalog jenis pelanggaran berpoin (ringan/sedang/berat), pencatatan pelanggaran santri oleh kesantrian dan musyrif, pembatalan dengan alasan, rekap poin per tahun ajaran dengan label ambang, dan total + daftar pelanggaran di portal wali.",
       "acceptance": [
@@ -503,9 +503,9 @@
         "Portal wali: total poin tahun ajaran aktif dan daftar pelanggaran anaknya saja (melewati scope visible lewat portalViolations), tanpa deskripsi dan tanpa catatan batal; tanpa tahun ajaran aktif tampil kosong",
         "Instalasi membuat 8 jenis bawaan dan 3 ambang bawaan; data demo lewat Action; seed ulang tidak menggandakan"
       ],
-      "owner": "sesi-f026",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 58a0547 (branch feat/f026-kedisiplinan). Test: tests/Feature/Kedisiplinan/* dan PortalWaliDisciplineTest (60 lulus), ModuleComplianceTest, ModuleTest, RolePermissionSeederTest, ModuleSwitchVerifyTest lulus; suite penuh PHP 8.4: 5414 lulus, 5 skip, 2 gagal di ModuleTest (daftar modul) lalu diperbaiki dan lulus. Pint lulus. Cek tampilan 360/1024/desktop (panel admin dan portal wali).",
       "notes": "Fase 3. Jalur penuh (migration, permission, Action yang mengubah data). Ruang lingkup K1-K9 disetujui pemilik proyek 24 Okt 2026: katalog berpoin + kategori, tanpa poin positif, ambang sebagai label, per tahun ajaran, requires Akademik, tanpa notifikasi, koreksi lewat pembatalan; wali-kelas tidak ikut. Rencana: docs/plans/F026-plan.md"
     },
     {

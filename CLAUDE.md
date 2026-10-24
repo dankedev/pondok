@@ -68,7 +68,7 @@ Berlaku untuk rencana, kode, dan test. Bila bertentangan, urutannya YAGNI, lalu 
 
 - **Permission** (Spatie) menentukan modul atau aksi yang boleh diakses.
 - **Cakupan jenjang** (`unit_user`) menentukan data jenjang mana yang terlihat. Tidak punya baris di `unit_user` berarti boleh melihat semua jenjang. Diterapkan sebagai global scope pada `Student`, `Invoice`, `Applicant`, dan model turunannya.
-- Peran bawaan (di-seed saat instalasi): `super-admin`, `bendahara`, `admin-konten`, `admin-sekolah`, `admin-psb`, `kesantrian`, `musyrif`, `ustadz-tahfidz`, `petugas-pos`, serta `wali` untuk portal wali.
+- Peran bawaan (di-seed saat instalasi): `super-admin`, `bendahara`, `admin-konten`, `admin-sekolah`, `admin-psb`, `kesantrian`, `musyrif`, `ustadz-tahfidz`, `wali-kelas`, `petugas-pos`, serta `wali` untuk portal wali.
 
 ## Aturan bisnis utama
 

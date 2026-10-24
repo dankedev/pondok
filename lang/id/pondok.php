@@ -2576,6 +2576,25 @@ return [
         ],
     ],
 
+    'attendance' => [
+        'label' => 'absensi',
+        'plural' => 'Absensi harian',
+        'statuses' => [
+            'hadir' => 'Hadir',
+            'sakit' => 'Sakit',
+            'izin' => 'Izin',
+            'alpa' => 'Alpa',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mencatat absensi rombel ini.',
+            'invalid_date' => 'Tanggal absensi tidak valid.',
+            'future_date' => 'Tanggal absensi tidak boleh melewati hari ini.',
+            'outside_academic_year' => 'Tanggal absensi harus di dalam tahun ajaran rombel (:start sampai :end).',
+            'student_not_in_roster' => 'Ada santri yang bukan santri aktif di rombel ini. Muat ulang lembar absensi.',
+            'invalid_status' => 'Status kehadiran hanya boleh Hadir, Sakit, Izin, atau Alpa.',
+        ],
+    ],
+
     'modules' => [
         'akademik' => [
             'label' => 'Akademik',
@@ -2620,6 +2639,10 @@ return [
         'perizinan' => [
             'label' => 'Perizinan',
             'description' => 'Izin keluar dan pulang santri, catatan keluar-kembali di pos, pulang massal, dan kunjungan wali.',
+        ],
+        'absensi' => [
+            'label' => 'Absensi',
+            'description' => 'Absensi harian santri per rombel oleh wali kelas, rekap bulanan, dan kehadiran di portal wali.',
         ],
     ],
 

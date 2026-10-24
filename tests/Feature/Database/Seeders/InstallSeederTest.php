@@ -79,7 +79,7 @@ it('AC-2: setting seeder creates every enum module enabled and no legacy row', f
     }
 
     expect(Setting::query()->where('key', 'like', 'modules.%.enabled')->count())->toBe(count(Module::cases()))
-        ->and(Setting::query()->whereKey('modules.absensi.enabled')->exists())->toBeFalse();
+        ->and(Setting::query()->whereKey('modules.arsip-lama.enabled')->exists())->toBeFalse();
 });
 
 it('AC-2: seeding again keeps a module that was switched off', function () {

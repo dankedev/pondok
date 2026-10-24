@@ -59,7 +59,7 @@ it('AC-9: rejects a duplicate name, a category outside the enum, and points outs
             app(SaveViolationType::class)->handle($f->kes, disiplinTypeData($overrides));
             $this->fail("{$label}: ValidationException diharapkan");
         } catch (ValidationException $exception) {
-            expect($exception->errors())->toHaveKey($field, $label);
+            expect($exception->errors())->toHaveKey($field, message: $label);
         }
     }
 

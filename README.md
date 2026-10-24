@@ -4,6 +4,13 @@
 
 Pondok bersifat **single-tenant**: satu instalasi digunakan oleh satu lembaga. Aplikasi dirancang agar dapat dijalankan di shared hosting cPanel atau VPS kecil, tanpa Redis, worker yang terus berjalan, maupun Node.js di server produksi.
 
+## Situs resmi
+
+- [pondok.org](https://pondok.org) — informasi tentang Pondok.
+- [Dokumentasi](https://pondok.org/docs)
+- [Fitur](https://pondok.org/fitur)
+- [Blog](https://pondok.org/blog)
+
 ## Fitur
 
 - **Akademik dan santri** — jenjang, tahun ajaran, angkatan, rombongan belajar, santri, wali, staf, riwayat kelas, dan absensi.

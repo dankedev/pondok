@@ -42,6 +42,7 @@ const DEMO_ACCOUNTS = [
     'musyrif' => [],
     'ustadz-tahfidz' => [],
     'petugas-pos' => [],
+    'wali-kelas' => [],
 ];
 
 /**
@@ -174,7 +175,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
 
     // AC-3
     expect(Unit::query()->pluck('code')->sort()->values()->all())->toBe(['SD', 'SLTA', 'SLTP']);
-    expect(Role::query()->whereIn('name', array_keys(DEMO_ACCOUNTS))->count())->toBe(9);
+    expect(Role::query()->whereIn('name', array_keys(DEMO_ACCOUNTS))->count())->toBe(10);
     foreach (['akademik', 'asrama', 'psb', 'keuangan', 'konten', 'dokumen', 'prestasi'] as $module) {
         expect(Setting::get("modules.{$module}.enabled"))->toBeTruthy("AC-3 modul {$module}");
     }
@@ -217,7 +218,7 @@ it('AC-3..AC-22: mengisi data demo lengkap, mematuhi aturan bisnis, dan idempote
 
     // AC-6 (bagian data)
     $demoUsers = User::query()->where('email', 'like', '%@demo.test')->get();
-    expect($demoUsers)->toHaveCount(9);
+    expect($demoUsers)->toHaveCount(10);
     foreach (DEMO_ACCOUNTS as $role => $unitCodes) {
         $user = demoUser($role);
         expect($user->roles->pluck('name')->all())->toBe([$role]);

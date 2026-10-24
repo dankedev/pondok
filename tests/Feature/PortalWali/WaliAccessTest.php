@@ -19,7 +19,7 @@ it('AC-3: lets an active wali into the wali portal but not into the admin panel'
 
 it('AC-3: keeps built-in non-wali roles out of the wali portal with the admin-login hint', function (string $role) {
     $this->actingAs(keuanganUser($role))->get('/wali')->assertForbidden()->assertSee('masuk lewat halaman admin');
-})->with(['super-admin', 'bendahara', 'admin-konten', 'admin-sekolah', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos']);
+})->with(['super-admin', 'bendahara', 'admin-konten', 'admin-sekolah', 'admin-psb', 'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali-kelas']);
 
 it('AC-3: keeps an inactive wali out and sends guests to the wali login', function () {
     $this->f->wali->forceFill(['is_active' => false])->save();

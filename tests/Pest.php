@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Absensi\BuildAttendanceSheet;
+use App\Actions\Absensi\RecordClassroomAttendance;
 use App\Actions\Dokumen\IssueLetter;
 use App\Actions\Dokumen\LetterNumbering;
 use App\Actions\Kesehatan\RecordHealthVisit;
@@ -33,6 +35,8 @@ use App\Models\AdmissionWave;
 use App\Models\Album;
 use App\Models\Applicant;
 use App\Models\ApplicantDocument;
+use App\Models\AttendanceRecord;
+use App\Models\AttendanceSession;
 use App\Models\Category;
 use App\Models\Classroom;
 use App\Models\Cohort;
@@ -1274,6 +1278,7 @@ function dashboardMatrix(): array
         'musyrif' => [],
         'ustadz-tahfidz' => [],
         'petugas-pos' => [],
+        'wali-kelas' => [],
     ];
 }
 
@@ -5643,4 +5648,205 @@ function perizinanSelectOptions(Testable $component, string $field, string $sear
     }
 
     return array_map('intval', array_keys($options));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper modul Absensi (F025)
+|--------------------------------------------------------------------------
+|
+| Berawalan `absensi`. Waktu dibekukan di 15 Okt 2026 10.00 WIB, tahun ajaran aktif 2026/2027 (1 Jul 2026 - 30 Jun 2027).
+|
+*/
+
+/**
+ * Seeder, saklar modul, rombel, akun per peran, dan santri.
+ *
+ * Rombel: `c7a` (SLTP, wali = staff `homeroomStaff`), `c7b` (SLTP, tanpa wali), `c10a` (SLTA).
+ * Santri 7A: `s1`, `s2`, `s3` aktif dan `grad` (status lulus, tetap terdaftar di 7A); `o7b` di 7B; `o10` di 10A.
+ * Akun: `admin` admin-sekolah semua jenjang, `adminSltp` admin-sekolah SLTP, `kes` kesantrian semua jenjang,
+ * `kesSltp` kesantrian SLTP, `homeroom` wali-kelas wali 7A, `idle` wali-kelas berstaff tetapi bukan wali rombel mana pun,
+ * `noStaff` wali-kelas tanpa baris staff.
+ *
+ * @return object{year: AcademicYear, sltp: Unit, slta: Unit, c7a: Classroom, c7b: Classroom, c10a: Classroom, homeroomStaff: Staff, admin: User, adminSltp: User, kes: User, kesSltp: User, homeroom: User, idle: User, noStaff: User, s1: Student, s2: Student, s3: Student, grad: Student, o7b: Student, o10: Student}
+ */
+function absensiFixture(): object
+{
+    $f = tahfidzBoot();
+
+    foreach (['asrama', 'perizinan', 'absensi'] as $module) {
+        Setting::set("modules.{$module}.enabled", true);
+    }
+
+    $f->homeroomStaff = Staff::factory()->create(['gender' => 'L', 'position' => 'ustadz']);
+    $f->c7a = Classroom::factory()->create(['academic_year_id' => $f->year->id, 'unit_id' => $f->sltp->id, 'grade' => 7, 'name' => '7A', 'homeroom_staff_id' => $f->homeroomStaff->id]);
+    $f->c7b = Classroom::factory()->create(['academic_year_id' => $f->year->id, 'unit_id' => $f->sltp->id, 'grade' => 7, 'name' => '7B']);
+    $f->c10a = Classroom::factory()->create(['academic_year_id' => $f->year->id, 'unit_id' => $f->slta->id, 'grade' => 10, 'name' => '10A']);
+
+    $f->admin = asramaUser('admin-sekolah');
+    $f->adminSltp = asramaUser('admin-sekolah', ['SLTP']);
+    $f->kes = asramaUser('kesantrian');
+    $f->kesSltp = asramaUser('kesantrian', ['SLTP']);
+    $f->homeroom = asramaUser('wali-kelas');
+    $f->homeroomStaff->forceFill(['user_id' => $f->homeroom->id])->save();
+    $f->idle = asramaUser('wali-kelas');
+    Staff::factory()->create(['user_id' => $f->idle->id, 'gender' => 'L', 'position' => 'ustadz']);
+    $f->noStaff = asramaUser('wali-kelas');
+
+    foreach (['s1' => 'Santri Satu', 's2' => 'Santri Dua', 's3' => 'Santri Tiga'] as $key => $name) {
+        $f->{$key} = absensiStudent($f, $f->c7a, $name);
+    }
+
+    $f->grad = absensiStudent($f, $f->c7a, 'Santri Lulus', ['status' => 'lulus']);
+    $f->o7b = absensiStudent($f, $f->c7b, 'Santri Tujuh B');
+    $f->o10 = absensiStudent($f, $f->c10a, 'Santri Sepuluh', [], $f->slta);
+
+    return $f;
+}
+
+/**
+ * Santri yang terdaftar (enrollment) di `$classroom`.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function absensiStudent(object $f, Classroom $classroom, string $name, array $attributes = [], ?Unit $unit = null): Student
+{
+    $student = tahfidzStudent($f, 'L', $unit, ['name' => $name, ...$attributes]);
+    Enrollment::factory()->create(['student_id' => $student->id, 'classroom_id' => $classroom->id, 'academic_year_id' => $f->year->id]);
+
+    return $student;
+}
+
+/**
+ * Catat absensi lewat Action sebagai `$actor` (ikut login karena cakupan data memakai user login).
+ *
+ * @param  array<int, string>  $statuses  student_id => status
+ */
+function absensiRecord(User $actor, Classroom $classroom, string $date, array $statuses = []): AttendanceSession
+{
+    test()->actingAs($actor);
+
+    return app(RecordClassroomAttendance::class)->handle($actor, $classroom, $date, $statuses);
+}
+
+/**
+ * Sesi (dan baris) langsung lewat model tanpa Action.
+ *
+ * @param  array<int, string>  $statuses  student_id => status
+ */
+function absensiRaw(Classroom $classroom, string $date, array $statuses = [], ?User $recorder = null): AttendanceSession
+{
+    $session = AttendanceSession::query()->forceCreate([
+        'classroom_id' => $classroom->id,
+        'held_on' => $date,
+        'recorded_by' => $recorder?->id,
+    ]);
+
+    foreach ($statuses as $studentId => $status) {
+        AttendanceRecord::query()->forceCreate(['attendance_session_id' => $session->id, 'student_id' => $studentId, 'status' => $status]);
+    }
+
+    return $session;
+}
+
+/**
+ * Status tersimpan sebuah rombel pada tanggal tertentu: student_id => status (tanpa cakupan apa pun).
+ *
+ * @return array<int, string>
+ */
+function absensiStored(Classroom $classroom, string $date): array
+{
+    return DB::table('attendance_records')
+        ->join('attendance_sessions', 'attendance_sessions.id', '=', 'attendance_records.attendance_session_id')
+        ->where('attendance_sessions.classroom_id', $classroom->id)
+        ->whereDate('attendance_sessions.held_on', $date)
+        ->pluck('attendance_records.status', 'attendance_records.student_id')
+        ->all();
+}
+
+/**
+ * Seluruh isi tabel absensi sebagai penanda perubahan (untuk assert "tidak ada yang berubah").
+ *
+ * @return array{sessions: list<string>, records: list<string>}
+ */
+function absensiSnapshot(): array
+{
+    return [
+        'sessions' => DB::table('attendance_sessions')->orderBy('id')->get()->map(fn (object $row): string => json_encode($row))->all(),
+        'records' => DB::table('attendance_records')->orderBy('id')->get()->map(fn (object $row): string => json_encode($row))->all(),
+    ];
+}
+
+/**
+ * Izin dari Perizinan langsung lewat model; kolom waktu mengikuti `$status` kecuali `$attributes` menimpa.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function absensiLeave(Student $student, string $status, array $attributes = []): LeaveRequest
+{
+    $type = LeaveType::query()->where('name', 'Izin Berobat')->first() ?? LeaveType::factory()->create(['name' => 'Izin Berobat']);
+
+    return perizinanRaw($student, $type, $status, $attributes);
+}
+
+/**
+ * Lembar absensi hasil `BuildAttendanceSheet` pada tanggal tertentu.
+ *
+ * @return Collection<int, mixed>
+ */
+function absensiSheet(Classroom $classroom, string $date): Collection
+{
+    return app(BuildAttendanceSheet::class)->handle($classroom, CarbonImmutable::parse($date, 'Asia/Jakarta'));
+}
+
+/**
+ * Baris lembar untuk santri tertentu: status (string), locked (bool), dan id izin petunjuk (atau null).
+ * Baris boleh berupa array maupun objek.
+ *
+ * @param  Collection<int, mixed>  $sheet
+ * @return array{status: ?string, locked: bool, leave: ?int}|null
+ */
+function absensiRow(Collection $sheet, Student $student): ?array
+{
+    $row = $sheet->first(fn (mixed $row): bool => (int) data_get($row, 'student.id') === $student->id);
+
+    if ($row === null) {
+        return null;
+    }
+
+    $status = data_get($row, 'status');
+
+    return [
+        'status' => $status instanceof BackedEnum ? $status->value : $status,
+        'locked' => (bool) data_get($row, 'locked'),
+        'leave' => data_get($row, 'leave.id'),
+    ];
+}
+
+/**
+ * Hadir/Sakit/Izin/Alpa pada baris tabel (halaman rekap) yang memuat `$name`: empat sel numerik terakhir, atau null bila baris tidak ada.
+ *
+ * @return list<int>|null
+ */
+function absensiRecapRow(Testable $component, string $name): ?array
+{
+    $dom = new DOMDocument;
+    @$dom->loadHTML('<?xml encoding="utf-8" ?>'.$component->html());
+    $xpath = new DOMXPath($dom);
+
+    foreach ($xpath->query('//tr') as $row) {
+        if (! str_contains((string) $row->textContent, $name)) {
+            continue;
+        }
+
+        $cells = [];
+
+        foreach ($xpath->query('./th|./td', $row) as $cell) {
+            $cells[] = trim((string) preg_replace('/[\s\x{00A0}]+/u', ' ', $cell->textContent));
+        }
+
+        return array_map('intval', array_slice($cells, -4));
+    }
+
+    return null;
 }

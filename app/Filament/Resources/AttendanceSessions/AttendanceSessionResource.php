@@ -39,6 +39,14 @@ class AttendanceSessionResource extends Resource
         return Module::Absensi->value;
     }
 
+    /**
+     * Menu ada di grup Akademik, jadi ikut hilang bila modul Akademik (prasyarat Absensi) mati.
+     */
+    public static function canAccess(): bool
+    {
+        return Module::Akademik->isEnabled() && parent::canAccess();
+    }
+
     public static function getModelLabel(): string
     {
         return __('pondok.attendance.label');

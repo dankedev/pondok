@@ -9,7 +9,6 @@ use App\Filament\Resources\AttendanceSessions\Schemas\AttendanceSessionForm;
 use App\Models\AcademicYear;
 use App\Models\AttendanceSession;
 use App\Models\Classroom;
-use App\Models\Setting;
 use App\Models\Student;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -24,7 +23,6 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Gate;
 
 /**
  * Rekap absensi bulanan per rombel (F025): jumlah Hadir/Sakit/Izin/Alpa tiap santri yang punya baris
@@ -57,7 +55,7 @@ class AttendanceRecap extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return Setting::moduleEnabled(static::getModule()) && Gate::allows('viewAny', AttendanceSession::class);
+        return AttendanceSessionResource::canAccess();
     }
 
     /**

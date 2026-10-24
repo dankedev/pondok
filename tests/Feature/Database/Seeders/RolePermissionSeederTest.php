@@ -113,12 +113,16 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'check-in-out:leave-request', 'cancel:leave-request',
         'view-any:visit', 'view:visit', 'create:visit', 'update:visit',
         'view-any:attendance-session', 'view:attendance-session',
+        'view-any:violation-type', 'view:violation-type', 'create:violation-type', 'update:violation-type',
+        'view-any:discipline-level', 'view:discipline-level', 'create:discipline-level', 'update:discipline-level', 'delete:discipline-level', 'delete-any:discipline-level',
+        'view-any:student-violation', 'view:student-violation', 'create:student-violation', 'update:student-violation', 'cancel:student-violation',
     ]],
     'musyrif' => ['musyrif', [
         'view-dashboard', 'view-any:room-assignment', 'view:room-assignment',
         'view-any:health-visit', 'view:health-visit', 'create:health-visit',
         'view-leave-metrics',
         'view-any:leave-request', 'view:leave-request', 'create:leave-request', 'approve:leave-request', 'cancel:leave-request',
+        'view-any:student-violation', 'view:student-violation', 'create:student-violation',
     ]],
     'ustadz-tahfidz' => ['ustadz-tahfidz', [
         'view-dashboard',
@@ -157,6 +161,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:tahfidz-exam', 'view:tahfidz-exam', 'create:tahfidz-exam', 'delete:tahfidz-exam',
         'view-any:tahfidz-target', 'view:tahfidz-target', 'create:tahfidz-target', 'update:tahfidz-target', 'delete:tahfidz-target', 'delete-any:tahfidz-target',
         'view-any:attendance-session', 'view:attendance-session', 'create:attendance-session', 'update:attendance-session',
+        'view-any:student-violation', 'view:student-violation',
     ]],
 ]);
 

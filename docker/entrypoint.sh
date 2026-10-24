@@ -1,7 +1,8 @@
 #!/bin/sh
 # Dijalankan setiap container start: siapkan folder storage (volume bisa kosong),
 # pasang Pondok sekali (`pondok:install --skip-if-installed`), lalu `pondok:upgrade`
-# untuk migrasi dan data sistem baru sebelum Apache. Tidak pernah menghapus data.
+# untuk migrasi dan data sistem baru, lalu scheduler di background dan Apache.
+# Tidak pernah menghapus data.
 set -e
 
 cd /var/www/html
@@ -38,5 +39,22 @@ until runuser -u www-data -- php artisan pondok:install --skip-if-installed --no
 done
 
 runuser -u www-data -- php artisan pondok:upgrade --force --no-interaction
+
+# Scheduler di samping Apache (F089): menjalankan antrean (email) dan tugas
+# terjadwal tanpa cron host. Matikan dengan PONDOK_SCHEDULER=false bila
+# platform menjalankan `schedule:run` sendiri. Kunci withoutOverlapping dari
+# container lama yang mati di tengah tugas dihapus dulu agar tidak menahan
+# antrean; saat start belum ada tugas jadwal yang berjalan.
+if [ "${PONDOK_SCHEDULER:-true}" != "false" ]; then
+    runuser -u www-data -- php artisan schedule:clear-cache --no-interaction > /dev/null \
+        || echo "schedule:clear-cache gagal; scheduler tetap dijalankan." >&2
+    (
+        while true; do
+            runuser -u www-data -- php artisan schedule:work --no-interaction > /dev/null || true
+            echo "Scheduler (schedule:work) berhenti; dijalankan ulang dalam 5 detik." >&2
+            sleep 5
+        done
+    ) &
+fi
 
 exec "$@"

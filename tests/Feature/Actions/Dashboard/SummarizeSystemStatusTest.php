@@ -34,7 +34,7 @@ it('AC-14: handles a missing active academic year', function () {
 it('AC-2: counts the modules of the enum and ignores a legacy module row', function () {
     dashboardEnableThreeModules();
     Setting::set('school.name', 'Ma\'had Al-Kitab');
-    Setting::set('modules.absensi.enabled', true);
+    Setting::set('modules.arsip-lama.enabled', true);
 
     $summary = app(SummarizeSystemStatus::class)->handle();
 

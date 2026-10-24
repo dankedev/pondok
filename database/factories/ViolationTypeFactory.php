@@ -15,7 +15,7 @@ class ViolationTypeFactory extends Factory
     {
         return [
             'name' => fake()->unique()->words(3, true),
-            'category' => ViolationCategory::Light,
+            'category' => ViolationCategory::Ringan,
             'points' => 5,
             'is_active' => true,
         ];

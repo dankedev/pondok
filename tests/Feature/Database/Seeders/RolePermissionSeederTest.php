@@ -21,7 +21,7 @@ beforeEach(function () {
 it('creates every role from CLAUDE.md and the PRD', function () {
     expect(Role::query()->pluck('name')->sort()->values()->all())->toBe([
         'admin-konten', 'admin-psb', 'admin-sekolah', 'bendahara', 'kesantrian',
-        'musyrif', 'petugas-pos', 'super-admin', 'ustadz-tahfidz', 'wali',
+        'musyrif', 'petugas-pos', 'super-admin', 'ustadz-tahfidz', 'wali', 'wali-kelas',
     ]);
 });
 
@@ -112,6 +112,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:leave-request', 'view:leave-request', 'create:leave-request', 'approve:leave-request', 'approve-any:leave-request',
         'check-in-out:leave-request', 'cancel:leave-request',
         'view-any:visit', 'view:visit', 'create:visit', 'update:visit',
+        'view-any:attendance-session', 'view:attendance-session',
     ]],
     'musyrif' => ['musyrif', [
         'view-dashboard', 'view-any:room-assignment', 'view:room-assignment',
@@ -131,6 +132,10 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:visit', 'view:visit', 'create:visit', 'update:visit',
     ]],
     'wali' => ['wali', []],
+    'wali-kelas' => ['wali-kelas', [
+        'view-dashboard',
+        'view-any:attendance-session', 'view:attendance-session', 'create:attendance-session', 'update:attendance-session',
+    ]],
     'admin-sekolah' => ['admin-sekolah', [
         'view-dashboard', 'view-student-metrics', 'view-settings-metrics',
         'view-any:staff', 'view:staff', 'create:staff', 'update:staff', 'delete:staff', 'delete-any:staff', 'import:staff',
@@ -151,6 +156,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:memorization-record', 'view:memorization-record', 'create:memorization-record', 'delete:memorization-record',
         'view-any:tahfidz-exam', 'view:tahfidz-exam', 'create:tahfidz-exam', 'delete:tahfidz-exam',
         'view-any:tahfidz-target', 'view:tahfidz-target', 'create:tahfidz-target', 'update:tahfidz-target', 'delete:tahfidz-target', 'delete-any:tahfidz-target',
+        'view-any:attendance-session', 'view:attendance-session', 'create:attendance-session', 'update:attendance-session',
     ]],
 ]);
 

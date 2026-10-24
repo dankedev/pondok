@@ -21,15 +21,23 @@ class SetPortalSecurityHeaders
     {
         $response = $next($request);
 
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        self::setBaseHeaders($response);
 
         if (config('pondok.portal.csp_enabled') && ! Vite::isRunningHot()) {
             $response->headers->set('Content-Security-Policy', self::CONTENT_SECURITY_POLICY);
         }
 
         return $response;
+    }
+
+    /**
+     * Header dasar yang juga dipakai panel admin (F086).
+     */
+    public static function setBaseHeaders(Response $response): void
+    {
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     }
 }

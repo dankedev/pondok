@@ -15,7 +15,7 @@ class RolePermissionSeeder extends Seeder
 
     public const ROLES = [
         'super-admin', 'bendahara', 'admin-konten', 'admin-sekolah', 'admin-psb',
-        'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali',
+        'kesantrian', 'musyrif', 'ustadz-tahfidz', 'petugas-pos', 'wali', 'wali-kelas',
     ];
 
     /** Permission dashboard dari PRD 3.10. */
@@ -55,6 +55,7 @@ class RolePermissionSeeder extends Seeder
         'Halaqah', 'MemorizationRecord', 'TahfidzExam', 'TahfidzTarget',
         'HealthVisit',
         'LeaveType', 'HomecomingPeriod', 'LeaveRequest', 'Visit',
+        'AttendanceSession',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -91,6 +92,8 @@ class RolePermissionSeeder extends Seeder
         'HomecomingPeriod' => ['viewAny', 'view', 'create', 'update', 'generate'],
         'LeaveRequest' => ['viewAny', 'view', 'create', 'approve', 'approveAny', 'checkInOut', 'cancel'],
         'Visit' => ['viewAny', 'view', 'create', 'update'],
+        // Absensi (F025): koreksi lewat ubah status, sesi tidak dihapus.
+        'AttendanceSession' => ['viewAny', 'view', 'create', 'update'],
     ];
 
     public function run(): void
@@ -234,6 +237,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('MemorizationRecord', ['viewAny', 'view', 'create', 'delete']),
                 ...self::resourcePermissions('TahfidzExam', ['viewAny', 'view', 'create', 'delete']),
                 ...self::resourcePermissions('TahfidzTarget'),
+                // Absensi harian (F025): mencatat dan mengoreksi absensi semua rombel dalam cakupannya.
+                ...self::resourcePermissions('AttendanceSession'),
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.
@@ -268,6 +273,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('HomecomingPeriod'),
                 ...self::resourcePermissions('LeaveRequest'),
                 ...self::resourcePermissions('Visit'),
+                // Absensi (F025): lihat saja, untuk memantau alpa santri dalam pembinaan.
+                ...self::resourcePermissions('AttendanceSession', $readOnly),
             ],
             // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi. Mencatat kesehatan
             // santri binaannya (`HealthVisit::visibleStudents`); koreksi oleh kesantrian.
@@ -296,6 +303,11 @@ class RolePermissionSeeder extends Seeder
             ],
             // Portal wali (Fase 2) di luar panel admin.
             'wali' => [],
+            // Wali kelas (F025): mencatat absensi harian rombel yang ia walikan (`AttendanceSession::visibleClassrooms`).
+            'wali-kelas' => [
+                'view-dashboard',
+                ...self::resourcePermissions('AttendanceSession'),
+            ],
         };
     }
 }

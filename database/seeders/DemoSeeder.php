@@ -14,6 +14,7 @@ use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\Demo\DemoAcademics;
 use Database\Seeders\Demo\DemoAdmissions;
+use Database\Seeders\Demo\DemoAttendance;
 use Database\Seeders\Demo\DemoContent;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoData;
@@ -70,6 +71,8 @@ class DemoSeeder extends Seeder
             (new DemoTahfidz($context))->run();
             (new DemoHealth($context))->run();
             (new DemoLeave($context))->run();
+            // Setelah Perizinan: santri yang sedang izin keluar tercatat Izin.
+            (new DemoAttendance($context))->run();
         } finally {
             $context->files->cleanup();
         }

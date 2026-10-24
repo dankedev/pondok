@@ -2717,6 +2717,12 @@ return [
         'verify_sent' => 'Tautan verifikasi baru sudah dikirim ke email Anda.',
         'forbidden_title' => 'Bukan akun wali',
         'no_students' => 'Belum ada santri yang terhubung dengan akun Anda. Hubungi admin pondok.',
+        'attendance' => [
+            'title' => 'Kehadiran :month',
+            'absences' => 'Hari tidak hadir',
+            'no_records' => 'Belum ada absensi bulan ini.',
+            'all_present' => 'Hadir di semua hari yang tercatat bulan ini.',
+        ],
         'nis' => 'NIS :nis',
         'unit' => 'Jenjang',
         'classroom' => 'Rombel',

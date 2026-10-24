@@ -462,7 +462,7 @@
       "name": "Absensi harian per rombel",
       "phase": 3,
       "module": "Absensi",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F002", "F024", "F079"],
       "description": "Absensi harian per rombel (Hadir/Sakit/Izin/Alpa) oleh admin sekolah dan wali kelas, izin otomatis dari Perizinan, rekap bulanan di admin, dan rekap bulan berjalan di portal wali.",
       "acceptance": [
@@ -476,9 +476,9 @@
         "Portal wali: jumlah H/S/I/A bulan berjalan dan daftar hari tidak hadir hanya untuk anaknya sendiri",
         "Data demo: akun wali kelas dan beberapa hari absensi, seed ulang tidak menggandakan"
       ],
-      "owner": "f025-absensi-session",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Commit 3d38952 (branch feat/f025-absensi). Test: tests/Feature/Absensi/* (43 lulus), PortalWaliAttendanceTest, ModuleComplianceTest lulus; suite penuh PHP 8.4: 5359 lulus, 5 skip, 1 galat lingkungan (SUPER_ADMIN_* tanpa .env di worktree, lulus dengan nilai CI). Pint lulus. Cek tampilan 360/1024/desktop.",
       "notes": "Fase 3. Jalur penuh (migration, permission + peran baru wali-kelas, Action yang mengubah data). Disetujui pemilik proyek 24 Okt 2026. Tanpa notifikasi WhatsApp. Rencana: docs/plans/F025-plan.md"
     },
     {

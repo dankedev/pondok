@@ -96,7 +96,7 @@ it('AC-6: shows a cancelled violation with a badge, asks a reason in the cancel 
 
     expect($active->fresh()->cancelled_at)->toBeNull();
 
-    $component->callTableAction('cancel', $active, ['cancel_reason' => 'Dicatat dua kali'])->assertHasNoTableActionErrors();
+    $component->unmountAction()->callTableAction('cancel', $active, ['cancel_reason' => 'Dicatat dua kali'])->assertHasNoTableActionErrors();
 
     expect($active->fresh()->cancelled_at)->not->toBeNull()->and($active->fresh()->cancel_reason)->toBe('Dicatat dua kali');
 

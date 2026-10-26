@@ -515,14 +515,14 @@
       "name": "Rapor diniyah",
       "phase": 4,
       "module": "Akademik",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F002"],
       "description": "Rapor mata pelajaran diniyah.",
       "acceptance": [],
-      "owner": null,
+      "owner": "sesi-f027",
       "handoff": null,
       "evidence": "",
-      "notes": "Fase 4."
+      "notes": "Fase 4. Jalur penuh. Cakupan (user, 26 Okt 2026): mapel diniyah per jenjang, nilai per semester, predikat dan catatan, rapor PDF per santri; tanpa peringkat otomatis dan tanpa bobot rumit."
     },
     {
       "id": "F028",

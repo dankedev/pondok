@@ -531,14 +531,14 @@
       "name": "Tabungan & uang saku",
       "phase": 4,
       "module": "Keuangan",
-      "status": "deferred",
+      "status": "in-progress",
       "depends_on": ["F007"],
       "description": "Tabungan dan uang saku santri.",
       "acceptance": [],
-      "owner": null,
+      "owner": "sesi-f028",
       "handoff": null,
       "evidence": "",
-      "notes": "Fase 4."
+      "notes": "Fase 4. Jalur penuh. Cakupan (user, 26 Okt 2026): dompet santri sederhana, satu saldo per santri, ledger append-only, tanpa batas harian atau tutup buku."
     },
     {
       "id": "F029",

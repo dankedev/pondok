@@ -1,4 +1,4 @@
-{{-- Rincian santri portal wali (F079): ringkasan, kehadiran bulan ini (Absensi aktif, F025), uang saku dan tagihan (Keuangan aktif), dokumen (Dokumen aktif). --}}
+{{-- Rincian santri portal wali (F079): ringkasan, kehadiran bulan ini (Absensi aktif, F025), uang saku dan tagihan (Keuangan aktif), rapor diniyah (Akademik aktif, F027), dokumen (Dokumen aktif). --}}
 @php($rupiah = fn (int $amount): string => \App\Models\Payment::formatRupiah($amount))
 
 <x-layouts::public :title="$student->name" :noindex="true">
@@ -99,6 +99,21 @@
                         @endforeach
                     </ul>
                 @endif
+            </x-ui.card>
+        @endif
+
+        @if ($reports !== null && $reports->isNotEmpty())
+            <x-ui.card :title="__('pondok.diniyah.portal.title')">
+                <ul class="flex flex-col divide-y divide-gray-200" role="list">
+                    @foreach ($reports as $report)
+                        <li class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                            <span class="min-w-0 text-gray-900">{{ __('pondok.diniyah.portal.link', ['semester' => $report['semester'], 'year' => $report['year']->name]) }}</span>
+                            <x-ui.button variant="secondary" :href="route('portal-wali.diniyah-report.show', [$student->id, $report['year']->id, $report['semester']])">
+                                {{ __('pondok.diniyah.portal.open') }}<span class="sr-only"> {{ __('pondok.diniyah.portal.link', ['semester' => $report['semester'], 'year' => $report['year']->name]) }}</span>
+                            </x-ui.button>
+                        </li>
+                    @endforeach
+                </ul>
             </x-ui.card>
         @endif
 

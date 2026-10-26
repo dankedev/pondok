@@ -6,7 +6,11 @@ use App\Actions\Keuangan\WalletBalance;
 use App\Enums\AttendanceStatus;
 use App\Enums\Module;
 use App\Http\Controllers\Controller;
+use App\Models\AcademicYear;
 use App\Models\AttendanceRecord;
+use App\Models\DiniyahGrade;
+use App\Models\DiniyahReportNote;
+use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WalletTransaction;
@@ -18,7 +22,7 @@ use Illuminate\View\View;
 /**
  * Rincian santri portal wali (F079): ringkasan, tagihan non-batal berhalaman (Keuangan aktif),
  * uang saku (Keuangan aktif, F028), kehadiran bulan berjalan (Absensi aktif, F025), pelanggaran tahun ajaran aktif tanpa keterangan
- * (Kedisiplinan aktif, F026), dan dokumen terkini non-rahasia (Dokumen aktif).
+ * (Kedisiplinan aktif, F026), rapor diniyah per semester (Akademik aktif, F027), dan dokumen terkini non-rahasia (Dokumen aktif).
  * Santri bukan milik wali → 404.
  */
 class ShowStudent extends Controller
@@ -38,6 +42,7 @@ class ShowStudent extends Controller
             'violations' => Module::Kedisiplinan->isEnabled()
                 ? $user->portalViolations($student)->orderByDesc('occurred_on')->orderByDesc('id')->get()
                 : null,
+            'reports' => Module::Akademik->isEnabled() ? $this->reports($student) : null,
             'documents' => Module::Dokumen->isEnabled()
                 ? $user->portalDocuments()->where('documentable_id', $student->id)->with('documentType')->latest('id')->get()
                 : null,
@@ -77,5 +82,31 @@ class ShowStudent extends Controller
                 ->all(),
             'absences' => $records->reject(fn (AttendanceRecord $record): bool => $record->status === AttendanceStatus::Present)->values(),
         ];
+    }
+
+    /**
+     * Semester rapor diniyah yang bisa dibuka: ada nilai atau catatan dan santri terdaftar di tahun itu,
+     * tahun terbaru dulu.
+     *
+     * @return Collection<int, array{year: AcademicYear, semester: int}>
+     */
+    private function reports(Student $student): Collection
+    {
+        $semesters = DiniyahGrade::query()->where('student_id', $student->id)->select('academic_year_id', 'semester')
+            ->union(DiniyahReportNote::query()->where('student_id', $student->id)->select('academic_year_id', 'semester'))
+            ->get()
+            ->groupBy('academic_year_id');
+
+        return AcademicYear::query()
+            ->whereIn('id', Enrollment::query()->where('student_id', $student->id)->select('academic_year_id'))
+            ->whereIn('id', $semesters->keys())
+            ->orderByDesc('starts_on')
+            ->get()
+            ->flatMap(fn (AcademicYear $year): Collection => $semesters->get($year->id)
+                ->pluck('semester')
+                ->map(fn (mixed $semester): int => (int) $semester)
+                ->sortDesc()
+                ->map(fn (int $semester): array => ['year' => $year, 'semester' => $semester]))
+            ->values();
     }
 }

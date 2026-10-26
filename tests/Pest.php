@@ -2,6 +2,8 @@
 
 use App\Actions\Absensi\BuildAttendanceSheet;
 use App\Actions\Absensi\RecordClassroomAttendance;
+use App\Actions\Akademik\BuildDiniyahReportCard;
+use App\Actions\Akademik\SaveDiniyahGrades;
 use App\Actions\Dokumen\IssueLetter;
 use App\Actions\Dokumen\LetterNumbering;
 use App\Actions\Kedisiplinan\RecordStudentViolation;
@@ -43,6 +45,9 @@ use App\Models\AttendanceSession;
 use App\Models\Category;
 use App\Models\Classroom;
 use App\Models\Cohort;
+use App\Models\DiniyahGrade;
+use App\Models\DiniyahReportNote;
+use App\Models\DiniyahSubject;
 use App\Models\DisciplineLevel;
 use App\Models\Document;
 use App\Models\DocumentType;
@@ -6082,4 +6087,191 @@ function walletAssertRejected(Closure $callback, string $reason, ?string $field 
     }
 
     test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper rapor diniyah (F027)
+|--------------------------------------------------------------------------
+|
+| Berawalan `diniyah`. Model dibuat dengan `forceCreate` (tanpa Action) agar test tidak bergantung
+| pada aturan yang diuji. Argumen yang diuji dengan nilai tidak valid bertipe `mixed`.
+| Waktu dibekukan di 15 Okt 2026 10.00 WIB (dari `tahfidzBoot`).
+|
+*/
+
+/**
+ * Fixture absensi (rombel 7A/7B SLTP, 10A SLTA, akun, santri s1-s3, grad lulus, o7b, o10) ditambah
+ * tahun ajaran lama 2025/2026 (tidak aktif) dengan rombel `cOld` (SLTP, wali sama) berisi santri `old`,
+ * serta mapel: SLTP `fiqih` (urut 1), `aqidah` (2), `nahwu` (3), `sharaf` (4, nonaktif) dan SLTA `hadits`.
+ * Mapel SLTP dibuat berurutan Aqidah, Fiqih, Nahwu, Sharaf agar urutan id berbeda dari `sort_order`.
+ */
+function diniyahFixture(): object
+{
+    $f = absensiFixture();
+    Setting::set('modules.akademik.enabled', true);
+
+    $f->prev = AcademicYear::factory()->create(['name' => '2025/2026', 'starts_on' => '2025-07-01', 'ends_on' => '2026-06-30']);
+    $f->cOld = Classroom::factory()->create(['academic_year_id' => $f->prev->id, 'unit_id' => $f->sltp->id, 'grade' => 6, 'name' => '6A', 'homeroom_staff_id' => $f->homeroomStaff->id]);
+    $f->old = tahfidzStudent($f, 'L', null, ['name' => 'Santri Lama']);
+    Enrollment::factory()->create(['student_id' => $f->old->id, 'classroom_id' => $f->cOld->id, 'academic_year_id' => $f->prev->id]);
+
+    $f->aqidah = diniyahSubject($f->sltp, 'Aqidah', 2);
+    $f->fiqih = diniyahSubject($f->sltp, 'Fiqih', 1);
+    $f->nahwu = diniyahSubject($f->sltp, 'Nahwu', 3);
+    $f->sharaf = diniyahSubject($f->sltp, 'Sharaf', 4, false);
+    $f->hadits = diniyahSubject($f->slta, 'Hadits', 1);
+
+    return $f;
+}
+
+function diniyahSubject(Unit $unit, string $name, int $sort = 1, bool $active = true): DiniyahSubject
+{
+    return DiniyahSubject::query()->forceCreate([
+        'unit_id' => $unit->id,
+        'name' => $name,
+        'sort_order' => $sort,
+        'is_active' => $active,
+    ]);
+}
+
+function diniyahGrade(Student $student, AcademicYear $year, int $semester, DiniyahSubject $subject, int $score, ?User $by = null): DiniyahGrade
+{
+    return DiniyahGrade::query()->forceCreate([
+        'student_id' => $student->id,
+        'academic_year_id' => $year->id,
+        'semester' => $semester,
+        'diniyah_subject_id' => $subject->id,
+        'score' => $score,
+        'recorded_by' => $by?->id,
+    ]);
+}
+
+function diniyahNote(Student $student, AcademicYear $year, int $semester, string $note): DiniyahReportNote
+{
+    return DiniyahReportNote::query()->forceCreate([
+        'student_id' => $student->id,
+        'academic_year_id' => $year->id,
+        'semester' => $semester,
+        'note' => $note,
+    ]);
+}
+
+/**
+ * Simpan lewat Action sebagai `$actor` (ikut login karena cakupan data memakai user login).
+ *
+ * @param  mixed  $semester  sengaja longgar: diuji dengan nilai tidak valid
+ * @param  array<int, array<int, mixed>>  $scores  student_id => [subject_id => nilai|null]
+ * @param  array<int, mixed>  $notes  student_id => catatan|null
+ */
+function diniyahSave(User $actor, Classroom $classroom, mixed $semester, array $scores = [], array $notes = []): mixed
+{
+    test()->actingAs($actor);
+
+    return app(SaveDiniyahGrades::class)->handle($actor, $classroom, $semester, $scores, $notes);
+}
+
+/**
+ * Nilai tersimpan seorang santri pada satu semester: subject_id => score (tanpa cakupan apa pun).
+ *
+ * @return array<int, int>
+ */
+function diniyahStored(Student $student, int $semester = 1): array
+{
+    return DB::table('diniyah_grades')
+        ->where('student_id', $student->id)
+        ->where('semester', $semester)
+        ->orderBy('diniyah_subject_id')
+        ->pluck('score', 'diniyah_subject_id')
+        ->map(fn (mixed $score): int => (int) $score)
+        ->all();
+}
+
+/**
+ * Seluruh isi tabel nilai dan catatan sebagai penanda perubahan (untuk assert "tidak ada yang berubah").
+ *
+ * @return array{grades: list<string>, notes: list<string>}
+ */
+function diniyahSnapshot(): array
+{
+    return [
+        'grades' => DB::table('diniyah_grades')->orderBy('id')->get()->map(fn (object $row): string => json_encode($row))->all(),
+        'notes' => DB::table('diniyah_report_notes')->orderBy('id')->get()->map(fn (object $row): string => json_encode($row))->all(),
+    ];
+}
+
+/**
+ * Hasil `BuildDiniyahReportCard`: array dengan kunci `student`, `year`, `semester`, `classroom`, `homeroom`
+ * (Staff|null), `rows` (daftar `subject` nama, `score` int|null, `predicate` DiniyahPredicate|null),
+ * `average` (float|null), dan `note` (string|null).
+ *
+ * @return array<string, mixed>
+ */
+function diniyahCard(Student $student, AcademicYear $year, int $semester = 1): array
+{
+    return app(BuildDiniyahReportCard::class)->handle($student, $year, $semester);
+}
+
+/**
+ * Baris rapor untuk mapel bernama `$subject`, atau null bila tidak tampil.
+ *
+ * @param  array<string, mixed>  $card
+ * @return array{subject: string, score: ?int, predicate: ?string}|null
+ */
+function diniyahRow(array $card, string $subject): ?array
+{
+    foreach ($card['rows'] as $row) {
+        $name = data_get($row, 'subject');
+        $name = is_object($name) ? $name->name : $name;
+
+        if ($name === $subject) {
+            $predicate = data_get($row, 'predicate');
+
+            return [
+                'subject' => $name,
+                'score' => data_get($row, 'score') === null ? null : (int) data_get($row, 'score'),
+                'predicate' => $predicate instanceof BackedEnum ? $predicate->value : $predicate,
+            ];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Nama mapel pada rapor, urut seperti tampil.
+ *
+ * @param  array<string, mixed>  $card
+ * @return list<string>
+ */
+function diniyahRowNames(array $card): array
+{
+    return collect($card['rows'])
+        ->map(function (mixed $row): string {
+            $name = data_get($row, 'subject');
+
+            return is_object($name) ? $name->name : (string) $name;
+        })
+        ->values()
+        ->all();
+}
+
+/**
+ * Fixture portal wali (`waliBoot`) ditambah rombel 7A SLTP (wali kelas `staff`) berisi `s1` dan `o1`
+ * pada tahun ajaran aktif, mapel SLTP `aqidah` dan `fiqih`, serta mapel SLTA `hadits`.
+ */
+function diniyahPortalFixture(): object
+{
+    $f = waliBoot();
+    $f->staff = Staff::factory()->create(['name' => 'Ustadz Hasan', 'gender' => 'L', 'position' => 'ustadz']);
+    $f->room = Classroom::factory()->create(['academic_year_id' => $f->year->id, 'unit_id' => $f->sltp->id, 'grade' => 7, 'name' => '7A', 'homeroom_staff_id' => $f->staff->id]);
+
+    foreach ([$f->s1, $f->s2, $f->o1] as $student) {
+        Enrollment::factory()->create(['student_id' => $student->id, 'classroom_id' => $f->room->id, 'academic_year_id' => $f->year->id]);
+    }
+
+    $f->aqidah = diniyahSubject($f->sltp, 'Aqidah', 1);
+    $f->fiqih = diniyahSubject($f->sltp, 'Fiqih', 2);
+
+    return $f;
 }

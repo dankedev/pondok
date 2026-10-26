@@ -118,6 +118,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:violation-type', 'view:violation-type', 'create:violation-type', 'update:violation-type',
         'view-any:discipline-level', 'view:discipline-level', 'create:discipline-level', 'update:discipline-level', 'delete:discipline-level', 'delete-any:discipline-level',
         'view-any:student-violation', 'view:student-violation', 'create:student-violation', 'update:student-violation', 'cancel:student-violation',
+        'view-any:diniyah-subject', 'view:diniyah-subject', 'create:diniyah-subject', 'update:diniyah-subject', 'view-diniyah-report',
     ]],
     'musyrif' => ['musyrif', [
         'view-dashboard', 'view-any:room-assignment', 'view:room-assignment',
@@ -141,6 +142,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
     'wali-kelas' => ['wali-kelas', [
         'view-dashboard',
         'view-any:attendance-session', 'view:attendance-session', 'create:attendance-session', 'update:attendance-session',
+        'input-diniyah-grades', 'view-diniyah-report',
     ]],
     'admin-sekolah' => ['admin-sekolah', [
         'view-dashboard', 'view-student-metrics', 'view-settings-metrics',
@@ -164,6 +166,7 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:tahfidz-target', 'view:tahfidz-target', 'create:tahfidz-target', 'update:tahfidz-target', 'delete:tahfidz-target', 'delete-any:tahfidz-target',
         'view-any:attendance-session', 'view:attendance-session', 'create:attendance-session', 'update:attendance-session',
         'view-any:student-violation', 'view:student-violation',
+        'view-any:diniyah-subject', 'view:diniyah-subject', 'create:diniyah-subject', 'update:diniyah-subject', 'input-diniyah-grades', 'view-diniyah-report',
     ]],
 ]);
 

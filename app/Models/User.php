@@ -180,6 +180,17 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             ->with('violationType');
     }
 
+    /**
+     * Mutasi uang saku santri portal (F028), termasuk yang batal, tanpa cakupan jenjang.
+     * Pemanggil wajib memperoleh `$student` dari `portalStudents()`.
+     *
+     * @return Builder<WalletTransaction>
+     */
+    public function portalWalletTransactions(Student $student): Builder
+    {
+        return WalletTransaction::withoutUnitScope()->where('student_id', $student->id);
+    }
+
     public function portalInvoice(int $id): Invoice
     {
         return Invoice::withoutUnitScope()

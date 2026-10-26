@@ -70,6 +70,8 @@ it('grants each role exactly its permissions', function (string $role, array $ex
         'view-any:fee-override', 'view:fee-override', 'create:fee-override', 'update:fee-override',
         'view-any:invoice', 'view:invoice', 'generate:invoice', 'cancel:invoice', 'import:invoice',
         'view-any:payment', 'view:payment', 'create:payment', 'cancel:payment',
+        'view-any:wallet-transaction', 'view:wallet-transaction', 'create:wallet-transaction', 'cancel:wallet-transaction',
+        'view:wallet-balances',
         'view:finance-report',
         'view:finance-numbering',
     ]],

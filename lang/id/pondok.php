@@ -2645,6 +2645,29 @@ return [
         ],
     ],
 
+    'diniyah' => [
+        'predicates' => [
+            'mumtaz' => 'Mumtaz',
+            'jayyid_jiddan' => 'Jayyid Jiddan',
+            'jayyid' => 'Jayyid',
+            'maqbul' => 'Maqbul',
+            'rasib' => 'Rasib',
+        ],
+        'report' => [
+            'title' => 'Rapor Diniyah',
+        ],
+        'portal' => [
+            'title' => 'Rapor diniyah',
+        ],
+        'errors' => [
+            'forbidden' => 'Anda tidak berhak mengisi nilai diniyah rombel ini.',
+            'invalid_semester' => 'Semester harus 1 atau 2.',
+            'invalid_score' => 'Nilai harus bilangan bulat 0 sampai 100.',
+            'subject_unavailable' => 'Mapel tidak aktif atau bukan mapel jenjang rombel ini.',
+            'student_not_in_classroom' => 'Santri bukan anggota aktif rombel ini.',
+        ],
+    ],
+
     'attendance' => [
         'label' => 'absensi',
         'plural' => 'Absensi harian',

@@ -150,6 +150,30 @@ erDiagram
     enum relation "ayah | ibu | wali"
     boolean is_billing_contact "penerima info tagihan"
   }
+  diniyah_subjects {
+    bigint id PK
+    bigint unit_id FK
+    string name "Aqidah, Fiqih, ..."
+    tinyint sort_order
+    boolean is_active
+  }
+  diniyah_grades {
+    bigint id PK
+    bigint student_id FK
+    bigint academic_year_id FK
+    tinyint semester "1 | 2"
+    bigint diniyah_subject_id FK
+    unsignedTinyInteger score "0-100"
+    bigint recorded_by FK "users, nullable"
+  }
+  diniyah_report_notes {
+    bigint id PK
+    bigint student_id FK
+    bigint academic_year_id FK
+    tinyint semester "1 | 2"
+    text note "catatan wali kelas"
+    bigint recorded_by FK "users, nullable"
+  }
   units ||--o{ cohorts : ""
   units ||--o{ classrooms : ""
   academic_years ||--o{ classrooms : ""
@@ -161,6 +185,12 @@ erDiagram
   academic_years ||--o{ enrollments : ""
   students ||--o{ student_guardian : ""
   guardians ||--o{ student_guardian : ""
+  units ||--o{ diniyah_subjects : "mapel"
+  students ||--o{ diniyah_grades : "nilai"
+  academic_years ||--o{ diniyah_grades : ""
+  diniyah_subjects ||--o{ diniyah_grades : ""
+  students ||--o{ diniyah_report_notes : "catatan rapor"
+  academic_years ||--o{ diniyah_report_notes : ""
   
 ```
 
@@ -171,6 +201,7 @@ erDiagram
 - Saat santri lanjut dari SD ke SLTP, `unit_id` dan `cohort_id` di `students` diperbarui ke jenjang baru. Riwayatnya tetap terbaca dari `enrollments` dan snapshot di `invoices`.
 - `students.unit_id` sengaja diduplikasi dari `cohorts.unit_id` supaya filter dan scope per jenjang cepat. Validasi kecocokannya di Action class.
 - Wali memakai pivot karena kakak-adik di pondok sering berbagi wali yang sama, sehingga tagihan bisa digabung per keluarga.
+- **Rapor diniyah** (F027): mapel per jenjang (`diniyah_subjects`, dinonaktifkan, tidak dihapus), nilai bulat 0-100 per santri-tahun ajaran-semester-mapel, dan satu catatan wali kelas per santri-semester. Disimpan lewat `App\Actions\Akademik\SaveDiniyahGrades`; sel kosong menghapus baris. Predikat tidak disimpan: dihitung dari nilai oleh enum `DiniyahPredicate` (Mumtaz 90-100, Jayyid Jiddan 80-89, Jayyid 70-79, Maqbul 60-69, Rasib 0-59). Rombel diturunkan dari `enrollments` tahun itu (tanpa kolom `classroom_id`). Unique: `diniyah_subjects` (`unit_id`, `name`), `diniyah_grades` (`student_id`, `academic_year_id`, `semester`, `diniyah_subject_id`), `diniyah_report_notes` (`student_id`, `academic_year_id`, `semester`). FK mapel/santri/tahun ajaran `restrictOnDelete`; `recorded_by` `nullOnDelete`. Tanpa soft delete; CHECK 0-100 dijaga Action.
 
 ## Asrama & Musyrif
 

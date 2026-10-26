@@ -531,13 +531,13 @@
       "name": "Tabungan & uang saku",
       "phase": 4,
       "module": "Keuangan",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F007"],
       "description": "Tabungan dan uang saku santri.",
       "acceptance": [],
-      "owner": "sesi-f028",
+      "owner": null,
       "handoff": null,
-      "evidence": "",
+      "evidence": "Test Pest Keuangan/RecordWalletTransactionTest, VoidWalletTransactionTest, WalletTransactionResourceTest, WalletTransactionAdversarialTest, PortalWali/StudentWalletTest lulus; suite penuh PHP 8.4 hanya gagal 18 test portal akibat public/hot (Vite dev aktif) di mesin lokal; commit 516229a.",
       "notes": "Fase 4. Jalur penuh. Cakupan (user, 26 Okt 2026): dompet santri sederhana, satu saldo per santri, ledger append-only, tanpa batas harian atau tutup buku."
     },
     {

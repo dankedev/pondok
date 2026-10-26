@@ -6038,7 +6038,7 @@ function walletStudent(string $unitCode = 'SLTP', array $attributes = []): Stude
  *
  * @param  array<string, mixed>  $extra
  */
-function walletRecord(Student $student, User $user, string $type, int $amount, array $extra = []): WalletTransaction
+function walletRecord(Student $student, User $user, string $type, mixed $amount, array $extra = []): WalletTransaction
 {
     return app(RecordWalletTransaction::class)->handle($student, $user, [
         'type' => $type,

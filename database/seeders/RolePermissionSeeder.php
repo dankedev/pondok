@@ -33,6 +33,8 @@ class RolePermissionSeeder extends Seeder
     /** Halaman Filament kustom, dengan format nama permission page Shield (`view:<slug>`). */
     public const PAGE_PERMISSIONS = [
         'view:finance-report',
+        // Rekap saldo uang saku santri (F028).
+        'view:wallet-balances',
         // Profil lembaga (F016/F036): membuka dan menyimpan keempat halaman cluster.
         'view:school-profile',
         // Penomoran dokumen (F039): format kuitansi/tagihan (bendahara) dan NIS (admin-sekolah).
@@ -47,7 +49,7 @@ class RolePermissionSeeder extends Seeder
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
         'Cohort', 'Classroom', 'Student', 'Guardian',
         'Dormitory', 'Room', 'RoomAssignment', 'DormitorySupervisor',
-        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment',
+        'FeeType', 'FeeRate', 'Scholarship', 'FeeOverride', 'Invoice', 'Payment', 'WalletTransaction',
         'AdmissionWave', 'AdmissionTrack', 'AdmissionRequirement', 'Applicant',
         'DocumentType', 'Document', 'IssuedLetter',
         'Category', 'Post', 'Album', 'Video', 'StaticPage',
@@ -98,6 +100,8 @@ class RolePermissionSeeder extends Seeder
         // Kedisiplinan (F026): jenis dinonaktifkan, pelanggaran dibatalkan; keduanya tidak dihapus.
         'ViolationType' => ['viewAny', 'view', 'create', 'update'],
         'StudentViolation' => ['viewAny', 'view', 'create', 'update', 'cancel'],
+        // Uang saku santri (F028): ledger append-only, salah catat dibatalkan (status `batal`).
+        'WalletTransaction' => ['viewAny', 'view', 'create', 'cancel'],
     ];
 
     public function run(): void
@@ -196,6 +200,8 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('FeeOverride', $withoutDelete),
                 ...self::resourcePermissions('Invoice', ['viewAny', 'view', 'generate', 'cancel', 'import']),
                 ...self::resourcePermissions('Payment', ['viewAny', 'view', 'create', 'cancel']),
+                ...self::resourcePermissions('WalletTransaction'),
+                'view:wallet-balances',
                 'view:finance-report',
                 'view:finance-numbering',
             ],

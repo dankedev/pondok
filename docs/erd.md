@@ -832,6 +832,19 @@ erDiagram
     bigint cancelled_by FK "users, nullable"
     string cancel_reason "nullable"
   }
+  wallet_transactions {
+    bigint id PK
+    bigint student_id FK
+    enum type "setor | tarik | koreksi_tambah | koreksi_kurang"
+    bigint amount "rupiah, 1..999.999.999"
+    date occurred_on
+    string note "255, nullable; wajib untuk koreksi"
+    enum status "berhasil | batal"
+    bigint recorded_by FK "users"
+    timestamp cancelled_at "nullable"
+    bigint cancelled_by FK "users, nullable"
+    string cancel_reason "nullable"
+  }
   fee_types ||--o{ fee_rates : ""
   admission_waves ||--o{ fee_rates : ""
   applicants ||--o{ invoices : ""
@@ -849,6 +862,8 @@ erDiagram
   invoices ||--o{ payments : ""
   payments ||--o{ payment_allocations : ""
   invoice_items ||--o{ payment_allocations : ""
+  students ||--o{ wallet_transactions : "uang saku"
+  users ||--o{ wallet_transactions : "pencatat"
   
 ```
 
@@ -867,6 +882,7 @@ erDiagram
 - `invoice_items` menyimpan tarif normal, potongan, dan nominal akhir, jadi besarnya beasiswa yang diberikan tiap bulan bisa dihitung langsung dari tagihan.
 - Pembayaran cicilan pada tagihan gabungan dialokasikan ke item sesuai `fee_types.priority` (misalnya makan dulu, lalu asrama, lalu SPP) dan dicatat di `payment_allocations`. Laporan bendahara per jenis biaya jadi akurat.
 - Penandatangan kuitansi (F062): setting `keuangan.receipt_signer_staff_id` (id staff aktif, atau tidak ada = petugas pencatat yang menandatangani). Saat `RecordPayment` mencatat, nama dan jabatan staff itu dibekukan ke `payments.signer_name` dan `signer_title` (null bila setting kosong, staff tidak ada/nonaktif, atau jabatan kosong); kuitansi lama dan yang batal memakai snapshot barisnya sendiri. Perubahan setting dilog `receipt_signer_updated`.
+- Saldo uang saku (F028) = jumlah masuk (`setor`, `koreksi_tambah`) dikurangi keluar (`tarik`, `koreksi_kurang`) pada transaksi `berhasil`, dihitung dari ledger tanpa kolom saldo; tidak boleh negatif. Transaksi tidak diubah atau dihapus: salah catat dibatalkan (`status = batal`, beserta `cancelled_*`) dan koreksi lewat `koreksi_tambah`/`koreksi_kurang` beralasan. Action mengunci baris santri dalam transaksi DB sebelum menghitung saldo.
 - Pembayaran tidak dihapus. Pembayaran salah input dibatalkan (`payments.status = batal`, beserta `cancelled_at`, `cancelled_by`, `cancel_reason`); baris, nomor kuitansi, alokasi, dan bukti transfer tetap ada, sedangkan `paid_amount` item dan `paid_total` tagihan dikurangi kembali. Alokasi berlaku selama pembayarannya `diterima`; pembayaran lain tidak dialokasikan ulang (keputusan F007).
 - Nomor kuitansi `KW-YYYYMM-NNNNN`, urut per bulan pencatatan untuk semua jenjang; pembayaran `batal` tetap memakai nomornya. Bukti transfer disimpan di disk `private`.
 - **Tagihan tahunan (F041):** jenis biaya `frequency = tahunan` (mis. daftar ulang) ditagih `GenerateAnnualInvoices` sekali per santri per tahun ajaran, pada bulan setting `keuangan.annual_billing_month` (1–12; kosong = tidak terjadwal, jalur manual ditolak). `period` = tanggal 1 bulan itu di dalam tahun ajaran, `academic_year_id` = tahun ajaran yang dipilih, `due_on` = `keuangan.due_day` bulan itu. Aturan tarif, keringanan, `applies_to`, `entered_on`, dan penggabungan `billing_group` sama dengan generator bulanan (inti `GenerateMonthlyInvoices::generateFor()`, lock per periode yang sama). Sudah ditagih = item jenis biaya itu ada di tagihan aktif (bukan `batal`, bukan `SALDO_AWAL`) santri pada tahun ajaran yang sama, periode apa pun, sehingga mengganti bulan di tengah tahun tidak menggandakan tagihan. Scheduler `keuangan:generate-annual-invoices` tanggal 1 pukul 01:00 WIB setelah generator bulanan, hanya pada bulan setting; manual lewat `--academic-year` atau tombol "Buat tagihan tahunan" (`generate:invoice`). Bila digabung ke grup bulanan yang sudah dibayar, item tahunan dilewati (`invoice_locked`); sebaiknya biaya tahunan memakai `billing_group` sendiri.
@@ -1060,6 +1076,7 @@ foreach (students aktif as $s) {
 | `invoices` | check: `student_id` atau `applicant_id` wajib terisi; unique (`applicant_id`, `billing_group`, `active_marker`) | Tagihan selalu punya pemilik, dan biaya PSB tidak dobel selama tagihannya aktif |
 | `invoice_items` | unique (`invoice_id`, `fee_type_id`) | Satu jenis biaya hanya muncul sekali per tagihan |
 | `payments` | unique `receipt_no`; index (`invoice_id`, `status`), (`status`, `paid_on`); semua FK `restrictOnDelete` | Nomor kuitansi tidak ganda; daftar pembayaran per tagihan dan laporan kas harian (F008) |
+| `wallet_transactions` | index (`student_id`, `status`), (`status`, `occurred_on`); semua FK `restrictOnDelete` | Rekap saldo dan mutasi per santri (F028) |
 | `payment_allocations` | unique (`payment_id`, `invoice_item_id`); FK `restrictOnDelete` | Satu baris alokasi per item per pembayaran |
 | `fee_overrides` | index (`student_id`, `fee_type_id`, `valid_from`) | Cari override yang berlaku di bulan tagihan |
 | `invoices` | index (`status`, `period`), (`status`, `due_on`), (`period`, `status`) | Widget tunggakan dan rasio koleksi di dashboard; tunggakan jatuh tempo dan laporan per rentang periode (F052) |
@@ -1097,7 +1114,7 @@ MySQL dan Postgres menganggap setiap `NULL` berbeda, jadi unique key biasa di `f
 - `guardian_invitation_tokens` (bentuk sama dengan `password_reset_tokens`): token undangan akun portal wali dari broker `guardian_invitations`, berlaku 72 jam, terpisah dari token "Lupa password" (60 menit).
 - `jobs`, `job_batches`, `failed_jobs` (queue driver database)
 - `notifications` (notifikasi in-app Filament)
-- `activity_log` dari Spatie Activitylog untuk audit `invoices`, `payments`, dan perubahan override
+- `activity_log` dari Spatie Activitylog untuk audit `invoices`, `payments`, `wallet_transactions`, dan perubahan override
 
 ### Konvensi umum
 

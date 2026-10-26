@@ -44,6 +44,9 @@ class RolePermissionSeeder extends Seeder
         'view:re-registration-payment',
     ];
 
+    /** Permission rapor diniyah (F027): input nilai (wali kelas, admin sekolah) dan cetak rapor. */
+    public const DINIYAH_PERMISSIONS = ['input-diniyah-grades', 'view-diniyah-report'];
+
     /** Model yang punya resource Filament, beserta aksi policy-nya. */
     public const RESOURCE_MODELS = [
         'Unit', 'AcademicYear', 'Staff', 'User', 'Role',
@@ -59,6 +62,7 @@ class RolePermissionSeeder extends Seeder
         'LeaveType', 'HomecomingPeriod', 'LeaveRequest', 'Visit',
         'AttendanceSession',
         'ViolationType', 'DisciplineLevel', 'StudentViolation',
+        'DiniyahSubject',
     ];
 
     public const RESOURCE_ACTIONS = ['viewAny', 'view', 'create', 'update', 'delete', 'deleteAny'];
@@ -102,6 +106,8 @@ class RolePermissionSeeder extends Seeder
         'StudentViolation' => ['viewAny', 'view', 'create', 'update', 'cancel'],
         // Uang saku santri (F028): ledger append-only, salah catat dibatalkan (status `batal`).
         'WalletTransaction' => ['viewAny', 'view', 'create', 'cancel'],
+        // Rapor diniyah (F027): mapel dinonaktifkan, tidak dihapus.
+        'DiniyahSubject' => ['viewAny', 'view', 'create', 'update'],
     ];
 
     public function run(): void
@@ -171,7 +177,7 @@ class RolePermissionSeeder extends Seeder
             self::RESOURCE_MODELS,
         ));
 
-        return [...self::DASHBOARD_PERMISSIONS, ...$resource, ...self::PAGE_PERMISSIONS];
+        return [...self::DASHBOARD_PERMISSIONS, ...$resource, ...self::PAGE_PERMISSIONS, ...self::DINIYAH_PERMISSIONS];
     }
 
     /**
@@ -251,6 +257,10 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('AttendanceSession'),
                 // Kedisiplinan (F026): lihat pelanggaran dan rekap poin saja.
                 ...self::resourcePermissions('StudentViolation', $readOnly),
+                // Rapor diniyah (F027): mapel, input nilai semua rombel dalam cakupan, dan cetak rapor.
+                ...self::resourcePermissions('DiniyahSubject', $withoutDelete),
+                'input-diniyah-grades',
+                'view-diniyah-report',
             ],
             // Gelombang dan jalur tidak dihapus: ditutup atau dinonaktifkan. Syarat berkas
             // boleh dihapus selama belum dirujuk berkas pendaftar.
@@ -291,6 +301,9 @@ class RolePermissionSeeder extends Seeder
                 ...self::resourcePermissions('ViolationType'),
                 ...self::resourcePermissions('DisciplineLevel'),
                 ...self::resourcePermissions('StudentViolation'),
+                // Rapor diniyah (F027): mengatur mapel dan mencetak rapor; tidak menginput nilai.
+                ...self::resourcePermissions('DiniyahSubject', $withoutDelete),
+                'view-diniyah-report',
             ],
             // Daftar penghuni lihat-saja, terbatas pada asrama/kamar yang diawasi. Mencatat kesehatan
             // santri binaannya (`HealthVisit::visibleStudents`); koreksi oleh kesantrian.
@@ -325,6 +338,9 @@ class RolePermissionSeeder extends Seeder
             'wali-kelas' => [
                 'view-dashboard',
                 ...self::resourcePermissions('AttendanceSession'),
+                // Rapor diniyah (F027): mengisi nilai dan mencetak rapor rombel yang ia walikan.
+                'input-diniyah-grades',
+                'view-diniyah-report',
             ],
         };
     }

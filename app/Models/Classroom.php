@@ -49,6 +49,20 @@ class Classroom extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    /**
+     * Roster rombel: santri `aktif` yang terdaftar di rombel ini, tanpa cakupan jenjang (pemanggil yang
+     * memeriksa akses rombelnya), urut nama.
+     *
+     * @return Builder<Student>
+     */
+    public function rosterStudents(): Builder
+    {
+        return Student::withoutUnitScope()
+            ->active()
+            ->whereIn('id', Enrollment::query()->where('classroom_id', $this->id)->select('student_id'))
+            ->orderBy('name');
+    }
+
     public function acceptsGender(string $gender): bool
     {
         return $this->gender === self::GENDER_MIXED || $this->gender === $gender;

@@ -12,6 +12,8 @@ use App\Actions\Keuangan\GenerateAnnualInvoices;
 use App\Actions\Keuangan\GenerateInvoiceNumber;
 use App\Actions\Keuangan\GenerateMonthlyInvoices;
 use App\Actions\Keuangan\RecordPayment;
+use App\Actions\Keuangan\RecordWalletTransaction;
+use App\Actions\Keuangan\WalletBalance;
 use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
 use App\Actions\Konten\UpdatePortalFooter;
@@ -78,6 +80,7 @@ use App\Models\User;
 use App\Models\Video;
 use App\Models\ViolationType;
 use App\Models\Visit;
+use App\Models\WalletTransaction;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Seeders\AdmissionTrackSeeder;
@@ -6007,4 +6010,76 @@ function disiplinOptions(Testable $component, string $field, string $search = ''
     }
 
     return array_map('intval', array_keys($options));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper uang saku santri (F028)
+|--------------------------------------------------------------------------
+|
+| Berawalan `wallet`. Test pemanggil menyeding `UnitSeeder` dan `RolePermissionSeeder`.
+|
+*/
+
+/**
+ * Santri pada jenjang `$unitCode` (kode unit seeder: SD, SLTP, SLTA).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function walletStudent(string $unitCode = 'SLTP', array $attributes = []): Student
+{
+    $unit = Unit::query()->where('code', $unitCode)->firstOrFail();
+
+    return Student::factory()->forCohort(Cohort::factory()->create(['unit_id' => $unit->id]))->create($attributes);
+}
+
+/**
+ * Catat transaksi lewat Action (tanggal bawaan hari ini).
+ *
+ * @param  array<string, mixed>  $extra
+ */
+function walletRecord(Student $student, User $user, string $type, int $amount, array $extra = []): WalletTransaction
+{
+    return app(RecordWalletTransaction::class)->handle($student, $user, [
+        'type' => $type,
+        'amount' => $amount,
+        'occurred_on' => today('Asia/Jakarta')->toDateString(),
+        ...$extra,
+    ]);
+}
+
+function walletBalance(Student $student): int
+{
+    return WalletBalance::forStudent($student->id);
+}
+
+/**
+ * Pastikan callback melempar ValidationException dengan pesan `pondok.wallet.errors.<reason>`.
+ * Bila `$field` diisi, error harus ada pada field tersebut.
+ */
+function walletAssertRejected(Closure $callback, string $reason, ?string $field = null): void
+{
+    $message = __("pondok.wallet.errors.{$reason}");
+    expect($message)->not->toBe("pondok.wallet.errors.{$reason}");
+
+    $parts = preg_split('/:[A-Za-z_]+/', $message);
+    $pattern = '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), $parts)).'$/su';
+
+    try {
+        $callback();
+    } catch (ValidationException $exception) {
+        $errors = $exception->errors();
+
+        if ($field !== null) {
+            expect($errors)->toHaveKey($field);
+        }
+
+        $matches = collect($errors)->flatten()->contains(fn (string $text): bool => preg_match($pattern, $text) === 1);
+
+        expect($matches)->toBeTrue("Pesan error tidak sesuai pondok.wallet.errors.{$reason}: ".json_encode($errors));
+
+        return;
+    }
+
+    test()->fail('ValidationException diharapkan, tetapi tidak dilempar.');
 }

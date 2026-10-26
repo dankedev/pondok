@@ -71,21 +71,12 @@ class AttendanceSession extends Model
     }
 
     /**
-     * Rombel yang absensinya boleh dilihat dan dicatat `$user` (F025 D2), dalam cakupan jenjangnya:
-     * pemegang `view-any:student` (super-admin, admin-sekolah, kesantrian) → semua rombel;
-     * selain itu hanya rombel yang wali kelasnya baris `staff` milik `$user` (tanpa staff → kosong).
+     * Rombel yang absensinya boleh dilihat dan dicatat `$user` (F025 D2); sumbernya `Classroom::visibleTo()`.
      *
      * @return Builder<Classroom>
      */
     public static function visibleClassrooms(User $user): Builder
     {
-        $unitIds = $user->scopedUnitIds();
-
-        return Classroom::query()
-            ->when($unitIds !== [], fn (Builder $query) => $query->whereIn('unit_id', $unitIds))
-            ->unless(
-                $user->can('view-any:student'),
-                fn (Builder $query) => $query->whereIn('homeroom_staff_id', Staff::query()->where('user_id', $user->id)->select('id')),
-            );
+        return Classroom::visibleTo($user);
     }
 }

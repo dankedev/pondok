@@ -98,6 +98,6 @@ class WalletTransaction extends Model
 
     public function statusLabel(): string
     {
-        return __("pondok.wallet.statuses.{$this->status}");
+        return __("pondok.wallet.status.{$this->status}");
     }
 }

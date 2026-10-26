@@ -1,4 +1,4 @@
-{{-- Rincian santri portal wali (F079): ringkasan, kehadiran bulan ini (Absensi aktif, F025), tagihan (Keuangan aktif), dokumen (Dokumen aktif). --}}
+{{-- Rincian santri portal wali (F079): ringkasan, kehadiran bulan ini (Absensi aktif, F025), uang saku dan tagihan (Keuangan aktif), dokumen (Dokumen aktif). --}}
 @php($rupiah = fn (int $amount): string => \App\Models\Payment::formatRupiah($amount))
 
 <x-layouts::public :title="$student->name" :noindex="true">
@@ -11,6 +11,37 @@
         </div>
 
         @include('portal-wali.partials.student-summary', ['student' => $student, 'showStatus' => true])
+
+        @if ($wallet !== null)
+            <x-ui.card :title="__('pondok.wallet.portal.title')">
+                <div class="flex items-baseline justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">
+                    <span class="text-sm text-gray-600">{{ __('pondok.wallet.portal.balance') }}</span>
+                    <span class="shrink-0 whitespace-nowrap text-2xl font-semibold tabular-nums text-gray-900">{{ $rupiah($wallet['balance']) }}</span>
+                </div>
+
+                @if ($wallet['transactions']->isEmpty())
+                    <x-ui.empty-state icon="heroicon-o-wallet">{{ __('pondok.wallet.portal.empty') }}</x-ui.empty-state>
+                @else
+                    <h3 class="mt-6 mb-2 text-base font-semibold text-gray-900">{{ __('pondok.wallet.portal.latest') }}</h3>
+                    <ul class="flex flex-col divide-y divide-gray-200" role="list">
+                        @foreach ($wallet['transactions'] as $transaction)
+                            <li class="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                                <div class="min-w-0">
+                                    <p class="text-gray-900">{{ $transaction->type->label() }}</p>
+                                    <p class="text-sm text-gray-600">{{ $transaction->occurred_on->translatedFormat('j M Y') }}@if ($transaction->note) · {{ $transaction->note }}@endif</p>
+                                </div>
+                                <div class="flex shrink-0 flex-col items-end gap-1">
+                                    <span class="whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ $transaction->type->isCredit() ? '+' : '-' }}{{ $rupiah($transaction->amount) }}</span>
+                                    @if ($transaction->status === \App\Models\WalletTransaction::STATUS_CANCELLED)
+                                        <x-ui.badge :color="$transaction->statusColor()">{{ $transaction->statusLabel() }}</x-ui.badge>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-ui.card>
+        @endif
 
         @if ($attendance !== null)
             <x-ui.card :title="__('pondok.portal_wali.attendance.title', ['month' => $attendance['month']->translatedFormat('F Y')])">

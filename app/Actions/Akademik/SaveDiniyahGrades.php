@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveDiniyahGrades
 {
+    public const MAX_NOTE_LENGTH = 1000;
+
     /**
      * @param  array<int, array<int, mixed>>  $scores  student_id => [subject_id => nilai|null]
      * @param  array<int, mixed>  $notes  student_id => catatan|null
@@ -125,6 +127,8 @@ class SaveDiniyahGrades
 
             if ($note === null || trim($note) === '') {
                 $clear[] = (int) $studentId;
+            } elseif (mb_strlen(trim($note)) > self::MAX_NOTE_LENGTH) {
+                $this->fail('notes', 'note_too_long');
             } else {
                 $set[(int) $studentId] = trim($note);
             }

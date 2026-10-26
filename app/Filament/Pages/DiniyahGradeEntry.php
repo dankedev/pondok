@@ -266,7 +266,7 @@ class DiniyahGradeEntry extends Page
                 Textarea::make("notes.{$student->id}")
                     ->label(__('pondok.diniyah.entry.note'))
                     ->rows(2)
-                    ->maxLength(1000),
+                    ->maxLength(SaveDiniyahGrades::MAX_NOTE_LENGTH),
             ]))->all();
     }
 

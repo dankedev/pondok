@@ -109,6 +109,10 @@ class RecordWalletTransaction
     private function parseDate(mixed $value): CarbonImmutable
     {
         try {
+            if (trim((string) $value) === '') {
+                throw new \InvalidArgumentException;
+            }
+
             return CarbonImmutable::parse((string) $value, 'Asia/Jakarta')->startOfDay();
         } catch (\Throwable) {
             throw ValidationException::withMessages(['occurred_on' => __('pondok.wallet.errors.date_future')]);

@@ -6,8 +6,6 @@ use App\Models\Classroom;
 use App\Models\DiniyahGrade;
 use App\Models\DiniyahReportNote;
 use App\Models\DiniyahSubject;
-use App\Models\Enrollment;
-use App\Models\Student;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -151,9 +149,7 @@ class SaveDiniyahGrades
      */
     private function rosterIds(Classroom $classroom): array
     {
-        return Student::withoutUnitScope()
-            ->active()
-            ->whereIn('id', Enrollment::query()->where('classroom_id', $classroom->id)->select('student_id'))
+        return $classroom->rosterStudents()
             ->pluck('id')
             ->map(fn (mixed $id): int => (int) $id)
             ->all();

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
+use App\Http\Controllers\Akademik\PrintDiniyahReport;
 use App\Http\Controllers\Dokumen\DownloadDocument;
 use App\Http\Controllers\Dokumen\PrintIssuedLetter;
 use App\Http\Controllers\Keuangan\DownloadFinanceExport;
@@ -109,6 +110,11 @@ class AdminPanelProvider extends PanelProvider
                     Route::get('receipts/{payment}', ShowPaymentReceipt::class)->name('keuangan.receipt');
                     Route::get('payment-proofs/{payment}', DownloadPaymentProof::class)->name('keuangan.payment-proof');
                     Route::get('finance-exports/{export}', DownloadFinanceExport::class)->whereUuid('export')->name('keuangan.finance-export');
+                });
+                Route::middleware(EnsureModuleIsEnabled::class.':akademik')->group(function (): void {
+                    Route::get('akademik/rapor/{student}/{year}/{semester}', PrintDiniyahReport::class)
+                        ->whereNumber(['student', 'year', 'semester'])
+                        ->name('akademik.diniyah-report');
                 });
                 Route::middleware(EnsureModuleIsEnabled::class.':psb')->group(function (): void {
                     Route::get('applicant-documents/{applicantDocument}', DownloadApplicantDocument::class)->name('psb.applicant-document');

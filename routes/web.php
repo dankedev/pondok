@@ -14,6 +14,7 @@ use App\Http\Controllers\Portal\ShowStaticPage;
 use App\Http\Controllers\PortalWali\DownloadStudentDocument;
 use App\Http\Controllers\PortalWali\EmailVerificationController;
 use App\Http\Controllers\PortalWali\Logout as PortalWaliLogout;
+use App\Http\Controllers\PortalWali\ShowDiniyahReport as PortalWaliDiniyahReport;
 use App\Http\Controllers\PortalWali\ShowHome as PortalWaliHome;
 use App\Http\Controllers\PortalWali\ShowInvoice as PortalWaliInvoice;
 use App\Http\Controllers\PortalWali\ShowStudent as PortalWaliStudent;
@@ -71,6 +72,10 @@ Route::prefix('wali')
             Route::middleware('verified:portal-wali.verification.notice')->group(function (): void {
                 Route::get('/', PortalWaliHome::class)->name('home');
                 Route::get('santri/{student}', PortalWaliStudent::class)->whereNumber('student')->name('students.show');
+                Route::get('santri/{student}/rapor/{year}/{semester}', PortalWaliDiniyahReport::class)
+                    ->middleware(EnsureModuleIsEnabled::class.':akademik,404')
+                    ->whereNumber(['student', 'year', 'semester'])
+                    ->name('diniyah-report.show');
                 Route::get('tagihan/{invoice}', PortalWaliInvoice::class)
                     ->middleware(EnsureModuleIsEnabled::class.':keuangan,404')
                     ->whereNumber('invoice')

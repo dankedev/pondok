@@ -1864,7 +1864,7 @@
       "name": "Onboarding setup awal di dashboard",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F018", "F066"],
       "description": "Widget Setup awal di dashboard super-admin: langkah setup dengan status dari data nyata, bar progres dan persentase, tombol ke halaman admin, dan tautan panduan pondok.org/docs. Hilang saat 100%.",
       "acceptance": [
@@ -1876,9 +1876,9 @@
         "Tautan panduan mengarah ke halaman pondok.org/docs yang ada",
         "Rapi di 360px, 1024px, desktop, dan dark mode"
       ],
-      "owner": "sesi F094",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 8b46eea, 5ec6331. SummarizeSetupProgressTest, SetupChecklistWidgetTest, ModuleComplianceTest, Dashboard*Test lulus di PHP 8.4; suite penuh 5635 lulus (1 gagal hanya karena worktree tanpa SUPER_ADMIN_* di .env, lulus saat env diisi); Pint bersih. Tampilan dicek di 360px, 1024px, 1440px, dan dark mode (artisan serve + SQLite sementara).",
       "notes": "Jalur cepat: tanpa migration, tanpa Action yang mengubah data (tombol Sembunyikan tidak dibuat). Rencana: docs/plans/F094-plan.md."
     }
   ]

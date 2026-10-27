@@ -691,6 +691,7 @@ it('AC-23 dan AC-7b: tanggal mengikuti hari ini dan password bawaan dipakai bila
     Storage::fake('private');
     Storage::fake('public');
     config(['pondok.demo.password' => null]);
+    config(['pondok.super_admin' => ['name' => 'Admin Lembaga', 'email' => 'admin@pondok.sch.id', 'password' => 'rahasia123']]);
 
     // AC-25 bagian 2: admin sudah mengganti nama jenjang SLTP sebelum seeding.
     $this->seed(InstallSeeder::class);
@@ -730,6 +731,9 @@ it('AC-23 dan AC-7b: tanggal mengikuti hari ini dan password bawaan dipakai bila
     foreach (User::query()->where('email', 'like', '%@demo.test')->get() as $user) {
         demoCheck(Hash::check(DemoSeeder::DEFAULT_PASSWORD, $user->password), "AC-7b {$user->email}");
     }
+
+    // F095: super-admin dari SUPER_ADMIN_* ikut dibuat bersama data demo.
+    expect(User::query()->where('email', 'admin@pondok.sch.id')->first()?->hasRole('super-admin'))->toBeTrue();
 })->group('seeder-demo');
 
 it('VERIFY: production tidak menulis berkas ke disk, tagihan hanya untuk santri aktif, uang bulat, dan dashboard semua akun render', function () {

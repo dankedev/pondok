@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F095",
+  "next_id": "F096",
   "features": [
     {
       "id": "F001",
@@ -1880,6 +1880,26 @@
       "handoff": null,
       "evidence": "Commit 8b46eea, 5ec6331. SummarizeSetupProgressTest, SetupChecklistWidgetTest, ModuleComplianceTest, Dashboard*Test lulus di PHP 8.4; suite penuh 5635 lulus (1 gagal hanya karena worktree tanpa SUPER_ADMIN_* di .env, lulus saat env diisi); Pint bersih. Tampilan dicek di 360px, 1024px, 1440px, dan dark mode (artisan serve + SQLite sementara).",
       "notes": "Jalur cepat: tanpa migration, tanpa Action yang mengubah data (tombol Sembunyikan tidak dibuat). Rencana: docs/plans/F094-plan.md."
+    },
+    {
+      "id": "F095",
+      "key": "inti-super-admin-seed-demo",
+      "issue": 118,
+      "name": "Super-admin selalu dibuat saat seeding data demo",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F034"],
+      "description": "DemoSeeder ikut membuat super-admin dari SUPER_ADMIN_* (bila terisi) agar admin lembaga tetap bisa masuk setelah migrate:fresh + data demo.",
+      "acceptance": [
+        "Seeding demo dengan SUPER_ADMIN_* terisi membuat akun super-admin lembaga",
+        "SUPER_ADMIN_* kosong tidak menggagalkan seeding demo, hanya peringatan",
+        "docs/demo.md menyebut perilaku ini"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "DemoSeederTest dan InstallSeederTest lulus di PHP 8.4; Pint bersih.",
+      "notes": "Jalur cepat: data demo, tanpa migration."
     }
   ]
 }

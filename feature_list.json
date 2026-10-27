@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F091",
+  "next_id": "F092",
   "features": [
     {
       "id": "F001",
@@ -1814,6 +1814,26 @@
       "handoff": null,
       "evidence": "Commit 42d67a4 (fitur), c0a6d24 (test). tests/Feature/Filament/NavigationSearchTest.php (5) dan seluruh tests/Feature/Filament (1216) lulus di PHP 8.4; ModuleComplianceTest lulus; Pint bersih. Suite penuh dan cek tampilan 360px/1024px/desktop belum dijalankan; CI PHP 8.3 menjadi syarat merge.",
       "notes": "Jalur cepat. Rencana: docs/plans/F090-plan.md."
+    },
+    {
+      "id": "F091",
+      "key": "admin-pencarian-aksi",
+      "issue": 109,
+      "name": "Pencarian global: kategori Aksi",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F090"],
+      "description": "Pencarian global (Ctrl+K) menampilkan aksi Tambah <model> untuk resource yang punya halaman create dan boleh dibuat pengguna, otomatis dari resource yang ada.",
+      "acceptance": [
+        "Pencarian tambah memuat aksi untuk resource yang boleh dibuat",
+        "Peran tanpa izin atau modul mati tidak melihat aksinya",
+        "Kata kunci satu huruf tidak memuat kategori Aksi"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "NavigationSearchTest (9) dan ModuleComplianceTest lulus di PHP 8.4; Pint bersih. Resource yang dikelola lewat modal (tanpa halaman create, mis. jenis biaya) tidak ikut. Cek tampilan dan suite penuh belum dijalankan; CI PHP 8.3 jadi syarat merge.",
+      "notes": "Jalur cepat. Rencana: docs/plans/F091-plan.md."
     }
   ]
 }

@@ -74,6 +74,7 @@ class AdminPanelProvider extends PanelProvider
                 'institution' => app(GetSchoolProfile::class)->handle()['name'],
             ])->render()))
             ->brandLogoHeight('2.5rem')
+            ->favicon(asset('favicon.svg'))
             // F088: avatar inisial lokal; bawaan Filament mengirim inisial ke ui-avatars.com.
             ->defaultAvatarProvider(InitialsAvatarProvider::class)
             ->colors([

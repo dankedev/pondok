@@ -40,6 +40,8 @@ php artisan db:seed --class=DemoSeeder
 
 ## Akun demo
 
+Selain akun di bawah, seeder juga membuat super-admin lembaga dari `SUPER_ADMIN_EMAIL` dan `SUPER_ADMIN_PASSWORD` di `.env` (bila keduanya terisi), sama seperti `php artisan migrate:fresh --seed`.
+
 | Peran | Email | Cakupan jenjang |
 |---|---|---|
 | super-admin | `super-admin@demo.test` | semua |

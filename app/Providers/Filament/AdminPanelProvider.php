@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
-use App\Filament\GlobalSearch\NavigationAwareGlobalSearchProvider;
 use App\Http\Controllers\Akademik\PrintDiniyahReport;
 use App\Http\Controllers\Dokumen\DownloadDocument;
 use App\Http\Controllers\Dokumen\PrintIssuedLetter;
@@ -78,8 +77,10 @@ class AdminPanelProvider extends PanelProvider
                 fn (string $label): NavigationGroup => NavigationGroup::make($label)->collapsed(),
                 array_values(__('pondok.navigation')),
             ))
-            ->globalSearch(NavigationAwareGlobalSearchProvider::class)
-            ->globalSearchKeyBindings(['ctrl+k', 'command+k'])
+            // F092: palet perintah kustom (Ctrl+K) menggantikan kolom pencarian global bawaan.
+            ->globalSearch(false)
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => auth()->check() ? view('filament.command-palette-trigger') : '')
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('filament.command-palette-host') : '')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')

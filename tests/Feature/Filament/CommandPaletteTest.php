@@ -11,13 +11,21 @@ beforeEach(function () {
     Filament::setCurrentPanel('admin');
 });
 
-it('lists actions and menu before typing', function () {
+it('lists menu grouped by navigation group before typing, without actions', function () {
     $this->actingAs(keuanganUser('super-admin'));
 
     Livewire::test(CommandPalette::class)
-        ->assertSee(__('pondok.navigation_search.actions'))
-        ->assertSee(__('pondok.navigation_search.category'))
-        ->assertSee(__('pondok.diniyah.subject.plural'));
+        ->assertSee(__('pondok.navigation.akademik'))
+        ->assertSee(__('pondok.diniyah.subject.plural'))
+        ->assertDontSee(__('pondok.navigation_search.actions'));
+});
+
+it('shows create actions once a keyword is typed', function () {
+    $this->actingAs(keuanganUser('super-admin'));
+
+    Livewire::test(CommandPalette::class)
+        ->set('search', 'tambah')
+        ->assertSee(__('pondok.navigation_search.actions'));
 });
 
 it('filters the list by the typed keyword', function () {

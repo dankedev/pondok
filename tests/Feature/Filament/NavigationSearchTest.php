@@ -18,7 +18,9 @@ function menuSearch(string $role, string $query): array
 
     $categories = (new NavigationAwareGlobalSearchProvider)->getResults($query)->getCategories();
 
-    return collect($categories[__('pondok.navigation_search.category')] ?? [])
+    return collect($categories)
+        ->except(__('pondok.navigation_search.actions'))
+        ->flatten(1)
         ->map(fn ($result): string => (string) $result->title)
         ->all();
 }

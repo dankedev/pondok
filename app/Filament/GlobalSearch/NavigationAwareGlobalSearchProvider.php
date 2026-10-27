@@ -26,15 +26,14 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
         $results = GlobalSearchResults::make();
 
         $long = $needle === '' || mb_strlen($needle) >= self::MIN_QUERY_LENGTH;
-        $menu = $long ? $this->matchingMenu($needle) : [];
-        $actions = $long ? $this->matchingActions($needle) : [];
-
-        if ($menu !== []) {
-            $results->category(__('pondok.navigation_search.category'), $menu);
-        }
+        $actions = $long && $needle !== '' ? $this->matchingActions($needle) : [];
 
         if ($actions !== []) {
             $results->category(__('pondok.navigation_search.actions'), $actions);
+        }
+
+        foreach ($long ? $this->matchingMenu($needle) : [] as $groupLabel => $items) {
+            $results->category($groupLabel, $items);
         }
 
         $data = mb_strlen($needle) >= self::MIN_QUERY_LENGTH ? app(DefaultGlobalSearchProvider::class)->getResults($query) : null;
@@ -47,7 +46,9 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
     }
 
     /**
-     * @return list<GlobalSearchResult>
+     * Item menu per grup navigasi (kunci = label grup; tanpa grup memakai "Menu").
+     *
+     * @return array<string, list<GlobalSearchResult>>
      */
     private function matchingMenu(string $needle): array
     {
@@ -55,6 +56,7 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
 
         foreach (Filament::getNavigation() as $group) {
             $groupLabel = (string) $group->getLabel();
+            $heading = $groupLabel !== '' ? $groupLabel : __('pondok.navigation_search.category');
 
             foreach ($group->getItems() as $item) {
                 $label = (string) $item->getLabel();
@@ -64,7 +66,7 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
                     continue;
                 }
 
-                $matches[] = new GlobalSearchResult($label, $url, $groupLabel !== '' ? [__('pondok.navigation_search.group') => $groupLabel] : []);
+                $matches[$heading][] = new GlobalSearchResult($label, $url);
             }
         }
 

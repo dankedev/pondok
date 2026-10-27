@@ -10,7 +10,8 @@ use Filament\GlobalSearch\Providers\DefaultGlobalSearchProvider;
 use Illuminate\Support\Str;
 
 /**
- * Pencarian global bawaan Filament ditambah kategori "Menu" dan "Aksi" di atas hasil data.
+ * Sumber hasil palet perintah (F092): kategori "Aksi" dan "Menu" di atas hasil data pencarian
+ * global bawaan Filament. Kata kunci kosong menampilkan semua aksi dan menu.
  * Menu diambil dari navigasi panel, aksi ("Tambah <model>") dari resource yang punya
  * halaman create dan lolos `canCreate()`. Keduanya sudah disaring permission dan saklar
  * modul, sehingga pengguna tidak pernah melihat yang tak boleh dibukanya.
@@ -24,7 +25,7 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
         $needle = Str::lower(trim($query));
         $results = GlobalSearchResults::make();
 
-        $long = mb_strlen($needle) >= self::MIN_QUERY_LENGTH;
+        $long = $needle === '' || mb_strlen($needle) >= self::MIN_QUERY_LENGTH;
         $menu = $long ? $this->matchingMenu($needle) : [];
         $actions = $long ? $this->matchingActions($needle) : [];
 
@@ -36,7 +37,7 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
             $results->category(__('pondok.navigation_search.actions'), $actions);
         }
 
-        $data = app(DefaultGlobalSearchProvider::class)->getResults($query);
+        $data = mb_strlen($needle) >= self::MIN_QUERY_LENGTH ? app(DefaultGlobalSearchProvider::class)->getResults($query) : null;
 
         foreach ($data?->getCategories() ?? [] as $name => $items) {
             $results->category($name, $items);
@@ -59,7 +60,7 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
                 $label = (string) $item->getLabel();
                 $url = $item->getUrl();
 
-                if ($url === null || ! Str::contains(Str::lower($label.' '.$groupLabel), $needle)) {
+                if ($url === null || ! $this->matches($label.' '.$groupLabel, $needle)) {
                     continue;
                 }
 
@@ -84,11 +85,16 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
 
             $label = __('pondok.navigation_search.create', ['model' => Str::lower($resource::getModelLabel())]);
 
-            if (Str::contains(Str::lower($label), $needle)) {
+            if ($this->matches($label, $needle)) {
                 $matches[] = new GlobalSearchResult($label, $resource::getUrl('create'));
             }
         }
 
         return $matches;
+    }
+
+    private function matches(string $haystack, string $needle): bool
+    {
+        return $needle === '' || Str::contains(Str::lower($haystack), $needle);
     }
 }

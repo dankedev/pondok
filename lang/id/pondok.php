@@ -23,6 +23,14 @@ return [
         'access' => 'Pengguna & Akses',
     ],
 
+    'command_palette' => [
+        'title' => 'Palet perintah',
+        'trigger' => 'Cari',
+        'placeholder' => 'Cari menu, aksi, atau data',
+        'min_length' => 'Ketik minimal 2 huruf.',
+        'empty' => 'Tidak ada hasil.',
+    ],
+
     'navigation_search' => [
         'category' => 'Menu',
         'group' => 'Grup',

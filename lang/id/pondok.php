@@ -26,6 +26,8 @@ return [
     'navigation_search' => [
         'category' => 'Menu',
         'group' => 'Grup',
+        'actions' => 'Aksi',
+        'create' => 'Tambah :model',
     ],
 
     'numbering' => [

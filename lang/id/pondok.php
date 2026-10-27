@@ -3572,6 +3572,7 @@ return [
         'refused_production' => 'Data demo tidak boleh dijalankan di lingkungan production.',
         'default_password_warning' => 'DEMO_PASSWORD kosong: akun demo memakai password bawaan yang tertulis di docs/demo.md. Isi DEMO_PASSWORD di .env bila instance ini bisa diakses orang lain.',
         'skipped' => 'Bagian data demo dilewati: :part (:reason).',
+        'super_admin_skipped' => 'SUPER_ADMIN_EMAIL atau SUPER_ADMIN_PASSWORD kosong: akun super-admin lembaga tidak dibuat. Masuk memakai akun demo super-admin.',
         'summary' => 'Data demo siap: :students santri, :invoices tagihan, :payments pembayaran, :applicants pendaftar, :posts berita.',
     ],
 

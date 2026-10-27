@@ -52,6 +52,7 @@ class DemoSeeder extends Seeder
         Auth::forgetGuards();
 
         $this->call(InstallSeeder::class);
+        $this->seedSuperAdmin();
 
         $context = new DemoContext($this->command);
 
@@ -116,6 +117,23 @@ class DemoSeeder extends Seeder
         foreach (DemoData::UNIT_NAMES as $code => $name) {
             Unit::query()->where('code', $code)->where('name', $defaults[$code])->update(['name' => $name]);
         }
+    }
+
+    /**
+     * Super-admin dari `SUPER_ADMIN_*` ikut dibuat agar admin lembaga tetap bisa
+     * masuk setelah `migrate:fresh` + data demo. Dilewati dengan peringatan bila kosong.
+     */
+    private function seedSuperAdmin(): void
+    {
+        $config = config('pondok.super_admin');
+
+        if (blank($config['email'] ?? null) || blank($config['password'] ?? null)) {
+            $this->command?->warn(__('pondok.demo.super_admin_skipped'));
+
+            return;
+        }
+
+        $this->call(SuperAdminSeeder::class);
     }
 
     private function seedAccounts(DemoContext $context): void

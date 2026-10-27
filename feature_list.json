@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F093",
+  "next_id": "F095",
   "features": [
     {
       "id": "F001",
@@ -1856,6 +1856,30 @@
       "handoff": null,
       "evidence": "CommandPaletteTest (5), NavigationSearchTest (9), ModuleComplianceTest lulus di PHP 8.4; Pint bersih. Tampilan dan interaksi keyboard belum diverifikasi di browser (browser pane tidak bisa memuat aset server Vite lokal); perlu dicek manual di 360px, 1024px, dan desktop.",
       "notes": "Jalur cepat. Rencana: docs/plans/F092-plan.md."
+    },
+    {
+      "id": "F094",
+      "key": "inti-onboarding-setup-awal",
+      "issue": 115,
+      "name": "Onboarding setup awal di dashboard",
+      "phase": 1,
+      "module": "Inti",
+      "status": "in-progress",
+      "depends_on": ["F018", "F066"],
+      "description": "Widget Setup awal di dashboard super-admin: langkah setup dengan status dari data nyata, bar progres dan persentase, tombol ke halaman admin, dan tautan panduan pondok.org/docs. Hilang saat 100%.",
+      "acceptance": [
+        "Instalasi baru menampilkan widget dengan progres di bawah 100%",
+        "Status tiap langkah mengikuti data",
+        "Langkah modul nonaktif tidak muncul dan tidak dihitung",
+        "Hanya super-admin yang melihat widget",
+        "Widget tidak tampil pada 100%",
+        "Tautan panduan mengarah ke halaman pondok.org/docs yang ada",
+        "Rapi di 360px, 1024px, desktop, dan dark mode"
+      ],
+      "owner": "sesi F094",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur cepat: tanpa migration, tanpa Action yang mengubah data (tombol Sembunyikan tidak dibuat). Rencana: docs/plans/F094-plan.md."
     }
   ]
 }

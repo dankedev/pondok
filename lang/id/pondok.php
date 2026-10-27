@@ -23,6 +23,10 @@ return [
         'access' => 'Pengguna & Akses',
     ],
 
+    'brand' => [
+        'product' => 'Pondok CMS',
+    ],
+
     'command_palette' => [
         'title' => 'Palet perintah',
         'trigger' => 'Cari',

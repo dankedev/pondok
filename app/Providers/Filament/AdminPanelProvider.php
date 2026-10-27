@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Actions\Konten\GetSchoolProfile;
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
 use App\Http\Controllers\Akademik\PrintDiniyahReport;
 use App\Http\Controllers\Dokumen\DownloadDocument;
@@ -34,6 +35,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -67,6 +69,11 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling(null)
             ->lazyLoadedDatabaseNotifications(false)
             ->brandName(fn (): string => config('app.name'))
+            // F093: logo, nama produk, dan nama lembaga (Pengaturan > Identitas) di header.
+            ->brandLogo(fn () => new HtmlString(view('filament.brand', [
+                'institution' => app(GetSchoolProfile::class)->handle()['name'],
+            ])->render()))
+            ->brandLogoHeight('2.25rem')
             // F088: avatar inisial lokal; bawaan Filament mengirim inisial ke ui-avatars.com.
             ->defaultAvatarProvider(InitialsAvatarProvider::class)
             ->colors([

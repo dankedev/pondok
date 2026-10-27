@@ -13,6 +13,7 @@ use App\Filament\Resources\AcademicYears\AcademicYearResource;
 use App\Filament\Resources\Staff\StaffResource;
 use App\Filament\Resources\Units\UnitResource;
 use App\Filament\Resources\Users\UserResource;
+use App\Filament\Widgets\SetupChecklistWidget;
 use App\Filament\Widgets\SystemOverviewWidget;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use App\Models\Setting;
@@ -68,7 +69,7 @@ it('AC-9: every panel resource, page and widget is core or declares a valid modu
         Dashboard::class, Identity::class, Contacts::class,
         Modules::class, DataRetention::class, Home::class, Navigation::class,
         Footer::class, Theme::class,
-        AccountWidget::class, SystemOverviewWidget::class,
+        AccountWidget::class, SystemOverviewWidget::class, SetupChecklistWidget::class,
     ];
 
     $panel = Filament::getPanel('admin');

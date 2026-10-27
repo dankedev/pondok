@@ -62,6 +62,7 @@
     @if ($school['favicon_url'])
         <link rel="icon" type="image/png" href="{{ $school['favicon_url'] }}">
     @else
+        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
         <link rel="icon" href="{{ asset('favicon.ico') }}">
     @endif
     @fonts($theme['font_aliases'])

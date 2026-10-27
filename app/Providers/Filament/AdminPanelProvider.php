@@ -73,7 +73,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => new HtmlString(view('filament.brand', [
                 'institution' => app(GetSchoolProfile::class)->handle()['name'],
             ])->render()))
-            ->brandLogoHeight('2.25rem')
+            ->brandLogoHeight('2.5rem')
             // F088: avatar inisial lokal; bawaan Filament mengirim inisial ke ui-avatars.com.
             ->defaultAvatarProvider(InitialsAvatarProvider::class)
             ->colors([

@@ -10,9 +10,10 @@ use Filament\GlobalSearch\Providers\DefaultGlobalSearchProvider;
 use Illuminate\Support\Str;
 
 /**
- * Pencarian global bawaan Filament ditambah kategori "Menu" di atas hasil data.
- * Item diambil dari navigasi panel yang sudah disaring permission dan saklar modul,
- * sehingga pengguna tidak pernah melihat menu yang tak boleh dibukanya.
+ * Pencarian global bawaan Filament ditambah kategori "Menu" dan "Aksi" di atas hasil data.
+ * Menu diambil dari navigasi panel, aksi ("Tambah <model>") dari resource yang punya
+ * halaman create dan lolos `canCreate()`. Keduanya sudah disaring permission dan saklar
+ * modul, sehingga pengguna tidak pernah melihat yang tak boleh dibukanya.
  */
 class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
 {
@@ -23,10 +24,16 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
         $needle = Str::lower(trim($query));
         $results = GlobalSearchResults::make();
 
-        $menu = mb_strlen($needle) >= self::MIN_QUERY_LENGTH ? $this->matchingMenu($needle) : [];
+        $long = mb_strlen($needle) >= self::MIN_QUERY_LENGTH;
+        $menu = $long ? $this->matchingMenu($needle) : [];
+        $actions = $long ? $this->matchingActions($needle) : [];
 
         if ($menu !== []) {
             $results->category(__('pondok.navigation_search.category'), $menu);
+        }
+
+        if ($actions !== []) {
+            $results->category(__('pondok.navigation_search.actions'), $actions);
         }
 
         $data = app(DefaultGlobalSearchProvider::class)->getResults($query);
@@ -57,6 +64,28 @@ class NavigationAwareGlobalSearchProvider implements GlobalSearchProvider
                 }
 
                 $matches[] = new GlobalSearchResult($label, $url, $groupLabel !== '' ? [__('pondok.navigation_search.group') => $groupLabel] : []);
+            }
+        }
+
+        return $matches;
+    }
+
+    /**
+     * @return list<GlobalSearchResult>
+     */
+    private function matchingActions(string $needle): array
+    {
+        $matches = [];
+
+        foreach (Filament::getResources() as $resource) {
+            if (! $resource::hasPage('create') || ! $resource::canCreate()) {
+                continue;
+            }
+
+            $label = __('pondok.navigation_search.create', ['model' => Str::lower($resource::getModelLabel())]);
+
+            if (Str::contains(Str::lower($label), $needle)) {
+                $matches[] = new GlobalSearchResult($label, $resource::getUrl('create'));
             }
         }
 

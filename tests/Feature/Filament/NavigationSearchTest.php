@@ -5,6 +5,7 @@ use App\Models\Setting;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SettingSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->seed([RolePermissionSeeder::class, SettingSeeder::class]);
@@ -42,4 +43,39 @@ it('hides menu items of a disabled module', function () {
 
 it('skips the menu category for a one-character query', function () {
     expect(menuSearch('super-admin', 'k'))->toBeEmpty();
+});
+
+function actionSearch(string $role, string $query): array
+{
+    test()->actingAs(keuanganUser($role));
+
+    $categories = (new NavigationAwareGlobalSearchProvider)->getResults($query)->getCategories();
+
+    return collect($categories[__('pondok.navigation_search.actions')] ?? [])
+        ->map(fn ($result): string => (string) $result->title)
+        ->all();
+}
+
+it('offers create actions for resources the user may create', function () {
+    expect(actionSearch('super-admin', 'tambah'))->toContain(
+        __('pondok.navigation_search.create', ['model' => Str::lower(__('pondok.diniyah.subject.label'))])
+    );
+});
+
+it('hides create actions the role cannot perform', function () {
+    expect(actionSearch('musyrif', 'tambah'))->not->toContain(
+        __('pondok.navigation_search.create', ['model' => Str::lower(__('pondok.diniyah.subject.label'))])
+    );
+});
+
+it('hides create actions of a disabled module', function () {
+    Setting::set('modules.akademik.enabled', false);
+
+    expect(actionSearch('super-admin', 'tambah'))->not->toContain(
+        __('pondok.navigation_search.create', ['model' => Str::lower(__('pondok.diniyah.subject.label'))])
+    );
+});
+
+it('skips the action category for a one-character query', function () {
+    expect(actionSearch('super-admin', 't'))->toBeEmpty();
 });

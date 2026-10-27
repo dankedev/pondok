@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F092",
+  "next_id": "F093",
   "features": [
     {
       "id": "F001",
@@ -1834,6 +1834,28 @@
       "handoff": null,
       "evidence": "NavigationSearchTest (9) dan ModuleComplianceTest lulus di PHP 8.4; Pint bersih. Resource yang dikelola lewat modal (tanpa halaman create, mis. jenis biaya) tidak ikut. Cek tampilan dan suite penuh belum dijalankan; CI PHP 8.3 jadi syarat merge.",
       "notes": "Jalur cepat. Rencana: docs/plans/F091-plan.md."
+    },
+    {
+      "id": "F092",
+      "key": "admin-palet-perintah",
+      "issue": 111,
+      "name": "Palet perintah admin (Ctrl+K)",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F090", "F091"],
+      "description": "Palet perintah modal (Livewire + Alpine) menggantikan kolom pencarian global bawaan: daftar Aksi dan Menu tampil sebelum mengetik, filter saat mengetik, hasil data ikut, navigasi keyboard.",
+      "acceptance": [
+        "Ctrl+K, Cmd+K, atau tombol Cari membuka palet; Esc menutup",
+        "Sebelum mengetik tampil Aksi dan Menu; hasil data mulai 2 huruf",
+        "Panah dan Enter berfungsi",
+        "Item di luar permission atau modul mati tidak tampil",
+        "Tidak dirender di halaman login"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "CommandPaletteTest (5), NavigationSearchTest (9), ModuleComplianceTest lulus di PHP 8.4; Pint bersih. Tampilan dan interaksi keyboard belum diverifikasi di browser (browser pane tidak bisa memuat aset server Vite lokal); perlu dicek manual di 360px, 1024px, dan desktop.",
+      "notes": "Jalur cepat. Rencana: docs/plans/F092-plan.md."
     }
   ]
 }

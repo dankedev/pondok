@@ -3076,6 +3076,60 @@ return [
 
     'dashboard' => [
         'module_unavailable' => 'Modul belum tersedia.',
+        'setup' => [
+            'heading' => 'Setup awal',
+            'description' => 'Langkah menyiapkan Pondok untuk lembaga Anda. Status diperbarui otomatis dari data.',
+            'progress' => ':done dari :total langkah selesai',
+            'progress_label' => 'Progres setup awal',
+            'percent' => ':percent%',
+            'done' => 'Selesai',
+            'pending' => 'Belum',
+            'open' => 'Buka',
+            'docs' => 'Panduan',
+            'features_link' => 'Lihat semua fitur',
+            'steps' => [
+                'profile' => [
+                    'title' => 'Profil lembaga',
+                    'description' => 'Isi nama, logo, dan kontak lembaga (alamat, email, atau telepon).',
+                ],
+                'units' => [
+                    'title' => 'Jenjang',
+                    'description' => 'Sesuaikan jenjang yang ada di lembaga.',
+                ],
+                'academic_year' => [
+                    'title' => 'Tahun ajaran aktif',
+                    'description' => 'Buat tahun ajaran dan aktifkan yang sedang berjalan.',
+                ],
+                'modules' => [
+                    'title' => 'Modul yang dipakai',
+                    'description' => 'Tinjau Pengaturan → Modul dan matikan modul yang tidak dipakai.',
+                ],
+                'classrooms' => [
+                    'title' => 'Rombel',
+                    'description' => 'Buat rombel untuk tahun ajaran aktif.',
+                ],
+                'students' => [
+                    'title' => 'Data santri',
+                    'description' => 'Tambah santri satu per satu atau impor dari CSV.',
+                ],
+                'staff' => [
+                    'title' => 'Pengguna staf dan peran',
+                    'description' => 'Buat akun staf dan beri peran, misalnya bendahara atau admin sekolah.',
+                ],
+                'fee_rates' => [
+                    'title' => 'Tarif biaya',
+                    'description' => 'Atur tarif SPP dan biaya lain per jenjang.',
+                ],
+                'mail' => [
+                    'title' => 'Email (SMTP)',
+                    'description' => 'Atur MAIL_* di .env agar email benar-benar terkirim.',
+                ],
+                'cron' => [
+                    'title' => 'Cron dan antrean',
+                    'description' => 'Pasang cron schedule:run setiap menit dan pastikan antrean berjalan.',
+                ],
+            ],
+        ],
         'finance' => [
             'heading' => 'Keuangan :period',
             'billed' => 'Ditagihkan',

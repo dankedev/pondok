@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F090",
+  "next_id": "F091",
   "features": [
     {
       "id": "F001",
@@ -1793,6 +1793,27 @@
       "handoff": null,
       "evidence": "Commit 32db08f (entrypoint), 5f92619 (dokumen). sh -n dan dash -n lulus; shellcheck tidak tersedia. Simulasi loop dengan runuser tiruan: schedule:work yang berhenti dijalankan ulang dan dicatat di stderr, stdout dibuang, PONDOK_SCHEDULER=false tidak menjalankan apa pun, clear-cache yang gagal tidak menghentikan start. Tanpa perubahan PHP, suite tidak dijalankan. Smoke test container belum dilakukan (Docker dilarang di mesin pengembang).",
       "notes": "Jalur cepat. Rencana: docs/plans/F089-plan.md."
+    },
+    {
+      "id": "F090",
+      "key": "admin-navigasi-pencarian-menu",
+      "issue": 107,
+      "name": "Navigasi admin: grup terlipat dan pencarian menu",
+      "phase": 1,
+      "module": "Inti",
+      "status": "in-progress",
+      "depends_on": [],
+      "description": "Grup menu admin terlipat secara default dan pencarian global (Ctrl+K) juga mencari menu yang boleh diakses pengguna, agar menu panjang super-admin mudah dijangkau.",
+      "acceptance": [
+        "Grup navigasi terlipat secara default; grup berisi halaman aktif tetap terbuka",
+        "Pencarian global memuat kategori Menu berisi item navigasi yang cocok dan hanya yang boleh diakses pengguna",
+        "Ctrl+K dan Cmd+K membuka pencarian global",
+        "Hasil pencarian data (santri dsb.) tidak berubah"
+      ],
+      "owner": "sesi-f090",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur cepat. Rencana: docs/plans/F090-plan.md."
     }
   ]
 }

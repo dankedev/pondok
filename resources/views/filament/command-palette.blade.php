@@ -42,7 +42,7 @@
                     autocomplete="off"
                     maxlength="100"
                     placeholder="{{ __('pondok.command_palette.placeholder') }}"
-                    class="w-full border-0 bg-transparent py-3 text-sm text-gray-950 placeholder:text-gray-400 focus:ring-0 dark:text-white"
+                    class="w-full border-0 bg-transparent py-3.5 text-sm text-gray-950 shadow-none outline-none ring-0 placeholder:text-gray-400 focus:shadow-none focus:outline-none focus:ring-0 dark:text-white"
                 />
                 <kbd class="shrink-0 rounded border border-gray-300 px-1.5 text-xs text-gray-500 dark:border-white/20 dark:text-gray-400">Esc</kbd>
             </div>
@@ -51,7 +51,7 @@
                 x-ref="list"
                 x-on:keydown.arrow-down.prevent="move(1)"
                 x-on:keydown.arrow-up.prevent="move(-1)"
-                class="overflow-y-auto p-2"
+                class="overflow-y-auto pb-2"
             >
                 @php($query = trim($search))
 
@@ -61,14 +61,14 @@
                     <p class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">{{ __('pondok.command_palette.empty') }}</p>
                 @else
                     @foreach ($categories as $name => $results)
-                        <div class="py-1" wire:key="palette-{{ $loop->index }}">
-                            <h3 class="px-3 pb-1 pt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">{{ $name }}</h3>
+                        <div wire:key="palette-{{ $loop->index }}">
+                            <h3 class="sticky top-0 z-10 bg-gray-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-800 dark:text-gray-400">{{ $name }}</h3>
 
                             @foreach ($results as $result)
                                 <a
                                     href="{{ $result->url }}"
                                     data-palette-item
-                                    class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-gray-950 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-white dark:hover:bg-white/5 dark:focus:bg-white/5"
+                                    class="mx-2 flex items-center justify-between gap-3 rounded-lg px-3 py-1.5 text-sm text-gray-950 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-white dark:hover:bg-white/5 dark:focus:bg-white/5"
                                 >
                                     <span class="truncate">{{ $result->title }}</span>
                                     @if ($result->details)

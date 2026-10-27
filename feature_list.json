@@ -1801,7 +1801,7 @@
       "name": "Navigasi admin: grup terlipat dan pencarian menu",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [],
       "description": "Grup menu admin terlipat secara default dan pencarian global (Ctrl+K) juga mencari menu yang boleh diakses pengguna, agar menu panjang super-admin mudah dijangkau.",
       "acceptance": [
@@ -1810,9 +1810,9 @@
         "Ctrl+K dan Cmd+K membuka pencarian global",
         "Hasil pencarian data (santri dsb.) tidak berubah"
       ],
-      "owner": "sesi-f090",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 42d67a4 (fitur), c0a6d24 (test). tests/Feature/Filament/NavigationSearchTest.php (5) dan seluruh tests/Feature/Filament (1216) lulus di PHP 8.4; ModuleComplianceTest lulus; Pint bersih. Suite penuh dan cek tampilan 360px/1024px/desktop belum dijalankan; CI PHP 8.3 menjadi syarat merge.",
       "notes": "Jalur cepat. Rencana: docs/plans/F090-plan.md."
     }
   ]

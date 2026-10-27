@@ -19,3 +19,13 @@ it('shows the logo, product name, and institution name in the admin header', fun
         ->assertSee('Pesantren Contoh Nusantara')
         ->assertSee('logo.svg', false);
 });
+
+it('shows only the logo on the login page', function () {
+    Setting::set('school.name', 'Pesantren Contoh Nusantara');
+
+    $this->get('/admin/login')
+        ->assertOk()
+        ->assertSee('logo.svg', false)
+        ->assertDontSee('Pesantren Contoh Nusantara')
+        ->assertDontSee('>'.__('pondok.brand.product').'</div>', false);
+});

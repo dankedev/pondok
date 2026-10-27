@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
+use App\Filament\GlobalSearch\NavigationAwareGlobalSearchProvider;
 use App\Http\Controllers\Akademik\PrintDiniyahReport;
 use App\Http\Controllers\Dokumen\DownloadDocument;
 use App\Http\Controllers\Dokumen\PrintIssuedLetter;
@@ -19,6 +20,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationManager;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
@@ -72,7 +74,12 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Emerald,
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->navigationGroups(array_values(__('pondok.navigation')))
+            ->navigationGroups(array_map(
+                fn (string $label): NavigationGroup => NavigationGroup::make($label)->collapsed(),
+                array_values(__('pondok.navigation')),
+            ))
+            ->globalSearch(NavigationAwareGlobalSearchProvider::class)
+            ->globalSearchKeyBindings(['ctrl+k', 'command+k'])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')

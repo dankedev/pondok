@@ -23,6 +23,11 @@ return [
         'access' => 'Pengguna & Akses',
     ],
 
+    'navigation_search' => [
+        'category' => 'Menu',
+        'group' => 'Grup',
+    ],
+
     'numbering' => [
         'save' => 'Simpan',
         'saved' => 'Pengaturan penomoran disimpan.',

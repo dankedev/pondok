@@ -102,3 +102,15 @@ it('AC-11: answers 404 for the report when portal-wali is off', function () {
 
     $this->actingAs($f->wali)->get($this->url)->assertNotFound();
 });
+
+it('AC-13: shows the passing score and flags only a subject below it on the wali report', function () {
+    $f = $this->f;
+    $f->fiqih->forceFill(['passing_score' => 80])->save();
+    $f->aqidah->forceFill(['passing_score' => 92])->save();
+
+    $html = $this->actingAs($f->wali)->get($this->url)->assertOk()->getContent();
+
+    expect(bayarHtmlText($html))->toContain('KKM')
+        ->and(diniyahReportRowText($html, 'Fiqih'))->toContain('80')->toContain('Belum tuntas')
+        ->and(diniyahReportRowText($html, 'Aqidah'))->toContain('92')->not->toContain('Belum tuntas');
+});

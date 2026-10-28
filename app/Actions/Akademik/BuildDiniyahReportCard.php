@@ -23,7 +23,7 @@ use App\Models\Student;
 class BuildDiniyahReportCard
 {
     /**
-     * @return array{student: Student, year: AcademicYear, semester: int, classroom: ?Classroom, homeroom: ?Staff, rows: list<array{subject: string, score: ?int, predicate: ?DiniyahPredicate}>, average: ?float, note: ?string}
+     * @return array{student: Student, year: AcademicYear, semester: int, classroom: ?Classroom, homeroom: ?Staff, rows: list<array{subject: string, score: ?int, predicate: ?DiniyahPredicate, passing_score: ?int, below_passing: bool}>, average: ?float, note: ?string}
      */
     public function handle(Student $student, AcademicYear $year, int $semester): array
     {
@@ -57,6 +57,8 @@ class BuildDiniyahReportCard
                     'subject' => $subject->name,
                     'score' => $score,
                     'predicate' => $score === null ? null : DiniyahPredicate::fromScore($score),
+                    'passing_score' => $subject->passing_score,
+                    'below_passing' => $subject->isBelowPassing($score),
                 ];
             })
             ->values();

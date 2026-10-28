@@ -10,15 +10,14 @@ use App\Models\Classroom;
 use Carbon\CarbonImmutable;
 
 /**
- * Absensi harian beberapa hari belajar terakhir (F025) untuk rombel 7A dan 8A MTW/SMP, dicatat lewat
- * `RecordClassroomAttendance` oleh akun admin-sekolah demo (cakupan MTW/SMP). Jumat libur. Santri yang
- * sedang izin keluar dari demo Perizinan otomatis tercatat Izin. Hanya dibuat bila belum ada sesi (idempotent).
+ * Absensi harian sepuluh hari belajar terakhir (F025) untuk semua rombel tahun ajaran aktif, dicatat lewat
+ * `RecordClassroomAttendance` oleh akun admin-sekolah demo untuk MTW/SMP (cakupannya) dan super-admin untuk
+ * jenjang lain. Jumat libur. Santri yang sedang izin keluar dari demo Perizinan otomatis tercatat Izin.
+ * Hanya dibuat bila belum ada sesi (idempotent).
  */
 final class DemoAttendance
 {
-    private const CLASSROOMS = ['7A', '8A'];
-
-    private const SCHOOL_DAYS = 5;
+    private const SCHOOL_DAYS = 10;
 
     public function __construct(private readonly DemoContext $context) {}
 
@@ -28,20 +27,14 @@ final class DemoAttendance
             return;
         }
 
-        $actor = $this->context->user('admin-sekolah');
+        $classrooms = Classroom::query()
+            ->where('academic_year_id', $this->context->activeYear->id)
+            ->orderBy('unit_id')
+            ->orderBy('name')
+            ->get();
 
-        foreach (self::CLASSROOMS as $name) {
-            $classroom = Classroom::query()
-                ->where('academic_year_id', $this->context->activeYear->id)
-                ->where('unit_id', $this->context->unit('SLTP')->id)
-                ->where('name', $name)
-                ->first();
-
-            if (! $classroom instanceof Classroom) {
-                $this->context->skip('absensi', "rombel {$name} tidak ditemukan");
-
-                continue;
-            }
+        foreach ($classrooms as $classroom) {
+            $actor = $this->context->user($classroom->unit_id === $this->context->unit('SLTP')->id ? 'admin-sekolah' : 'super-admin');
 
             foreach ($this->schoolDays() as $index => $day) {
                 app(RecordClassroomAttendance::class)->handle($actor, $classroom, $day, $this->statuses($classroom, $day, $index));
@@ -59,7 +52,7 @@ final class DemoAttendance
         $startsOn = $this->context->activeYear->starts_on->toDateString();
         $days = [];
 
-        for ($ago = 0; count($days) < self::SCHOOL_DAYS && $ago < 14; $ago++) {
+        for ($ago = 0; count($days) < self::SCHOOL_DAYS && $ago < 21; $ago++) {
             $day = $this->context->calendar->daysAgo($ago);
 
             if (! $day->isFriday() && $day->toDateString() >= $startsOn) {

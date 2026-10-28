@@ -1908,7 +1908,7 @@
       "name": "Peringatan storage Docker tanpa volume persisten",
       "phase": 1,
       "module": "Inti",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F019"],
       "description": "Entrypoint Docker dan pondok:doctor memperingatkan bila /var/www/html/storage bukan volume persisten (unggahan hilang saat rebuild), kecuali FILESYSTEM_DISK=s3. Container tetap jalan.",
       "acceptance": [
@@ -1919,9 +1919,9 @@
         "Teks lewat lang/id; test Pest untuk logika doctor",
         "docs/deploy-docker.md menyebut peringatan ini"
       ],
-      "owner": "f099-storage-volume",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 4166c35, baa9c2b, b543212, ad63e61. CheckSystemHealthTest dan tests/Feature/Console lulus; suite penuh PHP 8.4: 5639 lulus, 5 dilewati; Pint bersih. Logika entrypoint diuji dengan sh -n dan simulasi mountpoint/stat palsu; smoke test container belum dilakukan (Docker tidak dijalankan).",
       "notes": "Jalur cepat: script entrypoint, pemeriksaan doctor read-only, dan dokumen; tanpa migration."
     }
   ]

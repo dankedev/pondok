@@ -95,7 +95,7 @@ class SaveDiniyahGrades
 
             foreach ($cells as $subjectId => $value) {
                 if (! in_array((int) $subjectId, $subjects, true)) {
-                    $this->fail('scores', 'subject_unavailable');
+                    $this->fail("scores.{$studentId}.{$subjectId}", 'subject_unavailable');
                 }
 
                 if ($value === null || $value === '') {
@@ -104,7 +104,7 @@ class SaveDiniyahGrades
                     continue;
                 }
 
-                $set[] = [(int) $studentId, (int) $subjectId, $this->score($value)];
+                $set[] = [(int) $studentId, (int) $subjectId, $this->score($value, "scores.{$studentId}.{$subjectId}")];
             }
         }
 
@@ -137,12 +137,12 @@ class SaveDiniyahGrades
         return [$set, $clear];
     }
 
-    private function score(mixed $value): int
+    private function score(mixed $value, string $field): int
     {
         $score = is_int($value) ? $value : (is_string($value) && preg_match('/^\d{1,3}$/', trim($value)) ? (int) $value : null);
 
         if ($score === null || $score < 0 || $score > 100) {
-            $this->fail('scores', 'invalid_score');
+            $this->fail($field, 'invalid_score');
         }
 
         return $score;

@@ -24,7 +24,7 @@ class CheckSystemHealth
     /** Urutan pemeriksaan yang ditampilkan. */
     public const CHECKS = [
         'php_version', 'extensions', 'app_key', 'app_env', 'app_url', 'database', 'database_version',
-        'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'app_exposure',
+        'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'persistent_storage', 'app_exposure',
         'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'version',
     ];
 
@@ -369,6 +369,27 @@ class CheckSystemHealth
         return self::pathIsInside($realRoot, $public)
             ? ['failure', __('pondok.doctor.messages.private_disk_public')]
             : ['ok', __('pondok.doctor.messages.private_disk_ok')];
+    }
+
+    /**
+     * Di Docker, storage tanpa volume hilang setiap rebuild (F099). Di luar
+     * container (cPanel/Herd) storage ada di disk server, jadi dianggap aman.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function checkPersistentStorage(): array
+    {
+        if (! $this->probe->runningInContainer()) {
+            return ['ok', __('pondok.doctor.messages.persistent_storage_not_container')];
+        }
+
+        if (config('filesystems.default') === 's3') {
+            return ['ok', __('pondok.doctor.messages.persistent_storage_s3')];
+        }
+
+        return $this->probe->isMountPoint(storage_path())
+            ? ['ok', __('pondok.doctor.messages.persistent_storage_ok')]
+            : ['warning', __('pondok.doctor.messages.persistent_storage_missing', ['path' => storage_path()])];
     }
 
     /**

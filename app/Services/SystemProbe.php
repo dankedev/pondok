@@ -45,4 +45,23 @@ class SystemProbe
     {
         return is_writable($path);
     }
+
+    /**
+     * Berjalan di container Docker (berkas penanda `/.dockerenv`).
+     */
+    public function runningInContainer(): bool
+    {
+        return is_file('/.dockerenv');
+    }
+
+    /**
+     * Folder adalah mount point (volume): device-nya berbeda dari folder induk.
+     */
+    public function isMountPoint(string $path): bool
+    {
+        $device = @stat($path)['dev'] ?? null;
+        $parentDevice = @stat(dirname($path))['dev'] ?? null;
+
+        return $device !== null && $parentDevice !== null && $device !== $parentDevice;
+    }
 }

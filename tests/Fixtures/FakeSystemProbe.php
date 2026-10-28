@@ -23,6 +23,10 @@ class FakeSystemProbe extends SystemProbe
     /** @var list<string> */
     public array $unwritable = [];
 
+    public bool $inContainer = false;
+
+    public bool $storageMounted = false;
+
     public function phpVersion(): string
     {
         return $this->version;
@@ -46,5 +50,15 @@ class FakeSystemProbe extends SystemProbe
     public function isWritable(string $path): bool
     {
         return ! in_array($path, $this->unwritable, true);
+    }
+
+    public function runningInContainer(): bool
+    {
+        return $this->inContainer;
+    }
+
+    public function isMountPoint(string $path): bool
+    {
+        return $this->storageMounted;
     }
 }

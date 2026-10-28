@@ -6,7 +6,7 @@ use App\Services\SystemProbe;
 use Illuminate\Support\Facades\DB;
 use Tests\Fixtures\FakeSystemProbe;
 
-const F019_KEYS = ['php_version', 'extensions', 'app_key', 'app_env', 'app_url', 'database', 'database_version', 'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'app_exposure', 'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'version'];
+const F019_KEYS = ['php_version', 'extensions', 'app_key', 'app_env', 'app_url', 'database', 'database_version', 'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'persistent_storage', 'app_exposure', 'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'version'];
 
 beforeEach(function () {
     $this->iso = isolateInstallation();
@@ -245,4 +245,26 @@ it('AC-41: checks mail and version', function () {
     expect(health('mail')['status'])->toBe('warning');
 
     expect(health('version')['status'])->toBe('ok')->and(health('version')['message'])->toContain('dev');
+});
+
+it('F099: warns when docker storage is not a persistent volume', function () {
+    expect(health('persistent_storage')['status'])->toBe('ok');
+
+    $this->probe->inContainer = true;
+    expect(health('persistent_storage')['status'])->toBe('warning')
+        ->and(health('persistent_storage')['message'])->toContain(storage_path())->toContain('hilang');
+
+    $this->probe->storageMounted = true;
+    expect(health('persistent_storage')['status'])->toBe('ok');
+
+    $this->probe->storageMounted = false;
+    config(['filesystems.default' => 's3']);
+    expect(health('persistent_storage')['status'])->toBe('ok');
+});
+
+it('F099: the real probe compares devices of a folder and its parent', function () {
+    $probe = new SystemProbe;
+
+    expect($probe->isMountPoint(storage_path()))->toBeFalse()
+        ->and($probe->isMountPoint(storage_path('folder-yang-tidak-ada-f099')))->toBeFalse();
 });

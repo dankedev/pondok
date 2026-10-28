@@ -106,3 +106,18 @@ it('AC-11: closes the print route when akademik is off and keeps the data', func
     expect($this->get($this->url)->status())->toBeIn([403, 404])
         ->and(DB::table('diniyah_grades')->count())->toBe(3);
 });
+
+it('AC-13: prints the passing score and flags only a subject below it', function () {
+    $f = $this->f;
+    DB::table('diniyah_grades')->where('diniyah_subject_id', $f->fiqih->id)->update(['score' => 65]);
+    $f->fiqih->forceFill(['passing_score' => 70])->save();
+    $f->nahwu->forceFill(['passing_score' => 70])->save();
+
+    $html = $this->actingAs($f->admin)->get($this->url)->assertOk()->getContent();
+
+    expect(bayarHtmlText($html))->toContain('KKM')
+        ->and(diniyahReportRowText($html, 'Fiqih'))->toContain('70')->toContain('Belum tuntas')
+        ->and(diniyahReportRowText($html, 'Nahwu'))->toContain('70')->not->toContain('Belum tuntas')
+        ->and(diniyahReportRowText($html, 'Aqidah'))->toContain('90')->not->toContain('Belum tuntas')
+        ->and(diniyahReportRowText($html, 'Aqidah'))->toMatch('/(^|\s)-(\s|$)/');
+});

@@ -28,6 +28,7 @@
         th, td { padding: 4px 8px; border: 1px solid currentColor; text-align: left; vertical-align: top; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         tfoot td { font-weight: 700; }
+        .below { display: block; font-size: 11px; }
         .note { margin: 12px 0; padding: 8px 12px; border: 1px solid currentColor; white-space: pre-line; overflow-wrap: anywhere; }
         .note h3 { margin: 0 0 4px; font-size: 13px; }
         .note p { margin: 0; }
@@ -86,6 +87,7 @@
             <thead>
                 <tr>
                     <th scope="col">{{ __('pondok.diniyah.report.subject') }}</th>
+                    <th scope="col" class="num">{{ __('pondok.diniyah.report.passing_score') }}</th>
                     <th scope="col" class="num">{{ __('pondok.diniyah.report.score') }}</th>
                     <th scope="col">{{ __('pondok.diniyah.report.predicate') }}</th>
                 </tr>
@@ -94,14 +96,20 @@
                 @foreach ($card['rows'] as $row)
                     <tr>
                         <td>{{ $row['subject'] }}</td>
-                        <td class="num">{{ $row['score'] ?? '-' }}</td>
+                        <td class="num">{{ $row['passing_score'] ?? '-' }}</td>
+                        <td class="num">
+                            {{ $row['score'] ?? '-' }}
+                            @if ($row['below_passing'])
+                                <strong class="below">{{ __('pondok.diniyah.report.below_passing') }}</strong>
+                            @endif
+                        </td>
                         <td>{{ $row['predicate']?->label() ?? '-' }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
-                    <td>{{ __('pondok.diniyah.report.average') }}</td>
+                    <td colspan="2">{{ __('pondok.diniyah.report.average') }}</td>
                     <td class="num">{{ $card['average'] === null ? '-' : $number($card['average']) }}</td>
                     <td></td>
                 </tr>

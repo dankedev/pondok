@@ -1908,7 +1908,7 @@
       "name": "KKM mapel dan mode input nilai diniyah",
       "phase": 4,
       "module": "Akademik",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F027"],
       "description": "KKM opsional per mapel diniyah; nilai di bawah KKM ditandai di input nilai dan rapor. Input nilai punya mode per santri dan per rombel (Simpan semua dan Simpan per baris).",
       "acceptance": [
@@ -1919,9 +1919,9 @@
         "Kedua mode menghormati permission, cakupan jenjang, dan saklar modul",
         "Rapi di 360px, 1024px, desktop, dan dark mode; teks lewat lang/id"
       ],
-      "owner": "sesi feat/f096-kkm-input-nilai",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "Commit 34379de, aca455b, 7eaa1b1, ebeec27, a88ab20. tests/Feature/Akademik, PortalWali, ModuleComplianceTest lulus (268); suite penuh PHP 8.4: 5670 lulus, 5 skip; Pint bersih. Tampilan dicek di 360px, 1024px, desktop, dan dark mode (artisan serve + SQLite sementara).",
       "notes": "Jalur penuh: migration dan Action yang mengubah data. Rencana: docs/plans/F096-plan.md."
     },
     {

@@ -2,12 +2,14 @@
 
 use App\Actions\Akademik\BuildDiniyahReportCard;
 use App\Models\Classroom;
+use App\Models\DiniyahSubject;
 use App\Models\Enrollment;
 
 /*
 | Kontrak `BuildDiniyahReportCard::handle(Student, AcademicYear, int $semester): array` dengan kunci
 | `student`, `year`, `semester`, `classroom`, `homeroom` (Staff|null), `rows` (urut `sort_order`; tiap baris
-| `subject` nama, `score` int|null, `predicate` DiniyahPredicate|null), `average` (float|null), `note` (string|null).
+| `subject` nama, `score` int|null, `predicate` DiniyahPredicate|null, `passing_score` int|null,
+| `below_passing` bool), `average` (float|null), `note` (string|null).
 | Jenjang mapel diambil dari `classrooms.unit_id` pada enrollment tahun itu, bukan `students.unit_id` sekarang.
 */
 
@@ -103,4 +105,35 @@ it('AC-8: is read-only and builds without a logged-in user', function () {
     app(BuildDiniyahReportCard::class)->handle($f->s1, $f->year, 1);
 
     expect(diniyahSnapshot())->toBe($before);
+});
+
+it('AC-3: marks only scores strictly below the passing score', function () {
+    $subject = new DiniyahSubject(['passing_score' => 70]);
+    $none = new DiniyahSubject;
+
+    expect($subject->isBelowPassing(69))->toBeTrue('69 vs 70')
+        ->and($subject->isBelowPassing(70))->toBeFalse('70 vs 70')
+        ->and($subject->isBelowPassing(71))->toBeFalse('71 vs 70')
+        ->and($subject->isBelowPassing(null))->toBeFalse('null vs 70')
+        ->and($none->isBelowPassing(0))->toBeFalse('0 vs null');
+});
+
+it('AC-12: returns the passing score and the flag per row, also for an inactive subject with a score', function () {
+    $f = $this->f;
+    $f->aqidah->forceFill(['passing_score' => 70])->save();
+    $f->fiqih->forceFill(['passing_score' => 70])->save();
+    $f->sharaf->forceFill(['passing_score' => 80])->save();
+    diniyahGrade($f->s1, $f->year, 1, $f->aqidah, 65);
+    diniyahGrade($f->s1, $f->year, 1, $f->fiqih, 70);
+    diniyahGrade($f->s1, $f->year, 1, $f->nahwu, 10);
+    diniyahGrade($f->s1, $f->year, 1, $f->sharaf, 79);
+
+    $card = diniyahCard($f->s1, $f->year, 1);
+
+    expect(diniyahRow($card, 'Aqidah'))->toMatchArray(['score' => 65, 'passing_score' => 70, 'below_passing' => true])
+        ->and(diniyahRow($card, 'Fiqih'))->toMatchArray(['score' => 70, 'passing_score' => 70, 'below_passing' => false])
+        ->and(diniyahRow($card, 'Nahwu'))->toMatchArray(['score' => 10, 'passing_score' => null, 'below_passing' => false])
+        ->and(diniyahRow($card, 'Sharaf'))->toMatchArray(['score' => 79, 'passing_score' => 80, 'below_passing' => true])
+        ->and(round((float) $card['average'], 1))->toBe(56.0)
+        ->and(diniyahRow($card, 'Aqidah')['predicate'])->toBe('maqbul');
 });

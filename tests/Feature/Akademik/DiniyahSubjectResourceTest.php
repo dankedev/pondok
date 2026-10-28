@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 /*
-| Kontrak form: field `unit_id`, `name`, `sort_order`, `is_active`. Resource di grup Akademik, tanpa aksi hapus.
+| Kontrak form: field `unit_id`, `name`, `sort_order`, `is_active`, `passing_score` (KKM 0-100, nullable; F096). Resource di grup Akademik, tanpa aksi hapus.
 */
 
 beforeEach(function () {
@@ -103,4 +103,57 @@ it('AC-12: refuses to delete a subject or an academic year that already has grad
     expect(fn () => DB::table('diniyah_subjects')->where('id', $f->aqidah->id)->delete())->toThrow(QueryException::class)
         ->and(fn () => DB::table('academic_years')->where('id', $year->id)->delete())->toThrow(QueryException::class)
         ->and(DB::table('diniyah_grades')->count())->toBe(1);
+});
+
+it('AC-1: saves a subject with or without a passing score', function () {
+    $f = $this->f;
+    $this->actingAs($f->admin);
+
+    foreach ([null, 0, 70, 100] as $i => $kkm) {
+        Livewire::test(CreateDiniyahSubject::class)
+            ->fillForm(['unit_id' => $f->sltp->id, 'name' => "Mapel KKM {$i}", 'sort_order' => 10 + $i, 'is_active' => true, 'passing_score' => $kkm])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        expect(DiniyahSubject::query()->where('name', "Mapel KKM {$i}")->sole()->passing_score)->toBe($kkm);
+    }
+
+    Livewire::test(EditDiniyahSubject::class, ['record' => $f->aqidah->getKey()])
+        ->fillForm(['passing_score' => 75])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    Livewire::test(EditDiniyahSubject::class, ['record' => $f->aqidah->getKey()])
+        ->fillForm(['passing_score' => null])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($f->aqidah->fresh()->passing_score)->toBeNull();
+});
+
+it('AC-1: rejects a passing score outside 0-100 or not an integer', function (mixed $value) {
+    $f = $this->f;
+    $f->aqidah->forceFill(['passing_score' => 60])->save();
+    $this->actingAs($f->admin);
+
+    Livewire::test(EditDiniyahSubject::class, ['record' => $f->aqidah->getKey()])
+        ->fillForm(['passing_score' => $value])
+        ->call('save')
+        ->assertHasFormErrors(['passing_score']);
+
+    expect($f->aqidah->fresh()->passing_score)->toBe(60);
+})->with([-1, 101, 'abc', 75.5]);
+
+it('AC-2: lists the passing score or a dash', function () {
+    $f = $this->f;
+    $f->aqidah->forceFill(['passing_score' => 70])->save();
+    $this->actingAs($f->admin);
+
+    $component = Livewire::test(ListDiniyahSubjects::class)
+        ->assertTableColumnExists('passing_score')
+        ->assertTableColumnStateSet('passing_score', 70, $f->aqidah)
+        ->assertTableColumnStateSet('passing_score', null, $f->fiqih);
+
+    expect(tagihanPlainText($component))->toContain('KKM');
+    expect(diniyahReportRowText($component->html(), 'Fiqih'))->toMatch('/(^|\s)-(\s|$)/');
 });

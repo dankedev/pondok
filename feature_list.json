@@ -1902,6 +1902,50 @@
       "notes": "Jalur cepat: data demo, tanpa migration."
     },
     {
+      "id": "F096",
+      "key": "akademik-kkm-input-nilai",
+      "issue": 122,
+      "name": "KKM mapel dan mode input nilai diniyah",
+      "phase": 4,
+      "module": "Akademik",
+      "status": "done",
+      "depends_on": ["F027"],
+      "description": "KKM opsional per mapel diniyah; nilai di bawah KKM ditandai di input nilai dan rapor. Input nilai punya mode per santri dan per rombel (Simpan semua dan Simpan per baris).",
+      "acceptance": [
+        "Mapel bisa disimpan dengan atau tanpa KKM, KKM divalidasi 0-100",
+        "Nilai di bawah KKM ditandai di input nilai dan rapor; tanpa KKM tidak ada tanda",
+        "Mode per santri menyimpan nilai semua mapel santri itu",
+        "Mode per rombel: Simpan semua menyimpan seluruh baris, Simpan per baris hanya baris itu",
+        "Kedua mode menghormati permission, cakupan jenjang, dan saklar modul",
+        "Rapi di 360px, 1024px, desktop, dan dark mode; teks lewat lang/id"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 34379de, aca455b, 7eaa1b1, ebeec27, a88ab20. tests/Feature/Akademik, PortalWali, ModuleComplianceTest lulus (268); suite penuh PHP 8.4: 5670 lulus, 5 skip; Pint bersih. Tampilan dicek di 360px, 1024px, desktop, dan dark mode (artisan serve + SQLite sementara).",
+      "notes": "Jalur penuh: migration dan Action yang mengubah data. Rencana: docs/plans/F096-plan.md."
+    },
+    {
+      "id": "F097",
+      "key": "inti-demo-diniyah",
+      "issue": 123,
+      "name": "Data demo mapel, nilai, dan absensi",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F096"],
+      "description": "DemoSeeder berisi mapel diniyah (sebagian ber-KKM), nilai termasuk yang di bawah KKM, dan absensi yang cukup agar halaman tidak kosong.",
+      "acceptance": [
+        "Setelah migrate:fresh --seed lalu db:seed --class=DemoSeeder, halaman mapel, input nilai, rapor diniyah, dan absensi berisi data",
+        "Ada nilai di bawah KKM",
+        "Menjalankan seeder ulang tidak menggandakan data",
+        "Konten mengikuti manhaj Ahlus Sunnah"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit d6810bb, 1f38595, c6e9e2a. DemoDiniyahTest, tests/Feature/Database/Seeders, tests/Feature/Absensi lulus (130); suite penuh PHP 8.4: 5671 lulus, 5 skip; Pint bersih. migrate:fresh --seed + DemoSeeder dua kali: 12 mapel, 396 nilai tanpa duplikat; halaman dicek.",
+      "notes": "Jalur cepat: data demo, tanpa migration. Rencana: docs/plans/F097-plan.md."
+    },
+    {
       "id": "F099",
       "key": "inti-peringatan-volume-storage",
       "issue": 125,

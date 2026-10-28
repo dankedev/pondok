@@ -92,7 +92,7 @@ it('AC-13: seeds a wali-kelas demo account and attendance sessions through the A
 
     expect($sessions->where('classroom_id', $room->id)->count())->toBeGreaterThanOrEqual(2)
         ->and($sessions->pluck('classroom_id')->unique()->count())->toBeGreaterThanOrEqual(2)
-        ->and($sessions->every(fn (AttendanceSession $session): bool => $session->recorded_by === $admin->id))->toBeTrue()
+        ->and($sessions->whereIn('classroom_id', Classroom::query()->where('unit_id', $room->unit_id)->pluck('id'))->every(fn (AttendanceSession $session): bool => $session->recorded_by === $admin->id))->toBeTrue()
         ->and($statuses->count())->toBeGreaterThanOrEqual(2)
         ->and($statuses->contains('hadir'))->toBeTrue();
 

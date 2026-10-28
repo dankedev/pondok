@@ -83,6 +83,13 @@ class DiniyahSubjectResource extends Resource
                     ->maxValue(255)
                     ->default(1)
                     ->required(),
+                TextInput::make('passing_score')
+                    ->label(__('pondok.diniyah.subject.passing_score'))
+                    ->helperText(__('pondok.diniyah.subject.passing_score_helper'))
+                    ->integer()
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->nullable(),
                 Toggle::make('is_active')
                     ->label(__('pondok.common.is_active'))
                     ->helperText(__('pondok.diniyah.subject.is_active_helper'))
@@ -105,6 +112,12 @@ class DiniyahSubjectResource extends Resource
                     ->label(__('pondok.diniyah.subject.sort_order'))
                     ->numeric()
                     ->alignEnd()
+                    ->extraAttributes(['class' => 'tabular-nums']),
+                TextColumn::make('passing_score')
+                    ->label(__('pondok.diniyah.subject.passing_score'))
+                    ->numeric()
+                    ->alignEnd()
+                    ->placeholder('-')
                     ->extraAttributes(['class' => 'tabular-nums']),
                 IconColumn::make('is_active')
                     ->label(__('pondok.common.is_active'))

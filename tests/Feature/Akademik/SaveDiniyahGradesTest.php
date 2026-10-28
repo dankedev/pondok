@@ -216,3 +216,32 @@ it('AC-13: creates the three tables and rejects duplicate keys in the database',
         ->and(fn () => DB::table('diniyah_subjects')->insert(['unit_id' => $f->sltp->id, 'name' => 'Aqidah', 'sort_order' => 9, 'is_active' => true]))->toThrow(QueryException::class)
         ->and(DB::table('diniyah_grades')->insert([...$grade, 'semester' => 2]))->toBeTrue();
 });
+
+it('AC-5: reports an invalid score or unavailable subject on its own cell key', function () {
+    $f = $this->f;
+    $cases = [
+        'invalid_score' => [$f->s1->id => [$f->aqidah->id => 101]],
+        'subject_unavailable' => [$f->s1->id => [$f->sharaf->id => 80]],
+    ];
+
+    foreach ($cases as $reason => $scores) {
+        $subjectId = array_key_first($scores[$f->s1->id]);
+
+        try {
+            diniyahSave($f->homeroom, $f->c7a, 1, $scores);
+            $errors = [];
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+        }
+
+        expect(array_keys($errors))->toBe(["scores.{$f->s1->id}.{$subjectId}"], $reason);
+    }
+
+    try {
+        diniyahSave($f->homeroom, $f->c7a, 1, [$f->o7b->id => [$f->aqidah->id => 80]]);
+    } catch (ValidationException $e) {
+        expect(array_keys($e->errors()))->toBe(['scores']);
+    }
+
+    expect(DiniyahGrade::query()->count())->toBe(0);
+});

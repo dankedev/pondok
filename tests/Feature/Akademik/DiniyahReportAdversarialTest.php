@@ -104,17 +104,34 @@ it('keeps a unit-scoped admin from creating a subject in a unit outside the scop
     expect(DiniyahSubject::withoutUnitScope()->where('name', 'Akhlak')->exists())->toBeFalse();
 });
 
-it('does not let a homeroom teacher of another classroom load or save the sheet through livewire state', function () {
+it('AC-9: blocks another homeroom teacher in both modes and on saveRow', function () {
     $f = $this->f;
     $f->homeroomStaff->forceFill(['user_id' => null])->save();
     $other = asramaUser('wali-kelas');
     $f->c7b->forceFill(['homeroom_staff_id' => Staff::factory()->create(['user_id' => $other->id, 'gender' => 'L', 'position' => 'ustadz'])->id])->save();
+    diniyahGrade($f->s1, $f->year, 1, $f->aqidah, 50);
+    diniyahNote($f->s1, $f->year, 1, 'Lama');
     $this->actingAs($other);
+    $before = diniyahSnapshot();
+    $scores = [$f->s1->id => [$f->aqidah->id => 99]];
+
+    $room = Livewire::test(DiniyahGradeEntry::class)
+        ->set('data.classroom_id', $f->c7a->id)
+        ->set('data.subject_id', $f->aqidah->id)
+        ->set('data.scores', $scores)
+        ->call('save')
+        ->call('saveRow', $f->s1->id);
+
+    expect($room->instance()->data['scores'][$f->s1->id][$f->aqidah->id] ?? null)->toBe(99)
+        ->and(tagihanPlainText($room))->not->toContain('Santri Satu');
 
     Livewire::test(DiniyahGradeEntry::class)
+        ->set('data.mode', 'student')
         ->set('data.classroom_id', $f->c7a->id)
-        ->set('data.scores', [$f->s1->id => [$f->aqidah->id => 99]])
+        ->set('data.student_id', $f->s1->id)
+        ->set('data.scores', $scores)
+        ->set('data.notes', [$f->s1->id => 'Palsu'])
         ->call('save');
 
-    expect(diniyahSnapshot()['grades'])->toBe([]);
+    expect(diniyahSnapshot())->toBe($before);
 });

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F099",
+  "next_id": "F100",
   "features": [
     {
       "id": "F001",
@@ -1944,6 +1944,29 @@
       "handoff": null,
       "evidence": "Commit d6810bb, 1f38595, c6e9e2a. DemoDiniyahTest, tests/Feature/Database/Seeders, tests/Feature/Absensi lulus (130); suite penuh PHP 8.4: 5671 lulus, 5 skip; Pint bersih. migrate:fresh --seed + DemoSeeder dua kali: 12 mapel, 396 nilai tanpa duplikat; halaman dicek.",
       "notes": "Jalur cepat: data demo, tanpa migration. Rencana: docs/plans/F097-plan.md."
+    },
+    {
+      "id": "F099",
+      "key": "inti-peringatan-volume-storage",
+      "issue": 125,
+      "name": "Peringatan storage Docker tanpa volume persisten",
+      "phase": 1,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": ["F019"],
+      "description": "Entrypoint Docker dan pondok:doctor memperingatkan bila /var/www/html/storage bukan volume persisten (unggahan hilang saat rebuild), kecuali FILESYSTEM_DISK=s3. Container tetap jalan.",
+      "acceptance": [
+        "Container tanpa volume storage menulis peringatan di log saat start",
+        "Container dengan volume storage tidak menampilkan peringatan",
+        "pondok:doctor menampilkan status storage persisten di container; di luar container dianggap aman",
+        "FILESYSTEM_DISK=s3 tidak memunculkan peringatan palsu",
+        "Teks lewat lang/id; test Pest untuk logika doctor",
+        "docs/deploy-docker.md menyebut peringatan ini"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "Commit 4166c35, baa9c2b, b543212, ad63e61. CheckSystemHealthTest dan tests/Feature/Console lulus; suite penuh PHP 8.4: 5639 lulus, 5 dilewati; Pint bersih. Logika entrypoint diuji dengan sh -n dan simulasi mountpoint/stat palsu; smoke test container belum dilakukan (Docker tidak dijalankan).",
+      "notes": "Jalur cepat: script entrypoint, pemeriksaan doctor read-only, dan dokumen; tanpa migration."
     }
   ]
 }

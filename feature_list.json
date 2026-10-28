@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F096",
+  "next_id": "F099",
   "features": [
     {
       "id": "F001",
@@ -1900,6 +1900,50 @@
       "handoff": null,
       "evidence": "DemoSeederTest dan InstallSeederTest lulus di PHP 8.4; Pint bersih.",
       "notes": "Jalur cepat: data demo, tanpa migration."
+    },
+    {
+      "id": "F096",
+      "key": "akademik-kkm-input-nilai",
+      "issue": 122,
+      "name": "KKM mapel dan mode input nilai diniyah",
+      "phase": 4,
+      "module": "Akademik",
+      "status": "in-progress",
+      "depends_on": ["F027"],
+      "description": "KKM opsional per mapel diniyah; nilai di bawah KKM ditandai di input nilai dan rapor. Input nilai punya mode per santri dan per rombel (Simpan semua dan Simpan per baris).",
+      "acceptance": [
+        "Mapel bisa disimpan dengan atau tanpa KKM, KKM divalidasi 0-100",
+        "Nilai di bawah KKM ditandai di input nilai dan rapor; tanpa KKM tidak ada tanda",
+        "Mode per santri menyimpan nilai semua mapel santri itu",
+        "Mode per rombel: Simpan semua menyimpan seluruh baris, Simpan per baris hanya baris itu",
+        "Kedua mode menghormati permission, cakupan jenjang, dan saklar modul",
+        "Rapi di 360px, 1024px, desktop, dan dark mode; teks lewat lang/id"
+      ],
+      "owner": "sesi feat/f096-kkm-input-nilai",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh: migration dan Action yang mengubah data. Rencana: docs/plans/F096-plan.md."
+    },
+    {
+      "id": "F097",
+      "key": "inti-demo-diniyah",
+      "issue": 123,
+      "name": "Data demo mapel, nilai, dan absensi",
+      "phase": 1,
+      "module": "Inti",
+      "status": "todo",
+      "depends_on": ["F096"],
+      "description": "DemoSeeder berisi mapel diniyah (sebagian ber-KKM), nilai termasuk yang di bawah KKM, dan absensi yang cukup agar halaman tidak kosong.",
+      "acceptance": [
+        "Setelah migrate:fresh --seed lalu db:seed --class=DemoSeeder, halaman mapel, input nilai, rapor diniyah, dan absensi berisi data",
+        "Ada nilai di bawah KKM",
+        "Menjalankan seeder ulang tidak menggandakan data",
+        "Konten mengikuti manhaj Ahlus Sunnah"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": null
     }
   ]
 }

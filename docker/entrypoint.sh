@@ -17,6 +17,20 @@ mkdir -p \
     bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 
+# Tanpa volume di storage, unggahan dan dokumen santri hilang setiap rebuild
+# (F099). Hanya peringatan; container tetap jalan. Dilewati bila unggahan di S3.
+storage_is_volume() {
+    if command -v mountpoint > /dev/null 2>&1; then
+        mountpoint -q storage
+    else
+        [ "$(stat -c %d storage)" != "$(stat -c %d .)" ]
+    fi
+}
+
+if [ "$FILESYSTEM_DISK" != "s3" ] && ! storage_is_volume; then
+    echo "PERINGATAN: /var/www/html/storage bukan volume persisten. Unggahan dan dokumen santri akan HILANG saat image di-rebuild atau container dibuat ulang. Pasang volume ke /var/www/html/storage (lihat docs/deploy-docker.md)." >&2
+fi
+
 if [ -z "$APP_KEY" ]; then
     echo "APP_KEY belum diisi. Buat dengan: php artisan key:generate --show, lalu isi di environment." >&2
     exit 1

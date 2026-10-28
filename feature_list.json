@@ -1931,7 +1931,7 @@
       "name": "Data demo mapel, nilai, dan absensi",
       "phase": 1,
       "module": "Inti",
-      "status": "todo",
+      "status": "done",
       "depends_on": ["F096"],
       "description": "DemoSeeder berisi mapel diniyah (sebagian ber-KKM), nilai termasuk yang di bawah KKM, dan absensi yang cukup agar halaman tidak kosong.",
       "acceptance": [
@@ -1942,8 +1942,8 @@
       ],
       "owner": null,
       "handoff": null,
-      "evidence": null,
-      "notes": null
+      "evidence": "Commit d6810bb, 1f38595, c6e9e2a. DemoDiniyahTest, tests/Feature/Database/Seeders, tests/Feature/Absensi lulus (130); suite penuh PHP 8.4: 5671 lulus, 5 skip; Pint bersih. migrate:fresh --seed + DemoSeeder dua kali: 12 mapel, 396 nilai tanpa duplikat; halaman dicek.",
+      "notes": "Jalur cepat: data demo, tanpa migration. Rencana: docs/plans/F097-plan.md."
     }
   ]
 }

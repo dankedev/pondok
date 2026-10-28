@@ -2681,6 +2681,8 @@ return [
             'unique' => 'Mapel dengan nama ini sudah ada di jenjang tersebut. Gunakan nama lain.',
             'create_action' => 'Tambah mapel',
             'empty' => 'Belum ada mapel diniyah. Tambahkan mapel untuk jenjang yang akan dinilai.',
+            'passing_score' => 'KKM',
+            'passing_score_helper' => 'Kosongkan bila mapel tanpa KKM.',
         ],
         'entry' => [
             'navigation' => 'Nilai diniyah',
@@ -2707,6 +2709,8 @@ return [
             'subject' => 'Mata pelajaran',
             'score' => 'Nilai',
             'predicate' => 'Predikat',
+            'passing_score' => 'KKM',
+            'below_passing' => 'Belum tuntas',
             'average' => 'Rata-rata',
             'note' => 'Catatan wali kelas',
             'no_note' => 'Tidak ada catatan.',

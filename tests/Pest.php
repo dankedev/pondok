@@ -6125,13 +6125,14 @@ function diniyahFixture(): object
     return $f;
 }
 
-function diniyahSubject(Unit $unit, string $name, int $sort = 1, bool $active = true): DiniyahSubject
+function diniyahSubject(Unit $unit, string $name, int $sort = 1, bool $active = true, ?int $passingScore = null): DiniyahSubject
 {
     return DiniyahSubject::query()->forceCreate([
         'unit_id' => $unit->id,
         'name' => $name,
         'sort_order' => $sort,
         'is_active' => $active,
+        ...($passingScore === null ? [] : ['passing_score' => $passingScore]),
     ]);
 }
 
@@ -6231,7 +6232,27 @@ function diniyahRow(array $card, string $subject): ?array
                 'subject' => $name,
                 'score' => data_get($row, 'score') === null ? null : (int) data_get($row, 'score'),
                 'predicate' => $predicate instanceof BackedEnum ? $predicate->value : $predicate,
+                'passing_score' => data_get($row, 'passing_score') === null ? null : (int) data_get($row, 'passing_score'),
+                'below_passing' => data_get($row, 'below_passing'),
             ];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Teks polos baris tabel rapor (HTML cetak/portal) yang memuat nama mapel `$subject`, atau null.
+ */
+function diniyahReportRowText(string $html, string $subject): ?string
+{
+    preg_match_all('/<tr\b.*?<\/tr>/s', $html, $matches);
+
+    foreach ($matches[0] as $row) {
+        $text = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($row), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+
+        if (str_contains($text, $subject)) {
+            return $text;
         }
     }
 

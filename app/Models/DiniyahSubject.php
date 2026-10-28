@@ -14,8 +14,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Mapel diniyah per jenjang (F027). Tidak dihapus; mapel nonaktif hilang dari lembar input
  * tetapi tetap tampil di rapor yang sudah bernilai. User login hanya melihat mapel jenjangnya.
+ * KKM (`passing_score`) opsional (F096).
  */
-#[Fillable(['unit_id', 'name', 'sort_order', 'is_active'])]
+#[Fillable(['unit_id', 'name', 'sort_order', 'is_active', 'passing_score'])]
 class DiniyahSubject extends Model
 {
     /** @use HasFactory<DiniyahSubjectFactory> */
@@ -26,6 +27,7 @@ class DiniyahSubject extends Model
         return [
             'sort_order' => 'integer',
             'is_active' => 'boolean',
+            'passing_score' => 'integer',
         ];
     }
 
@@ -37,6 +39,14 @@ class DiniyahSubject extends Model
     public function grades(): HasMany
     {
         return $this->hasMany(DiniyahGrade::class);
+    }
+
+    /**
+     * Nilai di bawah KKM; nilai sama dengan KKM tuntas, mapel tanpa KKM tidak pernah ditandai.
+     */
+    public function isBelowPassing(?int $score): bool
+    {
+        return $score !== null && $this->passing_score !== null && $score < $this->passing_score;
     }
 
     /**

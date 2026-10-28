@@ -156,6 +156,7 @@ erDiagram
     string name "Aqidah, Fiqih, ..."
     tinyint sort_order
     boolean is_active
+    tinyint passing_score "KKM, nullable"
   }
   diniyah_grades {
     bigint id PK
@@ -201,7 +202,7 @@ erDiagram
 - Saat santri lanjut dari SD ke SLTP, `unit_id` dan `cohort_id` di `students` diperbarui ke jenjang baru. Riwayatnya tetap terbaca dari `enrollments` dan snapshot di `invoices`.
 - `students.unit_id` sengaja diduplikasi dari `cohorts.unit_id` supaya filter dan scope per jenjang cepat. Validasi kecocokannya di Action class.
 - Wali memakai pivot karena kakak-adik di pondok sering berbagi wali yang sama, sehingga tagihan bisa digabung per keluarga.
-- **Rapor diniyah** (F027): mapel per jenjang (`diniyah_subjects`, dinonaktifkan, tidak dihapus), nilai bulat 0-100 per santri-tahun ajaran-semester-mapel, dan satu catatan wali kelas per santri-semester. Disimpan lewat `App\Actions\Akademik\SaveDiniyahGrades`; sel kosong menghapus baris. Predikat tidak disimpan: dihitung dari nilai oleh enum `DiniyahPredicate` (Mumtaz 90-100, Jayyid Jiddan 80-89, Jayyid 70-79, Maqbul 60-69, Rasib 0-59). Rombel diturunkan dari `enrollments` tahun itu (tanpa kolom `classroom_id`). Unique: `diniyah_subjects` (`unit_id`, `name`), `diniyah_grades` (`student_id`, `academic_year_id`, `semester`, `diniyah_subject_id`), `diniyah_report_notes` (`student_id`, `academic_year_id`, `semester`). FK mapel/santri/tahun ajaran `restrictOnDelete`; `recorded_by` `nullOnDelete`. Tanpa soft delete; CHECK 0-100 dijaga Action.
+- **Rapor diniyah** (F027): mapel per jenjang (`diniyah_subjects`, dinonaktifkan, tidak dihapus), nilai bulat 0-100 per santri-tahun ajaran-semester-mapel, dan satu catatan wali kelas per santri-semester. Disimpan lewat `App\Actions\Akademik\SaveDiniyahGrades`; sel kosong menghapus baris. Predikat tidak disimpan: dihitung dari nilai oleh enum `DiniyahPredicate` (Mumtaz 90-100, Jayyid Jiddan 80-89, Jayyid 70-79, Maqbul 60-69, Rasib 0-59). Rombel diturunkan dari `enrollments` tahun itu (tanpa kolom `classroom_id`). Unique: `diniyah_subjects` (`unit_id`, `name`), `diniyah_grades` (`student_id`, `academic_year_id`, `semester`, `diniyah_subject_id`), `diniyah_report_notes` (`student_id`, `academic_year_id`, `semester`). FK mapel/santri/tahun ajaran `restrictOnDelete`; `recorded_by` `nullOnDelete`. Tanpa soft delete; CHECK 0-100 dijaga Action. KKM opsional per mapel (`passing_score`, F096); nilai < KKM ditandai, nilai = KKM tuntas; tidak disimpan di nilai.
 
 ## Asrama & Musyrif
 

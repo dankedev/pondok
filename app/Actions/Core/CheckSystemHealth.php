@@ -18,7 +18,7 @@ class CheckSystemHealth
     /** Ekstensi PHP wajib: semua `ext-*` di composer.lock (paket non-dev) ditambah PDO. */
     public const REQUIRED_EXTENSIONS = [
         'ctype', 'dom', 'fileinfo', 'filter', 'hash', 'iconv', 'intl', 'json', 'libxml',
-        'mbstring', 'openssl', 'pcre', 'session', 'tokenizer', 'xmlreader', 'zip', 'pdo',
+        'mbstring', 'openssl', 'pcre', 'session', 'tokenizer', 'xmlreader', 'simplexml', 'zip', 'pdo',
     ];
 
     /** Urutan pemeriksaan yang ditampilkan. */
@@ -345,6 +345,10 @@ class CheckSystemHealth
      */
     private function checkPublicStorage(): array
     {
+        if (config('filesystems.disks.public.driver') === 's3') {
+            return ['ok', __('pondok.doctor.messages.public_storage_s3')];
+        }
+
         $root = (string) config('filesystems.disks.public.root');
         $link = public_path('storage');
         $realRoot = realpath($root);
@@ -362,6 +366,10 @@ class CheckSystemHealth
      */
     private function checkPrivateDisk(): array
     {
+        if (config('filesystems.disks.private.driver') === 's3') {
+            return ['ok', __('pondok.doctor.messages.private_disk_s3')];
+        }
+
         $root = (string) config('filesystems.disks.private.root');
         $realRoot = realpath($root) ?: $root;
         $public = realpath(public_path()) ?: public_path();
@@ -383,7 +391,7 @@ class CheckSystemHealth
             return ['ok', __('pondok.doctor.messages.persistent_storage_not_container')];
         }
 
-        if (config('filesystems.default') === 's3') {
+        if (config('filesystems.disks.private.driver') === 's3' && config('filesystems.disks.public.driver') === 's3') {
             return ['ok', __('pondok.doctor.messages.persistent_storage_s3')];
         }
 

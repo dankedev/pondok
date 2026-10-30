@@ -258,8 +258,13 @@ it('F099: warns when docker storage is not a persistent volume', function () {
     expect(health('persistent_storage')['status'])->toBe('ok');
 
     $this->probe->storageMounted = false;
-    config(['filesystems.default' => 's3']);
-    expect(health('persistent_storage')['status'])->toBe('ok');
+    config(['filesystems.disks.private.driver' => 's3']);
+    expect(health('persistent_storage')['status'])->toBe('warning');
+
+    config(['filesystems.disks.public.driver' => 's3']);
+    expect(health('persistent_storage')['status'])->toBe('ok')
+        ->and(health('public_storage')['status'])->toBe('ok')
+        ->and(health('private_disk')['status'])->toBe('ok');
 });
 
 it('F099: the real probe compares devices of a folder and its parent', function () {

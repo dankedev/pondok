@@ -1,5 +1,18 @@
 <?php
 
+// Sambungan S3/R2 bersama untuk disk `private` dan `public` (bila dialihkan lewat
+// .env). R2 tidak mengenal ACL, jadi `visibility` sengaja tidak diisi.
+$s3Connection = [
+    'driver' => 's3',
+    'key' => env('AWS_ACCESS_KEY_ID'),
+    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    'region' => env('AWS_DEFAULT_REGION'),
+    'endpoint' => env('AWS_ENDPOINT'),
+    'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+    'throw' => false,
+    'report' => false,
+];
+
 return [
 
     /*
@@ -38,7 +51,14 @@ return [
             'report' => false,
         ],
 
-        'private' => [
+        // PRIVATE_DISK_DRIVER=s3 memindahkan dokumen santri, berkas PSB, bukti bayar,
+        // dan ekspor keuangan ke bucket S3/R2 (AWS_BUCKET). Bucket ini harus privat;
+        // unduhan tetap lewat route aplikasi yang dicek permission.
+        'private' => env('PRIVATE_DISK_DRIVER', 'local') === 's3' ? [
+            ...$s3Connection,
+            'bucket' => env('AWS_BUCKET'),
+            'url' => null,
+        ] : [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'visibility' => 'private',
@@ -49,7 +69,14 @@ return [
 
         // PUBLIC_STORAGE_ROOT: isi dengan `<document root>/storage` bila hosting
         // mematikan symlink, sehingga berkas publik disimpan langsung di folder web.
-        'public' => [
+        // PUBLIC_DISK_DRIVER=s3 memindahkan galeri, sampul berita, dan logo ke bucket
+        // AWS_PUBLIC_BUCKET yang terbuka untuk publik, diakses lewat AWS_PUBLIC_URL
+        // (domain publik bucket atau custom domain).
+        'public' => env('PUBLIC_DISK_DRIVER', 'local') === 's3' ? [
+            ...$s3Connection,
+            'bucket' => env('AWS_PUBLIC_BUCKET'),
+            'url' => env('AWS_PUBLIC_URL'),
+        ] : [
             'driver' => 'local',
             'root' => env('PUBLIC_STORAGE_ROOT', storage_path('app/public')),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',

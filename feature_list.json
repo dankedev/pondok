@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F100",
+  "next_id": "F102",
   "features": [
     {
       "id": "F001",
@@ -1967,6 +1967,30 @@
       "handoff": null,
       "evidence": "Commit 4166c35, baa9c2b, b543212, ad63e61. CheckSystemHealthTest dan tests/Feature/Console lulus; suite penuh PHP 8.4: 5639 lulus, 5 dilewati; Pint bersih. Logika entrypoint diuji dengan sh -n dan simulasi mountpoint/stat palsu; smoke test container belum dilakukan (Docker tidak dijalankan).",
       "notes": "Jalur cepat: script entrypoint, pemeriksaan doctor read-only, dan dokumen; tanpa migration."
+    },
+    {
+      "id": "F101",
+      "key": "inti-dukungan-r2-s3",
+      "issue": 131,
+      "name": "Dukungan R2/S3 untuk disk private dan public",
+      "phase": 1,
+      "module": "Inti",
+      "status": "in-progress",
+      "depends_on": ["F099"],
+      "description": "Opsional lewat .env: PRIVATE_DISK_DRIVER=s3 dan PUBLIC_DISK_DRIVER=s3 memindahkan disk private dan public ke bucket S3/Cloudflare R2. Default tetap lokal.",
+      "acceptance": [
+        "league/flysystem-aws-s3-v3 ada di composer.json",
+        "Disk private dan public bisa dialihkan ke s3 lewat .env; tanpa variabel perilaku sama",
+        "Disk public punya url sendiri (AWS_PUBLIC_URL)",
+        "Disk private tetap hanya diunduh lewat route berpermission",
+        "Backup menolak dengan pesan jelas bila private bukan lokal",
+        "Peringatan volume dan doctor dilewati hanya bila private dan public sama-sama s3",
+        "Panduan R2 di docs/deploy-docker.md"
+      ],
+      "owner": "sesi-f101",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh (dokumen pribadi). Rencana: docs/plans/F101-plan.md. Dependensi aws-sdk menambah syarat ext-simplexml."
     }
   ]
 }

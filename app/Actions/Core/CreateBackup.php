@@ -45,6 +45,10 @@ class CreateBackup
             throw new RuntimeException(__('pondok.backup.pgsql_unsupported'));
         }
 
+        if (config('filesystems.disks.'.self::DISK.'.driver') !== 'local') {
+            throw new RuntimeException(__('pondok.backup.private_not_local'));
+        }
+
         if (! class_exists(ZipArchive::class)) {
             throw new RuntimeException(__('pondok.backup.zip_unavailable'));
         }

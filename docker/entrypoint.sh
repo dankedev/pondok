@@ -18,7 +18,8 @@ mkdir -p \
 chown -R www-data:www-data storage bootstrap/cache
 
 # Tanpa volume di storage, unggahan dan dokumen santri hilang setiap rebuild
-# (F099). Hanya peringatan; container tetap jalan. Dilewati bila unggahan di S3.
+# (F099). Hanya peringatan; container tetap jalan. Dilewati bila disk private dan
+# public sama-sama dialihkan ke S3/R2 (F101).
 storage_is_volume() {
     if command -v mountpoint > /dev/null 2>&1; then
         mountpoint -q storage
@@ -27,7 +28,7 @@ storage_is_volume() {
     fi
 }
 
-if [ "$FILESYSTEM_DISK" != "s3" ] && ! storage_is_volume; then
+if { [ "$PRIVATE_DISK_DRIVER" != "s3" ] || [ "$PUBLIC_DISK_DRIVER" != "s3" ]; } && ! storage_is_volume; then
     echo "PERINGATAN: /var/www/html/storage bukan volume persisten. Unggahan dan dokumen santri akan HILANG saat image di-rebuild atau container dibuat ulang. Pasang volume ke /var/www/html/storage (lihat docs/deploy-docker.md)." >&2
 fi
 

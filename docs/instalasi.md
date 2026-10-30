@@ -7,7 +7,7 @@ Contoh di panduan ini memakai akun cPanel `akun` dengan folder rumah `/home/akun
 ## 1. Kebutuhan server
 
 - **PHP 8.3 atau lebih baru.** Di cPanel pilih versi `ea-php83` lewat **MultiPHP Manager** untuk domain Anda.
-- **Ekstensi PHP** yang harus aktif: `ctype`, `dom`, `fileinfo`, `filter`, `hash`, `iconv`, `intl`, `json`, `libxml`, `mbstring`, `openssl`, `pcre`, `session`, `tokenizer`, `xmlreader`, `zip`, `pdo`, dan `pdo_mysql`. Biasanya diatur di menu **Select PHP Version** atau **MultiPHP INI Editor**; bila tidak ada, minta penyedia hosting mengaktifkannya.
+- **Ekstensi PHP** yang harus aktif: `ctype`, `dom`, `fileinfo`, `filter`, `hash`, `iconv`, `intl`, `json`, `libxml`, `mbstring`, `openssl`, `pcre`, `session`, `tokenizer`, `xmlreader`, `simplexml`, `zip`, `pdo`, dan `pdo_mysql`. Biasanya diatur di menu **Select PHP Version** atau **MultiPHP INI Editor**; bila tidak ada, minta penyedia hosting mengaktifkannya.
 - **Database MySQL 8.0 atau lebih baru, atau MariaDB 10.6 atau lebih baru.**
 - **Batas PHP:** `upload_max_filesize` minimal `5M` (unggahan dokumen santri), `post_max_size` tidak lebih kecil dari `upload_max_filesize`, dan `memory_limit` minimal `128M`. Atur di **MultiPHP INI Editor**.
 - **Akses Terminal** di cPanel. Bila hosting tidak menyediakan Terminal, semua perintah bisa dijalankan lewat **Cron Jobs** sekali jalan (lihat langkah 6).

@@ -108,12 +108,19 @@ Cara menjalankan test (mesin pengembang hanya 8GB RAM):
 
 ### 1. Branch, commit, dan pull request
 
-Pondok sudah dirilis dan dipakai, jadi `main` harus selalu stabil. Tidak ada pekerjaan langsung di `main`.
+Pondok sudah dirilis dan dipakai, jadi `main` harus selalu stabil. Tidak ada pekerjaan langsung di `main` maupun `dev`.
 
-1. **Satu issue = satu branch** dari `main` terbaru, dibuat saat issue diklaim sebelum file apa pun diubah: `<type>/<id-kecil>-<topik>`, misalnya `feat/f062-penandatangan-kuitansi` atau `fix/f065-foto-galeri`. Sesi yang bekerja paralel di repo yang sama memakai worktree terpisah agar perubahan tidak tercampur.
+**Branch integrasi `dev`** (keputusan user, 2 Nov 2026): fitur besar yang belum siap rilis dikumpulkan di `dev`, lalu dipindahkan ke `main` sekaligus setelah matang. Perbaikan kecil, hotfix, dan dokumen yang boleh langsung dirilis tetap bercabang dari `main`. Bila ragu, tanyakan ke user tujuan PR-nya.
+
+- Cabang issue untuk fitur besar dibuat dari `dev` terbaru, dan PR-nya ditujukan ke `dev`.
+- `dev` rutin menyerap `main` (merge `main` ke `dev`) supaya tidak menyimpang jauh, terutama setelah hotfix.
+- Issue di PR ke `dev` memakai `Refs #<n>`, karena `Closes` baru menutup issue saat masuk ke branch default (`main`). Issue ditutup oleh PR rilis `dev` → `main` yang memuat `Closes #<n>` untuk semua issue di dalamnya.
+- PR `dev` → `main` hanya atas permintaan user, setelah suite penuh lulus di `dev`; tidak di-auto-merge. Setelah masuk ke `main`, tandai versi (lihat `docs/rilis.md`).
+
+1. **Satu issue = satu branch** dari `main` terbaru (atau `dev` terbaru untuk fitur besar), dibuat saat issue diklaim sebelum file apa pun diubah: `<type>/<id-kecil>-<topik>`, misalnya `feat/f062-penandatangan-kuitansi` atau `fix/f065-foto-galeri`. Sesi yang bekerja paralel di repo yang sama memakai worktree terpisah agar perubahan tidak tercampur.
 2. **Commit** mengikuti skill **git-commit** (`~/.claude/skills/git-commit/SKILL.md`): micro-commits (satu perubahan logis per commit) dengan format Conventional Commits `type(scope): deskripsi`. Scope memakai `key` modul, misalnya `feat(asrama): ...`, `fix(keuangan): ...`. Setiap commit menyebut `Refs #<n>`; commit terakhir biasanya `docs(features): tandai <ID> selesai`.
-3. **Pull request** dibuat setelah test terdampak, Pint, dan suite penuh lulus: push branch, lalu `gh pr create` dengan judul Conventional Commits dan deskripsi berisi ringkasan, hasil test, dan `Closes #<n>`.
-4. **Auto-merge rebase:** `gh pr merge <nomor> --auto --rebase --delete-branch`. PR masuk ke `main` setelah CI `Pest (PHP 8.3)` lulus, dan issue tertutup otomatis. Bila CI gagal, perbaiki dengan commit baru di branch yang sama; jangan force push tanpa izin user.
+3. **Pull request** dibuat setelah test terdampak, Pint, dan suite penuh lulus: push branch, lalu `gh pr create` dengan judul Conventional Commits dan deskripsi berisi ringkasan, hasil test, dan `Closes #<n>` (`Refs #<n>` bila PR ditujukan ke `dev`).
+4. **Auto-merge rebase:** `gh pr merge <nomor> --auto --rebase --delete-branch`. PR masuk ke `main` (atau `dev`) setelah CI `Pest (PHP 8.3)` lulus; issue tertutup otomatis hanya untuk PR ke `main`. Bila CI gagal, perbaiki dengan commit baru di branch yang sama; jangan force push tanpa izin user.
 
 Keputusan user (20 Okt 2026): issue yang selesai dan lulus test langsung di-commit, dibuatkan PR, dan di-auto-merge tanpa menunggu permintaan lagi; hasilnya tetap dilaporkan. Commit di luar alur issue ini (atau saat ada keraguan) tetap ditanyakan dulu.
 

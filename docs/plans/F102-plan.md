@@ -59,7 +59,7 @@ Tanpa tabel baru. `Setting`: `themes.install.<slug>` (`{status: queued|running|f
 - **AC-10** Tema dengan header + footer: `portal.home`, berita, dan `psb.info` merender header/footer tema di dalam `<head>`, tautan lompat, dan `<main id="konten">` inti; `<head>` identik dengan tanpa tema selain tautan CSS; tema hanya-header memakai footer inti. Respons bertema tanpa `csrf-token`, aset Livewire, atau `Set-Cookie`, dengan `Cache-Control` public dan ETag utuh seperti tanpa tema. Jumlah query sama dengan layout inti. Halaman PortalWali (masuk, lupa/atur password) dan formulir PSB Livewire tetap chrome inti walau tema aktif.
 - **AC-11** Tema aktif hilang, manifest rusak, view wajib hilang, **berkas CSS hilang dari disk public**, atau `min_core` > inti: `portal.home`, berita, `psb.info` tetap 200 dengan header/footer/blok/tautan bawaan inti (tanpa tautan CSS tema); `Log::warning` tercatat.
 - **AC-12** Satu view blok tema melempar exception (render): halaman 200, blok itu memakai `themes.default.blocks.<tipe>`, blok lain tetap versi tema; `Log::warning` tercatat sekali untuk beberapa request dalam satu jam. Begitu pula header tema yang melempar → header inti.
-- **AC-13** `sodium` ada di `REQUIRED_EXTENSIONS` (dan `ext-sodium` di `composer.json`, bila disetujui); check `theme_catalog` di `CheckSystemHealth::CHECKS`: `ok` bila katalog terbaca, `warning` bila tidak terjangkau, `skipped` bila modul Konten mati; `pondok:doctor` menampilkannya.
+- **AC-13** `sodium` ada di `REQUIRED_EXTENSIONS` (dan `ext-sodium` di `composer.json` + lock, disetujui user; dikerjakan saat implementasi); check `theme_catalog` di `CheckSystemHealth::CHECKS`: `ok` bila katalog terbaca, `warning` bila tidak terjangkau, `skipped` bila modul Konten mati; `pondok:doctor` menampilkannya.
 - **AC-14** `pondok:theme-sign` dengan kunci uji menghasilkan `.pondok-theme` yang lolos `InstallThemePackage` (config `public_key` = kunci uji) dan entri katalog dengan sha256 dan size benar; gagal jelas bila berkas kunci tidak ada atau tema melanggar AC-5/AC-6; zip deterministik (dua kali sign = byte sama).
 - **AC-15** `ModuleComplianceTest` lulus (page di Konten); `manage:themes` hanya untuk `super-admin`; semua teks baru lewat `lang/id`; Konten dimatikan menyembunyikan page tanpa menghapus data tema.
 
@@ -79,7 +79,8 @@ Tanpa tabel baru. `Setting`: `themes.install.<slug>` (`{status: queued|running|f
 - **Replay paket lama** bertanda tangan valid (anti-rollback hanya membandingkan dengan yang terpasang): risiko diterima di v1.
 - **CSS tema** hanya utilitas yang dikompilasi pengelola; pedoman masuk `docs/rilis.md`.
 - Antrean lewat cron: pemasangan tertunda ±1 menit; tampilan portal basi ≤5 menit (dijelaskan di UI).
-- **Butuh keputusan user:** (1) `manage:themes` hanya `super-admin` atau juga `admin-sekolah`? (2) Menambah `ext-sodium` ke `composer.json` mengubah dependensi/lock: setuju? (3) URL katalog resmi dan pemegang kunci privat. (4) `centered` bawaan tetap di inti: setuju?
+- **Diputuskan user (2 Nov 2026):** (1) `manage:themes` hanya `super-admin`; (2) `ext-sodium` ditambahkan ke `composer.json` dan lock saat implementasi; (4) `centered` tetap di inti.
+- **Masih terbuka:** (3) URL katalog resmi dan pemegang kunci privat, menunggu usulan orkestrator; jangan diisi sebelum diputuskan.
 - Beda dengan issue: kriteria 13-15 digabung ke AC-10/11/6; kontras/fokus jadi checklist manual; statistik ditunda; tema tidak berlaku di halaman wali dan formulir PSB. Body issue perlu diperbarui.
 
 ## Review #1 (plan-reviewer, CHANGES_REQUESTED → direvisi satu kali)
@@ -95,7 +96,7 @@ Tanpa tabel baru. `Setting`: `themes.install.<slug>` (`{status: queued|running|f
 | 8 | Denylist kurang | Diperluas + assert runtime tanpa csrf/cookie |
 | 9 | Whitelist aset | Salin seluruh `assets/*`; ekstensi di luar whitelist menolak paket |
 | 10 | Aturan aset lama | Ditulis; `_previous` dikosongkan setelah rollback |
-| 11 | AC padat | Dipecah (15 AC); permission ikut pola `PAGE_PERMISSIONS`; `ext-sodium` tetap terbuka |
+| 11 | AC padat | Dipecah (15 AC); permission ikut pola `PAGE_PERMISSIONS`; `ext-sodium` kini disetujui user |
 
 ## Riwayat revisi
 - Revisi 1: menyikapi Review #1 (lihat tabel). Unggah manual digabung ke AC-4; AC-12 baru (fallback blok).

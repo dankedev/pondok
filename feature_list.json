@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F100",
+  "next_id": "F103",
   "features": [
     {
       "id": "F001",
@@ -1967,6 +1967,37 @@
       "handoff": null,
       "evidence": "Commit 4166c35, baa9c2b, b543212, ad63e61. CheckSystemHealthTest dan tests/Feature/Console lulus; suite penuh PHP 8.4: 5639 lulus, 5 dilewati; Pint bersih. Logika entrypoint diuji dengan sh -n dan simulasi mountpoint/stat palsu; smoke test container belum dilakukan (Docker tidak dijalankan).",
       "notes": "Jalur cepat: script entrypoint, pemeriksaan doctor read-only, dan dokumen; tanpa migration."
+    },
+    {
+      "id": "F102",
+      "key": "konten-katalog-tema",
+      "issue": 133,
+      "name": "Katalog tema resmi: pilih dan pasang dari dashboard",
+      "phase": 2,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F070", "F072"],
+      "description": "Admin memilih tema dari katalog resmi di dashboard; paket diunduh ke hosting, diverifikasi hash dan tanda tangan Ed25519, lalu muncul di pilihan tema. Tema pihak luar belum dibuka. Detail dan celah fondasi ada di issue #133.",
+      "acceptance": [
+        "Katalog menampilkan status tiap tema (belum dipasang, terpasang, ada pembaruan, tidak cocok versi)",
+        "Paket dengan hash atau tanda tangan tidak valid ditolak tanpa mengubah apa pun",
+        "Ekstraksi menolak path traversal, jenis file tidak diizinkan, dan paket terlalu besar",
+        "Pemasangan atomik; kegagalan di tengah tidak merusak tema sebelumnya",
+        "Blok yang tidak disediakan tema jatuh ke tema default",
+        "Tema hilang, rusak, atau tidak cocok versi inti membuat portal memakai tema default tanpa error",
+        "Unggah zip manual hanya menerima paket bertanda tangan valid",
+        "pondok:doctor memeriksa sodium dan koneksi keluar ke katalog",
+        "Katalog tidak terjangkau: halaman tetap tampil tanpa exception",
+        "Menghapus tema tidak menghapus token dan konten",
+        "Teks lewat lang/id; ModuleComplianceTest lulus",
+        "Tema dapat menyediakan layout publik sendiri; tanpa layout atau layout rusak dipakai layout inti, portal dan PSB tetap benar",
+        "Kontrak layout dijaga (lompat ke konten, meta, @vite, token tema); layout tema tanpa aset Livewire, CSRF, sesi, atau auth di halaman portal yang di-cache",
+        "Layout tema memakai data inti yang sama tanpa query sendiri dan lolos kontras serta fokus papan tombol"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh (arsitektur, keamanan, unduhan berkas). Keputusan user (2 Nov 2026): tema v1 mencakup beranda dan layout (header, navigasi, footer); halaman isi tetap view inti. Layout publik dipakai bersama portal (di-cache) dan PSB (Livewire), jadi kontrak layout harus eksplisit."
     }
   ]
 }

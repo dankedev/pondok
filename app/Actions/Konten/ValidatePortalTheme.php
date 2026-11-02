@@ -10,7 +10,7 @@ use JsonException;
  * Validasi `theme.json` (F102, skema v1) dan kembalikan pohon ternormalisasi; set kunci tertutup, tanpa string bebas.
  *
  * Urutan: ukuran berkas (sebelum decode), UTF-8, decode (depth longgar, hanya pengaman teknis), versi skema,
- * kunci puncak, metadata, lalu pohon `header`/`footer`/`home.sections` (kedalaman <= 6 dan node <= 150 setelah decode).
+ * kunci puncak, metadata, lalu pohon `header`/`footer`/`home.layout` (kedalaman <= 6 dan node <= 150 setelah decode).
  * Slug harus sama dengan nama direktori tema. Semua penolakan berupa `InvalidArgumentException` berpesan Indonesia.
  */
 class ValidatePortalTheme
@@ -36,7 +36,7 @@ class ValidatePortalTheme
 
     /**
      * @param  string  $path  path `theme.json`; nama direktori induknya = slug
-     * @return array{schema_version: int, slug: string, name: string, description: string, version: string, min_core: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{sections: array<string, array<string, mixed>>}}
+     * @return array{schema_version: int, slug: string, name: string, description: string, version: string, min_core: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{layout: list<array<string, mixed>>}}
      *
      * @throws InvalidArgumentException
      */
@@ -62,13 +62,13 @@ class ValidatePortalTheme
             }
         }
 
-        $sections = $this->assertHome($manifest['home'] ?? [], $count);
+        $layout = $this->assertHome($manifest['home'] ?? [], $count);
 
         return [
             ...$manifest,
             'header' => $manifest['header'] ?? null,
             'footer' => $manifest['footer'] ?? null,
-            'home' => ['sections' => $sections],
+            'home' => ['layout' => $layout],
         ];
     }
 
@@ -135,31 +135,36 @@ class ValidatePortalTheme
     }
 
     /**
-     * @return array<string, array<string, mixed>>
+     * Tanpa `home.layout` = preset `blocks` (blok beranda dirender oleh view legacy).
+     *
+     * @return list<array<string, mixed>>
      */
     private function assertHome(mixed $home, int &$count): array
     {
         $this->assertObject($home, 'home');
-        $this->assertKeys($home, ['sections'], 'home');
+        $this->assertKeys($home, ['layout'], 'home');
 
-        $sections = $home['sections'] ?? [];
-        $this->assertObject($sections, 'home.sections');
-
-        foreach ($sections as $type => $section) {
-            $where = "home.sections.{$type}";
-            $component = ThemeComponents::HOME[$type] ?? null;
-
-            if ($component === null) {
-                $this->fail('component_not_allowed', ['component' => $type, 'where' => 'home.sections']);
-            }
-
-            $this->assertObject($section, $where);
-            $this->assertKeys($section, ['variant', 'style'], $where);
-            $this->assertCount($where, 1, $count);
-            $this->assertAppearance($section, $component, $where, auto: true);
+        if (! array_key_exists('layout', $home)) {
+            return [['component' => 'blocks', 'variant' => 'default']];
         }
 
-        return $sections;
+        $layout = $home['layout'];
+
+        if (! is_array($layout) || ! array_is_list($layout)) {
+            $this->fail('invalid_layout');
+        }
+
+        foreach ($layout as $index => $node) {
+            $this->assertNode($node, 'home', "home.layout.{$index}", 1, $count);
+        }
+
+        foreach ($layout as $node) {
+            if ($node['component'] === 'blocks' && count($layout) !== 1) {
+                $this->fail('blocks_alone');
+            }
+        }
+
+        return $layout;
     }
 
     private function assertNode(mixed $node, string $slot, string $where, int $depth, int &$count): void
@@ -174,21 +179,29 @@ class ValidatePortalTheme
             $this->fail('component_not_allowed', ['component' => json_encode($component), 'where' => $slot]);
         }
 
-        $this->assertAppearance($node, $component, $where);
-
-        if (! array_key_exists('children', $node)) {
-            return;
+        if ($component === 'blocks' && ($depth > 1 || array_key_exists('style', $node))) {
+            $this->fail('blocks_alone');
         }
 
-        if ($component !== 'container') {
-            $this->fail('children_not_allowed', ['where' => $where]);
+        $children = $node['children'] ?? null;
+
+        if (array_key_exists('children', $node)) {
+            if (! in_array($component, ['container', 'columns'], true)) {
+                $this->fail('children_not_allowed', ['where' => $where]);
+            }
+
+            if (! is_array($children) || ! array_is_list($children)) {
+                $this->fail('invalid_children', ['where' => $where]);
+            }
         }
 
-        if (! is_array($node['children']) || ! array_is_list($node['children'])) {
-            $this->fail('invalid_children', ['where' => $where]);
+        if ($component === 'columns' && (count($children ?? []) < 2 || count($children) > 4)) {
+            $this->fail('columns_children', ['where' => $where]);
         }
 
-        foreach ($node['children'] as $index => $child) {
+        $this->assertAppearance($node, $component, $where, auto: $slot === 'home' && $depth === 1, cells: count($children ?? []));
+
+        foreach ($children ?? [] as $index => $child) {
             $this->assertNode($child, $slot, "{$where}.children.{$index}", $depth + 1, $count);
         }
     }
@@ -196,18 +209,21 @@ class ValidatePortalTheme
     /**
      * @param  array<string, mixed>  $node
      */
-    private function assertAppearance(array $node, string $component, string $where, bool $auto = false): void
+    private function assertAppearance(array $node, string $component, string $where, bool $auto, int $cells): void
     {
         if (array_key_exists('variant', $node) && (! is_string($node['variant']) || ! in_array($node['variant'], ThemeComponents::VARIANTS[$component] ?? [], true))) {
             $this->fail('invalid_variant', ['variant' => json_encode($node['variant']), 'component' => $component, 'where' => $where]);
         }
 
         if (array_key_exists('style', $node)) {
-            $this->assertStyle($node['style'], "{$where}.style", $auto);
+            $this->assertStyle($node['style'], "{$where}.style", $auto, $component === 'columns' ? $cells : null);
         }
     }
 
-    private function assertStyle(mixed $style, string $where, bool $auto = false): void
+    /**
+     * @param  ?int  $cells  jumlah anak bila node = `columns` (satu-satunya yang boleh `style.columns`), selain itu null
+     */
+    private function assertStyle(mixed $style, string $where, bool $auto, ?int $cells): void
     {
         $this->assertObject($style, $where, 'invalid_style');
         $this->assertKeys($style, array_keys(ThemeStyleMap::MAP), $where);
@@ -231,6 +247,16 @@ class ValidatePortalTheme
 
             if (! $valid) {
                 $this->fail('invalid_style_value', ['property' => $property, 'value' => json_encode($value)]);
+            }
+
+            if ($property === 'columns') {
+                if ($cells === null) {
+                    $this->fail('columns_style_only', ['where' => $where]);
+                }
+
+                if (max(is_array($value) ? $value : [$value]) > $cells) {
+                    $this->fail('columns_style_too_wide', ['where' => $where, 'cells' => $cells]);
+                }
             }
         }
     }

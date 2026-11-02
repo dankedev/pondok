@@ -34,9 +34,9 @@ class ThemeStyleMap
         'shadow' => ['none' => 'shadow-none', 'sm' => 'shadow-sm'],
         'border' => ['none' => '', 'top' => 'border-t border-current/20', 'bottom' => 'border-b border-current/20'],
         'columns' => [
-            'base' => [2 => 'grid-cols-2', 3 => 'grid-cols-3', 4 => 'grid-cols-4'],
-            'md' => [2 => 'md:grid-cols-2', 3 => 'md:grid-cols-3', 4 => 'md:grid-cols-4'],
-            'lg' => [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'],
+            'base' => [1 => 'grid-cols-1', 2 => 'grid-cols-2', 3 => 'grid-cols-3', 4 => 'grid-cols-4'],
+            'md' => [1 => 'md:grid-cols-1', 2 => 'md:grid-cols-2', 3 => 'md:grid-cols-3', 4 => 'md:grid-cols-4'],
+            'lg' => [1 => 'lg:grid-cols-1', 2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'],
         ],
     ];
 

@@ -6,28 +6,11 @@
   "name": "Standar (bawaan)",
   "description": "Hero dua kolom dengan gambar di samping, keunggulan dalam kartu.",
   "home": {
-    "sections": {
-      "hero": {
-        "variant": "split"
-      },
-      "text_image": {
-        "variant": "split"
-      },
-      "features": {
-        "variant": "split"
-      },
-      "quote": {
-        "variant": "split"
-      },
-      "cta": {
-        "variant": "split"
-      },
-      "video": {
-        "variant": "split"
-      },
-      "feed": {
-        "variant": "split"
+    "layout": [
+      {
+        "component": "blocks",
+        "variant": "default"
       }
-    }
+    ]
   }
 }

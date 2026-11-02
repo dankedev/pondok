@@ -1,10 +1,10 @@
 {{--
-    Renderer node tema portal (F102): satu node `theme.json` (rekursif lewat `container`) menjadi HTML.
-    Semua data dioper eksplisit; node tidak membawa teks atau URL. Pemetaan komponen ke view ada di `portal.theme.node`
-    (include berliteral, tidak pernah nama view dari JSON).
+    Renderer node tema portal (F102): satu node `theme.json` (rekursif lewat `container`/`columns`) menjadi HTML.
+    Node beranda sudah dianotasi `ResolveHomeLayout` (blok terikat, kelas, heading); node header/footer apa adanya.
+    Pemetaan komponen ke view ada di `portal.theme.node` (include berliteral, tidak pernah nama view dari JSON).
 
-    Gagal render: bagian beranda diganti komponen bawaan inti, header/footer diganti partial inti (`portal.partials.*`),
-    keduanya dengan `Log::warning`. Node anak chrome melempar ulang supaya akar yang memutuskan cadangannya.
+    Gagal render: bagian beranda dirender ulang tanpa gaya dan varian (komponen bawaan inti), header/footer diganti partial
+    inti (`portal.partials.*`), keduanya dengan `Log::warning`. Node anak chrome melempar ulang supaya akar yang memutuskan cadangannya.
 --}}
 @props([
     'node',
@@ -14,13 +14,10 @@
     'navigation' => null,
     'footer' => null,
     'compact' => false,
-    'block' => null,
-    'headingId' => null,
-    'band' => null,
 ])
 
 @php
-    $context = ['node' => $node, 'area' => $area, 'school' => $school, 'navigation' => $navigation, 'footer' => $footer, 'compact' => $compact, 'block' => $block, 'data' => $block['data'] ?? null, 'headingId' => $headingId, 'band' => $band];
+    $context = ['node' => $node, 'area' => $area, 'root' => $root, 'school' => $school, 'navigation' => $navigation, 'footer' => $footer, 'compact' => $compact];
     $fallback = false;
 
     try {
@@ -36,7 +33,7 @@
         $html = match ($area) {
             'header' => view('portal.partials.header', $context)->render(),
             'footer' => view('portal.partials.footer', $context)->render(),
-            default => view('portal.theme.node', [...$context, 'node' => ['component' => $node['component'], 'variant' => 'split'], 'band' => $band ?? 'bg-white'])->render(),
+            default => view('portal.theme.node', [...$context, 'node' => \Illuminate\Support\Arr::except($node, ['style', 'variant', 'class'])])->render(),
         };
     }
 @endphp

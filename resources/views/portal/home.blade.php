@@ -1,11 +1,11 @@
 @php
-    // Bagian beranda: komponen/varian/gaya dari tema aktif (F102), latar selang-seling dihitung di `ResolveHomeSections`.
-    $sections = app(\App\Actions\Konten\ResolveHomeSections::class)->handle($blocks, app(\App\Actions\Konten\ResolveActiveTheme::class)->handle());
+    // Susunan beranda dari tema aktif (F102): blok terikat, node kosong, heading, dan latar selang-seling dihitung di `ResolveHomeLayout`.
+    $layout = app(\App\Actions\Konten\ResolveHomeLayout::class)->handle($blocks, app(\App\Actions\Konten\ResolveActiveTheme::class)->handle());
 @endphp
 
 <x-layouts::public :canonical="route('portal.home')" :bare="true">
-    @unless ($hasHero)
-        {{-- Tanpa blok hero: pita sederhana nama lembaga sebagai satu-satunya h1. --}}
+    @if ($layout['banner'])
+        {{-- Preset tanpa blok hero: pita sederhana nama lembaga sebagai satu-satunya h1. --}}
         <section class="bg-white">
             <div class="mx-auto max-w-6xl px-4 pb-12 pt-16 sm:px-6 lg:pb-16 lg:pt-24">
                 <hgroup class="max-w-3xl space-y-4">
@@ -16,9 +16,14 @@
                 </hgroup>
             </div>
         </section>
-    @endunless
+    @endif
 
-    @foreach ($sections as $section)
-        <x-portal.theme-node :node="$section['node']" area="home" :school="$school" :block="$section['block']" :heading-id="$section['headingId']" :band="$section['band']" />
+    @if ($layout['srH1'])
+        {{-- Susunan bebas tanpa hero di posisi h1: judul halaman tetap ada untuk pembaca layar. --}}
+        <h1 class="sr-only">{{ $school['name'] }}</h1>
+    @endif
+
+    @foreach ($layout['nodes'] as $node)
+        <x-portal.theme-node :node="$node" area="home" :school="$school" />
     @endforeach
 </x-layouts::public>

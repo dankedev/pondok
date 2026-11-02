@@ -42,6 +42,8 @@ class RolePermissionSeeder extends Seeder
         'view:student-numbering',
         // Syarat daftar ulang (F040): nominal minimal pembayaran per jenjang (admin-psb).
         'view:re-registration-payment',
+        // Katalog tema resmi (F103): pasang, kembalikan, dan hapus tema (hanya super-admin).
+        'manage:themes',
     ];
 
     /** Permission rapor diniyah (F027): input nilai (wali kelas, admin sekolah) dan cetak rapor. */

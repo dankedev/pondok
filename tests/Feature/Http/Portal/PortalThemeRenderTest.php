@@ -211,7 +211,9 @@ it('AC-4: puts the klasik style map classes on each mapped block section and no 
     $owned = fn (array $tokens): array => array_values(array_filter($tokens, fn (string $token): bool => preg_match('/^(?:(?:md|lg):)?(?:py|gap|grid-cols)-/', $token) === 1));
     $allowed = collect(['padding', 'gap', 'columns'])->flatMap(fn (string $property): array => collect(['padding' => ['sm', 'md', 'lg'], 'gap' => ['sm', 'md', 'lg'], 'columns' => [2, 3, 4]][$property])->flatMap(fn (mixed $value): array => [
         ...preg_split('/\s+/', trim(ThemeStyleMap::classes([$property => $value]))),
-        ...preg_split('/\s+/', trim(ThemeStyleMap::classes([$property => ['base' => $value, 'md' => $value, 'lg' => $value]]))),
+        ...(in_array($property, ['padding', 'columns'], true)
+            ? preg_split('/\s+/', trim(ThemeStyleMap::classes([$property => ['base' => $value, 'md' => $value, 'lg' => $value]])))
+            : []),
     ])->all())->filter()->unique()->all();
 
     expect($expected)->not->toBeEmpty('manifest klasik harus memberi gaya pada setidaknya satu seksi beranda');

@@ -1,7 +1,6 @@
 <?php
 
 use App\Actions\Konten\BuildColorScale;
-use App\Actions\Konten\GetPortalHomeData;
 use App\Actions\Konten\GetPortalTheme;
 use Illuminate\Support\Facades\View;
 
@@ -120,26 +119,17 @@ it('AC-12: needs the Lora aliases too before using Lora', function () {
 });
 
 /*
-| F072 AC-1, AC-4 (Action), AC-5. Kontrak: `GetPortalTheme::template(): string`, `handle()['template']`,
-| `static blockView(string $template, string $type): string`, `TEMPLATES` (`default`, `centered`), `DEFAULT_TEMPLATE`.
+| F072 AC-1, AC-4 (Action). Kontrak: `GetPortalTheme::template(): string`, `handle()['template']`, `DEFAULT_TEMPLATE`.
+| F102 menghapus `TEMPLATES` dan `blockView` (daftar tema dari `ListPortalThemes`); pemetaan blok ke view dicakup golden
+| `PortalThemeGoldenTest`. Test AC-5 lama (blockView) diganti test F102 AC-6.
 */
 
-it('F072 AC-1: defaults to the default template and every home block resolves to its default view', function () {
+it('F072 AC-1: defaults to the default template', function () {
     $theme = themeResolve();
 
     expect(app(GetPortalTheme::class)->template())->toBe('default')
         ->and($theme['template'])->toBe('default')
         ->and($theme['css'])->toBeNull();
-
-    blkSet([blk('hero', ['title' => 'Judul uji']), blk('quote', ['text' => 'Kutipan uji']), blk('cta', ['heading' => 'Ajakan uji', 'variant' => 'light'])]);
-
-    $views = collect(app(GetPortalHomeData::class)->handle()['blocks'])->pluck('view', 'type')->all();
-
-    expect($views)->toBe([
-        'hero' => 'themes.default.blocks.hero',
-        'quote' => 'themes.default.blocks.quote',
-        'cta' => 'themes.default.blocks.cta',
-    ]);
 });
 
 it('F072 AC-1: the template does not affect the generated css', function () {
@@ -157,16 +147,9 @@ it('F072 AC-4: falls back to the default template for a corrupted stored value',
     }
 });
 
-it('F072 AC-5: resolves a block view from the template and falls back to default for a block it does not override', function () {
-    expect(GetPortalTheme::blockView('centered', 'hero'))->toBe('themes.centered.blocks.hero')
-        ->and(GetPortalTheme::blockView('centered', 'cta'))->toBe('themes.default.blocks.cta');
-
-    foreach (['hero', 'features', 'feed', 'cta', 'quote', 'text_image', 'video'] as $type) {
-        expect(View::exists("themes.default.blocks.{$type}"))->toBeTrue($type)
-            ->and(GetPortalTheme::blockView('default', $type))->toBe("themes.default.blocks.{$type}");
-    }
-
-    expect(is_dir(resource_path('views/portal/blocks')))->toBeFalse();
+it('F102 AC-6: no longer carries the hard-coded preset list or the block view resolver', function () {
+    expect(defined(GetPortalTheme::class.'::TEMPLATES'))->toBeFalse('TEMPLATES diganti ListPortalThemes')
+        ->and(method_exists(GetPortalTheme::class, 'blockView'))->toBeFalse('blockView diganti renderer tema');
 });
 
 /*

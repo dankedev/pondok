@@ -116,7 +116,7 @@
         "component": "quote",
         "variant": "framed",
         "style": {
-          "tone": "brand",
+          "tone": "light",
           "align": "center"
         }
       },

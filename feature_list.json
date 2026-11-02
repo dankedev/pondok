@@ -1992,7 +1992,7 @@
       "owner": "f102-planner",
       "handoff": null,
       "evidence": null,
-      "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. PR ke dev dengan Refs #133."
+      "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. Revisi 4 (2 Nov 2026): susunan bebas ala Elementor, home.sections diganti home.layout, klasik diganti majalah dan mushaf; rencana menunggu tinjauan ulang. PR ke dev dengan Refs #133."
     },
     {
       "id": "F103",

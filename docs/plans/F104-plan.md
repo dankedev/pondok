@@ -1,7 +1,7 @@
 # F104 konten-tema-warna-font — Tema portal menentukan warna dan tipografi
 
 Issue: #140
-Status rencana: DRAFT (revisi 2, setelah Review #1: 3 major terjawab)
+Status rencana: APPROVED (revisi 2; Review #1: 0 blocker, 3 major + 6 minor terjawab, satu putaran)
 PR ditujukan ke `dev` (cabang `feat/f104-warna-tipografi-tema`), memakai `Refs #140`, bukan `Closes`.
 Jalur: penuh (skema dan validator tema).
 
@@ -36,7 +36,7 @@ Penerapan di `GetPortalTheme::handle()`: tema aktif dibaca dari `ResolveActiveTh
 ## Kriteria penerimaan
 - **AC-1 Kompatibilitas:** untuk tema uji v1 tanpa kunci baru (`min_core` 1.0.0) dan tema resmi `default`/`centered`/`majalah`/`mushaf` (tidak diubah), keluaran `GetPortalTheme::handle()` sama persis dengan keadaan tanpa tema, lintas kombinasi pengaturan admin (kosong, primer, aksen, font).
 - **AC-2 Validator:** `palette`, `surface`, `font` menerima hanya nilai enum (string, pembanding `in_array` strict); nilai lain (angka, `true`, `0`, hex, array, kosong, nama font bebas, `url(...)`, huruf besar) ditolak dengan pesan Indonesia; `min_core` 1.1.0 diterima dan 1.2.0 ditolak (`CORE_VERSION` 1.1.0).
-- **AC-3 Kontras:** skala `BuildColorScale` palet `hijau` + aksen bawaan lolos `contrastFailure` (4,5:1) dan `brandTokens` tidak null. Untuk `krem`: `gray-50` dan `gray-100` krem berkontras >= 4,5:1 dengan `gray-500`, `gray-600`, `gray-700`, `gray-900` (skala slate bawaan), serta dengan `brand_text` dan `primary-700` palet `hijau`.
+- **AC-3 Kontras:** skala `BuildColorScale` palet `hijau` + aksen bawaan lolos `contrastFailure` (4,5:1) dan `brandTokens` tidak null. Untuk `krem`: `gray-50` dan `gray-100` krem berkontras >= 4,5:1 dengan `gray-500`, `gray-600`, `gray-700`, `gray-900` (skala slate bawaan), serta dengan `brand_text` dan `primary-700` palet `hijau`. Pengecualian terukur: `gray-500` di atas `gray-100` krem cukup tidak lebih buruk dari slate-100 bawaan (4,35:1), karena 4,5:1 hanya tercapai oleh warna yang nyaris putih.
 - **AC-4 Keluaran CSS:** tema `palette: hijau` tanpa pengaturan admin menulis `--color-primary-*` dan token merek; `surface: krem` menulis tepat dua deklarasi gray; `font: lora` menulis `--font-heading` dan `font_aliases` Lora; setiap nilai di `PALETTES`/`SURFACES` cocok `/^#[0-9a-f]{6}\z/` dan nama token `/^--color-[a-z0-9-]+\z/`.
 - **AC-5 Prioritas admin:** `theme.primary`, `theme.accent`, `theme.font` admin yang terisi mengalahkan tema; kosong mengikuti tema; aksen admin yang gagal kontras terhadap primer palet dibuang oleh jalur lama tanpa exception (batasan sadar: `UpdatePortalTheme::ensureReadable` dan pratinjau Tampilan hanya mengenal nilai admin, jadi bisa berbeda dari portal; diterima).
 - **AC-6 Fallback:** tema hilang/rusak/`min_core` terlalu tinggi memberi keluaran seperti tanpa tema (portal 200); font (tema atau admin) yang aliasnya tak ada di manifest font build jatuh ke bawaan Jakarta tanpa exception.
@@ -56,3 +56,6 @@ Penerapan di `GetPortalTheme::handle()`: tema aktif dibaca dari `ResolveActiveTh
 - `krem` hanya mewarnai permukaan `gray-50/100`; latar `body`/`tone: light` tetap putih (batasan sadar, bukan bug).
 - Opsi font bawaan di Tampilan tersimpan null dan tetap mengikuti tema (admin tidak bisa memaksa Jakarta di atas tema berfont lain); diterima, catatan UI menjelaskannya.
 - F103 (#138) juga menyentuh `ValidatePortalTheme`; rebase kecil saat salah satunya masuk `dev` lebih dulu.
+
+## Review #1 (plan-reviewer): CHANGES_REQUESTED, 0 blocker, 3 major, 6 minor
+Major: aksen palet tanpa pemakai dan palet `biru` (dibuang), aksen admin vs primer palet (AC-5 + batasan), kontras `krem` kurang lengkap (AC-3 dilengkapi). Minor: aturan `min_core` kunci baru dibuang, AC-1/8 diperjelas, catatan UI font bawaan dan nomor versi F103 masuk Risiko. Semua diterapkan di revisi 2.

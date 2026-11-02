@@ -156,7 +156,7 @@ class ValidatePortalTheme
             $this->assertObject($section, $where);
             $this->assertKeys($section, ['variant', 'style'], $where);
             $this->assertCount($where, 1, $count);
-            $this->assertAppearance($section, $component, $where);
+            $this->assertAppearance($section, $component, $where, auto: true);
         }
 
         return $sections;
@@ -196,25 +196,25 @@ class ValidatePortalTheme
     /**
      * @param  array<string, mixed>  $node
      */
-    private function assertAppearance(array $node, string $component, string $where): void
+    private function assertAppearance(array $node, string $component, string $where, bool $auto = false): void
     {
         if (array_key_exists('variant', $node) && (! is_string($node['variant']) || ! in_array($node['variant'], ThemeComponents::VARIANTS[$component] ?? [], true))) {
             $this->fail('invalid_variant', ['variant' => json_encode($node['variant']), 'component' => $component, 'where' => $where]);
         }
 
         if (array_key_exists('style', $node)) {
-            $this->assertStyle($node['style'], "{$where}.style");
+            $this->assertStyle($node['style'], "{$where}.style", $auto);
         }
     }
 
-    private function assertStyle(mixed $style, string $where): void
+    private function assertStyle(mixed $style, string $where, bool $auto = false): void
     {
         $this->assertObject($style, $where, 'invalid_style');
         $this->assertKeys($style, array_keys(ThemeStyleMap::MAP), $where);
 
         foreach ($style as $property => $value) {
             $allowed = ThemeStyleMap::values($property);
-            $allowed = $property === 'tone' ? ['auto', ...$allowed] : $allowed;
+            $allowed = $property === 'tone' && $auto ? ['auto', ...$allowed] : $allowed;
 
             if (is_array($value)) {
                 $valid = in_array($property, ThemeStyleMap::RESPONSIVE, true)
@@ -223,6 +223,10 @@ class ValidatePortalTheme
                     && array_filter($value, fn (mixed $item): bool => ! in_array($item, $allowed, true)) === [];
             } else {
                 $valid = in_array($value, $allowed, true);
+            }
+
+            if (! $valid && $property === 'tone' && $value === 'auto') {
+                $this->fail('tone_auto_home_only', ['where' => $where]);
             }
 
             if (! $valid) {

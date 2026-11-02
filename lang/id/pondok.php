@@ -3236,6 +3236,36 @@ return [
         '5xx' => ['title' => 'Terjadi gangguan', 'body' => 'Ada masalah di server kami. Silakan coba lagi beberapa saat lagi. Bila terus terjadi, hubungi admin lembaga.'],
     ],
 
+    /*
+    | Galat validasi tema portal JSON (F102); dibaca admin di Situs > Tampilan.
+    */
+    'theme_schema' => [
+        'file_missing' => 'Berkas tema tidak ditemukan.',
+        'file_too_large' => 'Berkas tema terlalu besar (maksimum :max KB).',
+        'invalid_utf8' => 'Berkas tema bukan UTF-8 yang sah.',
+        'invalid_json' => 'Berkas tema bukan JSON yang sah.',
+        'json_too_nested' => 'Berkas tema terlalu dalam bersarang.',
+        'root_not_object' => 'Isi berkas tema harus berupa objek JSON.',
+        'unsupported_version' => 'Versi skema tema :version tidak didukung.',
+        'unknown_keys' => 'Kunci tidak dikenal di :where: :keys.',
+        'missing_key' => 'Kunci :key wajib ada.',
+        'invalid_text' => 'Kunci :key harus berupa teks 1-:max karakter.',
+        'invalid_slug' => 'Slug tema harus 2-40 karakter huruf kecil, angka, atau tanda hubung.',
+        'slug_mismatch' => 'Slug tema (:slug) harus sama dengan nama direktorinya (:directory).',
+        'invalid_version' => 'Kunci :key harus berformat versi x.y.z.',
+        'core_too_old' => 'Tema membutuhkan inti versi :required atau lebih baru (inti ini :core).',
+        'invalid_node' => 'Node di :where harus berupa objek.',
+        'component_not_allowed' => 'Komponen :component tidak dikenal di :where.',
+        'children_not_allowed' => 'Hanya komponen container yang boleh punya children (di :where).',
+        'invalid_children' => 'children di :where harus berupa daftar node.',
+        'invalid_variant' => 'Varian :variant tidak dikenal untuk komponen :component (di :where).',
+        'invalid_style' => 'style di :where harus berupa objek.',
+        'unknown_style_property' => 'Properti gaya :property tidak dikenal.',
+        'invalid_style_value' => 'Nilai :value tidak sah untuk properti gaya :property.',
+        'too_deep' => 'Pohon komponen terlalu dalam: kedalaman maksimum :max tingkat.',
+        'too_many_nodes' => 'Pohon komponen terlalu besar: maksimum :max node.',
+    ],
+
     'portal' => [
         'breadcrumb_label' => 'Navigasi halaman',
         'nav' => [

@@ -132,11 +132,14 @@ class ThemeCatalog extends Page implements HasTable
             ->columns([
                 Split::make([
                     TextColumn::make('name')
+                        ->grow()
                         ->weight('semibold')
                         ->description(fn (array $record): ?string => $record['description'] !== '' ? $record['description'] : null),
                     TextColumn::make('version')
+                        ->grow(false)
                         ->extraAttributes(['class' => 'tabular-nums']),
                     TextColumn::make('status')
+                        ->grow(false)
                         ->badge()
                         ->formatStateUsing(fn (string $state): string => __("pondok.theme_catalog.status.{$state}"))
                         ->color(fn (string $state): string => match ($state) {
@@ -147,7 +150,7 @@ class ThemeCatalog extends Page implements HasTable
                             default => 'gray',
                         })
                         ->description(fn (array $record): ?string => $record['message']),
-                ])->from('md'),
+                ])->from('xl'),
             ])
             ->recordActions([
                 Action::make('install')

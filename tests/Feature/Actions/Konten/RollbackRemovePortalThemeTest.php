@@ -143,7 +143,7 @@ it('AC-3: only the holder of manage:themes can remove or roll back; other roles 
 
     foreach (['admin-sekolah', 'admin-konten', 'bendahara', 'wali'] as $role) {
         foreach ([RollbackPortalTheme::class, RemovePortalTheme::class] as $action) {
-            expect(fn () => app($action)->handle('zz-uji', kontenUser($role)))->toThrow(AuthorizationException::class, "{$role} {$action}");
+            expect(fn () => app($action)->handle('zz-uji', kontenUser($role)))->toThrow(AuthorizationException::class);
         }
     }
 

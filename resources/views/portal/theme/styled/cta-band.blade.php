@@ -1,10 +1,6 @@
-{{-- Ajakan bergaya: latar dan perataan dari tema (varian `light/navy/gold` data blok tidak dipakai); tombol terbalik di atas latar gelap/merek. --}}
-@php
-    $buttons = $onInverse ? ['inverse', 'inverse-secondary'] : ['primary', 'secondary'];
-@endphp
-
+{{-- Ajakan pita: teks rata tengah langsung di atas latar node (tombol terbalik bila latar gelap/merek; varian `light/navy/gold` data blok tidak dipakai). --}}
 <section class="{{ $sectionClass }} flex flex-col" aria-labelledby="{{ $headingId }}">
-    <div @class(['max-w-3xl space-y-4', 'mx-auto' => $centered])>
+    <div class="mx-auto max-w-3xl space-y-4 text-center">
         @if ($data['eyebrow'])
             <p class="text-base font-semibold">{{ $data['eyebrow'] }}</p>
         @endif
@@ -13,7 +9,7 @@
             <p class="whitespace-pre-line text-base leading-relaxed lg:text-lg">{{ $data['text'] }}</p>
         @endif
         @if ($block['buttons'] !== [])
-            <div @class(['flex flex-wrap gap-3 pt-4', 'justify-center' => $centered])>
+            <div class="flex flex-wrap justify-center gap-3 pt-4">
                 @foreach ($block['buttons'] as $button)
                     <x-ui.button :href="$button['url']" :variant="$buttons[$loop->first ? 0 : 1]">{{ $button['label'] }}</x-ui.button>
                 @endforeach

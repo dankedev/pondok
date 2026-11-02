@@ -3284,6 +3284,50 @@ return [
             'no_previous' => 'Tidak ada versi sebelumnya yang dapat dikembalikan.',
             'forbidden' => 'Hanya super-admin yang dapat mengelola tema dari katalog.',
             'write_failed' => 'Berkas tema tidak dapat ditulis. Tema yang terpasang tidak berubah.',
+            'stalled' => 'Pemasangan tidak selesai dalam 5 menit. Pastikan antrean berjalan, lalu coba lagi.',
+            'module_disabled' => 'Modul Konten sedang nonaktif, jadi tema tidak dipasang.',
+            'not_in_catalog' => 'Tema ini tidak lagi ada di katalog resmi.',
+            'install_failed' => 'Tema tidak dapat dipasang. Coba lagi nanti.',
+        ],
+    ],
+
+    /*
+    | Halaman Situs > Katalog tema (F103). Pesan galat pemasangan ada di `theme_install.errors`.
+    */
+    'theme_catalog' => [
+        'title' => 'Katalog tema',
+        'description' => 'Tema resmi yang dapat dipasang ke portal. Tema terpasang dipilih di Situs > Tampilan.',
+        'empty' => 'Katalog belum memuat tema.',
+        'empty_description' => 'Muat ulang katalog, atau coba lagi nanti bila katalog resmi sedang tidak dapat dijangkau.',
+        'cache_note' => 'Pemasangan berjalan di antrean dan dapat memakan waktu sekitar satu menit. Perubahan tema tampil di portal publik dengan jeda sekitar 5 menit.',
+        'error_heading' => 'Katalog tidak dapat dimuat',
+        'version' => 'Versi :version',
+        'version_update' => 'Versi :installed, tersedia :available',
+        'status' => [
+            'not_installed' => 'Belum dipasang',
+            'installed' => 'Terpasang',
+            'update_available' => 'Ada pembaruan',
+            'incompatible' => 'Tidak cocok versi',
+            'queued' => 'Menunggu antrean',
+            'running' => 'Sedang dipasang',
+            'failed' => 'Gagal',
+        ],
+        'actions' => [
+            'refresh' => 'Muat ulang katalog',
+            'install' => 'Pasang',
+            'update' => 'Perbarui',
+            'install_confirm' => 'Tema :name akan diunduh dan diverifikasi tanda tangannya di latar belakang. Tema yang sudah terpasang tetap dipakai sampai pemasangan selesai.',
+            'rollback' => 'Kembalikan versi sebelumnya',
+            'rollback_confirm' => 'Tema :name dikembalikan ke versi sebelumnya dan versi sekarang tidak disimpan. Pilihan tema di Situs > Tampilan tidak berubah.',
+            'remove' => 'Hapus',
+            'remove_confirm' => 'Tema :name dihapus dari server beserta versi sebelumnya. Bila tema ini sedang dipakai portal, portal kembali ke tampilan inti; pilihan di Situs > Tampilan tetap tersimpan dan aktif lagi bila tema dipasang ulang.',
+        ],
+        'notifications' => [
+            'queued' => 'Pemasangan tema :name diantrekan.',
+            'rolled_back' => 'Tema :name dikembalikan ke versi sebelumnya.',
+            'removed' => 'Tema :name dihapus.',
+            'failed' => 'Tindakan pada tema belum berhasil',
+            'refreshed' => 'Katalog tema dimuat ulang.',
         ],
     ],
 

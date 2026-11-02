@@ -135,10 +135,38 @@ Panel seperti Easypanel, Coolify, atau Dokploy bisa membangun `Dockerfile` langs
 - **Port:** container mendengarkan HTTP di port `80`; arahkan domain/proxy panel ke port itu.
 - **Environment runtime wajib:** `APP_ENV=production`, `APP_KEY`, `APP_URL`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, serta `SUPER_ADMIN_NAME`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` untuk instalasi pertama. Isi di menu environment panel, bukan sebagai build argument. Nilai lain dari `.env.production.example` (mis. `MAIL_*`) boleh ditambahkan. `DB_CONNECTION=mysql` sudah bawaan image.
 - **Database:** pakai layanan MySQL/MariaDB dari panel dengan volume persisten, dan isi `DB_HOST` dengan nama host internal layanan itu.
-- **Volume persisten:** pasang volume ke `/var/www/html/storage`. Tanpa volume ini, unggahan dan dokumen santri hilang setiap deploy. Bila volume belum terpasang, log container menampilkan `PERINGATAN: /var/www/html/storage bukan volume persisten...` saat start, dan `pondok:doctor` menampilkan baris **Volume storage** berstatus peringatan. Container tetap jalan; pasang volume lalu deploy ulang sampai peringatan hilang. Peringatan dilewati bila unggahan memakai S3 (`FILESYSTEM_DISK=s3`).
+- **Volume persisten:** pasang volume ke `/var/www/html/storage`. Tanpa volume ini, unggahan dan dokumen santri hilang setiap deploy. Bila volume belum terpasang, log container menampilkan `PERINGATAN: /var/www/html/storage bukan volume persisten...` saat start, dan `pondok:doctor` menampilkan baris **Volume storage** berstatus peringatan. Container tetap jalan; pasang volume lalu deploy ulang sampai peringatan hilang. Peringatan dilewati hanya bila disk `private` dan `public` sama-sama dialihkan ke S3/R2 (`PRIVATE_DISK_DRIVER=s3` dan `PUBLIC_DISK_DRIVER=s3`; lihat [Penyimpanan di Cloudflare R2](#penyimpanan-di-cloudflare-r2)). `FILESYSTEM_DISK=s3` saja tidak cukup karena aplikasi memakai disk bernama `private` dan `public`.
   - Path `/app/storage` atau `/app/storage/app` dari template Laravel lain **tidak berlaku** untuk image Pondok: aplikasi ada di `/var/www/html`, sehingga volume di path itu tidak menyimpan apa pun dan unggahan tetap hilang. Pasang volume tepat ke `/var/www/html/storage` (seluruh folder storage, bukan subfoldernya).
 - **Scheduler:** sudah berjalan di dalam container; tidak perlu cron panel. Bila sebelumnya ada cron/scheduled task panel untuk `schedule:run`, hapus, atau isi `PONDOK_SCHEDULER=false` bila ingin tetap memakai cron panel. Cek dengan `php artisan pondok:doctor` di console panel sebagai `www-data` (lihat [Scheduler](#scheduler)).
 - **Backup:** pakai fitur backup database panel, dan backup volume storage terpisah.
+
+## Penyimpanan di Cloudflare R2
+
+Opsional. Bawaan Pondok adalah disk lokal; lewati bagian ini bila volume storage cukup. R2 berguna bila disk server kecil (free tier 10 GB, tanpa biaya egress). Semua S3-compatible (AWS S3, MinIO) bisa dipakai dengan variabel yang sama.
+
+1. Di dashboard Cloudflare, buat **dua bucket**: privat untuk dokumen (mis. `pondok-private`) dan publik untuk galeri/sampul/logo (mis. `pondok-public`). **Jangan** aktifkan akses publik pada bucket privat.
+2. Pada bucket publik, aktifkan akses publik lewat custom domain (disarankan, mis. `media.contoh.sch.id`) atau domain `r2.dev`.
+3. Buat API token R2 (Object Read & Write) yang dibatasi ke kedua bucket. Catat Access Key ID, Secret Access Key, dan endpoint `https://<account-id>.r2.cloudflarestorage.com`.
+4. Isi environment:
+
+```env
+PRIVATE_DISK_DRIVER=s3
+PUBLIC_DISK_DRIVER=s3
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_DEFAULT_REGION=auto
+AWS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+AWS_USE_PATH_STYLE_ENDPOINT=true
+AWS_BUCKET=pondok-private
+AWS_PUBLIC_BUCKET=pondok-public
+AWS_PUBLIC_URL=https://media.contoh.sch.id
+```
+
+Keduanya bisa dialihkan terpisah (mis. hanya `PRIVATE_DISK_DRIVER`), tetapi peringatan volume baru hilang bila keduanya S3. Dokumen pribadi tetap diunduh lewat route aplikasi yang dicek permission, bukan lewat URL bucket.
+
+- **CORS:** tidak perlu, karena unggahan lewat server aplikasi. Bila gambar publik dimuat dari domain lain lewat skrip, tambahkan aturan `GET` untuk domain itu di bucket publik.
+- **Instalasi yang sudah berjalan:** berkas lama tidak pindah otomatis. Salin isi `storage/app/private` ke bucket privat dan `storage/app/public` ke bucket publik (path sama), mis. dengan `rclone copy`, sebelum mengganti environment.
+- **Backup:** backup bawaan (`pondok:backup`) hanya mendukung disk `private` lokal dan akan menolak berjalan bila `PRIVATE_DISK_DRIVER=s3`. Backup database dengan `mysqldump`, dan aktifkan versioning atau replikasi di sisi bucket.
 
 ## Catatan healthcheck
 

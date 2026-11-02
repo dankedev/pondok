@@ -187,3 +187,10 @@ it('F085 AC-5: the manual command always backs up and keeps the newest archives 
         ->and(Storage::disk('private')->exists('backups/pondok-20260101-000000.zip'))->toBeFalse()
         ->and(Storage::disk('private')->exists('backups/pondok-20260104-000000.zip'))->toBeTrue();
 });
+
+it('F101: refuses to back up when the private disk is not local', function () {
+    config(['filesystems.disks.private.driver' => 's3']);
+
+    expect(fn () => app(CreateBackup::class)->handle())
+        ->toThrow(RuntimeException::class, 'mysqldump');
+});

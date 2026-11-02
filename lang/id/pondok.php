@@ -3294,6 +3294,15 @@ return [
     /*
     | Halaman Situs > Katalog tema (F103). Pesan galat pemasangan ada di `theme_install.errors`.
     */
+    'theme_sign' => [
+        'theme_missing' => 'Berkas theme.json tidak ditemukan.',
+        'secret_file_missing' => 'Berkas kunci rahasia tidak ditemukan. Berikan lewat --secret-file.',
+        'secret_invalid' => 'Kunci rahasia tidak valid. Isi berkas harus base64 dari kunci Ed25519 64 byte.',
+        'key_unknown' => 'Kunci publik untuk --key-id ini belum ada di config pondok.theme_public_keys.',
+        'key_mismatch' => 'Kunci rahasia tidak cocok dengan kunci publik :key di config.',
+        'url_required' => 'Opsi --url wajib diisi dengan URL publik berkas tema.',
+    ],
+
     'theme_catalog' => [
         'title' => 'Katalog tema',
         'description' => 'Tema resmi yang dapat dipasang ke portal. Tema terpasang dipilih di Situs > Tampilan.',
@@ -3542,6 +3551,7 @@ return [
             'php_functions' => 'Fungsi PHP',
             'php_limits' => 'Batas PHP',
             'mail' => 'Email',
+            'theme_catalog' => 'Katalog tema',
             'version' => 'Versi Pondok',
         ],
         'summary_ok' => 'Tidak ada pemeriksaan yang gagal.',
@@ -3605,6 +3615,9 @@ return [
             'php_limits_cli_note' => 'Nilai ini dari PHP Terminal; batas situs diatur di MultiPHP INI Editor.',
             'mail_ok' => 'Pengirim :mailer.',
             'mail_not_sent' => 'MAIL_MAILER=:mailer: email tidak benar-benar terkirim. Isi pengaturan SMTP di .env.',
+            'theme_catalog_ok' => 'Katalog tema resmi dapat dijangkau.',
+            'theme_catalog_unreachable' => 'Katalog tema resmi tidak dapat dijangkau. Situs tetap berjalan; pemasangan tema baru menunggu koneksi keluar ke pondok.org pulih.',
+            'theme_catalog_skipped' => 'Dilewati: modul Konten nonaktif atau database belum tersambung.',
             'version' => 'Versi :version, PHP :php',
         ],
     ],

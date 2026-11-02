@@ -134,7 +134,7 @@ it('AC-3: only the holder of manage:themes can claim an install, and the Konten 
     Queue::fake();
 
     foreach (['admin-sekolah', 'admin-konten', 'bendahara', 'admin-psb', 'wali'] as $role) {
-        expect(fn () => itClaim('zz-uji', kontenUser($role)))->toThrow(AuthorizationException::class, $role);
+        expect(fn () => itClaim('zz-uji', kontenUser($role)))->toThrow(AuthorizationException::class);
     }
 
     Setting::set('modules.konten.enabled', false);

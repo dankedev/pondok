@@ -94,7 +94,7 @@ it('AC-1: rejects manifests that break the closed schema', function () {
         'slug terlalu panjang' => [...$klasik, 'slug' => str_repeat('a', 41)],
         'slug dengan path' => [...$klasik, 'slug' => '../klasik'],
         'lebih dari 150 node' => themeWith($klasik, 'header.children', array_fill(0, 151, ['component' => 'brand'])),
-        'pohon bersarang 7 tingkat' => themeWith($klasik, 'header', array_reduce(range(1, 7), fn (array $inner): array => ['component' => 'container', 'children' => [$inner]], ['component' => 'brand'])),
+        'pohon bersarang 7 tingkat (kedalaman pohon > 6)' => themeWith($klasik, 'header', array_reduce(range(1, 6), fn (array $inner): array => ['component' => 'container', 'children' => [$inner]], ['component' => 'brand'])),
     ];
 
     foreach ($badStyleValues as $index => $value) {
@@ -117,7 +117,7 @@ it('AC-1: rejects manifests that break the closed schema', function () {
 it('AC-1: rejects a broken or hostile file before trusting it', function () {
     $klasik = themeOfficialManifest('klasik');
     $valid = json_encode($klasik);
-    $nested = str_repeat('{"a":', 12).'1'.str_repeat('}', 12);
+    $nested = str_repeat('{"a":', 1000).'1'.str_repeat('}', 1000);
     $cases = [
         'JSON terpotong' => '{"schema_version":1,',
         'berkas kosong' => '',
@@ -125,7 +125,7 @@ it('AC-1: rejects a broken or hostile file before trusting it', function () {
         'akar null' => 'null',
         'akar string' => '"klasik"',
         'UTF-8 rusak di nilai' => preg_replace('/"name":"/', '"name":"Rusak '."\xB1\x31".'', $valid, 1),
-        'depth JSON > 8' => $nested,
+        'JSON bersarang ekstrem (1000 tingkat)' => $nested,
         'lebih dari 64 KB (JSON sah diberi spasi)' => $valid.str_repeat(' ', 70 * 1024),
     ];
 
@@ -135,9 +135,14 @@ it('AC-1: rejects a broken or hostile file before trusting it', function () {
         ->and(fn () => app(ValidatePortalTheme::class)->handle(sys_get_temp_dir().'/tidak-ada-f102/klasik/theme.json'))->toThrow(InvalidArgumentException::class);
 });
 
+it('AC-1: names tree depth, not a JSON limit, when a valid-JSON tree is nested deeper than 6 levels', function () {
+    $tooDeep = themeWith(themeOfficialManifest('klasik'), 'header', array_reduce(range(1, 6), fn (array $inner): array => ['component' => 'container', 'children' => [$inner]], ['component' => 'brand']));
+
+    expect(themeRejection($tooDeep))->toMatch('/kedalaman|tingkat|dalam|depth/i');
+});
+
 it('AC-9: ships only theme.json files, with no code, markup or assets, in the official theme directories', function () {
     $files = collect(File::allFiles(resource_path('themes')))
-        ->reject(fn (SplFileInfo $file): bool => str_contains($file->getPathname(), '/zz-uji-'))
         ->map(fn (SplFileInfo $file): string => str_replace(resource_path('themes').'/', '', $file->getPathname()))
         ->sort()->values()->all();
 

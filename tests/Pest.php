@@ -114,6 +114,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Facades\Schema;
@@ -6302,9 +6303,10 @@ function diniyahPortalFixture(): object
 | F102 konten-katalog-tema
 |--------------------------------------------------------------------------
 |
-| Tema resmi: `resources/themes/<slug>/theme.json` (`default`, `centered`, `klasik`). Tema uji ditulis ke direktori yang sama
-| dengan slug unik berawalan `zz-uji-` (memoisasi validasi dan log peringatan per slug hidup selama proses, jadi slug tidak boleh
-| dipakai ulang antartest) dan dihapus lagi setelah test. `themeTempFile` hanya untuk validator: berkas di direktori sementara.
+| Tema resmi: `resources/themes/<slug>/theme.json` (`default`, `centered`, `klasik`). Tema uji TIDAK ditulis ke `resources/`: `themeSandbox()`
+| membuat folder sementara berisi salinan tema resmi (bila ada), men-set `config('pondok.themes_path')` ke sana, dan `themeCleanup()`
+| menghapusnya (dan mengembalikan config) setelah tiap test. Slug uji tetap unik (`zz-uji-*`) karena memoisasi validasi per slug
+| hidup selama proses. `themeTempFile` hanya untuk validator: berkas di direktori sementara.
 |
 */
 
@@ -6326,7 +6328,30 @@ function themeUniqueSlug(): string
 }
 
 /**
- * Tulis tema uji ke `resources/themes/<slug>/theme.json`. Array selalu diberi `slug` = nama direktori;
+ * Folder tema sementara milik test ini: salinan `resource_path('themes')` (bila ada) dan `config('pondok.themes_path')` diarahkan ke sana.
+ * Idempoten per test; dibersihkan `themeCleanup()`.
+ */
+function themeSandbox(): string
+{
+    if (isset($GLOBALS['themeSandboxDir']) && is_dir($GLOBALS['themeSandboxDir'])) {
+        return $GLOBALS['themeSandboxDir'];
+    }
+
+    $root = sys_get_temp_dir().'/pondok-f102-themes-'.Str::random(10);
+    mkdir($root, 0777, true);
+
+    if (is_dir(resource_path('themes'))) {
+        File::copyDirectory(resource_path('themes'), $root);
+    }
+
+    config()->set('pondok.themes_path', $root);
+    $GLOBALS['themeSandboxDir'] = $root;
+
+    return $root;
+}
+
+/**
+ * Tulis tema uji ke `<themes_path>/<slug>/theme.json` (folder sementara). Array selalu diberi `slug` = nama direktori;
  * string ditulis apa adanya (JSON rusak, berkas besar, dst.).
  *
  * @param  array<string, mixed>|string  $manifest
@@ -6335,7 +6360,7 @@ function themeUniqueSlug(): string
 function themeInstall(array|string $manifest, ?string $slug = null): string
 {
     $slug ??= themeUniqueSlug();
-    $dir = resource_path("themes/{$slug}");
+    $dir = themeSandbox()."/{$slug}";
     @mkdir($dir, 0777, true);
     file_put_contents("{$dir}/theme.json", is_array($manifest) ? json_encode([...$manifest, 'slug' => $slug], JSON_UNESCAPED_SLASHES) : $manifest);
     $GLOBALS['themeInstalledDirs'][] = $dir;
@@ -6369,7 +6394,12 @@ function themeCleanup(): void
     }
 
     $GLOBALS['themeInstalledDirs'] = [];
-    @rmdir(resource_path('themes'));
+
+    if (isset($GLOBALS['themeSandboxDir'])) {
+        File::deleteDirectory($GLOBALS['themeSandboxDir']);
+        unset($GLOBALS['themeSandboxDir']);
+        config()->set('pondok.themes_path', resource_path('themes'));
+    }
 }
 
 /**
@@ -6381,6 +6411,7 @@ function themeActivate(?string $slug): void
         test()->fail("Tema resmi {$slug} belum ada: resources/themes/{$slug}/theme.json");
     }
 
+    themeSandbox();
     Setting::set('theme.template', $slug);
     app()->forgetScopedInstances();
 }

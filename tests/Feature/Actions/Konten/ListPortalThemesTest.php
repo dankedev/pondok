@@ -4,19 +4,20 @@ use App\Actions\Konten\ListPortalThemes;
 
 /*
 | F102 AC-6 dan AC-8 (daftar). Kontrak yang diasumsikan: `ListPortalThemes::handle(): list<array{slug: string, name: string,
-| description: string, valid: bool, error: ?string}>` membaca hanya `resources/themes/*`/theme.json; nama dan deskripsi berasal
+| description: string, valid: bool, error: ?string}>` membaca hanya `config('pondok.themes_path')/*`/theme.json (bawaan `resource_path('themes')`); nama dan deskripsi berasal
 | dari manifest; tema yang gagal validasi tetap muncul dengan `valid = false` dan `error` berisi alasan (tanpa exception).
 */
 
 /**
- * Entri daftar tanpa tema uji milik test lain yang mungkin berjalan paralel.
+ * Entri daftar dari folder tema sementara test ini (`config('pondok.themes_path')`).
  *
  * @return array<string, array<string, mixed>> slug => entri
  */
 function themeListed(): array
 {
+    themeSandbox();
+
     return collect(app(ListPortalThemes::class)->handle())
-        ->reject(fn (array $entry): bool => str_starts_with($entry['slug'], 'zz-uji-'))
         ->keyBy('slug')
         ->all();
 }

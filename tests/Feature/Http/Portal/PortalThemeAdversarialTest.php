@@ -26,7 +26,7 @@ beforeEach(function () {
     Filament::setCurrentPanel('admin');
 });
 
-function advRejection(array|string $manifest, string $dir = 'klasik'): ?string
+function advRejection(array|string $manifest, string $dir = THEME_BASE_SLUG): ?string
 {
     try {
         app(ValidatePortalTheme::class)->handle(themeTempFile($manifest, $dir));
@@ -38,11 +38,11 @@ function advRejection(array|string $manifest, string $dir = 'klasik'): ?string
 }
 
 /**
- * JSON klasik berukuran persis `$bytes` (dipadatkan dengan spasi di ujung).
+ * JSON tema dasar berukuran persis `$bytes` (dipadatkan dengan spasi di ujung).
  */
 function advManifestOfSize(int $bytes): string
 {
-    $json = json_encode(themeOfficialManifest('klasik'));
+    $json = json_encode(themeBaseManifest());
 
     return $json.str_repeat(' ', $bytes - strlen($json));
 }
@@ -86,13 +86,12 @@ function advFullStyle(string $tone): array
         'radius' => 'lg',
         'shadow' => 'sm',
         'border' => 'top',
-        'columns' => ['base' => 4, 'md' => 3, 'lg' => 2],
     ];
 }
 
 it('VERIFY AC-1: accepts a file of exactly 64 KB, 150 nodes and depth 6, and rejects one byte, one node and one level more', function () {
-    $klasik = themeOfficialManifest('klasik');
-    $bare = Arr::except($klasik, ['header', 'footer', 'home']);
+    $base = themeBaseManifest();
+    $bare = Arr::except($base, ['header', 'footer', 'home']);
     $nodes = fn (int $children): array => [...$bare, 'header' => ['component' => 'container', 'children' => array_fill(0, $children, ['component' => 'brand'])]];
 
     expect(strlen(advManifestOfSize(65536)))->toBe(65536)
@@ -105,9 +104,9 @@ it('VERIFY AC-1: accepts a file of exactly 64 KB, 150 nodes and depth 6, and rej
 });
 
 it('VERIFY AC-1: rejects look-alike, mistyped and nested-wrong values at every level', function () {
-    $klasik = themeOfficialManifest('klasik');
-    $withHeader = fn (array $header): array => [...$klasik, 'header' => $header];
-    $withHero = fn (array $hero): array => themeWith2($klasik, ['home', 'sections', 'hero'], $hero);
+    $base = themeBaseManifest();
+    $withHeader = fn (array $header): array => [...$base, 'header' => $header];
+    $withHero = fn (array $hero): array => themeWith2($base, ['home', 'layout', 0], ['component' => 'hero', ...$hero]);
     $cases = [
         'component array' => $withHeader(['component' => ['container']]),
         'component int 0' => $withHeader(['component' => 0]),
@@ -134,40 +133,42 @@ it('VERIFY AC-1: rejects look-alike, mistyped and nested-wrong values at every l
         'padding empty object' => $withHero(['style' => ['padding' => []]]),
         'tone upper case' => $withHero(['style' => ['tone' => 'Dark']]),
         'tone auto in array' => $withHero(['style' => ['tone' => ['base' => 'auto']]]),
-        'unknown key in home' => [...$klasik, 'home' => ['sections' => [], 'layout' => 'x']],
-        'unknown key in sections entry' => $withHero(['style' => ['tone' => 'dark'], 'class' => 'x']),
+        'unknown key in home' => [...$base, 'home' => ['layout' => [], 'sections' => []]],
+        'home.sections from the old schema' => [...$base, 'home' => ['sections' => ['hero' => ['style' => ['tone' => 'dark']]]]],
+        'unknown key in layout node' => $withHero(['style' => ['tone' => 'dark'], 'class' => 'x']),
         'unknown key in nested child' => $withHeader(['component' => 'container', 'children' => [['component' => 'brand', 'onclick' => 'x']]]),
         'children not a list' => $withHeader(['component' => 'container', 'children' => ['a' => ['component' => 'brand']]]),
         'children of children on leaf' => $withHeader(['component' => 'container', 'children' => [['component' => 'brand', 'children' => []]]]),
-        'footer is a string' => [...$klasik, 'footer' => 'x'],
-        'header is a list' => [...$klasik, 'header' => [['component' => 'brand']]],
-        'sections is a list' => [...$klasik, 'home' => ['sections' => [['component' => 'hero']]]],
-        'schema_version true' => [...$klasik, 'schema_version' => true],
-        'schema_version huge' => [...$klasik, 'schema_version' => 99999999999999999999],
-        'min_core huge' => [...$klasik, 'min_core' => '99999999999999999999.0.0'],
-        'version with prerelease' => [...$klasik, 'version' => "1.0.0\n"],
-        'name only spaces' => [...$klasik, 'name' => '   '],
-        'name array' => [...$klasik, 'name' => ['x']],
-        'name too long' => [...$klasik, 'name' => str_repeat('a', 61)],
-        'slug null byte' => [...$klasik, 'slug' => "klasik\0"],
-        'slug percent-encoded dots' => [...$klasik, 'slug' => '%2e%2e'],
-        'slug trailing newline' => [...$klasik, 'slug' => "klasik\n"],
+        'footer is a string' => [...$base, 'footer' => 'x'],
+        'header is a list' => [...$base, 'header' => [['component' => 'brand']]],
+        'layout is an object' => [...$base, 'home' => ['layout' => ['a' => ['component' => 'hero']]]],
+        'layout node is a string' => [...$base, 'home' => ['layout' => ['hero']]],
+        'schema_version true' => [...$base, 'schema_version' => true],
+        'schema_version huge' => [...$base, 'schema_version' => 99999999999999999999],
+        'min_core huge' => [...$base, 'min_core' => '99999999999999999999.0.0'],
+        'version with prerelease' => [...$base, 'version' => "1.0.0\n"],
+        'name only spaces' => [...$base, 'name' => '   '],
+        'name array' => [...$base, 'name' => ['x']],
+        'name too long' => [...$base, 'name' => str_repeat('a', 61)],
+        'slug null byte' => [...$base, 'slug' => "zz-uji-dasar\0"],
+        'slug percent-encoded dots' => [...$base, 'slug' => '%2e%2e'],
+        'slug trailing newline' => [...$base, 'slug' => "zz-uji-dasar\n"],
     ];
 
     $accepted = array_keys(array_filter($cases, fn (array $manifest): bool => advRejection($manifest) === null));
 
     // Kunci duplikat: nilai terakhir menang, jadi komponen akhirnya tak dikenal.
     $duplicate = '{"component":"brand","component":"iframe"}';
-    $raw = str_replace(json_encode($klasik['header']), $duplicate, (string) json_encode($klasik));
+    $raw = str_replace(json_encode($base['header']), $duplicate, (string) json_encode($base));
 
     $floats = [
-        'schema_version 1.0' => [...$klasik, 'schema_version' => 1.0],
-        'columns 3.0' => themeWith2($klasik, ['home', 'sections', 'hero', 'style'], ['columns' => 3.0]),
+        'schema_version 1.0' => [...$base, 'schema_version' => 1.0],
+        'columns 2.0' => themeWith2($base, ['home', 'layout'], [['component' => 'columns', 'style' => ['columns' => 2.0], 'children' => [['component' => 'hero'], ['component' => 'hero']]]]),
     ];
     $floatAccepted = array_keys(array_filter($floats, fn (array $manifest): bool => advRejection(json_encode($manifest, JSON_PRESERVE_ZERO_FRACTION)) === null));
 
     expect($accepted)->toBe([], 'Seharusnya ditolak: '.implode('; ', $accepted))
-        ->and($floatAccepted)->toBe([], 'bilangan pecahan 1.0/3.0 bukan bilangan bulat')
+        ->and($floatAccepted)->toBe([], 'bilangan pecahan 1.0/2.0 bukan bilangan bulat')
         ->and(str_contains($raw, 'iframe'))->toBeTrue()
         ->and(advRejection($raw))->not->toBeNull('kunci duplikat');
 });
@@ -180,13 +181,13 @@ function themeWith2(array $manifest, array $path, mixed $value): array
 }
 
 it('VERIFY AC-1: keeps a hostile file from echoing itself into the error message', function () {
-    $klasik = themeOfficialManifest('klasik');
+    $base = themeBaseManifest();
     $huge = str_repeat('x', 50000);
     $cases = [
-        'schema_version panjang' => [...$klasik, 'schema_version' => $huge],
-        'nilai gaya panjang' => themeWith2($klasik, ['header', 'style', 'gap'], $huge),
-        'komponen panjang' => themeWith2($klasik, ['header', 'children', 0, 'component'], $huge),
-        'kunci tak dikenal banyak' => [...$klasik, ...array_combine(array_map(fn (int $i): string => "kunci{$i}".str_repeat('k', 200), range(1, 200)), array_fill(0, 200, 1))],
+        'schema_version panjang' => [...$base, 'schema_version' => $huge],
+        'nilai gaya panjang' => themeWith2($base, ['header', 'style', 'gap'], $huge),
+        'komponen panjang' => themeWith2($base, ['header', 'children', 0, 'component'], $huge),
+        'kunci tak dikenal banyak' => [...$base, ...array_combine(array_map(fn (int $i): string => "kunci{$i}".str_repeat('k', 200), range(1, 200)), array_fill(0, 200, 1))],
     ];
 
     $lengths = array_map(fn (array $manifest): int => mb_strlen((string) advRejection($manifest)), $cases);
@@ -194,18 +195,19 @@ it('VERIFY AC-1: keeps a hostile file from echoing itself into the error message
     expect(array_filter($lengths, fn (int $length): bool => $length > 1000))->toBe([], 'pesan galat tak dibatasi (dipakai di halaman Tampilan dan log): '.json_encode($lengths));
 });
 
-it('VERIFY AC-8: never silently downgrades a valid theme, with every style property on every node and tone', function () {
+it('VERIFY AC-15: never silently downgrades a valid theme, with every style property on every node and tone', function () {
     advSeedHome();
     Log::spy();
-    $klasik = themeOfficialManifest('klasik');
+    $base = themeBaseManifest();
 
     foreach (['light', 'muted', 'brand', 'dark', 'auto'] as $tone) {
         $style = advFullStyle($tone);
         $childStyle = [...$style, 'tone' => $tone === 'auto' ? 'light' : $tone];
         $header = ['component' => 'container', 'style' => [...$style, 'tone' => $tone === 'auto' ? 'light' : $tone], 'children' => [['component' => 'brand', 'style' => $childStyle], ['component' => 'nav_menu', 'style' => $childStyle]]];
         $footer = ['component' => 'container', 'style' => [...$style, 'tone' => $tone === 'auto' ? 'dark' : $tone], 'children' => [['component' => 'footer_widgets', 'style' => $childStyle], ['component' => 'copyright', 'style' => $childStyle]]];
-        $sections = array_map(fn (): array => ['style' => $style], array_flip(['hero', 'text_image', 'features', 'quote', 'cta', 'video', 'feed']));
-        $slug = themeInstall([...$klasik, 'header' => $header, 'footer' => $footer, 'home' => ['sections' => $sections]]);
+        $layout = array_map(fn (string $component): array => ['component' => $component, 'style' => $style], ['hero', 'text_image', 'feature_grid', 'quote', 'cta', 'video', 'feed_list']);
+        $layout[] = ['component' => 'columns', 'style' => [...$style, 'columns' => ['base' => 1, 'md' => 2, 'lg' => 2]], 'children' => [['component' => 'quote'], ['component' => 'cta']]];
+        $slug = themeInstall([...$base, 'header' => $header, 'footer' => $footer, 'home' => ['layout' => $layout]]);
         themeActivate($slug);
 
         $html = blkHome();
@@ -216,17 +218,17 @@ it('VERIFY AC-8: never silently downgrades a valid theme, with every style prope
     Log::shouldNotHaveReceived('warning');
 });
 
-it('VERIFY AC-8: either rejects tone auto outside the home sections or renders it, never falling back after a failed render', function () {
+it('VERIFY AC-15: either rejects tone auto outside top-level home.layout nodes or renders it, never falling back after a failed render', function () {
     advSeedHome();
     Log::spy();
-    $klasik = themeOfficialManifest('klasik');
+    $base = themeBaseManifest();
     $variants = [
         'header' => ['header' => ['component' => 'container', 'style' => ['tone' => 'auto'], 'children' => [['component' => 'brand'], ['component' => 'nav_menu']]]],
         'footer' => ['footer' => ['component' => 'container', 'children' => [['component' => 'footer_widgets', 'style' => ['tone' => 'auto']], ['component' => 'copyright']]]],
     ];
 
     foreach ($variants as $label => $override) {
-        $manifest = [...$klasik, ...$override];
+        $manifest = [...$base, ...$override];
 
         if (advRejection($manifest) !== null) {
             continue;
@@ -242,7 +244,7 @@ it('VERIFY AC-8: either rejects tone auto outside the home sections or renders i
 
 it('VERIFY AC-6: keeps odd stored slugs away from the filesystem and the chosen theme', function () {
     Log::spy();
-    $odd = ['../portal/home', "centered\n", "klasik\0", 'KLASIK', ' klasik', '..', '%2e%2e', 'a', str_repeat('a', 41), 'tidak-ada-folder', ['klasik'], 7, true];
+    $odd = ['../portal/home', "centered\n", "majalah\0", 'MAJALAH', ' majalah', '..', '%2e%2e', 'a', str_repeat('a', 41), 'tidak-ada-folder', ['majalah'], 7, true];
 
     foreach ($odd as $value) {
         Setting::set('theme.template', $value);
@@ -273,11 +275,11 @@ it('VERIFY AC-6: keeps odd stored slugs away from the filesystem and the chosen 
 
 it('VERIFY AC-6: refuses odd values from UpdatePortalTheme without touching the stored theme', function () {
     $user = kontenUser('admin-konten');
-    $broken = themeInstall([...themeOfficialManifest('klasik'), 'schema_version' => 99]);
+    $broken = themeInstall([...themeBaseManifest(), 'schema_version' => 99]);
     Setting::set('theme.template', 'centered');
     $accepted = [];
 
-    foreach (['../default', "klasik\n", 'KLASIK', ' klasik', 'klasik ', "klasik\0", ['klasik'], 1, true, '0', $broken, 'tidak-ada'] as $value) {
+    foreach (['../default', "majalah\n", 'MAJALAH', ' majalah', 'majalah ', "majalah\0", ['majalah'], 1, true, '0', $broken, 'tidak-ada'] as $value) {
         try {
             app(UpdatePortalTheme::class)->handle(['template' => $value], $user);
             $accepted[] = json_encode($value);
@@ -290,9 +292,9 @@ it('VERIFY AC-6: refuses odd values from UpdatePortalTheme without touching the 
 });
 
 it('VERIFY AC-6: escapes theme name, description and failure reason on the Tampilan page', function () {
-    $klasik = themeOfficialManifest('klasik');
-    $hostile = themeInstall([...$klasik, 'name' => '<script>alert(1)</script>Tema', 'description' => '<img src=x onerror=alert(2)>']);
-    themeInstall([...$klasik, '<b onmouseover=alert(3)>' => 1]);
+    $base = themeBaseManifest();
+    $hostile = themeInstall([...$base, 'name' => '<script>alert(1)</script>Tema', 'description' => '<img src=x onerror=alert(2)>']);
+    themeInstall([...$base, '<b onmouseover=alert(3)>' => 1]);
     mkdir(themeSandbox().'/Ada Spasi & <i>');
     $this->actingAs(kontenUser('admin-konten'));
 
@@ -308,7 +310,7 @@ it('VERIFY AC-6: escapes theme name, description and failure reason on the Tampi
 });
 
 it('VERIFY AC-6: lets a valid theme with an all-digit slug be chosen on the Tampilan page', function () {
-    themeInstall(themeOfficialManifest('klasik'), '12345');
+    themeInstall(themeBaseManifest(), '12345');
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(Theme::class)->fillForm(['template' => '12345'])->call('save')->assertHasNoErrors();
@@ -320,22 +322,22 @@ it('VERIFY AC-6: tolerates odd entries in the themes directory', function () {
     $root = themeSandbox();
     file_put_contents("{$root}/berkas-biasa.txt", 'x');
     mkdir("{$root}/KosongTanpaManifest");
-    symlink("{$root}/klasik", "{$root}/tautan-klasik");
+    symlink("{$root}/centered", "{$root}/tautan-centered");
     symlink("{$root}/tidak-ada-sasaran", "{$root}/tautan-putus");
     $entries = collect(app(ListPortalThemes::class)->handle())->keyBy('slug');
     $valid = $entries->where('valid', true)->keys()->sort()->values()->all();
 
-    expect($valid)->toBe(['centered', 'default', 'klasik'], 'tautan simbolik ke tema lain tidak jadi tema ber-slug berbeda')
+    expect($valid)->toBe(['centered', 'default', 'majalah', 'mushaf'], 'tautan simbolik ke tema lain tidak jadi tema ber-slug berbeda')
         ->and($entries->has('berkas-biasa.txt'))->toBeFalse()
         ->and($entries['KosongTanpaManifest']['valid'])->toBeFalse();
 
-    Setting::set('theme.template', 'tautan-klasik');
+    Setting::set('theme.template', 'tautan-centered');
     app()->forgetScopedInstances();
 
-    expect(app(ResolveActiveTheme::class)->handle())->toBeNull('slug manifest (klasik) tidak sama dengan nama direktori tautan');
+    expect(app(ResolveActiveTheme::class)->handle())->toBeNull('slug manifest (centered) tidak sama dengan nama direktori tautan');
 });
 
-it('VERIFY AC-7: keeps every themed portal route stateless and cacheable with klasik active', function () {
+it('VERIFY AC-7: keeps every themed portal route stateless and cacheable with majalah, mushaf and a broken theme active', function () {
     advSeedHome();
     Setting::set('modules.psb.enabled', true);
     psbInfoPage(['status' => 'terbit']);
@@ -343,7 +345,7 @@ it('VERIFY AC-7: keeps every themed portal route stateless and cacheable with kl
     $album = portalAlbumWithPhotos(1, ['title' => 'Album adv']);
     $urls = ['/', '/berita', "/berita/{$post->slug}", '/galeri', "/galeri/{$album->slug}", '/video', '/profil', route('psb.info', absolute: false)];
 
-    foreach (['klasik', themeUniqueSlug()] as $slug) {
+    foreach (['majalah', 'mushaf', themeUniqueSlug()] as $slug) {
         themeActivate($slug);
 
         foreach ($urls as $url) {
@@ -360,7 +362,7 @@ it('VERIFY AC-7: keeps every themed portal route stateless and cacheable with kl
 });
 
 it('VERIFY AC-7: does not theme the sitemap and robots, and keeps 404 when the content module is off', function () {
-    themeActivate('klasik');
+    themeActivate('mushaf');
 
     $this->get('/sitemap.xml')->assertOk();
     expect($this->get('/sitemap.xml')->headers->get('Content-Type'))->toContain('application/xml');
@@ -375,7 +377,7 @@ it('VERIFY AC-7: does not theme the sitemap and robots, and keeps 404 when the c
 it('VERIFY AC-8: falls back at once when an active theme is corrupted or deleted, and recovers when restored', function () {
     advSeedHome();
     $core = themeChrome2(blkHome());
-    $slug = themeInstall(themeOfficialManifest('klasik'));
+    $slug = themeInstall(themeBaseManifest());
     themeActivate($slug);
     $themed = themeChrome2(blkHome());
     $file = themeSandbox()."/{$slug}/theme.json";
@@ -414,11 +416,11 @@ it('VERIFY AC-3: adds no settings query for the theme on the portal home page', 
 
     themeActivate(null);
     $none = $count();
-    themeActivate('klasik');
-    $klasik = $count();
+    themeActivate('mushaf');
+    $base = $count();
     themeActivate('centered');
 
-    expect($klasik)->toBe($none)->and($count())->toBe($none);
+    expect($base)->toBe($none)->and($count())->toBe($none);
 });
 
 function themeChrome2(string $html): array

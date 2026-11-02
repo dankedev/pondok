@@ -4,7 +4,7 @@ use App\Models\Album;
 use App\Models\Setting;
 
 /*
-| F102 AC-4 (golden). Keluaran beranda preset `default` dan `centered` direkam dari kode SEBELUM refaktor ke renderer tema,
+| F102 AC-6 (golden). Keluaran beranda preset `default` dan `centered` direkam dari kode SEBELUM refaktor ke renderer tema,
 | lalu dibandingkan dengan keluaran sesudahnya: HTML harus identik (setelah normalisasi spasi, host, dan token acak).
 | Tiga skenario memuat ketujuh tipe blok (hero, text_image, features, quote, cta, video, feed), varian cta `light/navy/gold`
 | (hanya `light` yang memakai latar selang-seling), hero dengan gambar atau album, badge PSB, feed `posts/videos/albums`, serta
@@ -97,7 +97,7 @@ function goldenScenarios(): array
     ];
 }
 
-it('AC-4: renders the home page exactly as the recorded pre-migration golden', function (string $theme, string $scenario) {
+it('AC-6: renders the home page exactly as the recorded pre-migration golden', function (string $theme, string $scenario) {
     goldenScenarios()[$scenario]();
     Setting::set('theme.template', $theme === 'default' ? null : $theme);
     app()->forgetScopedInstances();

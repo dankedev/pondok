@@ -1,16 +1,21 @@
 <?php
 
+use App\Actions\Konten\GetPortalTheme;
+use App\Actions\Konten\ResolveActiveTheme;
 use App\Actions\Konten\ThemeStyleMap;
 use App\Models\Setting;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
 /*
-| F102 AC-3, AC-4 (selain golden, lihat PortalThemeGoldenTest), AC-5, AC-7, AC-8. Kontrak yang diasumsikan:
-|  - `theme.template` (Setting) berisi slug tema; tema resmi `default`, `centered`, `klasik` di `resources/themes/<slug>/theme.json`.
-|  - `klasik` merender header, footer, dan seksi beranda dari JSON; gaya seksi (peta `ThemeStyleMap`) dipasang pada elemen
-|    `<section>` akar tiap blok beranda. Tema tanpa `header`/`footer`/seksi beranda memakai komponen bawaan inti (hasil sama dengan `default`).
+| F102 AC-4, 5, 7, 8, 10, 11, 12, 13, 15 (golden AC-6 ada di PortalThemeGoldenTest). Kontrak yang diasumsikan:
+|  - `theme.template` (Setting) berisi slug tema; tema resmi `default`, `centered`, `majalah`, `mushaf` di `resources/themes/<slug>/theme.json`.
+|  - Renderer berjalan di pohon `home.layout`: tiap node isi (hero, text_image, feature_grid, quote, cta, video, feed_list) mengikat blok aktif
+|    pertama bertipe sama (hero<-hero, feature_grid<-features, feed_list<-feed); `blocks` = semua blok lewat view legacy. Node yang tak tampil
+|    tidak merender elemen apa pun. Gaya (peta `ThemeStyleMap`) dipasang pada elemen `<section>` akar node isi level atas.
+|  - Tema tanpa `header`/`footer` memakai partial inti; tanpa `home.layout` sama dengan `[{blocks, default}]` (HTML identik tema `default`).
 |  - Tema yang hilang atau tidak valid: portal 200 dengan chrome inti dan satu `Log::warning` per slug per proses (pesan atau konteks
 |    memuat slug).
 | Tema uji (`zz-uji-*`) ditulis lewat `themeInstall()` ke folder sementara `config('pondok.themes_path')` (tests/Pest.php).
@@ -19,8 +24,6 @@ use Illuminate\Support\Facades\Log;
 beforeEach(function () {
     portalBoot();
 });
-
-const PORTAL_THEMES = ['default', 'centered', 'klasik'];
 
 /**
  * Isi portal: menu, tombol header, widget footer, dan blok beranda (ketujuh tipe, satu tersembunyi, satu kosong).
@@ -82,21 +85,101 @@ function themeCleanHome(): string
     return themeSquash(blkHome());
 }
 
-it('AC-3: renders the klasik header and footer from json with the same core data as the default chrome', function () {
+/**
+ * Beranda dari tema uji sandbox berisi `$layout` (tanpa header/footer kecuali `$chrome`).
+ *
+ * @param  list<array<string, mixed>>  $layout
+ */
+function themeHomeWith(array $layout, bool $chrome = false): string
+{
+    $manifest = themeLayout($layout);
+
+    themeActivate(themeInstall($chrome ? $manifest : Arr::except($manifest, ['header', 'footer'])));
+
+    return blkHome();
+}
+
+function themeMain(string $html): string
+{
+    preg_match('#<main\b.*?</main>#is', $html, $match);
+
+    return $match[0] ?? '';
+}
+
+/**
+ * Buang blok bertipe `$types` dari data beranda yang sudah diisi `themeSeed()`.
+ *
+ * @param  list<string>  $types
+ */
+function themeSeedWithout(array $types): void
+{
+    blkSet(array_values(array_filter(blkStored(), fn (array $block): bool => ! in_array($block['type'], $types, true))));
+}
+
+/**
+ * @return list<array{level: int, attrs: string, text: string}>
+ */
+function themeHeadings(string $html): array
+{
+    preg_match_all('#<h([1-6])\b([^>]*)>(.*?)</h\1>#is', $html, $matches, PREG_SET_ORDER);
+
+    return array_map(fn (array $m): array => ['level' => (int) $m[1], 'attrs' => $m[2], 'text' => trim(html_entity_decode(strip_tags($m[3]), ENT_QUOTES | ENT_HTML5))], $matches);
+}
+
+/**
+ * Pastikan tepat satu h1, tanpa loncatan level, tanpa id ganda; kembalikan daftar heading.
+ *
+ * @return list<array{level: int, attrs: string, text: string}>
+ */
+function themeExpectOutline(string $html, string $label): array
+{
+    $headings = themeHeadings($html);
+    $levels = array_column($headings, 'level');
+    preg_match_all('#\sid="([^"]+)"#', $html, $ids);
+
+    expect(count(array_filter($levels, fn (int $level): bool => $level === 1)))->toBe(1, "{$label}: tepat satu h1")
+        ->and($levels[0] ?? null)->toBe(1, "{$label}: heading pertama h1")
+        ->and(count($ids[1]))->toBe(count(array_unique($ids[1])), "{$label}: id ganda: ".implode(', ', array_diff_assoc($ids[1], array_unique($ids[1]))));
+
+    foreach ($levels as $index => $level) {
+        expect($level)->toBeLessThanOrEqual(($levels[$index - 1] ?? 0) + 1, "{$label}: loncatan level heading ke-{$index}");
+    }
+
+    return $headings;
+}
+
+it('AC-10: renders the majalah and mushaf header and footer from json with the same core data as the default chrome', function () {
     themeSeed();
     $default = themeChrome(blkHome());
 
-    themeActivate('klasik');
-    $klasik = themeChrome(blkHome());
+    foreach (['majalah', 'mushaf'] as $slug) {
+        themeActivate($slug);
+        $chrome = themeChrome(blkHome());
 
-    expect($klasik['header'])->not->toBe('')->toContain('Ma&#039;had Al-Kitab')->toContain('Kabar terbaru')
-        ->and(themeLinks($klasik['header']))->toBe(themeLinks($default['header']))
-        ->and(themeLinks($klasik['footer']))->toBe(themeLinks($default['footer']))
-        ->and(profilVisibleText($klasik['footer']))->toContain('Teks footer uji.')->toContain('Tautan berita uji')->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Kitab"]))
-        ->and($klasik['header'] !== $default['header'] || $klasik['footer'] !== $default['footer'])->toBeTrue('klasik harus dirender dari JSON, bukan salinan chrome inti');
+        expect($chrome['header'])->not->toBe('')->toContain('Ma&#039;had Al-Kitab')->toContain('Kabar terbaru')
+            ->and(themeLinks($chrome['header']))->toBe(themeLinks($default['header']), "{$slug}: tautan header")
+            ->and(themeLinks($chrome['footer']))->toBe(themeLinks($default['footer']), "{$slug}: tautan footer")
+            ->and(profilVisibleText($chrome['footer']))->toContain('Teks footer uji.')->toContain('Tautan berita uji')->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Kitab"]))
+            ->and($chrome['header'] !== $default['header'] || $chrome['footer'] !== $default['footer'])->toBeTrue("{$slug} harus dirender dari JSON, bukan salinan chrome inti");
+    }
 });
 
-it('AC-3: costs the same number of queries with klasik as with the core layout', function () {
+it('AC-10: renders columns and divider in header and footer from the same node model', function () {
+    themeSeed();
+    $manifest = themeBaseManifest();
+    $manifest['header'] = ['component' => 'columns', 'children' => [['component' => 'brand'], ['component' => 'nav_menu']]];
+    $manifest['footer'] = ['component' => 'container', 'children' => [['component' => 'divider'], ['component' => 'columns', 'children' => [['component' => 'footer_widgets'], ['component' => 'copyright']]]]];
+    $default = themeChrome(blkHome());
+
+    themeActivate(themeInstall($manifest));
+    $chrome = themeChrome(blkHome());
+
+    expect(themeLinks($chrome['header']))->toBe(themeLinks($default['header']))
+        ->and(themeLinks($chrome['footer']))->toBe(themeLinks($default['footer']))
+        ->and(profilVisibleText($chrome['footer']))->toContain('Teks footer uji.')->toContain(__('pondok.portal.footer.rights', ['year' => now()->year, 'name' => "Ma'had Al-Kitab"]));
+});
+
+it('AC-10: costs the same number of queries with majalah and mushaf as with the core layout', function () {
     themeSeed();
     blkHome();
 
@@ -107,49 +190,53 @@ it('AC-3: costs the same number of queries with klasik as with the core layout',
     blkHome();
     $default = count(DB::getQueryLog());
 
-    themeActivate('klasik');
-    DB::flushQueryLog();
-    blkHome();
+    expect($default)->toBeGreaterThan(0);
 
-    expect($default)->toBeGreaterThan(0)->and(count(DB::getQueryLog()))->toBe($default);
+    foreach (['majalah', 'mushaf'] as $slug) {
+        themeActivate($slug);
+        DB::flushQueryLog();
+        blkHome();
+
+        expect(count(DB::getQueryLog()))->toBe($default, $slug);
+    }
 });
 
-it('AC-3: keeps school text escaped and unsafe urls out of the klasik header and footer', function () {
+it('AC-10: keeps school text escaped and unsafe urls out of the majalah and mushaf header and footer', function () {
     themeSeed();
     Setting::set('school.name', '<script>alert(1)</script>Pondok');
     navSet([navItem('home', 'Beranda'), navItem('url', 'Tautan jahat', ['url' => 'javascript:alert(1)'])], navItem('url', 'Tombol jahat', ['url' => 'javascript:alert(2)']));
     ftrSet([ftr('text', ['heading' => 'Tentang', 'body' => '<p onclick="alert(3)">Isi</p><script>alert(4)</script>']), ftr('links', ['items' => [navItem('url', 'Tautan footer jahat', ['url' => 'javascript:alert(5)'])]])]);
-    themeActivate('klasik');
 
-    $html = blkHome();
-    $chrome = themeChrome($html);
+    foreach (['majalah', 'mushaf'] as $slug) {
+        themeActivate($slug);
+        $chrome = themeChrome(blkHome());
 
-    expect($chrome['header'].$chrome['footer'])->not->toContain('<script')->not->toContain('javascript:')->not->toContain('onclick')
-        ->and($chrome['header'])->toContain('Pondok');
+        expect($chrome['header'].$chrome['footer'])->not->toContain('<script')->not->toContain('javascript:')->not->toContain('onclick')
+            ->and($chrome['header'])->toContain('Pondok', $slug);
+    }
 });
 
-it('AC-3: falls back to the core header and footer for a theme without them, and renders a theme without any mapping exactly like the core', function () {
+it('AC-10: falls back to the core header and footer for a theme without them, and renders a theme without home.layout exactly like the core', function () {
     themeSeed();
     $default = blkHome();
-    $klasik = themeOfficialManifest('klasik');
-    $slug = themeInstall(Arr::except($klasik, ['header', 'footer']));
+    $base = themeBaseManifest();
+    $withoutChrome = themeInstall(Arr::except($base, ['header', 'footer']));
 
-    themeActivate($slug);
-    $withoutChrome = blkHome();
+    themeActivate($withoutChrome);
 
-    expect(themeChrome($withoutChrome))->toBe(themeChrome($default));
+    expect(themeChrome(blkHome()))->toBe(themeChrome($default));
 
-    $blank = themeInstall(Arr::except($klasik, ['header', 'footer', 'home']));
+    $blank = themeInstall(Arr::except($base, ['header', 'footer', 'home']));
     themeActivate($blank);
 
-    expect(themeSquash(blkHome()))->toBe(themeSquash($default), 'tipe blok yang tidak dipetakan memakai komponen bawaan inti');
+    expect(themeSquash(blkHome()))->toBe(themeSquash($default), 'tanpa home.layout = [{blocks, default}], identik dengan inti');
 });
 
-it('AC-3: carries no portal text in the theme files and shows no manifest text on the portal', function () {
+it('AC-10: carries no portal text in the theme files and shows no manifest text on the portal', function () {
     themeSeed();
     $forbidden = ['text', 'label', 'title', 'heading', 'body', 'html', 'content', 'url', 'href', 'src'];
 
-    foreach (PORTAL_THEMES as $slug) {
+    foreach (THEME_OFFICIAL as $slug) {
         $manifest = themeOfficialManifest($slug);
         $keys = collect(Arr::dot($manifest))->keys()->map(fn (string $key): array => explode('.', $key))->flatten()->reject(fn (string $key): bool => is_numeric($key))->unique()->all();
 
@@ -162,7 +249,26 @@ it('AC-3: carries no portal text in the theme files and shows no manifest text o
     }
 });
 
-it('AC-4: shows every block in order for each theme, drops hidden and empty blocks and escapes block text', function () {
+it('AC-4: renders a free-order layout in exactly the order of the json, with repeated and nested nodes', function () {
+    themeSeed();
+    $html = themeHomeWith([
+        ['component' => 'quote'],
+        ['component' => 'hero'],
+        ['component' => 'container', 'children' => [
+            ['component' => 'columns', 'children' => [
+                ['component' => 'feed_list'],
+                ['component' => 'container', 'children' => [['component' => 'feature_grid'], ['component' => 'cta']]],
+            ]],
+        ]],
+        ['component' => 'feed_list'],
+        ['component' => 'feed_list'],
+    ]);
+    preg_match_all('/Teks kutipan uji|Judul hero uji|Feed uji|Keunggulan uji|Ajakan uji/', profilVisibleText(themeMain($html)), $matches);
+
+    expect($matches[0])->toBe(['Teks kutipan uji', 'Judul hero uji', 'Feed uji', 'Keunggulan uji', 'Ajakan uji', 'Feed uji', 'Feed uji']);
+});
+
+it('AC-4 and AC-5: shows every block for each official theme, drops hidden and empty blocks and escapes block text', function () {
     themeSeed();
     $blocks = blkStored();
     $blocks[0]['data']['text'] = '<img src=x onerror=alert(1)> Teks hero uji';
@@ -170,73 +276,193 @@ it('AC-4: shows every block in order for each theme, drops hidden and empty bloc
     blkSet($blocks);
     $needles = ['Judul hero uji', 'Keunggulan uji', 'Feed uji', 'Tentang uji', 'Teks kutipan uji', 'Video seksi uji', 'Ajakan uji'];
 
-    foreach (PORTAL_THEMES as $slug) {
+    foreach (THEME_OFFICIAL as $slug) {
         themeActivate($slug);
         $html = blkHome();
         $order = array_map(fn (string $needle): int|false => mb_strpos($html, $needle), $needles);
 
         expect($order)->not->toContain(false, "{$slug}: semua blok tampil")
-            ->and($order)->toBe(collect($order)->sort()->values()->all(), "{$slug}: urutan blok")
             ->and($html)->not->toContain('Kutipan tersembunyi uji')
             ->and($html)->not->toContain('<img src=x')->not->toContain('<script>alert(2)')
             ->and(substr_count($html, '<h1'))->toBe(1, "{$slug}: tepat satu h1");
+
+        if (in_array($slug, ['default', 'centered'], true)) {
+            expect($order)->toBe(collect($order)->sort()->values()->all(), "{$slug}: urutan blok sesuai admin");
+        }
     }
 });
 
-it('AC-4: alternates tone auto backgrounds like the old band closure and keeps unmapped block types on the core component', function () {
-    themeSeed();
-    $klasik = themeOfficialManifest('klasik');
-    $manifest = [...$klasik, 'home' => ['sections' => array_map(fn (): array => ['style' => ['tone' => 'auto']], array_flip(['features', 'feed', 'text_image', 'quote', 'video', 'cta']))]];
+it('AC-5: binds each node to the first active block of its type and repeats it, and lets blocks list every active block in admin order', function () {
+    portalSeedContent();
+    blkSet([
+        blk('quote', ['text' => 'Kutipan pertama uji']),
+        blk('hero', ['title' => 'Hero pertama uji']),
+        blk('quote', ['text' => 'Kutipan kedua uji']),
+        blk('hero', ['title' => 'Hero kedua uji']),
+    ]);
 
-    themeActivate(themeInstall($manifest));
-    $html = blkHome();
-    preg_match_all('#<section\b[^>]*class="([^"]*)"#i', $html, $sectionTags);
-    $backgrounds = array_map(fn (string $class): string => collect(explode(' ', $class))->first(fn (string $token): bool => str_starts_with($token, 'bg-')) ?? '', array_slice($sectionTags[1], 1));
+    $main = profilVisibleText(themeMain(themeHomeWith([['component' => 'hero'], ['component' => 'quote'], ['component' => 'hero']])));
+    $blocks = profilVisibleText(themeMain(themeHomeWith([['component' => 'blocks']])));
 
-    expect($html)->toContain('Judul hero uji')
-        ->and(substr_count($html, '<h1'))->toBe(1, 'hero tak dipetakan memakai komponen inti')
-        ->and($backgrounds)->toBe(['bg-gray-50', 'bg-white', 'bg-gray-50', 'bg-white', 'bg-gray-50', 'bg-white'], 'tone auto selang-seling mulai dari bg-gray-50, tanpa hero');
+    expect(substr_count($main, 'Hero pertama uji'))->toBe(2)
+        ->and($main)->not->toContain('Hero kedua uji')->toContain('Kutipan pertama uji')->not->toContain('Kutipan kedua uji')
+        ->and(collect(['Kutipan pertama uji', 'Hero pertama uji', 'Kutipan kedua uji', 'Hero kedua uji'])->map(fn (string $needle): int|false => mb_strpos($blocks, $needle))->all())
+        ->toBe(collect(['Kutipan pertama uji', 'Hero pertama uji', 'Kutipan kedua uji', 'Hero kedua uji'])->map(fn (string $needle): int|false => mb_strpos($blocks, $needle))->sort()->values()->all());
 });
 
-it('AC-4: puts the klasik style map classes on each mapped block section and no other padding, gap or column utilities there', function () {
+it('AC-5: renders no element at all for nodes whose block is missing, including wrappers, columns and dividers', function () {
+    portalSeedContent();
+    blkSet([blk('hero', ['title' => 'Hero tunggal uji'])]);
+
+    $only = themeSquash(themeMain(themeHomeWith([['component' => 'hero']])));
+    $withEmpty = themeSquash(themeMain(themeHomeWith([
+        ['component' => 'hero'],
+        ['component' => 'container', 'style' => ['tone' => 'muted', 'padding' => 'lg', 'gap' => 'md'], 'children' => [['component' => 'quote'], ['component' => 'divider'], ['component' => 'feed_list']]],
+        ['component' => 'columns', 'style' => ['border' => 'top'], 'children' => [['component' => 'quote'], ['component' => 'text_image']]],
+        ['component' => 'divider'],
+        ['component' => 'cta'],
+    ])));
+
+    expect($only)->toContain('Hero tunggal uji')
+        ->and($withEmpty)->toBe($only, 'node kosong, pembungkusnya, dan divider tanpa konten tetangga tidak dirender');
+});
+
+it('AC-5: gives a columns node as many grid columns as cells shown, at most the requested number', function () {
+    portalSeedContent();
+    blkSet([blk('hero', ['title' => 'Sel pertama uji']), blk('quote', ['text' => 'Sel ketiga uji'])]);
+    $tokens = fn (int $columns): array => array_values(array_filter(preg_split('/\s+/', trim(ThemeStyleMap::classes(['columns' => $columns]))) ?: []));
+    $html = themeMain(themeHomeWith([['component' => 'columns', 'style' => ['columns' => 3], 'children' => [['component' => 'hero'], ['component' => 'feed_list'], ['component' => 'quote']]]]));
+    $classes = collect(explode(' ', implode(' ', array_map(fn (array $m): string => $m[1], (function () use ($html): array {
+        preg_match_all('#class="([^"]*)"#', $html, $m, PREG_SET_ORDER);
+
+        return $m;
+    })()))));
+
+    expect($tokens(2))->not->toBeEmpty()
+        ->and(array_diff($tokens(2), $classes->all()))->toBe([], 'dua sel tampil: kolom = 2')
+        ->and(array_intersect(array_diff($tokens(3), $tokens(2)), $classes->all()))->toBe([], 'bukan 3 kolom walau diminta 3');
+});
+
+it('AC-5: does not query content tables for content nodes when the content module is off', function () {
     themeSeed();
-    $manifest = themeOfficialManifest('klasik');
-    themeActivate('klasik');
-    $html = blkHome();
-    $expected = collect($manifest['home']['sections'] ?? [])
-        ->filter(fn (array $node): bool => isset($node['style']) && ($node['style']['tone'] ?? null) !== 'auto')
-        ->map(fn (array $node): array => preg_split('/\s+/', trim(ThemeStyleMap::classes(Arr::except($node['style'], ['tone'])))));
-    preg_match_all('#<section\b[^>]*class="([^"]*)"#i', $html, $tags);
-    $classes = collect($tags[1])->map(fn (string $class): array => array_values(array_filter(explode(' ', $class))));
-    $owned = fn (array $tokens): array => array_values(array_filter($tokens, fn (string $token): bool => preg_match('/^(?:(?:md|lg):)?(?:py|gap|grid-cols)-/', $token) === 1));
-    $allowed = collect(['padding', 'gap', 'columns'])->flatMap(fn (string $property): array => collect(['padding' => ['sm', 'md', 'lg'], 'gap' => ['sm', 'md', 'lg'], 'columns' => [2, 3, 4]][$property])->flatMap(fn (mixed $value): array => [
-        ...preg_split('/\s+/', trim(ThemeStyleMap::classes([$property => $value]))),
-        ...(in_array($property, ['padding', 'columns'], true)
-            ? preg_split('/\s+/', trim(ThemeStyleMap::classes([$property => ['base' => $value, 'md' => $value, 'lg' => $value]])))
-            : []),
-    ])->all())->filter()->unique()->all();
+    Setting::set('modules.konten.enabled', false);
+    $manifest = themeLayout([['component' => 'feed_list'], ['component' => 'hero'], ['component' => 'feature_grid']]);
+    themeActivate(themeInstall(Arr::except($manifest, ['header', 'footer'])));
+    DB::enableQueryLog();
+    DB::flushQueryLog();
 
-    expect($expected)->not->toBeEmpty('manifest klasik harus memberi gaya pada setidaknya satu seksi beranda');
+    $this->get('/')->assertOk();
+    $tables = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => preg_match('/from ["`](?:posts|albums|photos|videos|achievements)["`]/i', $sql) === 1);
 
-    foreach ($classes as $tokens) {
-        expect(array_diff($owned($tokens), $allowed))->toBe([], 'section memuat kelas padding/gap/kolom di luar peta gaya');
-    }
+    expect($tables->all())->toBe([]);
+});
 
-    foreach ($expected as $type => $tokens) {
-        expect($classes->contains(fn (array $section): bool => array_diff($tokens, $section) === []))->toBeTrue("seksi {$type}: kelas peta gaya tidak terpasang pada <section>");
+it('AC-7: alternates tone auto backgrounds over the shown top-level nodes only, so empty nodes and dividers do not shift the rhythm', function () {
+    themeSeed();
+    themeSeedWithout(['cta', 'hero']);
+    $html = themeHomeWith([
+        ['component' => 'text_image', 'style' => ['tone' => 'auto']],
+        ['component' => 'divider'],
+        ['component' => 'cta', 'style' => ['tone' => 'auto']],
+        ['component' => 'feature_grid', 'style' => ['tone' => 'auto']],
+        ['component' => 'hero', 'style' => ['tone' => 'auto']],
+        ['component' => 'feed_list', 'style' => ['tone' => 'auto']],
+        ['component' => 'video', 'style' => ['tone' => 'auto']],
+    ]);
+    preg_match_all('#<section\b[^>]*class="([^"]*)"#i', themeMain($html), $tags);
+    $backgrounds = collect($tags[1])->map(fn (string $class): ?string => collect(explode(' ', $class))->first(fn (string $token): bool => in_array($token, ['bg-gray-50', 'bg-white'], true)))->filter()->values()->all();
+
+    expect($backgrounds)->toBe(['bg-gray-50', 'bg-white', 'bg-gray-50', 'bg-white'], 'text_image, feature_grid, feed_list, video; cta dan hero kosong');
+});
+
+it('AC-7: leaves a nested node without the section gutter and default section padding', function () {
+    themeSeed();
+    $count = fn (string $html, string $pattern): int => preg_match_all($pattern, themeMain($html));
+    $top = themeHomeWith([['component' => 'quote', 'style' => ['tone' => 'light']]]);
+    $nested = themeHomeWith([['component' => 'container', 'children' => [['component' => 'quote', 'style' => ['tone' => 'light']]]]]);
+
+    expect($count($top, '/portal-gutter/'))->toBeGreaterThan(0, 'kontrol: level atas memakai portal-gutter')
+        ->and($count($nested, '/portal-gutter/'))->toBe(0, 'bersarang tanpa portal-gutter')
+        ->and($count($nested, '/(?<![\w:-])py-\d/'))->toBeLessThan($count($top, '/(?<![\w:-])py-\d/'), 'bersarang tanpa padding bawaan bagian');
+});
+
+it('AC-8: gives each variant its own markup, and the first variant when none is given', function () {
+    themeSeed();
+    $variants = ['hero' => ['center', 'split'], 'feed_list' => ['cards', 'list', 'magazine'], 'quote' => ['plain', 'framed'], 'cta' => ['band', 'card'], 'feature_grid' => ['cards', 'numbered'], 'blocks' => ['default', 'centered']];
+
+    foreach ($variants as $component => $names) {
+        $markup = [];
+
+        foreach ($names as $name) {
+            $markup[$name] = themeSquash(themeMain(themeHomeWith([['component' => $component, 'variant' => $name]])));
+            expect($markup[$name])->not->toBe('', "{$component} {$name}");
+        }
+
+        $none = themeSquash(themeMain(themeHomeWith([['component' => $component]])));
+
+        expect(array_unique($markup))->toHaveCount(count($names), "{$component}: tiap varian punya markup berbeda")
+            ->and($none)->toBe($markup[$names[0]], "{$component}: tanpa variant = {$names[0]}");
     }
 });
 
-it('AC-5: gives every official theme a skip link, one main, one h1, orderly headings, two labelled navs and visible focus on every control', function () {
+it('AC-8: never interpolates the variant or component name into a class attribute of the theme views', function () {
+    $files = collect(File::allFiles(resource_path('views/portal/theme')))->filter(fn (SplFileInfo $file): bool => str_ends_with($file->getFilename(), '.blade.php'));
+    $problems = [];
+
+    foreach ($files as $file) {
+        $code = (string) preg_replace('/\{\{--.*?--\}\}/s', '', (string) file_get_contents($file->getPathname()));
+
+        // Satu-satunya sisipan sah di atribut class adalah kelas hasil `ThemeStyleMap` (`$sectionClass`, `$wrapperClass`); varian/komponen/node tidak.
+        if (preg_match('/class="[^"]*(?:\{\{|\{!!)[^}]*(?:\$variant|\$component|\$mode|\$type|\$node\[\s*.(?:variant|component))/', $code) === 1) {
+            $problems[] = $file->getFilename().': kelas disisipi variant/component di atribut class';
+        }
+    }
+
+    expect($files)->not->toBeEmpty()->and($problems)->toBe([]);
+});
+
+it('AC-11: keeps exactly one h1, ordered levels and unique ids on every official theme and every layout shape', function () {
     themeSeed();
 
-    foreach (PORTAL_THEMES as $slug) {
+    foreach (THEME_OFFICIAL as $slug) {
+        themeActivate($slug);
+        themeExpectOutline(blkHome(), $slug);
+    }
+
+    $withHero = themeExpectOutline(themeHomeWith([['component' => 'hero'], ['component' => 'quote'], ['component' => 'hero'], ['component' => 'feed_list'], ['component' => 'feed_list']]), 'hero berulang');
+    $heroes = array_values(array_filter($withHero, fn (array $h): bool => $h['text'] === 'Judul hero uji'));
+
+    expect(array_column($heroes, 'level'))->toBe([1, 2], 'hero pertama h1, kedua h2');
+
+    $noHero = themeSeedWithout(['hero']);
+    $outline = themeExpectOutline($html = themeHomeWith([['component' => 'feed_list'], ['component' => 'quote']]), 'tanpa hero');
+
+    expect($outline[0]['attrs'])->toContain('sr-only')
+        ->and($outline[0]['text'])->toContain("Ma'had Al-Kitab")
+        ->and(mb_strpos(themeMain($html), '<h1'))->toBeLessThan((int) mb_strpos(themeMain($html), 'Feed uji'), 'h1 sr-only di awal main');
+
+    themeExpectOutline(themeHomeWith([['component' => 'blocks']]), 'preset blocks tanpa hero');
+});
+
+it('AC-11: demotes a hero that follows a titled node to h2 and puts the single sr-only h1 at the start of main', function () {
+    themeSeed();
+    $html = themeHomeWith([['component' => 'feed_list'], ['component' => 'hero']]);
+    $outline = themeExpectOutline($html, 'node bertajuk sebelum hero');
+    $hero = collect($outline)->first(fn (array $h): bool => $h['text'] === 'Judul hero uji');
+
+    expect($outline[0]['attrs'])->toContain('sr-only')->and($outline[0]['text'])->toContain("Ma'had Al-Kitab")
+        ->and($hero['level'])->toBe(2)
+        ->and(mb_strpos(themeMain($html), '<h1'))->toBeLessThan((int) mb_strpos(themeMain($html), 'Feed uji'));
+});
+
+it('AC-12: gives every official theme a skip link, one main, two labelled navs and visible focus on every control', function () {
+    themeSeed();
+
+    foreach (THEME_OFFICIAL as $slug) {
         themeActivate($slug);
         $html = blkHome();
         $body = (string) preg_replace('#^.*?<body\b[^>]*>#is', '', $html);
         $header = themeChrome($html)['header'];
-        preg_match_all('#<h([1-6])\b#i', $html, $levels);
-        $levels = array_map('intval', $levels[1]);
         $navLabels = portalNavLabels($header);
         preg_match_all('#<nav\b[^>]*>#i', $html, $allNavs);
         preg_match_all('#<(?:a|button|summary)\b[^>]*>#i', $body, $controls);
@@ -244,13 +470,7 @@ it('AC-5: gives every official theme a skip link, one main, one h1, orderly head
         expect(preg_match('#^\s*<a\b[^>]*href="\#konten"#i', $body))->toBe(1, "{$slug}: tautan lompat adalah elemen fokus pertama")
             ->and(substr_count($html, '<main'))->toBe(1, "{$slug}: satu main")
             ->and($html)->toMatch('#<main\b[^>]*id="konten"#i')
-            ->and(substr_count($html, '<h1'))->toBe(1, "{$slug}: satu h1")
-            ->and($header)->not->toContain('<h1', "{$slug}: brand bukan h1")
-            ->and($levels[0] ?? null)->toBe(1, "{$slug}: heading pertama h1");
-
-        foreach ($levels as $index => $level) {
-            expect($level)->toBeLessThanOrEqual(($levels[$index - 1] ?? 0) + 1, "{$slug}: loncatan level heading di urutan ke-{$index}");
-        }
+            ->and($header)->not->toContain('<h1', "{$slug}: brand bukan h1");
 
         expect(array_filter($allNavs[0], fn (string $tag): bool => ! str_contains($tag, 'aria-label') && ! str_contains($tag, 'aria-labelledby')))->toBe([], "{$slug}: nav tanpa nama")
             ->and($navLabels)->toHaveCount(2, "{$slug}: dua nav di header")
@@ -264,12 +484,36 @@ it('AC-5: gives every official theme a skip link, one main, one h1, orderly head
     }
 });
 
-it('AC-7: serves every official theme with public cache headers, etag and 304, without tokens, livewire or cookies', function () {
+it('AC-13: starts nested columns at one column on mobile, adds no horizontal overflow, and keeps the mobile menu toggle in the mushaf header', function () {
+    themeSeed();
+    $base = array_values(array_filter(preg_split('/\s+/', trim(ThemeStyleMap::classes(['columns' => 1]))) ?: []));
+
+    expect($base)->not->toBeEmpty();
+
+    foreach (['majalah', 'mushaf'] as $slug) {
+        themeActivate($slug);
+        $html = blkHome();
+
+        expect($html)->not->toContain('overflow-x', "{$slug}: tanpa overflow-x");
+    }
+
+    themeActivate('majalah');
+    preg_match_all('#class="([^"]*)"#', themeMain(blkHome()), $classes);
+
+    expect(array_diff($base, explode(' ', implode(' ', $classes[1]))))->toBe([], 'majalah: columns responsif base 1 dipakai di main');
+
+    themeActivate('mushaf');
+    $header = themeChrome(blkHome())['header'];
+
+    expect($header)->toContain('<details')->toContain('<summary');
+});
+
+it('AC-15: serves every official theme with public cache headers, etag and 304, without tokens, livewire or cookies', function () {
     themeSeed();
     Setting::set('modules.psb.enabled', true);
     psbInfoPage(['status' => 'terbit']);
 
-    foreach (PORTAL_THEMES as $slug) {
+    foreach (THEME_OFFICIAL as $slug) {
         themeActivate($slug);
 
         foreach (['/', '/berita', route('psb.info', absolute: false)] as $url) {
@@ -289,13 +533,13 @@ it('AC-7: serves every official theme with public cache headers, etag and 304, w
     }
 });
 
-it('AC-7: keeps the core chrome on session pages, 404 and verification pages while klasik is active', function () {
+it('AC-15: keeps the core chrome on session pages, 404 and verification pages while mushaf is active', function () {
     Setting::set('modules.psb.enabled', true);
     portalPsbOpen();
     $urls = [route('psb.register', absolute: false), route('portal-wali.login', absolute: false), '/tidak-ada-f102', '/verifikasi-surat'];
     $before = array_map(fn (string $url): array => themeChrome($this->get($url)->getContent()), $urls);
 
-    themeActivate('klasik');
+    themeActivate('mushaf');
 
     foreach ($urls as $index => $url) {
         expect(themeChrome($this->get($url)->getContent()))->toBe($before[$index], $url);
@@ -304,17 +548,19 @@ it('AC-7: keeps the core chrome on session pages, 404 and verification pages whi
     expect($before[0]['header'])->not->toBe('', 'psb.register memakai chrome inti');
 });
 
-it('AC-8: falls back to the core chrome with a 200 and one warning per slug when the active theme is missing or unusable', function () {
+it('AC-15: falls back to the core chrome with a 200 and one warning per slug when the active theme is missing or unusable', function () {
     themeSeed();
     $default = themeSquash(blkHome());
-    $klasik = themeOfficialManifest('klasik');
-    $json = json_encode($klasik);
+    $base = themeBaseManifest();
+    $json = json_encode($base);
     $cases = [
         'hilang' => themeUniqueSlug(),
         'JSON rusak' => themeInstall('{"schema_version":1,'),
-        'schema 99' => themeInstall([...$klasik, 'schema_version' => 99]),
+        'schema 99' => themeInstall([...$base, 'schema_version' => 99]),
         'melebihi 64 KB' => themeInstall($json.str_repeat(' ', 70 * 1024)),
-        'min_core terlalu baru' => themeInstall([...$klasik, 'min_core' => '999.0.0']),
+        'min_core terlalu baru' => themeInstall([...$base, 'min_core' => '999.0.0']),
+        'home.sections lama' => themeInstall([...$base, 'home' => ['sections' => []]]),
+        'terlalu dalam' => themeInstall(themeLayout([themeNested(7, ['component' => 'hero'])])),
     ];
 
     Log::spy();
@@ -330,4 +576,16 @@ it('AC-8: falls back to the core chrome with a 200 and one warning per slug when
     foreach ($cases as $label => $slug) {
         Log::shouldHaveReceived('warning')->withArgs(fn (...$args): bool => str_contains(json_encode($args), $slug))->once();
     }
+});
+
+it('AC-14: treats a stored klasik value from old demo data as the core theme', function () {
+    themeSeed();
+    $core = themeSquash(blkHome());
+
+    Setting::set('theme.template', 'klasik');
+    app()->forgetScopedInstances();
+
+    expect(app(GetPortalTheme::class)->template())->toBe('default')
+        ->and(app(ResolveActiveTheme::class)->handle())->toBeNull()
+        ->and(themeSquash(blkHome()))->toBe($core);
 });

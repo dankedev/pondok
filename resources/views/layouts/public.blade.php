@@ -14,12 +14,15 @@
     'bare' => false,
     // true: footer ringkas (nama, tautan widget Tautan pertama, hak cipta). Null: otomatis untuk route `psb.*`.
     'compactFooter' => null,
+    // true/false memaksa; null = otomatis: tema aktif (F102) hanya di route `portal.*` (selain sitemap/robots) dan `psb.info`.
+    'themed' => null,
 ])
 
 @php
     $school = app(\App\Actions\Konten\GetSchoolProfile::class)->handle();
-    // Menu utama dan tombol header dihitung sekali untuk kedua nav; footer menghitung widgetnya sendiri (`GetPortalFooter`).
+    // Menu utama, tombol header, dan widget footer dihitung sekali; dipakai chrome inti maupun chrome tema.
     $navigation = app(\App\Actions\Konten\GetPortalNavigation::class)->handle($school);
+    $footer = app(\App\Actions\Konten\GetPortalFooter::class)->handle($school);
     $pageTitle = filled($title)
         ? __('pondok.portal.meta.title', ['title' => $title, 'name' => $school['name']])
         : ($school['tagline'] !== null ? __('pondok.portal.meta.home_title', ['name' => $school['name'], 'tagline' => $school['tagline']]) : $school['name']);
@@ -28,9 +31,10 @@
     $canonicalUrl = $canonical ?? route('portal.home');
     // Logo cetak (bukan logo desktop) sebagai gambar bagikan bawaan.
     $imageUrl = $ogImage ?? $school['logo_url'];
-    $desktopLogo = $school['logo_desktop_url'];
-    $mobileLogo = $school['logo_mobile_url'];
     $compactFooter ??= request()->routeIs('psb.*');
+    // Satu pemeriksaan untuk seluruh chrome bertema: halaman bersesi, 404, verifikasi, dan portal wali tetap chrome inti.
+    $themed ??= (request()->routeIs('portal.*') && ! request()->routeIs('portal.sitemap', 'portal.robots')) || request()->routeIs('psb.info');
+    $activeTheme = $themed ? app(\App\Actions\Konten\ResolveActiveTheme::class)->handle() : null;
     // Tema admin (F070): tanpa tema `css` dan `font_aliases` null, jadi keluaran sama dengan bawaan.
     $theme = app(\App\Actions\Konten\GetPortalTheme::class)->handle();
 @endphp
@@ -78,47 +82,11 @@
         {{ __('pondok.portal.nav.skip_to_content') }}
     </a>
 
-    <header class="border-b border-gray-100 bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-            <a href="{{ route('portal.home') }}"
-               class="flex min-h-11 min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                {{-- Logo desktop untuk >= md, logo mobile untuk < md; logo cetak tidak dipakai di header. --}}
-                @if ($desktopLogo && $mobileLogo)
-                    <picture class="block min-w-0 md:max-w-64">
-                        <source media="(min-width: 768px)" srcset="{{ $desktopLogo }}">
-                        <img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain md:h-14">
-                    </picture>
-                    <span class="sr-only">{{ $school['name'] }}</span>
-                @elseif ($desktopLogo)
-                    <img src="{{ $desktopLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto min-w-0 max-w-full object-contain md:h-14 md:max-w-64">
-                    <span class="sr-only">{{ $school['name'] }}</span>
-                @elseif ($mobileLogo)
-                    <span class="shrink-0 md:hidden"><img src="{{ $mobileLogo }}" alt="{{ $school['name'] }}" class="h-10 w-auto max-w-full object-contain"></span>
-                    <span class="hidden truncate text-lg font-bold text-brand-text md:inline">{{ $school['name'] }}</span>
-                @elseif ($school['short_name'])
-                    <span class="hidden truncate text-lg font-bold text-brand-text md:inline">{{ $school['name'] }}</span>
-                    <span class="truncate text-lg font-bold text-brand-text md:hidden">{{ $school['short_name'] }}</span>
-                @else
-                    <span class="truncate text-lg font-bold text-brand-text">{{ $school['name'] }}</span>
-                @endif
-            </a>
-
-            {{-- Menu bisa sampai 8 item + Masuk/Daftar: nav penuh mulai xl (di 1024px label terlipat), menu lipat di bawahnya. --}}
-            <nav class="hidden xl:flex xl:items-center xl:gap-1" aria-label="{{ __('pondok.portal.nav.label') }}">
-                @include('portal.partials.nav-links', ['layout' => 'desktop', 'navigation' => $navigation])
-            </nav>
-
-            <details class="group relative xl:hidden">
-                <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-gray-200 px-4 text-base font-semibold text-primary-950 hover:border-primary-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                    <x-heroicon-o-bars-3 class="size-6" aria-hidden="true" />
-                    {{ __('pondok.portal.nav.menu') }}
-                </summary>
-                <nav class="absolute right-0 z-10 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg" aria-label="{{ __('pondok.portal.nav.mobile_label') }}">
-                    @include('portal.partials.nav-links', ['layout' => 'mobile', 'navigation' => $navigation])
-                </nav>
-            </details>
-        </div>
-    </header>
+    @if ($activeTheme['header'] ?? null)
+        <x-portal.theme-node :node="$activeTheme['header']" area="header" :root="true" :school="$school" :navigation="$navigation" />
+    @else
+        @include('portal.partials.header')
+    @endif
 
     {{-- Halaman non-bare (form PSB) di atas abu muda sampai footer; halaman portal bare di atas body putih. --}}
     <main id="konten" @class(['flex-1', 'bg-gray-50' => ! $bare])>
@@ -131,6 +99,10 @@
         @endif
     </main>
 
-    @include('portal.partials.footer', ['school' => $school, 'compact' => $compactFooter])
+    @if ($activeTheme['footer'] ?? null)
+        <x-portal.theme-node :node="$activeTheme['footer']" area="footer" :root="true" :school="$school" :footer="$footer" :compact="$compactFooter" />
+    @else
+        @include('portal.partials.footer', ['compact' => $compactFooter])
+    @endif
 </body>
 </html>

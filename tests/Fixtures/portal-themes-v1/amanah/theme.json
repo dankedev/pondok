@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "min_core": "1.0.0",
+  "slug": "amanah",
+  "name": "Amanah",
+  "description": "Formal dan hangat untuk kesan pesantren klasik: pembuka berlatar warna lembaga, kutipan berbingkai, keunggulan bernomor, berita berdaftar, dan penutup gelap.",
+  "header": {
+    "component": "container",
+    "style": {
+      "tone": "light",
+      "border": "bottom",
+      "padding": {
+        "base": "sm",
+        "lg": "md"
+      },
+      "gap": "md",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "columns",
+        "style": {
+          "gap": "md"
+        },
+        "children": [
+          {
+            "component": "brand"
+          },
+          {
+            "component": "nav_menu"
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "component": "container",
+    "style": {
+      "tone": "dark",
+      "padding": {
+        "base": "md",
+        "lg": "lg"
+      },
+      "gap": "lg",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "divider"
+      },
+      {
+        "component": "footer_widgets",
+        "style": {
+          "gap": "lg"
+        }
+      },
+      {
+        "component": "copyright",
+        "style": {
+          "border": "top"
+        }
+      }
+    ]
+  },
+  "home": {
+    "layout": [
+      {
+        "component": "hero",
+        "variant": "center",
+        "style": {
+          "tone": "brand",
+          "align": "center",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "quote",
+        "variant": "framed",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      },
+      {
+        "component": "feature_grid",
+        "variant": "numbered",
+        "style": {
+          "tone": "muted"
+        }
+      },
+      {
+        "component": "text_image",
+        "style": {
+          "tone": "light"
+        }
+      },
+      {
+        "component": "feed_list",
+        "variant": "list",
+        "style": {
+          "tone": "muted"
+        }
+      },
+      {
+        "component": "video",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      },
+      {
+        "component": "cta",
+        "variant": "band",
+        "style": {
+          "tone": "dark",
+          "align": "center"
+        }
+      }
+    ]
+  }
+}

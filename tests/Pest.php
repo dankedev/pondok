@@ -108,6 +108,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Vite;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -115,6 +116,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Facades\Schema;
@@ -6484,3 +6486,250 @@ function themeActivate(?string $slug): void
     Setting::set('theme.template', $slug);
     app()->forgetScopedInstances();
 }
+
+/*
+|--------------------------------------------------------------------------
+| F103 katalog tema resmi: unduh dan pasang
+|--------------------------------------------------------------------------
+|
+| Pasangan Ed25519 uji dibangkitkan per test dan disuntik ke `pondok.theme_public_keys` (kunci produksi tak pernah dipakai).
+| Folder terpasang (`pondok.installed_themes_path`) = folder sementara unik per test, dibersihkan afterEach (aman `--parallel`).
+| Jaringan selalu palsu: `themeFakeHttp()` mengganti pabrik Http dan melarang request tanpa stub.
+| Kontrak penolakan: `InvalidArgumentException` berpesan Indonesia dari `lang/id/pondok.php` (`pondok.theme_install.errors.<alasan>`
+| atau `pondok.theme_schema.<kunci>` dari validator).
+|
+*/
+
+const THEME_CATALOG_URL = 'https://pondok.org/themes/themes.json';
+
+/**
+ * Bangkitkan pasangan kunci uji per id dan pasang kunci publiknya (base64) ke config.
+ *
+ * @param  list<string>  $ids
+ * @return array<string, array{public: string, secret: string}> secret = 64 byte mentah
+ */
+function themeTestKeys(array $ids = ['k1']): array
+{
+    $keys = [];
+
+    foreach ($ids as $id) {
+        $pair = sodium_crypto_sign_keypair();
+        $keys[$id] = ['public' => base64_encode(sodium_crypto_sign_publickey($pair)), 'secret' => sodium_crypto_sign_secretkey($pair)];
+    }
+
+    config([
+        'pondok.theme_public_keys' => array_map(fn (array $key): string => $key['public'], $keys),
+        'pondok.theme_catalog_url' => THEME_CATALOG_URL,
+    ]);
+    $GLOBALS['themeTestKeys'] = $keys;
+
+    return $keys;
+}
+
+/**
+ * Entri katalog untuk `$bytes` apa adanya (ukuran, sha256, tanda tangan Ed25519 base64 dihitung dari byte itu).
+ *
+ * @param  array<string, mixed>  $overrides  menimpa kunci entri setelah dihitung
+ * @return array<string, mixed>
+ */
+function themeCatalogEntry(string $slug, string $version, string $bytes, array $overrides = [], string $keyId = 'k1', ?string $secret = null): array
+{
+    $keys = $GLOBALS['themeTestKeys'] ?? themeTestKeys();
+    $secret ??= $keys[$keyId]['secret'] ?? sodium_crypto_sign_secretkey(sodium_crypto_sign_keypair());
+
+    return [
+        'slug' => $slug,
+        'name' => 'Tema dasar uji',
+        'description' => 'Tema uji mandiri untuk validator dan renderer.',
+        'version' => $version,
+        'schema_version' => 1,
+        'min_core' => '1.0.0',
+        'size' => strlen($bytes),
+        'sha256' => hash('sha256', $bytes),
+        'url' => "https://pondok.org/themes/{$slug}/{$version}/theme.json",
+        'signature' => base64_encode(sodium_crypto_sign_detached($bytes, $secret)),
+        'key_id' => $keyId,
+        ...$overrides,
+    ];
+}
+
+/**
+ * Paket tema uji bertanda tangan: `theme.json` (byte persis, dengan baris baru akhir) + entri katalognya.
+ *
+ * @param  array<string, mixed>  $manifest  menimpa manifest dasar (`themeBaseManifest()`)
+ * @param  array<string, mixed>  $entry  menimpa kunci entri
+ * @return array{entry: array<string, mixed>, bytes: string}
+ */
+function signedThemePackage(string $slug, string $version = '1.0.0', array $manifest = [], array $entry = [], string $keyId = 'k1'): array
+{
+    $document = [...themeBaseManifest(), 'slug' => $slug, 'version' => $version, ...$manifest];
+    $bytes = json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+
+    return ['entry' => themeCatalogEntry($slug, $version, $bytes, $entry, $keyId), 'bytes' => $bytes];
+}
+
+/**
+ * Ganti pabrik Http dengan yang baru lalu pasang stub; request tanpa stub melempar.
+ *
+ * @param  array<string, mixed>  $routes  URL lengkap => Http::response(...)/Closure
+ */
+function themeFakeHttp(array $routes = []): void
+{
+    Http::swap(new Factory);
+    Http::preventStrayRequests();
+    Http::fake($routes);
+}
+
+/**
+ * Stub katalog valid berisi `$entries` di URL katalog resmi.
+ *
+ * @param  list<array<string, mixed>>  $entries
+ * @param  array<string, mixed>  $extraRoutes
+ */
+function themeFakeCatalog(array $entries, array $extraRoutes = []): void
+{
+    themeFakeHttp([THEME_CATALOG_URL => Http::response(json_encode(['themes' => $entries]), 200), ...$extraRoutes]);
+}
+
+/**
+ * Folder tema terpasang sementara milik test ini (`<tmp>/themes`); idempoten per test.
+ */
+function themeInstalledSandbox(): string
+{
+    if (isset($GLOBALS['themeInstalledRoot']) && is_dir($GLOBALS['themeInstalledRoot'])) {
+        return $GLOBALS['themeInstalledRoot'].'/themes';
+    }
+
+    $base = sys_get_temp_dir().'/pondok-f103-'.Str::random(12);
+    mkdir($base.'/themes', 0777, true);
+    config(['pondok.installed_themes_path' => $base.'/themes']);
+    $GLOBALS['themeInstalledRoot'] = $base;
+
+    return $base.'/themes';
+}
+
+/**
+ * Tulis tema terpasang langsung (tanpa Action) dan kembalikan byte `theme.json`-nya.
+ *
+ * @param  array<string, mixed>|string  $manifest  array diberi `slug` = `$slug`
+ */
+function themeInstalledWrite(string $slug, array|string $manifest, ?string $previous = null): string
+{
+    $dir = themeInstalledSandbox()."/{$slug}";
+    @mkdir($dir, 0777, true);
+    $bytes = is_array($manifest) ? json_encode([...$manifest, 'slug' => $slug], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n" : $manifest;
+    file_put_contents("{$dir}/theme.json", $bytes);
+
+    if ($previous !== null) {
+        file_put_contents("{$dir}/previous.json", $previous);
+    }
+
+    return $bytes;
+}
+
+function themeInstalledFile(string $slug, string $file = 'theme.json'): ?string
+{
+    $path = themeInstalledSandbox()."/{$slug}/{$file}";
+
+    return is_file($path) ? (string) file_get_contents($path) : null;
+}
+
+/**
+ * Peta path relatif => md5 (atau 'dir') seluruh isi folder terpasang; folder `_staging` kosong tidak dihitung.
+ *
+ * @return array<string, string>
+ */
+function themeInstalledTree(): array
+{
+    $root = themeInstalledSandbox();
+    $tree = [];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $path => $info) {
+        $relative = substr((string) $path, strlen($root) + 1);
+
+        if ($relative !== '_staging') {
+            $tree[$relative] = $info->isDir() ? 'dir' : (string) md5_file((string) $path);
+        }
+    }
+
+    ksort($tree);
+
+    return $tree;
+}
+
+/**
+ * Seluruh isi folder dasar sementara (folder terpasang dan sebelahnya), untuk memastikan tak ada yang tertulis di luar folder tema.
+ *
+ * @return array<string, string>
+ */
+function themeInstalledBaseTree(): array
+{
+    $base = dirname(themeInstalledSandbox());
+    $tree = [];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $path => $info) {
+        $relative = substr((string) $path, strlen($base) + 1);
+
+        if ($relative !== 'themes/_staging') {
+            $tree[$relative] = $info->isDir() ? 'dir' : (string) md5_file((string) $path);
+        }
+    }
+
+    ksort($tree);
+
+    return $tree;
+}
+
+/**
+ * Pastikan callback menolak dengan `InvalidArgumentException`; bila `$reason` diberikan, pesannya harus pesan lang itu
+ * (`pondok.theme_install.errors.<reason>`, atau kunci penuh seperti `pondok.theme_schema.invalid_json`; placeholder bebas isi).
+ * Tanpa `$reason`: pesan tetap harus teks Indonesia sungguhan (bukan kunci lang mentah, bukan pesan Sodium).
+ */
+function themeAssertRejected(Closure $callback, ?string $reason = null): void
+{
+    try {
+        $callback();
+    } catch (InvalidArgumentException $exception) {
+        $message = $exception->getMessage();
+
+        expect(trim($message))->not->toBe('')
+            ->and($message)->not->toStartWith('pondok.')
+            ->and(strtolower($message))->not->toContain('sodium');
+
+        if ($reason !== null) {
+            $key = str_contains($reason, '.') ? $reason : "pondok.theme_install.errors.{$reason}";
+            $template = __($key);
+            expect($template)->not->toBe($key, "Kunci lang {$key} belum ada");
+
+            $pattern = '/^'.implode('.+', array_map(fn (string $part): string => preg_quote($part, '/'), preg_split('/:[A-Za-z_]+/', $template))).'$/su';
+            expect(preg_match($pattern, $message))->toBe(1, "Pesan '{$message}' tidak sesuai {$key}");
+        }
+
+        return;
+    }
+
+    test()->fail('InvalidArgumentException diharapkan, tetapi tidak dilempar.');
+}
+
+function themeInstalledCleanup(): void
+{
+    if (! isset($GLOBALS['themeInstalledRoot'])) {
+        return;
+    }
+
+    $base = $GLOBALS['themeInstalledRoot'];
+    unset($GLOBALS['themeInstalledRoot'], $GLOBALS['themeTestKeys']);
+
+    if (is_dir($base)) {
+        // Test yang membuat folder tak bisa ditulis harus tetap bisa dibersihkan.
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $path => $info) {
+            if ($info->isDir()) {
+                @chmod((string) $path, 0777);
+            }
+        }
+
+        File::deleteDirectory($base);
+    }
+}
+
+pest()->afterEach(fn () => themeInstalledCleanup());

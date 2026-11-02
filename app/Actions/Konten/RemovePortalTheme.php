@@ -36,7 +36,8 @@ class RemovePortalTheme
                 $version = null;
             }
 
-            File::deleteDirectory($directory);
+            // Folder tema berupa symlink: lepas tautannya saja, jangan mengosongkan sasarannya.
+            is_link($directory) ? @unlink($directory) : File::deleteDirectory($directory);
             Setting::query()->whereKey("themes.install.{$slug}")->get()->each->delete();
 
             return $version;

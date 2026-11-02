@@ -5,6 +5,7 @@ use App\Filament\Pages\Settings\Identity;
 use App\Filament\Pages\Site\Footer;
 use App\Filament\Pages\Site\Home;
 use App\Filament\Pages\Site\Navigation;
+use App\Filament\Pages\Site\ThemeCatalog;
 use App\Filament\Resources\Albums\AlbumResource;
 use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\Posts\PostResource;
@@ -28,7 +29,7 @@ beforeEach(function () {
 
 it('AC-9: groups the admin navigation into Situs in the planned order', function () {
     expect(situsNavigationLabels(kontenUser('super-admin')))->toBe([
-        'Beranda', 'Navigasi', 'Footer', 'Tampilan',
+        'Beranda', 'Navigasi', 'Footer', 'Tampilan', ThemeCatalog::getNavigationLabel(),
         StaticPageResource::getNavigationLabel(), PostResource::getNavigationLabel(), CategoryResource::getNavigationLabel(),
         AlbumResource::getNavigationLabel(), VideoResource::getNavigationLabel(),
     ]);

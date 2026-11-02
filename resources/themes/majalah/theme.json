@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "min_core": "1.0.0",
+  "slug": "majalah",
+  "name": "Majalah",
+  "description": "Gaya editorial: kutipan pembuka, hero dua kolom, kolom berita dan keunggulan berdampingan, banyak ruang putih.",
+  "header": {
+    "component": "container",
+    "style": {
+      "tone": "light",
+      "border": "bottom",
+      "padding": {
+        "base": "sm",
+        "lg": "md"
+      },
+      "gap": "md",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "brand"
+      },
+      {
+        "component": "nav_menu"
+      }
+    ]
+  },
+  "footer": {
+    "component": "container",
+    "style": {
+      "tone": "dark",
+      "padding": {
+        "base": "md",
+        "lg": "lg"
+      },
+      "gap": "lg",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "footer_widgets",
+        "style": {
+          "gap": "lg"
+        }
+      },
+      {
+        "component": "copyright",
+        "style": {
+          "border": "top"
+        }
+      }
+    ]
+  },
+  "home": {
+    "layout": [
+      {
+        "component": "quote",
+        "variant": "plain",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      },
+      {
+        "component": "hero",
+        "variant": "split",
+        "style": {
+          "tone": "light"
+        }
+      },
+      {
+        "component": "columns",
+        "style": {
+          "tone": "muted",
+          "gap": "lg",
+          "columns": {
+            "base": 1,
+            "md": 2
+          }
+        },
+        "children": [
+          {
+            "component": "feed_list",
+            "variant": "list"
+          },
+          {
+            "component": "container",
+            "style": {
+              "gap": "lg"
+            },
+            "children": [
+              {
+                "component": "feature_grid",
+                "variant": "numbered"
+              },
+              {
+                "component": "cta",
+                "variant": "card"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "component": "text_image",
+        "style": {
+          "tone": "light"
+        }
+      },
+      {
+        "component": "video",
+        "style": {
+          "tone": "muted"
+        }
+      },
+      {
+        "component": "feed_list",
+        "variant": "magazine",
+        "style": {
+          "tone": "light"
+        }
+      },
+      {
+        "component": "feed_list",
+        "variant": "cards",
+        "style": {
+          "tone": "muted"
+        }
+      }
+    ]
+  }
+}

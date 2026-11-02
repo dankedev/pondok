@@ -37,6 +37,12 @@ return [
     ],
 
     /*
+    | Direktori tema portal (F102): satu subfolder per tema berisi `theme.json`.
+    | Bawaan `resources/themes` (tiga tema resmi); test mengarahkannya ke folder sementara.
+    */
+    'themes_path' => resource_path('themes'),
+
+    /*
     | Data demo (F034, `php artisan db:seed --class=DemoSeeder`). Password semua
     | akun demo; kosong = password bawaan `DemoSeeder::DEFAULT_PASSWORD` yang
     | tertulis di docs/demo.md (seeder menampilkan peringatan).

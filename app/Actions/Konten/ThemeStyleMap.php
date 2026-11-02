@@ -2,6 +2,7 @@
 
 namespace App\Actions\Konten;
 
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -49,7 +50,7 @@ class ThemeStyleMap
      */
     public static function values(string $property): array
     {
-        $table = self::MAP[$property] ?? throw new InvalidArgumentException(__('pondok.theme_schema.unknown_style_property', ['property' => $property]));
+        $table = self::MAP[$property] ?? throw new InvalidArgumentException(__('pondok.theme_schema.unknown_style_property', ['property' => Str::limit($property, 80)]));
 
         return array_keys(in_array($property, self::RESPONSIVE, true) ? $table['base'] : $table);
     }
@@ -80,7 +81,7 @@ class ThemeStyleMap
     private static function responsive(string $property, array $value): string
     {
         if (! in_array($property, self::RESPONSIVE, true) || ! array_key_exists('base', $value) || array_diff(array_keys($value), ['base', 'md', 'lg']) !== []) {
-            throw new InvalidArgumentException(__('pondok.theme_schema.invalid_style_value', ['property' => $property, 'value' => json_encode($value)]));
+            throw new InvalidArgumentException(__('pondok.theme_schema.invalid_style_value', ['property' => Str::limit($property, 80), 'value' => Str::limit((string) json_encode($value), 80)]));
         }
 
         return implode(' ', array_map(fn (string $breakpoint): string => self::lookup($property, $value[$breakpoint], $breakpoint), array_keys($value)));
@@ -89,11 +90,11 @@ class ThemeStyleMap
     private static function lookup(string $property, mixed $value, string $breakpoint): string
     {
         $responsive = in_array($property, self::RESPONSIVE, true);
-        $table = self::MAP[$property] ?? throw new InvalidArgumentException(__('pondok.theme_schema.unknown_style_property', ['property' => $property]));
+        $table = self::MAP[$property] ?? throw new InvalidArgumentException(__('pondok.theme_schema.unknown_style_property', ['property' => Str::limit($property, 80)]));
         $table = $responsive ? $table[$breakpoint] : $table;
 
         if (! in_array($value, array_keys($table), true)) {
-            throw new InvalidArgumentException(__('pondok.theme_schema.invalid_style_value', ['property' => $property, 'value' => json_encode($value)]));
+            throw new InvalidArgumentException(__('pondok.theme_schema.invalid_style_value', ['property' => Str::limit($property, 80), 'value' => Str::limit((string) json_encode($value), 80)]));
         }
 
         return $table[$value];

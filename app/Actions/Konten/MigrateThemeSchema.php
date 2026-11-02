@@ -2,6 +2,7 @@
 
 namespace App\Actions\Konten;
 
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -25,7 +26,7 @@ class MigrateThemeSchema
         $version = $manifest['schema_version'] ?? null;
 
         if ($version !== self::CURRENT) {
-            throw new InvalidArgumentException(__('pondok.theme_schema.unsupported_version', ['version' => json_encode($version)]));
+            throw new InvalidArgumentException(__('pondok.theme_schema.unsupported_version', ['version' => Str::limit((string) json_encode($version), 80)]));
         }
 
         return $manifest;

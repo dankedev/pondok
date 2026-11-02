@@ -2,6 +2,7 @@
 
 namespace App\Actions\Konten;
 
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use JsonException;
 
@@ -269,6 +270,9 @@ class ValidatePortalTheme
      */
     private function fail(string $key, array $replace = []): never
     {
+        // Nilai dari berkas tema dipotong supaya pesan (tampil di halaman Tampilan dan log) tetap pendek.
+        $replace = array_map(fn (mixed $value): mixed => is_string($value) ? Str::limit($value, 80) : $value, $replace);
+
         throw new InvalidArgumentException(__("pondok.theme_schema.{$key}", $replace));
     }
 }

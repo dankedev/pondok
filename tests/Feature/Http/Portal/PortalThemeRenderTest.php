@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 |    `<section>` akar tiap blok beranda. Tema tanpa `header`/`footer`/seksi beranda memakai komponen bawaan inti (hasil sama dengan `default`).
 |  - Tema yang hilang atau tidak valid: portal 200 dengan chrome inti dan satu `Log::warning` per slug per proses (pesan atau konteks
 |    memuat slug).
-| Tema uji (`zz-uji-*`) ditulis lewat `themeInstall()` (tests/Pest.php).
+| Tema uji (`zz-uji-*`) ditulis lewat `themeInstall()` ke folder sementara `config('pondok.themes_path')` (tests/Pest.php).
 */
 
 beforeEach(function () {

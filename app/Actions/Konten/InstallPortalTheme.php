@@ -92,6 +92,10 @@ class InstallPortalTheme
         $temporary = "{$directory}/previous.json.tmp";
         $hasOld = is_file($theme);
 
+        if (is_link($directory)) {
+            $this->reject('write_failed');
+        }
+
         if (! $hasOld && ! is_dir($directory) && ! @mkdir($directory, 0755, true) && ! is_dir($directory)) {
             $this->reject('write_failed');
         }

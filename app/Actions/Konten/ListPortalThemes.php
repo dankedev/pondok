@@ -5,37 +5,62 @@ namespace App\Actions\Konten;
 use InvalidArgumentException;
 
 /**
- * Daftar tema portal (F102): satu entri per subfolder `config('pondok.themes_path')` (bawaan `resources/themes`).
+ * Daftar tema portal: tema resmi (satu entri per subfolder `config('pondok.themes_path')`, bawaan `resources/themes`, F102)
+ * dan tema terpasang dari katalog (`config('pondok.installed_themes_path')`, F103).
  *
  * Tema yang gagal validasi tetap muncul dengan `valid = false` dan alasannya, supaya bisa ditampilkan
- * nonaktif di Situs > Tampilan. Satu daftar dengan satu bentuk entri: sumber tema lain (F103) cukup
- * menambah folder atau menyambung di sini tanpa mengubah pemakainya. `default` selalu di urutan pertama.
+ * nonaktif di Situs > Tampilan. Hanya folder terpasang bernama slug sah yang terdaftar (`_staging` tidak), dan tema resmi
+ * menang atas folder terpasang berslug sama. `default` selalu di urutan pertama.
  */
 class ListPortalThemes
 {
-    public function __construct(private readonly ValidatePortalTheme $validate) {}
+    public function __construct(private readonly ValidatePortalTheme $validate, private readonly ResolveThemePath $paths) {}
 
     /**
-     * @return list<array{slug: string, name: string, description: string, valid: bool, error: ?string}>
+     * @return list<array{slug: string, name: string, description: string, valid: bool, error: ?string, source: string, version: ?string}>
      */
     public function handle(): array
     {
         $entries = [];
 
-        foreach (glob(rtrim((string) config('pondok.themes_path'), '/').'/*', GLOB_ONLYDIR) ?: [] as $directory) {
-            $slug = basename($directory);
+        foreach ($this->slugs('themes_path') as $slug) {
+            $entries[$slug] = $this->entry($slug, rtrim((string) config('pondok.themes_path'), '/')."/{$slug}/theme.json", 'official');
+        }
 
-            try {
-                $manifest = $this->validate->handle("{$directory}/theme.json");
+        foreach ($this->slugs('installed_themes_path') as $slug) {
+            $path = $this->paths->handle($slug);
 
-                $entries[] = ['slug' => $slug, 'name' => $manifest['name'], 'description' => $manifest['description'], 'valid' => true, 'error' => null];
-            } catch (InvalidArgumentException $e) {
-                $entries[] = ['slug' => $slug, 'name' => $slug, 'description' => '', 'valid' => false, 'error' => $e->getMessage()];
+            if (! isset($entries[$slug]) && $path !== null) {
+                $entries[$slug] = $this->entry($slug, $path, 'installed');
             }
         }
 
         usort($entries, fn (array $a, array $b): int => [$a['slug'] !== 'default', $a['slug']] <=> [$b['slug'] !== 'default', $b['slug']]);
 
         return $entries;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function slugs(string $configKey): array
+    {
+        $slugs = array_map('basename', glob(rtrim((string) config("pondok.{$configKey}"), '/').'/*', GLOB_ONLYDIR) ?: []);
+
+        return array_values(array_filter($slugs, ResolveThemePath::isSlug(...)));
+    }
+
+    /**
+     * @return array{slug: string, name: string, description: string, valid: bool, error: ?string, source: string, version: ?string}
+     */
+    private function entry(string $slug, string $path, string $source): array
+    {
+        try {
+            $manifest = $this->validate->handle($path);
+
+            return ['slug' => $slug, 'name' => $manifest['name'], 'description' => $manifest['description'], 'valid' => true, 'error' => null, 'source' => $source, 'version' => $manifest['version']];
+        } catch (InvalidArgumentException $e) {
+            return ['slug' => $slug, 'name' => $slug, 'description' => '', 'valid' => false, 'error' => $e->getMessage(), 'source' => $source, 'version' => null];
+        }
     }
 }

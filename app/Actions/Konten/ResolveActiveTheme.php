@@ -26,7 +26,7 @@ class ResolveActiveTheme
     /** @var ?array<string, mixed> */
     private ?array $theme = null;
 
-    public function __construct(private readonly ValidatePortalTheme $validate) {}
+    public function __construct(private readonly ValidatePortalTheme $validate, private readonly ResolveThemePath $paths) {}
 
     /**
      * @return ?array{slug: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{layout: list<array<string, mixed>>}}
@@ -53,14 +53,22 @@ class ResolveActiveTheme
         }
 
         // Slug menjadi nama direktori: bentuk yang tak sah tidak pernah menyentuh filesystem.
-        if (preg_match('/^[a-z0-9-]{2,40}\z/', $slug) !== 1) {
+        if (! ResolveThemePath::isSlug($slug)) {
             $this->warn($slug, 'invalid slug');
 
             return null;
         }
 
         try {
-            return $this->validate->handle(rtrim((string) config('pondok.themes_path'), '/')."/{$slug}/theme.json");
+            $path = $this->paths->handle($slug);
+
+            if ($path === null) {
+                $this->warn($slug, 'theme file missing');
+
+                return null;
+            }
+
+            return $this->validate->handle($path);
         } catch (Throwable $e) {
             $this->warn($slug, $e->getMessage());
 

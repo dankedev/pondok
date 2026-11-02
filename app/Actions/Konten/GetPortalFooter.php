@@ -13,6 +13,9 @@ namespace App\Actions\Konten;
  */
 class GetPortalFooter
 {
+    /** Kelas tautan di atas footer navy (teks primary-100, fokus emas 11.96:1); dipakai footer inti dan tema. */
+    public const LINK_CLASS = 'inline-flex min-h-11 items-center rounded-lg text-base text-primary-100 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400';
+
     public function __construct(
         private readonly ParseContentBlocks $parse,
         private readonly GetPortalNavigation $navigation,

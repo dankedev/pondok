@@ -1980,7 +1980,7 @@
       "description": "Tahap 1 tema portal berbasis JSON: tema = data JSON (struktur + enum gaya) yang dirender inti; tanpa Blade/PHP/JS dari tema, tanpa jaringan. Cakupan header, footer, dan bagian beranda; gaya = enum dipetakan server ke kelas Tailwind literal (tanpa CSS runtime). Skema v1 + validator, renderer, tema resmi default/centered/klasik, pemilihan di Situs > Tampilan, fallback. Aset gambar/font ditunda. Katalog dan unduh = F103. Detail di issue #133 dan docs/plans/F102-plan.md.",
       "acceptance": [
         "Validator skema v1 menolak schema_version tak didukung, kunci/komponen tak dikenal, nilai gaya di luar enum, slug tak sama nama direktori, UTF-8 rusak, dan JSON melebihi batas ukuran (dicek sebelum decode), depth, kedalaman, atau jumlah node",
-        "Peta gaya server: enum -> kelas Tailwind literal (termasuk md:/lg:), tanpa nilai JSON mentah jadi kelas, file peta masuk @source; semua tone lolos kontras 4,5:1 pada skala default dan F070 ekstrem",
+        "Peta gaya server: enum -> kelas Tailwind literal (md:/lg: hanya columns/padding), dicek statis PHP (pola token, literal utuh, tanpa interpolasi); pasangan latar/teks tone terjamin dan lolos kontras 4,5:1 pada skala default dan F070 ekstrem",
         "Renderer header/footer memakai data inti yang sama tanpa query tambahan; teks dan URL tetap tersanitasi",
         "Beranda berblok tidak berubah (default dan centered sama dengan golden pra-migrasi; tone auto = selang-seling renderer); tipe blok tak dipetakan memakai komponen bawaan",
         "Struktur aksesibel (lompat ke konten, satu h1, urutan heading, fokus terlihat) di semua tema resmi",

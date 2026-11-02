@@ -262,6 +262,12 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |
+| Katalog tema (Situs → Katalog tema) | belum dipasang | `gray` |
+| Katalog tema | terpasang | `success` |
+| Katalog tema | ada pembaruan | `info` |
+| Katalog tema | tidak cocok versi (skema atau inti tidak didukung) | `warning` |
+| Katalog tema | pemasangan sedang berjalan (antre, berjalan) | `info` |
+| Katalog tema | pemasangan gagal | `danger` |
 | Saklar modul (Pengaturan → Modul) | aktif | `success` |
 | Saklar modul (Pengaturan → Modul) | nonaktif | `gray` |
 

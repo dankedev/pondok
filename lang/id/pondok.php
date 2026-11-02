@@ -1968,19 +1968,10 @@ return [
         ],
         'theme' => [
             'section' => 'Tampilan portal',
-            'section_description' => 'Template beranda, warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan.',
-            'template' => 'Template beranda',
-            'template_helper' => 'Mengubah tata letak blok beranda. Isi blok tidak berubah.',
-            'templates' => [
-                'default' => [
-                    'label' => 'Standar (bawaan)',
-                    'description' => 'Hero dua kolom dengan gambar di samping, keunggulan dalam kartu.',
-                ],
-                'centered' => [
-                    'label' => 'Terpusat',
-                    'description' => 'Hero rata tengah dengan gambar lebar di bawahnya, keunggulan sebagai daftar bergaris.',
-                ],
-            ],
+            'section_description' => 'Tema portal, warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan.',
+            'template' => 'Tema portal',
+            'template_helper' => 'Mengubah tata letak beranda dan, bila tema membawanya, header dan footer. Isi beranda tidak berubah. Portal bisa masih menampilkan tema sebelumnya hingga 5 menit setelah disimpan (cache publik).',
+            'template_unavailable' => 'Tidak bisa dipilih: :reason',
             'primary' => 'Warna utama',
             'accent' => 'Warna aksen',
             'color_helper' => 'Dipakai sebagai dasar skala warna portal. Bila warna ini kurang terbaca, sistem memakai langkah skala terdekat yang terbaca. Kosongkan untuk warna bawaan.',

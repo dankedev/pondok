@@ -95,6 +95,8 @@ it('F102 AC-6: lists the official themes with the name and description from thei
         $manifest = themeOfficialManifest($slug);
         $component->assertSee($manifest['name'])->assertSee($manifest['description']);
     }
+
+    expectTranslatedKeys(['pondok.school_profile.theme.template', 'pondok.school_profile.theme.template_helper', 'pondok.school_profile.theme.template_unavailable']);
 });
 
 it('F102 AC-8: still renders when a theme is broken, shows the reason, and does not let it be chosen', function () {

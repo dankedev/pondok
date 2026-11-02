@@ -2,11 +2,12 @@
 
 use App\Actions\Core\CheckSystemHealth;
 use App\Actions\Core\RecordSchedulerHeartbeat;
+use App\Models\Setting;
 use App\Services\SystemProbe;
 use Illuminate\Support\Facades\DB;
 use Tests\Fixtures\FakeSystemProbe;
 
-const F019_KEYS = ['php_version', 'extensions', 'app_key', 'app_env', 'app_url', 'database', 'database_version', 'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'persistent_storage', 'app_exposure', 'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'version'];
+const F019_KEYS = ['php_version', 'extensions', 'app_key', 'app_env', 'app_url', 'database', 'database_version', 'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'persistent_storage', 'app_exposure', 'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'theme_catalog', 'version'];
 
 beforeEach(function () {
     $this->iso = isolateInstallation();
@@ -25,6 +26,10 @@ beforeEach(function () {
     ]);
     symlink($this->tmp.'/storage/app/public', $this->tmp.'/web/storage');
     file_put_contents(storage_path('framework/pondok-scheduler-heartbeat'), (string) now()->subMinute()->timestamp);
+    // F103: check `theme_catalog` berjalan hanya bila modul Konten aktif; katalog dipalsukan (tanpa jaringan).
+    Setting::set('modules.konten.enabled', true);
+    themeTestKeys();
+    themeFakeCatalog([]);
 });
 
 afterEach(fn () => $this->iso->finish());

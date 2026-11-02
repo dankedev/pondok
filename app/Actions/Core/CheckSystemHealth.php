@@ -18,7 +18,7 @@ class CheckSystemHealth
     /** Ekstensi PHP wajib: semua `ext-*` di composer.lock (paket non-dev) ditambah PDO. */
     public const REQUIRED_EXTENSIONS = [
         'ctype', 'dom', 'fileinfo', 'filter', 'hash', 'iconv', 'intl', 'json', 'libxml',
-        'mbstring', 'openssl', 'pcre', 'session', 'tokenizer', 'xmlreader', 'simplexml', 'zip', 'pdo',
+        'mbstring', 'openssl', 'pcre', 'session', 'sodium', 'tokenizer', 'xmlreader', 'simplexml', 'zip', 'pdo',
     ];
 
     /** Urutan pemeriksaan yang ditampilkan. */

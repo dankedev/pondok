@@ -3,6 +3,8 @@
 namespace App\Actions\Konten\Concerns;
 
 use App\Actions\Konten\ResolveThemePath;
+use App\Enums\Module;
+use App\Models\Setting;
 use App\Models\User;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -18,7 +20,7 @@ trait WritesInstalledThemes
 {
     protected function authorizeManagement(?User $actor): void
     {
-        if ($actor === null || ! $actor->can('manage:themes')) {
+        if ($actor === null || ! Setting::moduleEnabled(Module::Konten->value) || ! $actor->can('manage:themes')) {
             throw new AuthorizationException(__('pondok.theme_install.errors.forbidden'));
         }
     }

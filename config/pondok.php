@@ -50,10 +50,13 @@ return [
     /*
     | Katalog tema resmi (F103). URL dapat diganti env hanya untuk uji, bukan pengaturan admin. Kunci publik Ed25519
     | (base64) sengaja literal di sini, tidak dari env: `k1` utama, `k2` cadangan (privatnya disimpan terpisah offline).
-    | Selama kosong, pemasangan tema ditolak dengan pesan jelas. Kunci diisi pengelola sebelum rilis (docs/rilis.md).
+    | Kunci kosong membuat pemasangan tema ditolak dengan pesan jelas. Kunci privat tidak ada di repo (docs/rilis.md).
     */
     'theme_catalog_url' => env('PONDOK_THEME_CATALOG_URL', 'https://pondok.org/themes/themes.json'),
-    'theme_public_keys' => ['k1' => '', 'k2' => ''],
+    'theme_public_keys' => [
+        'k1' => 'iBp6Ju+fcrjdcH2jps6A6QNXUvkeZ6pisMR0FHL3Piw=',
+        'k2' => 'EJFcfG8aypTKgociXiahFy2gdmByxqKZ3U2ZNOqA6xk=',
+    ],
 
     /*
     | Data demo (F034, `php artisan db:seed --class=DemoSeeder`). Password semua

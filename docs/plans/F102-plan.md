@@ -1,7 +1,7 @@
 # F102 konten-katalog-tema — Tema portal berbasis JSON: renderer dan tema bawaan (Tahap 1)
 
 Issue: #133
-Status rencana: APPROVED (setelah revisi 1; disesuaikan revisi 2 tanpa review ulang)
+Status rencana: APPROVED (revisi 3 menyikapi Review #2, tanpa review ulang)
 PR ditujukan ke `dev` (cabang `feat/f102-katalog-tema`), memakai `Refs #133`, bukan `Closes`.
 Menggantikan rencana lama (tema paket Blade + zip); versi lama ada di riwayat git.
 
@@ -19,13 +19,15 @@ Tahap 2 (katalog, unduh, pasang) = F103 / #134, `depends_on: F102`, direncanakan
 `schema_version` (int), `slug`, `name`, `description`, `version` (semver), `min_core`, `header?`, `footer?`, `home.sections.<tipe_blok>?`. Tanpa `assets`.
 - **Node:** `{variant?, style?, children?}` plus `component` untuk header/footer. `children` hanya pada `container`. Pada `home.sections`, kunci = tipe blok dan `component` diturunkan dari pemetaan di bawah.
 - **Pustaka 12 komponen:** `container`, `brand`, `nav_menu` (header); `footer_widgets`, `copyright` (footer); beranda `hero`, `text_image`, `feature_grid`, `quote`, `cta`, `video`, `feed_list`. Slot sah dan `variant` per komponen di satu peta tetap (`ThemeComponents`), dibatasi pada yang dipakai tiga tema resmi.
-- **Gaya = enum:** `tone` (`auto|light|muted|brand|dark`), `padding`, `gap`, `align`, `width`, `radius`, `shadow`, `border`, `columns` (2-4), varian responsif `{base, md, lg}`; hanya nilai yang dipakai tema resmi. Tanpa warna, url, font-family, string bebas.
+- **Gaya = enum:** `tone` (`auto|light|muted|brand|dark`), `padding` (`sm|md|lg`), `gap` (`sm|md|lg`), `align` (`left|center`), `width` (`narrow|wide|full`), `radius` (`none|md|lg`), `shadow` (`none|sm`), `border` (`none|top|bottom`), `columns` (`2|3|4`). Responsif `{base, md, lg}` hanya untuk `columns` dan `padding` (dipakai `klasik`); properti lain hanya `base`. Hanya nilai yang dipakai tema resmi. Tanpa warna, url, font-family, string bebas.
 - **Batas:** berkas ≤ 64 KB (dicek sebelum `json_decode`), depth ≤ 8, UTF-8 rusak ditolak, kedalaman pohon ≤ 6, node ≤ 150, `slug` `^[a-z0-9-]{2,40}$` dan sama dengan nama direktori, kunci tak dikenal menolak.
 - **Versi skema:** naik hanya untuk perubahan merusak; inti mendukung N dan N-1 lewat `MigrateThemeSchema` (dalam memori); tambahan kompatibel cukup menaikkan `min_core`. Di luar dukungan = fallback.
 - **Pemetaan blok -> komponen:** `hero`, `text_image`, `features`->`feature_grid`, `quote`, `cta`, `video`, `feed`->`feed_list`. Data blok (`ParseContentBlocks`, `NormalizeContentBlocks`, `GetPortalHomeData`, `SanitizeBlockText`, `portal.home_blocks`) tidak berubah dan tidak dimigrasi. Tipe tak dipetakan tema memakai komponen bawaan inti.
 
 ## Peta gaya (pengganti mesin CSS)
-`App\Actions\Konten\ThemeStyleMap`: peta tetap server, enum -> string kelas Tailwind literal, mis. `padding.lg` -> `'py-12'`, responsif `{base,md,lg}` -> kelas `md:`/`lg:` yang tertulis utuh di PHP. Hanya lookup: tidak ada nilai JSON yang menjadi kelas, tidak ada CSS runtime. Berkas peta didaftarkan di `resources/css/app.css` (`@source '../../app/Actions/Konten/ThemeStyleMap.php'`) agar kelasnya dipindai saat build; test memastikan setiap kelas peta ada di CSS hasil build/sumber pindai. Kontras 4,5:1 dijamin peta `tone` (pasangan latar/teks per tone). Tanpa `BuildThemeStyles`, tanpa kelas `t-<hash>`, tanpa `<style data-theme-layout>`.
+`App\Actions\Konten\ThemeStyleMap`: array konstanta enum -> string kelas Tailwind literal, mis. `padding.lg` -> `'py-12'`, responsif -> kelas `md:`/`lg:` tertulis utuh. Hanya lookup; kunci tak dikenal melempar `InvalidArgumentException` (validator mencegahnya lebih dulu). Tidak ada CSS runtime, `BuildThemeStyles`, `t-<hash>`, atau `<style data-theme-layout>`. Tailwind 4 mendeteksi sumber otomatis, jadi tanpa `@source` baru. Cek kelas ada di CSS hasil build = langkah `npm run build` saat rilis, bukan test (`public/build` di-.gitignore, tanpa Node di test).
+- **Pasangan `tone` (hanya yang dijamin atau tak bergantung tema):** light = `bg-white`/`bg-gray-50` + `text-gray-900`; muted = `bg-gray-100` + `text-gray-900`; brand = `bg-brand text-on-brand` (dijamin `BuildColorScale::brandColors`); dark = `bg-primary-950 text-white` (dijamin `contrastFailure`: putih vs primary-950). Teks sekunder, tautan, dan fokus di dalam tone memakai kelas tetap di peta (dicek sama). Tanpa kelas warna lain di peta.
+- **Awalan tak beririsan:** tiap properti peta punya awalan utilitas sendiri (padding `py-`, gap `gap-`, columns `grid-cols-`, dst.); view komponen tidak memuat kelas berawalan itu pada mode `klasik` agar tak bentrok dan fokus tak bisa ditimpa.
 
 ## Migrasi beranda
 - (a) `default` dan `centered` tanpa `style` di beranda: varian = view statis `portal.theme.<komponen>` dengan kelas Tailwind lama (`default`->`split`, `centered`->`centered`); HTML identik. Hanya `klasik` memakai peta gaya.
@@ -50,28 +52,28 @@ Tanpa permission baru. Pilih tema tetap `view:school-profile`. `manage:themes` d
 
 ## Kriteria penerimaan
 - **AC-1** Validator: tiga tema resmi valid. Ditolak (data provider): tanpa/`schema_version` tak didukung, kunci tak dikenal (termasuk `assets`), komponen tak dikenal atau di slot salah, nilai gaya di luar enum (`url(`, `expression(`, `@import`, `;`, `}`, `javascript:`, `<script>`, hex bebas), kedalaman > 6, > 150 node, > 64 KB (tanpa `json_decode`), depth > 8, UTF-8 rusak, JSON rusak, slug ≠ nama direktori.
-- **AC-2** Peta gaya: tiap enum yang sah menghasilkan kelas literal dari `ThemeStyleMap`; tidak ada nilai JSON yang masuk atribut `class` (nilai tak dikenal tak lolos validator); varian responsif menjadi kelas `md:`/`lg:`; semua kelas peta ada dalam sumber pindai Tailwind (`@source` terdaftar). Setiap `tone` x skala default dan skala F070 ekstrem memenuhi kontras 4,5:1.
+- **AC-2** Peta gaya, cek statis PHP: (i) tiap kelas peta cocok pola token Tailwind yang diizinkan; (ii) tiap kelas muncul sebagai literal utuh di `ThemeStyleMap.php`; (iii) berkas tanpa interpolasi/penyambungan kelas (`"md:".`, `py-{$x}`, `sprintf`). Tiap enum sah menghasilkan kelas peta, responsif hanya `columns`/`padding`. Kontras: urai `bg-*`/`text-*` tiap `tone`, pasangan harus masuk daftar terjamin di atas, dan dihitung >= 4,5:1 dengan skala default dan F070 ekstrem lewat `BuildColorScale`. Awalan properti tak beririsan, dan view komponen tak memuat kelas berawalan itu saat `klasik`.
 - **AC-3** Header/footer: `klasik` merender header dan footer dari JSON dengan data inti yang sama (nama, logo, menu, tombol, widget); jumlah query sama dengan layout inti; URL `javascript:`/HTML di teks sekolah tetap dibuang/disanitasi; tema tanpa `header`/`footer` memakai partial inti; tema tak membawa teks portal.
 - **AC-4** Migrasi beranda: tujuh tipe blok, keluaran `default` dan `centered` sama dengan golden pra-migrasi; `portal.home_blocks` lama tampil sama tanpa migrasi data; blok kosong dibuang; `tone: auto` selang-seling sama dengan `$band()` lama; tipe tak dipetakan memakai komponen bawaan; teks lewat `SanitizeBlockText`.
 - **AC-5** Aksesibilitas, tiap tema resmi: tautan lompat fokus pertama ke satu `<main id="konten">`, tepat satu `h1` (`brand` bukan h1), tanpa loncatan level heading, dua `nav` ber-`aria-label` berbeda, semua `a`/`button` komponen punya kelas fokus terlihat yang tak bisa dihapus properti gaya.
 - **AC-6** Pemilihan: `ListPortalThemes` = tiga tema resmi; `UpdatePortalTheme` menyimpan slug valid dan menolak tak dikenal/tidak valid; `TEMPLATES` tak ada lagi; nilai lama `centered`/`default` tetap bekerja; token F070 tetap berlaku; Radio memakai daftar ini; tanpa `view:school-profile` 403.
 - **AC-7** Respons: tiap tema, `portal.home`, berita, `psb.info` ber-`Cache-Control` public + `max-age` + ETag utuh (304 saat ulang), tanpa `csrf-token`, aset Livewire, atau `Set-Cookie`. Dengan `klasik` aktif, `psb.register`, `portal-wali.login`, 404, `verify-*` tetap chrome inti.
 - **AC-8** Fallback: tema aktif hilang, JSON rusak, `schema_version` 99, melebihi batas, atau `min_core` > inti: portal 200 dengan chrome inti tanpa exception; `Log::warning` sekali per slug per proses; `Site/Theme` tetap tampil, tema rusak nonaktif dengan alasan.
-- **AC-9** Tanpa kode dari tema: isi `resources/themes` hanya `theme.json`; `component` tak dikenal tak pernah jadi path view; test arsitektur menegaskan renderer tak memakai nilai JSON sebagai nama view/kelas mentah; `ModuleComplianceTest` lulus; teks baru lewat `lang/id`.
+- **AC-9** Tanpa kode dari tema: isi `resources/themes` hanya `theme.json`; `component` tak dikenal tak pernah jadi path view; test arsitektur: `ThemeStyleMap` mengembalikan string dari array konstanta dan melempar untuk kunci tak dikenal; view/komponen tak memasukkan `$node['style']` ke `class` kecuali lewat `ThemeStyleMap`, dan tak memakai nilai JSON sebagai nama view; `ModuleComplianceTest` lulus; teks baru lewat `lang/id`.
 
 ## Rencana test
 `tests/Feature/Konten/PortalThemeSchemaTest.php` (AC-1, AC-9), `PortalThemeStyleMapTest.php` (AC-2), `PortalThemeRenderTest.php` (AC-3, AC-4, AC-5, AC-7, AC-8), `ListPortalThemesTest.php` + `ThemePageTest` (AC-6).
 **Tugas red-tester (RED), tes lama yang rusak:** perbarui `GetPortalThemeTest` (`blockView`/`TEMPLATES`), `UpdatePortalThemeTest`, `PortalTemplateTest`, dan label `lang` `pondok.school_profile.theme.templates`; golden AC-4 direkam sebelum refaktor.
 
 ## Urutan implementasi
-1. **Paket A, skema + peta gaya (hijau: PortalThemeSchemaTest, PortalThemeStyleMapTest):** `ThemeComponents`, `ValidatePortalTheme`, `MigrateThemeSchema`, `ThemeStyleMap` + `@source` di `app.css`, tiga `theme.json`.
+1. **Paket A, skema + peta gaya (hijau: PortalThemeSchemaTest, PortalThemeStyleMapTest):** `ThemeComponents`, `ValidatePortalTheme`, `MigrateThemeSchema`, `ThemeStyleMap`, tiga `theme.json`.
 2. **Paket B, renderer + migrasi (hijau: PortalThemeRenderTest, test portal/PSB/beranda yang ada):** `ListPortalThemes`, `ResolveActiveTheme`, partial header/footer, view komponen statis + varian, `GetPortalHomeData`, layout, fallback + log.
 3. **Paket C, pemilihan + modul (hijau: ListPortalThemesTest, ThemePageTest, ModuleComplianceTest):** hapus `TEMPLATES`/`blockView`, `UpdatePortalTheme`, `Site/Theme`, `lang/id`, `docs/rilis.md` (panduan skema, kebijakan versi), cek 360/1024/desktop.
 
 ## Risiko & pertanyaan terbuka
 - **Kompatibilitas skema selamanya:** dimitigasi set kunci tertutup, enum gaya, N dan N-1, `min_core`.
 - **Injeksi:** ditutup secara konstruksi (hanya lookup peta, tak ada string bebas ke kelas/URL/nama view); tetap diuji adversarial (AC-1, AC-2, AC-3).
-- **Kelas Tailwind tak terpindai:** bila peta tidak masuk `@source`, gaya hilang diam-diam; ditutup test AC-2 dan `npm run build` saat rilis.
+- **Kelas Tailwind tak terpindai:** cek statis AC-2 menjaga literal utuh; keberadaan di CSS dicek lewat `npm run build` saat rilis.
 - **Kombinasi gaya terbatas:** hanya yang ada di peta; menambah nilai = ubah peta + rilis inti (disengaja).
 - **Tampilan basi:** setelah ganti tema, portal basi ≤ 5 menit (cache publik), dijelaskan di UI.
 - **Terbuka (F103/#134):** URL katalog resmi dan pemegang kunci privat; tidak dibahas di rencana ini.
@@ -80,7 +82,11 @@ Tanpa permission baru. Pilih tema tetap `view:school-profile`. `manage:themes` d
 Ringkasan: 11 temuan; yang berkaitan T2 (keamanan unduh, kontrak daftar bersumber ganda/slug bentrok, penguncian job, replay versi) dipindah ke F103 dan dicatat di berkas catatan F103. Sisanya diselesaikan di rencana ini: cache dihapus (memoisasi per request), migrasi beranda dieksplisitkan (a-d), validator (ukuran sebelum decode, depth, UTF-8), daftar route tema, enum dibatasi pada tema resmi, tes lama rusak jadi tugas red-tester, klaim "tanpa teks tampil" diganti "tidak membawa teks portal".
 Keputusan user (2 Nov 2026): (1) mesin gaya = peta enum -> kelas Tailwind literal, `BuildThemeStyles` dibuang; (2) `assets` ditunda dari v1; (3) dipecah F102/F103; (4) tema `klasik` disetujui; (5) `manage:themes` pindah ke F103.
 
+## Review #2 (ThemeStyleMap, ringan): 2 major + 4 minor, diselesaikan
+Major: test CSS hasil build diganti tiga cek statis PHP; pasangan latar/teks `tone` dibatasi pada yang dijamin. Minor: `@source` dihapus, responsif dibatasi `columns`/`padding`, test awalan tak beririsan, test arsitektur AC-9 konkret.
+
 ## Riwayat revisi
 - 2 Nov 2026: ditulis ulang total mengikuti arah tema JSON; DRAFT.
 - 2 Nov 2026: revisi 1 menyikapi Review #1; APPROVED (setelah revisi 1).
 - 2 Nov 2026: revisi 2 mengikuti keputusan user: rencana dipecah (hanya Tahap 1, AC-10..14 pindah ke F103/#134), mesin gaya diganti peta kelas Tailwind literal (`ThemeStyleMap`), `assets` ditunda, `manage:themes` pindah ke F103; AC dirapikan jadi 9.
+- 2 Nov 2026: revisi 3 menyikapi Review #2 (lihat di atas).

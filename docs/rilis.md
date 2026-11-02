@@ -54,6 +54,31 @@ Tema portal adalah satu berkas `resources/themes/<slug>/theme.json` (data saja, 
 
 Isi manifes v1: `schema_version` (1), `version`, `slug`, `name`, `description`, `min_core`, serta `header`, `footer`, dan `home.layout` (daftar node `{component, variant?, style?, children?}` berurutan bebas: komponen boleh di posisi mana pun, berulang, dan bersarang di `container`/`columns`) yang disusun dari 15 komponen tetap dengan nilai gaya dari enum (padding, kolom, tone, dsb.). Node `blocks` menampilkan semua blok beranda dari admin sesuai urutannya (dipakai `default` dan `centered`); node isi (hero, feed_list, dst.) menampilkan blok aktif pertama bertipe itu. Editor visual dan susunan per situs di database adalah pekerjaan lanjutan dengan skema yang sama. Batas: kedalaman pohon 6, 150 node, 64 KB. Nilai di luar enum, kunci tak dikenal, dan `assets` ditolak.
 
+### Panduan `home.layout` (skema v1)
+
+Node: `{component, variant?, style?, children?}`. Komponen tata letak: `container` (susun vertikal; di header berderet), `columns` (anak = sel, 2 sampai 4 anak), `divider` (hiasan emas, satu bentuk). Komponen isi mengikat blok beranda aktif pertama bertipe sama: `hero`, `text_image`, `feature_grid` (blok keunggulan), `quote`, `cta`, `video`, `feed_list` (blok konten terbaru). `blocks` adalah preset lama: wajib satu-satunya node, tanpa `style`, varian `default` atau `centered`.
+
+Varian (yang pertama = bawaan bila `variant` dihilangkan):
+
+| Komponen | Varian |
+|---|---|
+| `hero` | `center`, `split` |
+| `feed_list` | `cards`, `list`, `magazine` |
+| `quote` | `plain`, `framed` |
+| `cta` | `band`, `card` |
+| `feature_grid` | `cards`, `numbered` |
+| `blocks` | `default`, `centered` |
+
+Aturan perilaku:
+
+- **Node kosong.** Node tampil bila ada anak isi yang tampil. Tanpa blok bertipe itu (atau blok disembunyikan admin), node beserta pembungkusnya tidak dirender. Sel `columns` kosong dibuang dan jumlah kolom = `min(style.columns, sel tampil)`. `divider` hanya tampil bila bersebelahan dengan konten yang tampil.
+- **Judul.** Hero pertama yang tampil memakai `h1`, berikutnya `h2`. Bila node bertajuk (text_image, feature_grid, cta, video, feed_list) tampil sebelum hero, hero tetap `h2` dan `h1` sr-only nama lembaga ditaruh di awal `<main>`. Tanpa hero, tampil `h1` sr-only (atau pita nama lembaga pada preset `blocks`).
+- **`tone: auto`.** Selang-seling `bg-gray-50` dan `bg-white` hanya untuk node level atas `home.layout`, dihitung menurut urutan tampil (node kosong dan `divider` tidak menggeser). Tidak sah di node bersarang, header, atau footer.
+- **Gaya.** Hanya enum `ThemeStyleMap` (tone, padding, gap, align, width, radius, shadow, border, columns); responsif `{base, md, lg}` hanya untuk `columns` dan `padding`. `style.columns` hanya pada `columns` (nilai 1 sampai 4, tidak melebihi jumlah anak). Node bersarang tidak mendapat padding atau gutter bawaan.
+- **Teks.** Tema hanya membawa struktur. Seluruh teks tampil berasal dari data sekolah (blok beranda, navigasi, footer); `name` dan `description` tema bukan teks portal.
+
+Pekerjaan lanjutan (belum ada, diusulkan sebagai issue terpisah menunggu persetujuan): editor visual susunan di Filament dengan susunan per situs di database (memakai skema yang sama), dan pemilihan blok ke-n (`nth`) agar sekolah dengan beberapa blok sejenis bisa menempatkan blok kedua dst. Saat ini node isi selalu memakai blok aktif pertama bertipe itu.
+
 Kebijakan versi:
 
 - `schema_version` naik hanya untuk perubahan yang merusak tema lama. Inti mendukung versi N dan N-1 (N-1 dimigrasikan dalam memori oleh `MigrateThemeSchema`, berkas tidak diubah).

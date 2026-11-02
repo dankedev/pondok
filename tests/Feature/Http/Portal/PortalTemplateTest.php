@@ -5,8 +5,9 @@ use App\Models\Setting;
 use Database\Seeders\RolePermissionSeeder;
 
 /*
-| F072 AC-4 (HTML), AC-6 sampai AC-11. Preset beranda = `resources/views/themes/<kunci>/blocks/<tipe>.blade.php`; `theme.template`
-| memilih preset (`default` atau `centered`), blok tanpa override jatuh ke preset default. Isian `portal.home_blocks` sama untuk semua preset.
+| F072 AC-4 (HTML), AC-6 sampai AC-11. `theme.template` memilih tema beranda (`default` atau `centered`); sejak F102 keduanya adalah
+| tema JSON resmi (`resources/themes/<slug>/theme.json`) yang dirender renderer tema dengan HTML identik dengan sebelum refaktor
+| (golden: `PortalThemeGoldenTest`). Isian `portal.home_blocks` sama untuk semua tema; test di file ini tetap berlaku tanpa diubah.
 */
 
 beforeEach(function () {

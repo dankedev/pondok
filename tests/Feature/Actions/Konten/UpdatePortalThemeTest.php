@@ -137,7 +137,7 @@ it('AC-6: accepts colours that looked risky before, because the rule judges the 
 });
 
 /*
-| F072 AC-2, AC-3. Input baru `template` (kunci `GetPortalTheme::TEMPLATES`); key `theme.template`, bawaan `default` disimpan null.
+| F072 AC-2, AC-3. Input `template` (slug tema valid dari `ListPortalThemes`, sejak F102); key `theme.template`, bawaan `default` disimpan null.
 */
 
 it('F072 AC-2: saves the template, logs once, and logs nothing when saved again', function () {
@@ -185,3 +185,24 @@ it('F072 AC-3: rejects an invalid template and saves nothing, including other ke
     'array' => [['centered']],
     'integer' => 1,
 ]);
+
+it('F102 AC-6: saves the klasik theme and any listed valid theme, but rejects an installed theme whose manifest is invalid', function () {
+    themeSave(['template' => 'klasik']);
+
+    expect(Setting::get('theme.template'))->toBe('klasik');
+
+    $copy = themeInstall(themeOfficialManifest('klasik'));
+    themeSave(['template' => $copy]);
+
+    expect(Setting::get('theme.template'))->toBe($copy);
+
+    $broken = themeInstall([...themeOfficialManifest('klasik'), 'schema_version' => 99]);
+    $unparsable = themeInstall('{"schema_version":');
+
+    foreach ([$broken, $unparsable] as $slug) {
+        kontenAssertRejected(fn () => themeSave(['template' => $slug]), 'theme_option_invalid', 'template');
+    }
+
+    expect(Setting::get('theme.template'))->toBe($copy)
+        ->and(kontenActivities()->where('description', 'portal_theme_updated'))->toHaveCount(2);
+});

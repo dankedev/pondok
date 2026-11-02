@@ -2,6 +2,7 @@
 
 use App\Actions\Konten\BuildColorScale;
 use App\Actions\Konten\GetPortalTheme;
+use App\Actions\Konten\ListPortalThemes;
 use App\Filament\Pages\Site\Theme;
 use App\Models\Setting;
 use Livewire\Livewire;
@@ -81,19 +82,35 @@ it('AC-15: shows the action error on the colour field and saves nothing', functi
 });
 
 /*
-| F072 AC-12. State `data.template` (bawaan `default`), Radio opsi `default`/`centered` dengan label dan deskripsi dari
-| `pondok.school_profile.theme.templates.<kunci>`. Simpan tidak menyentuh `portal.home_blocks`.
+| F072 AC-12, diperbarui F102. State `data.template` (bawaan `default`), Radio dari `ListPortalThemes` (nama dan deskripsi dari
+| manifest, tema rusak nonaktif dengan alasan). Simpan tidak menyentuh `portal.home_blocks`.
 */
 
-it('F072 AC-12: shows the default template and both options with their descriptions', function () {
+it('F102 AC-6: lists the official themes with the name and description from their manifests', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    $component = Livewire::test(Theme::class)->assertSet('data.template', 'default');
+
+    foreach (['default', 'centered', 'klasik'] as $slug) {
+        $manifest = themeOfficialManifest($slug);
+        $component->assertSee($manifest['name'])->assertSee($manifest['description']);
+    }
+});
+
+it('F102 AC-8: still renders when a theme is broken, shows the reason, and does not let it be chosen', function () {
+    $slug = themeInstall([...themeOfficialManifest('klasik'), 'schema_version' => 99]);
+    $error = collect(app(ListPortalThemes::class)->handle())->firstWhere('slug', $slug)['error'] ?? null;
     $this->actingAs(kontenUser('admin-konten'));
 
     Livewire::test(Theme::class)
-        ->assertSet('data.template', 'default')
-        ->assertSee('Standar (bawaan)')
-        ->assertSee('Terpusat')
-        ->assertSee(__('pondok.school_profile.theme.templates.default.description'))
-        ->assertSee(__('pondok.school_profile.theme.templates.centered.description'));
+        ->assertOk()
+        ->assertSee($error)
+        ->fillForm(['template' => $slug])
+        ->call('save')
+        ->assertHasErrors(['data.template']);
+
+    expect($error)->toBeString()->not->toBe('')
+        ->and(Setting::get('theme.template'))->toBeNull();
 });
 
 it('F072 AC-12: saves the chosen template, notifies, and leaves the home blocks untouched', function () {

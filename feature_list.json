@@ -1977,14 +1977,14 @@
       "module": "Konten",
       "status": "in-progress",
       "depends_on": ["F070", "F072"],
-      "description": "Tahap 1 tema portal berbasis JSON: tema = data JSON (struktur + enum gaya) yang dirender inti; tanpa Blade/PHP/JS dari tema, tanpa jaringan. Cakupan header, footer, dan bagian beranda; gaya = enum dipetakan server ke kelas Tailwind literal (tanpa CSS runtime). Skema v1 + validator, renderer, tema resmi default/centered/klasik, pemilihan di Situs > Tampilan, fallback. Aset gambar/font ditunda. Katalog dan unduh = F103. Detail di issue #133 dan docs/plans/F102-plan.md.",
+      "description": "Tahap 1 tema portal berbasis JSON: tema = data JSON (struktur + enum gaya) yang dirender inti; tanpa Blade/PHP/JS dari tema, tanpa jaringan. Cakupan header, footer, dan bagian beranda; gaya = enum dipetakan server ke kelas Tailwind literal (tanpa CSS runtime). Skema v1 + validator, renderer, tema resmi default/centered/majalah/mushaf, pemilihan di Situs > Tampilan, fallback. Aset gambar/font ditunda. Katalog dan unduh = F103. Detail di issue #133 dan docs/plans/F102-plan.md.",
       "acceptance": [
         "Validator skema v1 menolak schema_version tak didukung, kunci/komponen tak dikenal, nilai gaya di luar enum, slug tak sama nama direktori, UTF-8 rusak, dan JSON melebihi batas ukuran (dicek sebelum decode), depth, kedalaman, atau jumlah node",
         "Peta gaya server: enum -> kelas Tailwind literal (md:/lg: hanya columns/padding), dicek statis PHP (pola token, literal utuh, tanpa interpolasi); pasangan latar/teks tone terjamin dan lolos kontras 4,5:1 pada skala default dan F070 ekstrem",
         "Renderer header/footer memakai data inti yang sama tanpa query tambahan; teks dan URL tetap tersanitasi",
         "Beranda berblok tidak berubah (default dan centered sama dengan golden pra-migrasi; tone auto = selang-seling renderer); tipe blok tak dipetakan memakai komponen bawaan",
         "Struktur aksesibel (lompat ke konten, satu h1, urutan heading, fokus terlihat) di semua tema resmi",
-        "Tema dipilih di Situs > Tampilan dari ListPortalThemes (tiga tema resmi); TEMPLATES dihapus; token F070 tetap berlaku",
+        "Tema dipilih di Situs > Tampilan dari ListPortalThemes (empat tema resmi); TEMPLATES dihapus; token F070 tetap berlaku",
         "Respons portal bertema tanpa csrf-token, aset Livewire, atau Set-Cookie; Cache-Control public dan ETag utuh; PSB Livewire, portal wali, 404, dan verify-* tetap chrome inti",
         "Tema hilang, rusak, atau schema tak didukung membuat portal memakai tampilan inti dengan Log::warning sekali per slug per proses",
         "Tidak ada kode dari tema; ModuleComplianceTest lulus; teks lewat lang/id"
@@ -1992,7 +1992,7 @@
       "owner": "f102-planner",
       "handoff": null,
       "evidence": null,
-      "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. Revisi 4 (2 Nov 2026): susunan bebas ala Elementor, home.sections diganti home.layout, klasik diganti majalah dan mushaf; rencana menunggu tinjauan ulang. PR ke dev dengan Refs #133."
+      "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. Revisi 4 (2 Nov 2026): susunan bebas ala Elementor, home.sections diganti home.layout, klasik diganti majalah dan mushaf; revisi 5 APPROVED. Paket A/B/C selesai: skema home.layout, renderer, varian, tema resmi default/centered/majalah/mushaf (klasik dihapus), docs/rilis.md dan design-guide diperbarui. Editor visual dan nth = issue lanjutan (usul). PR ke dev dengan Refs #133."
     },
     {
       "id": "F103",

@@ -5,7 +5,7 @@ use App\Actions\Konten\GetPortalTheme;
 use App\Actions\Konten\ThemeStyleMap;
 
 /*
-| F102 AC-2 (peta gaya) dan bagian ThemeStyleMap AC-9. Kontrak yang diasumsikan:
+| F102 AC-3 (peta gaya) dan bagian ThemeStyleMap AC-9. `columns` = 1|2|3|4 (`1` untuk 360px). Kontrak yang diasumsikan:
 |  - `ThemeStyleMap::classes(array $style): string` menerima node `style` tervalidasi (`properti => nilai` atau, hanya untuk
 |    `padding` dan `columns`, `properti => ['base' => ..., 'md' => ..., 'lg' => ...]`) dan mengembalikan kelas Tailwind
 |    dipisah spasi (kelas breakpoint berawalan `md:`/`lg:`). `columns` berupa bilangan bulat. Nilai `none` boleh menghasilkan teks kosong.
@@ -24,7 +24,7 @@ const STYLE_ENUMS = [
     'radius' => ['none', 'md', 'lg'],
     'shadow' => ['none', 'sm'],
     'border' => ['none', 'top', 'bottom'],
-    'columns' => [2, 3, 4],
+    'columns' => [1, 2, 3, 4],
 ];
 
 const STYLE_RESPONSIVE = ['padding', 'columns'];
@@ -80,7 +80,7 @@ function styleMapSource(): string
     return implode('', array_map(fn ($token): string => is_array($token) ? (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? '' : $token[1]) : $token, token_get_all($code)));
 }
 
-it('AC-2: maps every valid enum value to Tailwind classes, responsive only for columns and padding', function () {
+it('AC-9: maps every valid enum value to Tailwind classes, responsive only for columns and padding', function () {
     $all = styleAllTokens();
 
     foreach (STYLE_ENUMS as $property => $values) {
@@ -117,7 +117,7 @@ it('AC-2: maps every valid enum value to Tailwind classes, responsive only for c
         ->and($all)->toHaveKeys(array_keys(STYLE_ENUMS));
 });
 
-it('AC-2 and AC-9: throws for any key or value the map does not know instead of passing it through', function () {
+it('AC-3 and AC-9: throws for any key or value the map does not know instead of passing it through', function () {
     $accepted = [];
 
     foreach ([
@@ -126,6 +126,7 @@ it('AC-2 and AC-9: throws for any key or value the map does not know instead of 
         'nilai css' => ['tone' => 'light; background:url(x)'],
         'nilai kelas bebas' => ['gap' => 'gap-96'],
         'columns di luar enum' => ['columns' => 7],
+        'columns nol' => ['columns' => 0],
         'columns string tak sah' => ['columns' => 'banyak'],
         'breakpoint tak dikenal' => ['padding' => ['base' => 'sm', 'xl' => 'lg']],
     ] as $label => $style) {
@@ -141,7 +142,7 @@ it('AC-2 and AC-9: throws for any key or value the map does not know instead of 
         ->and(ThemeStyleMap::classes(['tone' => 'dark']))->toBeString();
 });
 
-it('AC-2: keeps every class a whole literal token of the allowed Tailwind form, with no interpolation or concatenation', function () {
+it('AC-9: keeps every class a whole literal token of the allowed Tailwind form, with no interpolation or concatenation', function () {
     $allowed = '/^(?:(?:sm|md|lg|xl|hover|focus|focus-visible):)?-?[a-z][a-z0-9]*(?:-[a-z0-9]+(?:\.[0-9]+)?)*(?:\/[0-9]+)?$/';
     $source = styleMapSource();
     $invalid = $missing = [];
@@ -184,7 +185,7 @@ it('AC-2: keeps every class a whole literal token of the allowed Tailwind form, 
         ->and($constructed)->toBe([], 'Kelas dirangkai saat runtime: '.implode(', ', $constructed));
 });
 
-it('AC-2: gives each tone only background and text pairs that keep 4.5:1 with the default and extreme F070 colours', function () {
+it('AC-9: gives each tone only background and text pairs that keep 4.5:1 with the default and extreme F070 colours', function () {
     $allowedBackgrounds = ['light' => ['bg-white', 'bg-gray-50'], 'muted' => ['bg-gray-100'], 'brand' => ['bg-brand'], 'dark' => ['bg-primary-950']];
     $gray = [50 => '#f9fafb', 100 => '#f3f4f6', 200 => '#e5e7eb', 300 => '#d1d5db', 400 => '#9ca3af', 500 => '#6b7280', 600 => '#4b5563', 700 => '#374151', 800 => '#1f2937', 900 => '#111827'];
 
@@ -236,7 +237,7 @@ it('AC-2: gives each tone only background and text pairs that keep 4.5:1 with th
     }
 });
 
-it('AC-2: keeps each property on its own utility prefix and never emits focus, ring or outline classes', function () {
+it('AC-9: keeps each property on its own utility prefix and never emits focus, ring or outline classes', function () {
     $prefixOf = function (string $token): string {
         $base = preg_replace('/^(?:[a-z-]+:)+/', '', $token);
 

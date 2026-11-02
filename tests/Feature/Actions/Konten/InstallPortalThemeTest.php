@@ -212,15 +212,15 @@ it('AC-10: leaves theme.json and previous.json intact and cleans up when the swa
 
     $first = signedThemePackage('zz-uji', '1.0.0');
     $second = signedThemePackage('zz-uji', '2.0.0');
-    ipInstall($first);
-    ipInstall($second);
+    ipInstall($first, $this->admin);
+    ipInstall($second, $this->admin);
     $before = themeInstalledTree();
     $dir = themeInstalledSandbox().'/zz-uji';
 
     chmod($dir, 0555);
 
     try {
-        expect(fn () => ipInstall(signedThemePackage('zz-uji', '3.0.0'), $this->admin))->toThrow(Throwable::class);
+        expect(fn () => ipInstall(signedThemePackage('zz-uji', '3.0.0'), $this->admin))->toThrow(Exception::class);
     } finally {
         chmod($dir, 0755);
     }
@@ -231,7 +231,7 @@ it('AC-10: leaves theme.json and previous.json intact and cleans up when the swa
         ->and(glob("{$dir}/*.tmp"))->toBe([])
         ->and(is_dir(themeInstalledSandbox().'/_staging/zz-uji'))->toBeFalse()
         ->and(collect(app(ListPortalThemes::class)->handle())->firstWhere('slug', 'zz-uji')['valid'])->toBeTrue()
-        ->and(kontenActivities()->where('description', 'portal_theme_installed'))->toHaveCount(1);
+        ->and(kontenActivities()->where('description', 'portal_theme_installed'))->toHaveCount(2);
 });
 
 /**
@@ -276,7 +276,7 @@ function ipInstallFailing(array $package, array $modes, ?Closure $before = null,
     $before?->__invoke();
 
     try {
-        expect(fn () => app(InstallPortalTheme::class)->handle($package['entry'], $package['bytes']))->toThrow(Throwable::class);
+        expect(fn () => app(InstallPortalTheme::class)->handle($package['entry'], $package['bytes']))->toThrow(Exception::class);
     } finally {
         $after?->__invoke();
 
@@ -362,7 +362,7 @@ it('AC-10: an update whose rename of staging onto theme.json fails keeps the old
     $third = signedThemePackage('zz-uji', '3.0.0');
 
     try {
-        expect(fn () => app(InstallPortalTheme::class)->handle($third['entry'], $third['bytes']))->toThrow(Throwable::class);
+        expect(fn () => app(InstallPortalTheme::class)->handle($third['entry'], $third['bytes']))->toThrow(Exception::class);
     } finally {
         ipImmutable($target, false);
     }
@@ -381,7 +381,7 @@ it('AC-10: an update whose final rename of previous.json fails never leaves a mi
     mkdir("{$dir}/previous.json");
     file_put_contents("{$dir}/previous.json/penanda", 'UTUH');
 
-    expect(fn () => app(InstallPortalTheme::class)->handle($second['entry'], $second['bytes']))->toThrow(Throwable::class);
+    expect(fn () => app(InstallPortalTheme::class)->handle($second['entry'], $second['bytes']))->toThrow(Exception::class);
 
     // Kegagalan setelah rename theme.json boleh meninggalkan theme.json baru; yang tak boleh: hilang, terpotong, atau previous.json tertimpa sebagian.
     $theme = themeInstalledFile('zz-uji');

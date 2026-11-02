@@ -3253,6 +3253,7 @@ return [
         'invalid_style' => 'style di :where harus berupa objek.',
         'unknown_style_property' => 'Properti gaya :property tidak dikenal.',
         'invalid_style_value' => 'Nilai :value tidak sah untuk properti gaya :property.',
+        'tone_auto_home_only' => 'Nilai tone auto hanya sah di home.sections (di :where).',
         'too_deep' => 'Pohon komponen terlalu dalam: kedalaman maksimum :max tingkat.',
         'too_many_nodes' => 'Pohon komponen terlalu besar: maksimum :max node.',
     ],

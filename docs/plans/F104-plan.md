@@ -1,8 +1,8 @@
 # F104 konten-tema-warna-font — Tema portal menentukan warna dan tipografi
 
-Issue: #ISSUE
+Issue: #140
 Status rencana: DRAFT (revisi 1)
-PR ditujukan ke `dev` (cabang `feat/f104-warna-tipografi-tema`), memakai `Refs #ISSUE`, bukan `Closes`.
+PR ditujukan ke `dev` (cabang `feat/f104-warna-tipografi-tema`), memakai `Refs #140`, bukan `Closes`.
 Jalur: penuh (skema dan validator tema).
 
 ## Ringkasan & tujuan

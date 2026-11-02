@@ -130,12 +130,15 @@ class Theme extends SettingsFormPage
 
     protected function persist(array $data, User $user): void
     {
+        // Radio mengubah kunci opsi angka-saja (slug "12345") jadi int; slug tersimpan harus tetap string.
+        $template = is_int($data['template'] ?? null) ? (string) $data['template'] : ($data['template'] ?? null);
+
         app(UpdatePortalTheme::class)->handle([
             'primary' => $data['primary'] ?? null,
             'accent' => $data['accent'] ?? null,
             'font' => $data['font'] ?? null,
             'radius' => $data['radius'] ?? null,
-            'template' => $data['template'] ?? null,
+            'template' => $template,
         ], $user);
     }
 }

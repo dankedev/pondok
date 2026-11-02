@@ -152,15 +152,11 @@ class GetPortalTheme
     }
 
     /**
-     * Slug berbentuk sah (sama dengan `ResolveActiveTheme`) yang punya folder tema, atau null.
+     * Slug berbentuk sah (sama dengan `ResolveActiveTheme`) yang punya berkas tema (resmi atau terpasang), atau null.
      */
     private static function installedTheme(mixed $slug): ?string
     {
-        if (! is_string($slug) || preg_match('/^[a-z0-9-]{2,40}\z/', $slug) !== 1) {
-            return null;
-        }
-
-        return is_file(rtrim((string) config('pondok.themes_path'), '/')."/{$slug}/theme.json") ? $slug : null;
+        return app(ResolveThemePath::class)->handle($slug) === null ? null : $slug;
     }
 
     /**

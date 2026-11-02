@@ -589,3 +589,149 @@ it('AC-14: treats a stored klasik value from old demo data as the core theme', f
         ->and(app(ResolveActiveTheme::class)->handle())->toBeNull()
         ->and(themeSquash(blkHome()))->toBe($core);
 });
+
+/*
+| VERIFY F102: celah tepi susunan bebas (kedalaman, divider, feed_list magazine, XSS varian, cache, fallback sesi).
+*/
+
+it('VERIFY AC-2: renders a hero at depth 6 in home, and a brand at depth 6 in header and footer, without falling back', function () {
+    themeSeed();
+    $manifest = themeLayout([themeNested(6, ['component' => 'hero'])]);
+    $manifest['header'] = themeNested(6, ['component' => 'brand']);
+    $manifest['footer'] = themeNested(6, ['component' => 'copyright']);
+    themeActivate(themeInstall($manifest));
+    $html = blkHome();
+
+    expect(themeMain($html))->toContain('Judul hero uji')
+        ->and(themeChrome($html)['header'])->toContain('Ma&#039;had Al-Kitab')
+        ->and(themeChrome($html)['footer'])->not->toBe('')
+        ->and(substr_count($html, '<h1'))->toBe(1);
+});
+
+it('VERIFY AC-5: renders a divider only between shown content, never at the ends, doubled, or beside empty nodes or as a lone column cell', function () {
+    portalSeedContent();
+    blkSet([blk('hero', ['title' => 'Hero divider uji']), blk('text_image', ['heading' => 'Teks divider uji', 'text' => '<p>x</p>'])]);
+    $dividers = fn (array $layout): int => substr_count(themeMain(themeHomeWith($layout)), 'rotate-45');
+
+    expect($dividers([['component' => 'divider'], ['component' => 'hero'], ['component' => 'divider']]))->toBe(0, 'di ujung')
+        ->and($dividers([['component' => 'hero'], ['component' => 'divider'], ['component' => 'quote'], ['component' => 'divider'], ['component' => 'text_image']]))->toBe(1, 'dua divider mengapit node kosong = satu')
+        ->and($dividers([['component' => 'hero'], ['component' => 'divider'], ['component' => 'divider'], ['component' => 'text_image']]))->toBe(1, 'divider ganda = satu')
+        ->and($dividers([['component' => 'hero'], ['component' => 'columns', 'children' => [['component' => 'divider'], ['component' => 'quote']]], ['component' => 'text_image']]))->toBe(0, 'kolom hanya berisi divider dan node kosong');
+});
+
+it('VERIFY AC-5: renders a columns node with a single shown cell and drops it with none, in a container with a divider around it', function () {
+    portalSeedContent();
+    blkSet([blk('hero', ['title' => 'Sel tunggal uji'])]);
+    $html = themeMain(themeHomeWith([
+        ['component' => 'container', 'children' => [
+            ['component' => 'columns', 'style' => ['columns' => 4], 'children' => [['component' => 'quote'], ['component' => 'hero'], ['component' => 'cta'], ['component' => 'video']]],
+            ['component' => 'columns', 'children' => [['component' => 'quote'], ['component' => 'cta']]],
+        ]],
+    ]));
+
+    expect(substr_count($html, 'Sel tunggal uji'))->toBe(1)
+        ->and(substr_count($html, 'grid-cols-'))->toBe(1, 'hanya satu grid columns yang dirender, yang kosong dibuang');
+});
+
+it('VERIFY AC-11: keeps one h1 and unique ids with heroes nested in containers and columns around a titled node', function () {
+    themeSeed();
+    $html = themeHomeWith([
+        ['component' => 'columns', 'children' => [['component' => 'feed_list'], ['component' => 'hero']]],
+        ['component' => 'container', 'children' => [['component' => 'hero'], ['component' => 'feed_list']]],
+        ['component' => 'hero'],
+    ]);
+    $outline = themeExpectOutline($html, 'hero bersarang');
+
+    expect($outline[0]['attrs'])->toContain('sr-only')
+        ->and(collect($outline)->filter(fn (array $h): bool => $h['text'] === 'Judul hero uji')->pluck('level')->unique()->all())->toBe([2]);
+});
+
+it('VERIFY AC-5: renders feed_list magazine with one item and drops the node with none', function () {
+    portalBoot();
+    Setting::set('modules.konten.enabled', true);
+    blkSet([blk('feed', ['source' => 'albums', 'heading' => 'Feed magazine uji'])]);
+    $layout = [['component' => 'feed_list', 'variant' => 'magazine']];
+
+    $empty = themeHomeWith($layout);
+    expect($empty)->not->toContain('Feed magazine uji');
+
+    portalAlbumWithPhotos(1, ['title' => 'Album tunggal uji']);
+    $one = themeHomeWith($layout);
+
+    expect($one)->toContain('Feed magazine uji')->toContain('Album tunggal uji')
+        ->and(substr_count($one, '<ul class="min-w-0 space-y-4">'))->toBe(0);
+});
+
+it('VERIFY AC-5: drops nested feed nodes but keeps the hero when the content module is off', function () {
+    themeSeed();
+    Setting::set('modules.konten.enabled', false);
+    $html = themeHomeWith([['component' => 'container', 'children' => [['component' => 'hero'], ['component' => 'feed_list']]]]);
+
+    expect($html)->toContain('Judul hero uji')->not->toContain('Feed uji')->and(substr_count($html, '<h1'))->toBe(1);
+});
+
+it('VERIFY AC-8: escapes block text and the school name in every new variant', function () {
+    portalBoot();
+    portalSeedContent();
+    Setting::set('school.name', 'Sekolah <script>alert(9)</script>');
+    $xss = '<script>alert(1)</script><img src=x onerror=alert(2)>';
+    blkSet([
+        blk('quote', ['text' => $xss, 'translation' => $xss, 'source' => $xss]),
+        blk('features', ['heading' => $xss, 'items' => [['title' => $xss, 'text' => $xss]]]),
+        blk('cta', ['heading' => $xss, 'text' => $xss, 'variant' => 'light', 'primary' => navItem('posts', $xss)]),
+        blk('hero', ['title' => $xss, 'text' => $xss, 'eyebrow' => $xss]),
+        blk('feed', ['source' => 'posts', 'heading' => $xss]),
+    ]);
+    $html = themeHomeWith([
+        ['component' => 'quote', 'variant' => 'framed'], ['component' => 'feature_grid', 'variant' => 'numbered'], ['component' => 'cta', 'variant' => 'card'],
+        ['component' => 'hero', 'variant' => 'split'], ['component' => 'feed_list', 'variant' => 'magazine'], ['component' => 'feed_list', 'variant' => 'list'],
+    ], chrome: true);
+
+    expect($html)->not->toContain('<script>alert')->not->toContain('<img src=x')->not->toContain('onerror=alert(2)>');
+});
+
+it('VERIFY AC-5: renders majalah and mushaf with only one block, with no blocks, and with the content module off, with one h1 each', function () {
+    portalBoot();
+    portalSeedContent();
+
+    foreach ([[blk('quote', ['text' => 'Satu-satunya blok uji'])], []] as $blocks) {
+        blkSet($blocks);
+
+        foreach (['majalah', 'mushaf'] as $slug) {
+            themeActivate($slug);
+            $html = blkHome();
+
+            themeExpectOutline($html, $slug.' dengan '.count($blocks).' blok');
+            expect(preg_match('#<section\b[^>]*>\s*</section>#', $html))->toBe(0, "{$slug}: tanpa section kosong");
+        }
+    }
+});
+
+it('VERIFY AC-15: changes the etag and the body when the theme changes, so a stale 304 is never served', function () {
+    themeSeed();
+    themeActivate('default');
+    $first = $this->get('/');
+    $etag = $first->headers->get('ETag');
+
+    themeActivate('mushaf');
+    $second = $this->withHeaders(['If-None-Match' => $etag])->get('/');
+
+    expect($etag)->not->toBeNull()
+        ->and($second->getStatusCode())->toBe(200, 'tema baru tidak dijawab 304 dari ETag tema lama')
+        ->and($second->headers->get('ETag'))->not->toBe($etag);
+});
+
+it('VERIFY AC-15: keeps the core chrome with a 200 on session pages and 404 when the active theme is broken', function () {
+    Setting::set('modules.psb.enabled', true);
+    portalPsbOpen();
+    $urls = [route('psb.register', absolute: false), route('portal-wali.login', absolute: false), route('psb.info', absolute: false), '/tidak-ada-f102'];
+    $before = array_map(fn (string $url): array => themeChrome($this->get($url)->getContent()), $urls);
+
+    themeActivate(themeInstall('{"schema_version":1,'));
+
+    foreach ($urls as $index => $url) {
+        $response = $this->get($url);
+        expect(themeChrome($response->getContent()))->toBe($before[$index], $url)
+            ->and($response->getStatusCode())->toBe($index === 3 ? 404 : 200, $url);
+    }
+});

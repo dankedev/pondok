@@ -4,6 +4,7 @@ use App\Actions\Konten\InstallPortalTheme;
 use App\Actions\Konten\ListPortalThemes;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 
 /*
 | F103 AC-8, AC-9, AC-10. Kontrak: `InstallPortalTheme::handle(array $entry, string $bytes, ?User $actor = null): void`.
@@ -231,6 +232,173 @@ it('AC-10: leaves theme.json and previous.json intact and cleans up when the swa
         ->and(is_dir(themeInstalledSandbox().'/_staging/zz-uji'))->toBeFalse()
         ->and(collect(app(ListPortalThemes::class)->handle())->firstWhere('slug', 'zz-uji')['valid'])->toBeTrue()
         ->and(kontenActivities()->where('description', 'portal_theme_installed'))->toHaveCount(1);
+});
+
+/**
+ * Invarian pasang atomik (AC-10): `theme.json` selalu berkas utuh dan valid (salah satu dari `$allowed`, byte persis), `previous.json` persis
+ * `$previous` (null = tidak ada), tak ada sisa `*.tmp` maupun `_staging/<slug>`, dan tema tetap terdaftar valid.
+ *
+ * @param  list<string>|null  $allowed  null = `theme.json` harus tidak ada
+ */
+function ipAssertAtomicInvariant(string $slug, ?array $allowed, ?string $previous, string $label): void
+{
+    $root = themeInstalledSandbox();
+    $theme = themeInstalledFile($slug);
+    $temporary = collect(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)))
+        ->map(fn (SplFileInfo $file): string => $file->getPathname())->filter(fn (string $path): bool => str_ends_with($path, '.tmp'))->values()->all();
+
+    if ($allowed === null) {
+        expect($theme)->toBeNull($label);
+    } else {
+        expect(in_array($theme, $allowed, true))->toBeTrue("{$label}: theme.json harus utuh (lama atau baru)")
+            ->and(collect(app(ListPortalThemes::class)->handle())->firstWhere('slug', $slug)['valid'] ?? null)->toBeTrue($label);
+    }
+
+    expect(themeInstalledFile($slug, 'previous.json'))->toBe($previous, "{$label}: previous.json")
+        ->and($temporary)->toBe([], "{$label}: sisa .tmp")
+        ->and(is_dir("{$root}/_staging/{$slug}"))->toBeFalse("{$label}: sisa staging");
+}
+
+/**
+ * Jalankan pasang yang harus gagal; izin folder dikembalikan apa pun hasilnya.
+ *
+ * @param  array<string, int>  $modes  path => mode saat pasang
+ */
+function ipInstallFailing(array $package, array $modes, ?Closure $before = null, ?Closure $after = null): void
+{
+    $original = [];
+
+    foreach ($modes as $path => $mode) {
+        $original[$path] = fileperms($path) & 0777;
+        chmod($path, $mode);
+    }
+
+    $before?->__invoke();
+
+    try {
+        expect(fn () => app(InstallPortalTheme::class)->handle($package['entry'], $package['bytes']))->toThrow(Throwable::class);
+    } finally {
+        $after?->__invoke();
+
+        foreach ($original as $path => $mode) {
+            chmod($path, $mode);
+        }
+    }
+}
+
+/**
+ * Tahan penggantian berkas (rename di atasnya gagal) lewat flag immutable; false bila platform tak mendukung tanpa root.
+ */
+function ipImmutable(string $path, bool $on): bool
+{
+    if (PHP_OS_FAMILY !== 'Darwin') {
+        return false;
+    }
+
+    exec('chflags '.($on ? 'uchg' : 'nouchg').' '.escapeshellarg($path).' 2>&1', $output, $code);
+
+    return $code === 0;
+}
+
+it('AC-10: a first install that fails writing the staging file or placing theme.json leaves nothing behind', function () {
+    if (posix_geteuid() === 0) {
+        $this->markTestSkipped('Folder baca-saja tidak menghalangi root.');
+    }
+
+    $root = themeInstalledSandbox();
+    mkdir("{$root}/_staging", 0777);
+    $package = signedThemePackage('zz-uji', '1.0.0');
+
+    // Menulis berkas staging gagal: folder `_staging` tak bisa ditulis.
+    ipInstallFailing($package, ["{$root}/_staging" => 0555]);
+    ipAssertAtomicInvariant('zz-uji', null, null, 'staging tak bisa ditulis');
+    expect(is_dir("{$root}/zz-uji"))->toBeFalse();
+
+    // Membuat folder tema gagal: folder terpasang tak bisa ditulis (staging sudah berhasil ditulis).
+    ipInstallFailing($package, [$root => 0555]);
+    ipAssertAtomicInvariant('zz-uji', null, null, 'folder terpasang tak bisa ditulis');
+    expect(is_dir("{$root}/zz-uji"))->toBeFalse();
+
+    // Rename staging ke theme.json gagal: folder tema sudah ada tetapi kosong dan tak bisa ditulis.
+    mkdir("{$root}/zz-uji", 0777);
+    ipInstallFailing($package, ["{$root}/zz-uji" => 0555]);
+    ipAssertAtomicInvariant('zz-uji', null, null, 'rename ke theme.json gagal');
+
+    // Setelah semua kegagalan itu, pasang yang normal tetap berhasil.
+    ipInstall($package);
+
+    expect(themeInstalledFile('zz-uji'))->toBe($package['bytes']);
+});
+
+it('AC-10: an update that fails writing the staging file leaves theme.json and previous.json exactly as they were', function () {
+    if (posix_geteuid() === 0) {
+        $this->markTestSkipped('Folder baca-saja tidak menghalangi root.');
+    }
+
+    $first = signedThemePackage('zz-uji', '1.0.0');
+    $second = signedThemePackage('zz-uji', '2.0.0');
+    ipInstall($first);
+    ipInstall($second);
+    $root = themeInstalledSandbox();
+    $before = themeInstalledTree();
+
+    ipInstallFailing(signedThemePackage('zz-uji', '3.0.0'), ["{$root}/_staging" => 0555]);
+
+    ipAssertAtomicInvariant('zz-uji', [$second['bytes']], $first['bytes'], 'staging tak bisa ditulis');
+    expect(themeInstalledTree())->toBe($before);
+});
+
+it('AC-10: an update whose rename of staging onto theme.json fails keeps the old theme.json and previous.json and cleans up', function () {
+    $first = signedThemePackage('zz-uji', '1.0.0');
+    $second = signedThemePackage('zz-uji', '2.0.0');
+    ipInstall($first);
+    ipInstall($second);
+    $target = themeInstalledSandbox().'/zz-uji/theme.json';
+
+    if (! ipImmutable($target, true)) {
+        $this->markTestSkipped('Butuh `chflags uchg` (macOS) untuk menahan rename di atas theme.json; Linux membutuhkan root (`chattr +i`).');
+    }
+
+    $third = signedThemePackage('zz-uji', '3.0.0');
+
+    try {
+        expect(fn () => app(InstallPortalTheme::class)->handle($third['entry'], $third['bytes']))->toThrow(Throwable::class);
+    } finally {
+        ipImmutable($target, false);
+    }
+
+    ipAssertAtomicInvariant('zz-uji', [$second['bytes']], $first['bytes'], 'rename staging ke theme.json gagal');
+});
+
+it('AC-10: an update whose final rename of previous.json fails never leaves a missing or partial theme.json or a partial previous.json', function () {
+    $first = signedThemePackage('zz-uji', '1.0.0');
+    $second = signedThemePackage('zz-uji', '2.0.0');
+    $third = signedThemePackage('zz-uji', '3.0.0');
+    ipInstall($first);
+    $dir = themeInstalledSandbox().'/zz-uji';
+
+    // `previous.json` berupa folder berisi: rename `.tmp` ke atasnya selalu gagal, tepat di langkah terakhir.
+    mkdir("{$dir}/previous.json");
+    file_put_contents("{$dir}/previous.json/penanda", 'UTUH');
+
+    expect(fn () => app(InstallPortalTheme::class)->handle($second['entry'], $second['bytes']))->toThrow(Throwable::class);
+
+    // Kegagalan setelah rename theme.json boleh meninggalkan theme.json baru; yang tak boleh: hilang, terpotong, atau previous.json tertimpa sebagian.
+    $theme = themeInstalledFile('zz-uji');
+
+    expect(in_array($theme, [$first['bytes'], $second['bytes']], true))->toBeTrue('theme.json harus utuh (lama atau baru)')
+        ->and(file_get_contents("{$dir}/previous.json/penanda"))->toBe('UTUH')
+        ->and(glob("{$dir}/*.tmp"))->toBe([])
+        ->and(is_dir(themeInstalledSandbox().'/_staging/zz-uji'))->toBeFalse()
+        ->and(collect(app(ListPortalThemes::class)->handle())->firstWhere('slug', 'zz-uji')['valid'])->toBeTrue();
+
+    // Setelah hambatan dibuang, pasang berikutnya normal dan previous.json = versi yang berlaku sebelumnya.
+    File::deleteDirectory("{$dir}/previous.json");
+    $current = themeInstalledFile('zz-uji');
+    ipInstall($third);
+
+    expect(themeInstalledFile('zz-uji'))->toBe($third['bytes'])
+        ->and(themeInstalledFile('zz-uji', 'previous.json'))->toBe($current);
 });
 
 it('AC-10: refuses with a clear message while the write lock of the same slug is held, and keeps the files intact', function () {

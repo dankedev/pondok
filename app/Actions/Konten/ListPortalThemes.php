@@ -23,11 +23,11 @@ class ListPortalThemes
     {
         $entries = [];
 
-        foreach ($this->slugs('themes_path') as $slug) {
+        foreach ($this->slugs('themes_path', false) as $slug) {
             $entries[$slug] = $this->entry($slug, rtrim((string) config('pondok.themes_path'), '/')."/{$slug}/theme.json", 'official');
         }
 
-        foreach ($this->slugs('installed_themes_path') as $slug) {
+        foreach ($this->slugs('installed_themes_path', true) as $slug) {
             $path = $this->paths->handle($slug);
 
             if (! isset($entries[$slug]) && $path !== null) {
@@ -43,11 +43,12 @@ class ListPortalThemes
     /**
      * @return list<string>
      */
-    private function slugs(string $configKey): array
+    private function slugs(string $configKey, bool $onlyValidSlugs): array
     {
         $slugs = array_map('basename', glob(rtrim((string) config("pondok.{$configKey}"), '/').'/*', GLOB_ONLYDIR) ?: []);
 
-        return array_values(array_filter($slugs, ResolveThemePath::isSlug(...)));
+        // Folder tema bawaan tampil apa adanya (F102); folder terpasang disaring agar `_staging` dan nama non-slug tak muncul.
+        return $onlyValidSlugs ? array_values(array_filter($slugs, ResolveThemePath::isSlug(...))) : array_values($slugs);
     }
 
     /**

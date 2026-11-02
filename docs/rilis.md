@@ -48,6 +48,20 @@ Periksa isi zip bila perlu:
 unzip -l storage/app/releases/pondok-1.2.0.zip | less
 ```
 
+## Tema portal (skema v1)
+
+Tema portal adalah satu berkas `resources/themes/<slug>/theme.json` (data saja, tanpa kode, tanpa aset; `slug` harus sama dengan nama folder). Tiga tema resmi: `default`, `centered`, `klasik`. Tema dipilih di Situs > Tampilan; tema yang gagal validasi tampil nonaktif dan portal memakai chrome inti.
+
+Isi manifes v1: `schema_version` (1), `version`, `slug`, `name`, `description`, `min_core`, serta `header`, `footer`, dan `home.sections` yang disusun dari 12 komponen tetap dengan nilai gaya dari enum (padding, kolom, tone, dsb.). Batas: kedalaman pohon 6, 150 node, 64 KB. Nilai di luar enum, kunci tak dikenal, dan `assets` ditolak.
+
+Kebijakan versi:
+
+- `schema_version` naik hanya untuk perubahan yang merusak tema lama. Inti mendukung versi N dan N-1 (N-1 dimigrasikan dalam memori oleh `MigrateThemeSchema`, berkas tidak diubah).
+- Tambahan yang kompatibel (komponen atau varian baru) cukup menaikkan `min_core`: tema dengan `min_core` di atas versi inti dianggap tidak valid dan portal memakai chrome inti.
+- Versi di luar N dan N-1 diperlakukan sebagai tidak didukung (fallback inti, peringatan log sekali per slug).
+
+Saat rilis, jalankan `npm run build` (atau `pnpm run build`, sudah ada di `pondok:release`) sebelum memaketkan: kelas Tailwind peta gaya (`ThemeStyleMap`, kelas ditulis utuh sebagai literal) dan utilitas `portal-gutter` hanya ada di CSS bila dibuild. Test tidak memeriksa CSS hasil build, jadi periksa sekilas satu tema di portal setelah build.
+
 ## Memeriksa checksum
 
 Sekolah dapat mencocokkan berkas yang diunduh:

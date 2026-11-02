@@ -6303,10 +6303,11 @@ function diniyahPortalFixture(): object
 | F102 konten-katalog-tema
 |--------------------------------------------------------------------------
 |
-| Tema resmi: `resources/themes/<slug>/theme.json` (`default`, `centered`, `klasik`). Tema uji TIDAK ditulis ke `resources/`: `themeSandbox()`
+| Tema resmi: `resources/themes/<slug>/theme.json` (`default`, `centered`, `majalah`, `mushaf`). Tema uji TIDAK ditulis ke `resources/`: `themeSandbox()`
 | membuat folder sementara berisi salinan tema resmi (bila ada), men-set `config('pondok.themes_path')` ke sana, dan `themeCleanup()`
 | menghapusnya (dan mengembalikan config) setelah tiap test. Slug uji tetap unik (`zz-uji-*`) karena memoisasi validasi per slug
 | hidup selama proses. `themeTempFile` hanya untuk validator: berkas di direktori sementara.
+| `themeBaseManifest()` = manifest sah mandiri (skema v1, `home.layout` berpohon) sebagai dasar mutasi; tidak membaca `resources/`.
 |
 */
 
@@ -6320,6 +6321,74 @@ pest()->afterEach(fn () => themeCleanup());
 function themeOfficialManifest(string $slug): array
 {
     return json_decode((string) file_get_contents(resource_path("themes/{$slug}/theme.json")), true, 32);
+}
+
+const THEME_OFFICIAL = ['default', 'centered', 'majalah', 'mushaf'];
+
+const THEME_BASE_SLUG = 'zz-uji-dasar';
+
+/**
+ * Manifest sah mandiri untuk dimutasi test (tidak bergantung pada berkas di `resources/themes`).
+ * `home.layout` memuat ketujuh komponen isi, urut bebas; `header`/`footer` memakai `container`.
+ *
+ * @return array<string, mixed>
+ */
+function themeBaseManifest(): array
+{
+    return [
+        'schema_version' => 1,
+        'slug' => THEME_BASE_SLUG,
+        'name' => 'Tema dasar uji',
+        'description' => 'Tema uji mandiri untuk validator dan renderer.',
+        'version' => '1.0.0',
+        'min_core' => '1.0.0',
+        'header' => [
+            'component' => 'container',
+            'style' => ['tone' => 'light', 'border' => 'bottom', 'padding' => ['base' => 'sm', 'lg' => 'md'], 'gap' => 'md', 'width' => 'wide'],
+            'children' => [['component' => 'brand'], ['component' => 'nav_menu']],
+        ],
+        'footer' => [
+            'component' => 'container',
+            'style' => ['tone' => 'dark', 'padding' => ['base' => 'md', 'lg' => 'lg'], 'gap' => 'lg', 'width' => 'wide'],
+            'children' => [['component' => 'footer_widgets', 'style' => ['gap' => 'lg']], ['component' => 'copyright', 'style' => ['border' => 'top']]],
+        ],
+        'home' => [
+            'layout' => [
+                ['component' => 'hero', 'variant' => 'center', 'style' => ['tone' => 'dark', 'padding' => ['base' => 'md', 'md' => 'lg', 'lg' => 'lg'], 'align' => 'left']],
+                ['component' => 'text_image', 'style' => ['tone' => 'auto', 'padding' => ['base' => 'md', 'lg' => 'lg'], 'gap' => 'lg']],
+                ['component' => 'feature_grid', 'variant' => 'cards', 'style' => ['tone' => 'muted']],
+                ['component' => 'feed_list', 'variant' => 'cards', 'style' => ['tone' => 'auto']],
+                ['component' => 'quote', 'variant' => 'plain', 'style' => ['tone' => 'auto']],
+                ['component' => 'video', 'style' => ['tone' => 'light']],
+                ['component' => 'cta', 'variant' => 'band', 'style' => ['tone' => 'brand']],
+            ],
+        ],
+    ];
+}
+
+/**
+ * Base dengan `home.layout` diganti.
+ *
+ * @param  list<array<string, mixed>>  $layout
+ * @return array<string, mixed>
+ */
+function themeLayout(array $layout, ?array $base = null): array
+{
+    $base ??= themeBaseManifest();
+    $base['home'] = ['layout' => $layout];
+
+    return $base;
+}
+
+/**
+ * Pohon `container` bersarang sedalam `$levels` tingkat dengan satu daun `$leaf`.
+ *
+ * @param  array<string, mixed>  $leaf
+ * @return array<string, mixed>
+ */
+function themeNested(int $levels, array $leaf = ['component' => 'brand']): array
+{
+    return array_reduce(range(1, $levels - 1), fn (array $inner): array => ['component' => 'container', 'children' => [$inner]], $leaf);
 }
 
 function themeUniqueSlug(): string
@@ -6375,7 +6444,7 @@ function themeInstall(array|string $manifest, ?string $slug = null): string
  */
 function themeTempFile(array|string $manifest, ?string $dir = null): string
 {
-    $dir = sys_get_temp_dir().'/pondok-f102-'.Str::random(10).'/'.($dir ?? 'klasik');
+    $dir = sys_get_temp_dir().'/pondok-f102-'.Str::random(10).'/'.($dir ?? THEME_BASE_SLUG);
     mkdir($dir, 0777, true);
     file_put_contents("{$dir}/theme.json", is_array($manifest) ? json_encode($manifest, JSON_UNESCAPED_SLASHES) : $manifest);
     $GLOBALS['themeInstalledDirs'][] = $dir;
@@ -6407,7 +6476,7 @@ function themeCleanup(): void
  */
 function themeActivate(?string $slug): void
 {
-    if (in_array($slug, ['default', 'centered', 'klasik'], true) && ! is_file(resource_path("themes/{$slug}/theme.json"))) {
+    if (in_array($slug, THEME_OFFICIAL, true) && ! is_file(resource_path("themes/{$slug}/theme.json"))) {
         test()->fail("Tema resmi {$slug} belum ada: resources/themes/{$slug}/theme.json");
     }
 

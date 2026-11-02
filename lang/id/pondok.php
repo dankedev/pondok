@@ -3263,6 +3263,29 @@ return [
         'too_many_nodes' => 'Pohon komponen terlalu besar: maksimum :max node.',
     ],
 
+    /*
+    | Pemasangan tema resmi dari katalog (F103). Pesan penolakan dibaca super-admin di Situs > Katalog tema.
+    */
+    'theme_install' => [
+        'errors' => [
+            'download_failed' => 'Tema tidak dapat diunduh dari katalog resmi. Coba lagi nanti.',
+            'catalog_unavailable' => 'Katalog tema resmi tidak dapat dimuat. Coba lagi nanti.',
+            'invalid_slug' => 'Slug tema harus 2-40 karakter huruf kecil, angka, atau tanda hubung.',
+            'official_slug' => 'Tema resmi bawaan tidak dapat dipasang, dikembalikan, atau dihapus.',
+            'size_mismatch' => 'Ukuran berkas tema tidak sama dengan yang tercatat di katalog.',
+            'sha256_mismatch' => 'Berkas tema tidak sama dengan yang tercatat di katalog (sidik jari sha256 berbeda).',
+            'signature_invalid' => 'Tanda tangan berkas tema tidak sah. Tema tidak dipasang.',
+            'key_unknown' => 'Kunci penerbit tema (:key) tidak dikenal. Tema tidak dipasang.',
+            'key_not_configured' => 'Kunci publik penerbit tema belum diisi di konfigurasi, jadi tema belum dapat dipasang.',
+            'key_misconfigured' => 'Kunci publik penerbit tema di konfigurasi tidak sah, jadi tema belum dapat dipasang.',
+            'version_mismatch' => 'Versi di dalam berkas tema tidak sama dengan versi di katalog.',
+            'version_not_newer' => 'Versi :version tidak lebih baru dari versi terpasang (:installed), jadi tidak dipasang.',
+            'locked' => 'Tema ini sedang diproses. Coba lagi beberapa saat lagi.',
+            'no_previous' => 'Tidak ada versi sebelumnya yang dapat dikembalikan.',
+            'write_failed' => 'Berkas tema tidak dapat ditulis. Tema yang terpasang tidak berubah.',
+        ],
+    ],
+
     'portal' => [
         'breadcrumb_label' => 'Navigasi halaman',
         'nav' => [

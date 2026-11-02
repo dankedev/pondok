@@ -16,6 +16,14 @@ class ResolveThemePath
         return is_string($slug) && preg_match(self::SLUG_PATTERN, $slug) === 1;
     }
 
+    /**
+     * Slug tema resmi = nama folder di `pondok.themes_path`; tak pernah menyentuh filesystem untuk slug tak sah.
+     */
+    public static function isOfficial(string $slug): bool
+    {
+        return self::isSlug($slug) && is_dir(rtrim((string) config('pondok.themes_path'), '/')."/{$slug}");
+    }
+
     public function handle(mixed $slug): ?string
     {
         if (! self::isSlug($slug)) {

@@ -186,23 +186,25 @@ it('F072 AC-3: rejects an invalid template and saves nothing, including other ke
     'integer' => 1,
 ]);
 
-it('F102 AC-6: saves the klasik theme and any listed valid theme, but rejects an installed theme whose manifest is invalid', function () {
-    themeSave(['template' => 'klasik']);
+it('F102 AC-14: saves each official theme and any listed valid theme, but rejects klasik and an installed theme whose manifest is invalid', function () {
+    foreach (['majalah', 'mushaf'] as $slug) {
+        themeSave(['template' => $slug]);
 
-    expect(Setting::get('theme.template'))->toBe('klasik');
+        expect(Setting::get('theme.template'))->toBe($slug);
+    }
 
-    $copy = themeInstall(themeOfficialManifest('klasik'));
+    $copy = themeInstall(themeBaseManifest());
     themeSave(['template' => $copy]);
 
     expect(Setting::get('theme.template'))->toBe($copy);
 
-    $broken = themeInstall([...themeOfficialManifest('klasik'), 'schema_version' => 99]);
+    $broken = themeInstall([...themeBaseManifest(), 'schema_version' => 99]);
     $unparsable = themeInstall('{"schema_version":');
 
-    foreach ([$broken, $unparsable] as $slug) {
+    foreach ([$broken, $unparsable, 'klasik', 'tidak-dikenal'] as $slug) {
         kontenAssertRejected(fn () => themeSave(['template' => $slug]), 'theme_option_invalid', 'template');
     }
 
     expect(Setting::get('theme.template'))->toBe($copy)
-        ->and(kontenActivities()->where('description', 'portal_theme_updated'))->toHaveCount(2);
+        ->and(kontenActivities()->where('description', 'portal_theme_updated'))->toHaveCount(3);
 });

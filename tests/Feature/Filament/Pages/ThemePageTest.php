@@ -86,12 +86,12 @@ it('AC-15: shows the action error on the colour field and saves nothing', functi
 | manifest, tema rusak nonaktif dengan alasan). Simpan tidak menyentuh `portal.home_blocks`.
 */
 
-it('F102 AC-6: lists the official themes with the name and description from their manifests', function () {
+it('F102 AC-14: lists the four official themes with the name and description from their manifests', function () {
     $this->actingAs(kontenUser('admin-konten'));
 
     $component = Livewire::test(Theme::class)->assertSet('data.template', 'default');
 
-    foreach (['default', 'centered', 'klasik'] as $slug) {
+    foreach (THEME_OFFICIAL as $slug) {
         $manifest = themeOfficialManifest($slug);
         $component->assertSee($manifest['name'])->assertSee($manifest['description']);
     }
@@ -100,7 +100,7 @@ it('F102 AC-6: lists the official themes with the name and description from thei
 });
 
 it('F102 AC-8: still renders when a theme is broken, shows the reason, and does not let it be chosen', function () {
-    $slug = themeInstall([...themeOfficialManifest('klasik'), 'schema_version' => 99]);
+    $slug = themeInstall([...themeBaseManifest(), 'schema_version' => 99]);
     $error = collect(app(ListPortalThemes::class)->handle())->firstWhere('slug', $slug)['error'] ?? null;
     $this->actingAs(kontenUser('admin-konten'));
 

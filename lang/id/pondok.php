@@ -1968,7 +1968,7 @@ return [
         ],
         'theme' => [
             'section' => 'Tampilan portal',
-            'section_description' => 'Tema portal, warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan.',
+            'section_description' => 'Tema portal, warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan. Warna utama dan huruf yang dibiarkan bawaan mengikuti tema aktif; isi di sini untuk menimpanya.',
             'template' => 'Tema portal',
             'template_helper' => 'Mengubah tata letak beranda dan, bila tema membawanya, header dan footer. Isi beranda tidak berubah. Portal bisa masih menampilkan tema sebelumnya hingga 5 menit setelah disimpan (cache publik).',
             'template_unavailable' => 'Tidak bisa dipilih: :reason',
@@ -3244,6 +3244,7 @@ return [
         'invalid_slug' => 'Slug tema harus 2-40 karakter huruf kecil, angka, atau tanda hubung.',
         'slug_mismatch' => 'Slug tema (:slug) harus sama dengan nama direktorinya (:directory).',
         'invalid_version' => 'Kunci :key harus berformat versi x.y.z.',
+        'invalid_look' => 'Nilai :key tidak dikenal (:value); pilihan yang ada: :allowed.',
         'core_too_old' => 'Tema membutuhkan inti versi :required atau lebih baru (inti ini :core).',
         'invalid_node' => 'Node di :where harus berupa objek.',
         'component_not_allowed' => 'Komponen :component tidak dikenal di :where.',

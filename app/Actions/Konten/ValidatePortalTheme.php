@@ -22,13 +22,18 @@ class ValidatePortalTheme
     public const MAX_NODES = 150;
 
     /** Versi API tema inti; `min_core` tema tidak boleh melebihinya. */
-    public const CORE_VERSION = '1.0.0';
+    public const CORE_VERSION = '1.1.0';
 
     private const JSON_DEPTH = 64;
 
-    private const ROOT_KEYS = ['schema_version', 'slug', 'name', 'description', 'version', 'min_core', 'header', 'footer', 'home'];
+    private const ROOT_KEYS = ['schema_version', 'slug', 'name', 'description', 'version', 'min_core', 'palette', 'surface', 'font', 'header', 'footer', 'home'];
 
     private const REQUIRED_KEYS = ['schema_version', 'slug', 'name', 'description', 'version', 'min_core'];
+
+    /** Enum `palette` dan `surface` (F104); `navy` dan `putih` = bawaan inti tanpa deklarasi. */
+    private const PALETTE_VALUES = ['navy', 'hijau'];
+
+    private const SURFACE_VALUES = ['putih', 'krem'];
 
     private const BREAKPOINTS = ['base', 'md', 'lg'];
 
@@ -36,7 +41,7 @@ class ValidatePortalTheme
 
     /**
      * @param  string  $path  path `theme.json`; nama direktori induknya = slug
-     * @return array{schema_version: int, slug: string, name: string, description: string, version: string, min_core: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{layout: list<array<string, mixed>>}}
+     * @return array{schema_version: int, slug: string, name: string, description: string, version: string, min_core: string, palette: ?string, surface: ?string, font: ?string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{layout: list<array<string, mixed>>}}
      *
      * @throws InvalidArgumentException
      */
@@ -53,6 +58,7 @@ class ValidatePortalTheme
         }
 
         $this->assertMetadata($manifest, basename(dirname($path)));
+        $this->assertLook($manifest);
 
         $count = 0;
 
@@ -66,6 +72,9 @@ class ValidatePortalTheme
 
         return [
             ...$manifest,
+            'palette' => $manifest['palette'] ?? null,
+            'surface' => $manifest['surface'] ?? null,
+            'font' => $manifest['font'] ?? null,
             'header' => $manifest['header'] ?? null,
             'footer' => $manifest['footer'] ?? null,
             'home' => ['layout' => $layout],
@@ -131,6 +140,26 @@ class ValidatePortalTheme
 
         if (version_compare($manifest['min_core'], self::CORE_VERSION, '>')) {
             $this->fail('core_too_old', ['required' => $manifest['min_core'], 'core' => self::CORE_VERSION]);
+        }
+    }
+
+    /**
+     * Kunci warna dan font (F104): hanya nama enum, dibandingkan strict.
+     *
+     * @param  array<string, mixed>  $manifest
+     */
+    private function assertLook(array $manifest): void
+    {
+        $enums = [
+            'palette' => self::PALETTE_VALUES,
+            'surface' => self::SURFACE_VALUES,
+            'font' => array_keys(GetPortalTheme::FONTS),
+        ];
+
+        foreach ($enums as $key => $allowed) {
+            if (array_key_exists($key, $manifest) && ! in_array($manifest[$key], $allowed, true)) {
+                $this->fail('invalid_look', ['key' => $key, 'value' => json_encode($manifest[$key]), 'allowed' => implode(', ', $allowed)]);
+            }
         }
     }
 

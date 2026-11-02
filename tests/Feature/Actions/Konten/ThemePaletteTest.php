@@ -45,7 +45,7 @@ it('F104 AC-3: each surface keeps text readable on gray-50 and gray-100', functi
     foreach (ThemePalette::SURFACES as $name => $tokens) {
         foreach ($tokens as $token => $surface) {
             foreach (THEME_SLATE as $step => $text) {
-                $min = $step === '500' && $token === '--color-gray-100' ? $baseline - 0.0001 : BuildColorScale::MIN_CONTRAST;
+                $min = (string) $step === '500' && $token === '--color-gray-100' ? $baseline - 0.0001 : BuildColorScale::MIN_CONTRAST;
 
                 expect(BuildColorScale::contrast($text, $surface))->toBeGreaterThanOrEqual($min, "{$name} {$token} vs slate-{$step}");
             }

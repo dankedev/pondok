@@ -91,16 +91,19 @@
             },
             "children": [
               {
-                "component": "feature_grid",
-                "variant": "numbered"
-              },
-              {
                 "component": "cta",
                 "variant": "card"
               }
             ]
           }
         ]
+      },
+      {
+        "component": "feature_grid",
+        "variant": "numbered",
+        "style": {
+          "tone": "light"
+        }
       },
       {
         "component": "text_image",
@@ -119,13 +122,6 @@
         "variant": "magazine",
         "style": {
           "tone": "light"
-        }
-      },
-      {
-        "component": "feed_list",
-        "variant": "cards",
-        "style": {
-          "tone": "muted"
         }
       }
     ]

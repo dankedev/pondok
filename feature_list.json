@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F103",
+  "next_id": "F104",
   "features": [
     {
       "id": "F001",
@@ -1972,32 +1972,52 @@
       "id": "F102",
       "key": "konten-katalog-tema",
       "issue": 133,
-      "name": "Tema portal berbasis JSON: renderer bawaan dan katalog resmi",
+      "name": "Tema portal berbasis JSON: renderer dan tema bawaan (Tahap 1)",
       "phase": 2,
       "module": "Konten",
       "status": "in-progress",
       "depends_on": ["F070", "F072"],
-      "description": "Tema portal berupa data JSON (struktur + token gaya ber-whitelist; aset gambar/font ditunda, lihat pertanyaan terbuka rencana) yang dirender inti; tanpa Blade/PHP/JS dari tema. Cakupan header, footer, dan bagian beranda; sekolah memilih tema dan menyetel token F070. Tahap 1: skema v1 + validator, renderer, mesin gaya (memoisasi per request), tema resmi default/centered/klasik, pemilihan, fallback. Tahap 2: katalog statis, unduh via antrean, tanda tangan Ed25519, pasang atomik, doctor. Detail di issue #133 dan docs/plans/F102-plan.md.",
+      "description": "Tahap 1 tema portal berbasis JSON: tema = data JSON (struktur + enum gaya) yang dirender inti; tanpa Blade/PHP/JS dari tema, tanpa jaringan. Cakupan header, footer, dan bagian beranda; gaya = enum dipetakan server ke kelas Tailwind literal (tanpa CSS runtime). Skema v1 + validator, renderer, tema resmi default/centered/klasik, pemilihan di Situs > Tampilan, fallback. Aset gambar/font ditunda. Katalog dan unduh = F103. Detail di issue #133 dan docs/plans/F102-plan.md.",
       "acceptance": [
-        "T1: Validator skema v1 menolak schema_version tak didukung, kunci/komponen tak dikenal, nilai gaya di luar enum, slug tak sama nama direktori, UTF-8 rusak, dan JSON melebihi batas ukuran (dicek sebelum decode), kedalaman, atau jumlah node",
-        "T1: Mesin gaya menghasilkan CSS dari enum ber-whitelist (memoisasi per request, tanpa cache/query tambahan); semua tone lolos kontras 4,5:1 pada skala F070",
-        "T1: Renderer header/footer memakai data inti yang sama tanpa query tambahan; teks dan URL tetap tersanitasi",
-        "T1: Beranda berblok yang ada tidak berubah (default dan centered tanpa style, view statis, sama dengan golden pra-migrasi; tone auto = selang-seling renderer); tipe blok tak dipetakan tema memakai komponen bawaan",
-        "T1: Struktur aksesibel (lompat ke konten, satu h1, urutan heading, fokus terlihat) di semua tema resmi",
-        "T1: Tema dipilih di Situs > Tampilan dari daftar dinamis (resmi menang atas terpasang; slug bentrok ditolak); TEMPLATES dihapus; token F070 tetap berlaku",
-        "T1: Respons portal bertema tanpa csrf-token, aset Livewire, atau Set-Cookie; Cache-Control public dan ETag utuh; PSB Livewire, portal wali, 404, dan verify-* tetap chrome inti",
-        "T1: Tema hilang, rusak, atau schema tak didukung membuat portal memakai tampilan inti dengan Log::warning sekali per slug per proses",
-        "T1: Tidak ada kode dari tema; ModuleComplianceTest lulus; teks lewat lang/id",
-        "T2: Katalog dengan status tiap tema; katalog tak terjangkau tidak membuat halaman error; manage:themes hanya super-admin; url unduhan https/host sama/redirect dibatasi, body dibatasi saat streaming",
-        "T2: Unduh lewat antrean database dengan status, klik ganda aman (penguncian atomik), status basi > 5 menit dihitung failed",
-        "T2: Hash, tanda tangan Ed25519 atas byte theme.json (kunci tertanam di kode), versi lebih rendah, ukuran salah ditolak tanpa mengubah apa pun",
-        "T2: Pasang atomik, kembalikan satu versi, hapus tema jatuh ke tampilan inti",
-        "T2: ext-sodium wajib; pondok:doctor memeriksa katalog; perintah penandatangan menghasilkan entri katalog"
+        "Validator skema v1 menolak schema_version tak didukung, kunci/komponen tak dikenal, nilai gaya di luar enum, slug tak sama nama direktori, UTF-8 rusak, dan JSON melebihi batas ukuran (dicek sebelum decode), depth, kedalaman, atau jumlah node",
+        "Peta gaya server: enum -> kelas Tailwind literal (termasuk md:/lg:), tanpa nilai JSON mentah jadi kelas, file peta masuk @source; semua tone lolos kontras 4,5:1 pada skala default dan F070 ekstrem",
+        "Renderer header/footer memakai data inti yang sama tanpa query tambahan; teks dan URL tetap tersanitasi",
+        "Beranda berblok tidak berubah (default dan centered sama dengan golden pra-migrasi; tone auto = selang-seling renderer); tipe blok tak dipetakan memakai komponen bawaan",
+        "Struktur aksesibel (lompat ke konten, satu h1, urutan heading, fokus terlihat) di semua tema resmi",
+        "Tema dipilih di Situs > Tampilan dari ListPortalThemes (tiga tema resmi); TEMPLATES dihapus; token F070 tetap berlaku",
+        "Respons portal bertema tanpa csrf-token, aset Livewire, atau Set-Cookie; Cache-Control public dan ETag utuh; PSB Livewire, portal wali, 404, dan verify-* tetap chrome inti",
+        "Tema hilang, rusak, atau schema tak didukung membuat portal memakai tampilan inti dengan Log::warning sekali per slug per proses",
+        "Tidak ada kode dari tema; ModuleComplianceTest lulus; teks lewat lang/id"
       ],
       "owner": "f102-planner",
       "handoff": null,
       "evidence": null,
-      "notes": "jalur: penuh. Arah baru 2 Nov 2026 (issue #133): tema = JSON, bukan paket Blade; rencana ditulis ulang; direvisi 1x setelah review (APPROVED setelah revisi 1). Pertanyaan terbuka untuk user: mesin gaya CSS vs peta kelas Tailwind; assets opsi A (default) vs B. Rekomendasi pecah: T1 tetap F102/#133, T2 (katalog) issue baru dependen. Pertanyaan terbuka T2: URL katalog dan pemegang kunci. PR ke dev dengan Refs #133."
+      "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. PR ke dev dengan Refs #133."
+    },
+    {
+      "id": "F103",
+      "key": "konten-katalog-tema-unduh",
+      "issue": 134,
+      "name": "Katalog tema resmi: unduh dan pasang dari dashboard (Tahap 2)",
+      "phase": 2,
+      "module": "Konten",
+      "status": "todo",
+      "depends_on": ["F102"],
+      "description": "Tahap 2 tema JSON (lanjutan F102): admin melihat katalog tema resmi, lalu memasangnya. Berkas tema JSON diunduh lewat antrean, diverifikasi tanda tangan Ed25519, dan dipasang atomik; hanya tema resmi bertanda tangan. Memuat manage:themes (super-admin), ext-sodium, check doctor, dan pondok:theme-sign. Detail di issue #134.",
+      "acceptance": [
+        "Halaman Situs > Katalog tema menampilkan status tema (belum dipasang, terpasang, ada pembaruan, tidak cocok versi); hanya super-admin yang dapat memasang atau menghapus",
+        "Pasang memasukkan job ke antrean database; klik ganda tidak membuat job kedua; gagal menulis status failed dengan pesan Indonesia; status macet > 5 menit dianggap gagal",
+        "Paket ditolak tanpa mengubah tema terpasang: sha256 salah, tanda tangan salah/terpotong, schema_version tak didukung, versi lebih rendah, ukuran melebihi batas, host atau skema URL tidak sesuai",
+        "Pasang atomik: kegagalan di tengah tidak merusak tema lama; kembalikan satu versi berfungsi",
+        "Katalog timeout, 500, JSON rusak, atau terlalu besar: halaman tetap tampil dengan daftar terpasang dan pesan, tanpa exception",
+        "pondok:doctor memeriksa sodium dan katalog (warning bila tidak terjangkau)",
+        "Perintah penandatangan menghasilkan paket yang lolos pemasangan dan entri katalog dengan sha256 dan ukuran benar; hasil deterministik",
+        "Teks lewat lang/id; ModuleComplianceTest lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": null,
+      "notes": "jalur: penuh. URL katalog dan pemegang kunci masih terbuka."
     }
   ]
 }

@@ -3,7 +3,7 @@
 use App\Actions\Konten\ListPortalThemes;
 
 /*
-| F102 AC-6 dan AC-8 (daftar). Kontrak yang diasumsikan: `ListPortalThemes::handle(): list<array{slug: string, name: string,
+| F102 AC-14 dan AC-15 (daftar). Kontrak yang diasumsikan: `ListPortalThemes::handle(): list<array{slug: string, name: string,
 | description: string, valid: bool, error: ?string}>` membaca hanya `config('pondok.themes_path')/*`/theme.json (bawaan `resource_path('themes')`); nama dan deskripsi berasal
 | dari manifest; tema yang gagal validasi tetap muncul dengan `valid = false` dan `error` berisi alasan (tanpa exception).
 */
@@ -22,10 +22,10 @@ function themeListed(): array
         ->all();
 }
 
-it('AC-6: lists exactly the three official themes, valid, with name and description taken from the manifest', function () {
+it('AC-14: lists exactly the four official themes (no klasik), valid, with name and description taken from the manifest', function () {
     $themes = themeListed();
 
-    expect(array_keys($themes))->toEqualCanonicalizing(['default', 'centered', 'klasik']);
+    expect(array_keys($themes))->toEqualCanonicalizing(THEME_OFFICIAL);
 
     foreach ($themes as $slug => $theme) {
         $manifest = themeOfficialManifest($slug);
@@ -37,14 +37,14 @@ it('AC-6: lists exactly the three official themes, valid, with name and descript
     }
 });
 
-it('AC-8: keeps a theme with a broken manifest in the list, disabled with a reason, without failing the others', function () {
-    $klasik = themeOfficialManifest('klasik');
-    $good = themeInstall($klasik);
+it('AC-15: keeps a theme with a broken manifest in the list, disabled with a reason, without failing the others', function () {
+    $base = themeBaseManifest();
+    $good = themeInstall($base);
     $broken = [
         'json rusak' => themeInstall('{"schema_version":'),
-        'schema 99' => themeInstall([...$klasik, 'schema_version' => 99]),
-        'kunci tak dikenal' => themeInstall([...$klasik, 'assets' => ['css' => ['x.css']]]),
-        'min_core terlalu baru' => themeInstall([...$klasik, 'min_core' => '999.0.0']),
+        'schema 99' => themeInstall([...$base, 'schema_version' => 99]),
+        'kunci tak dikenal' => themeInstall([...$base, 'assets' => ['css' => ['x.css']]]),
+        'min_core terlalu baru' => themeInstall([...$base, 'min_core' => '999.0.0']),
     ];
 
     $entries = collect(app(ListPortalThemes::class)->handle())->keyBy('slug');

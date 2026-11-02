@@ -2001,7 +2001,7 @@
       "name": "Katalog tema resmi: unduh dan pasang dari dashboard (Tahap 2)",
       "phase": 2,
       "module": "Konten",
-      "status": "todo",
+      "status": "in-progress",
       "depends_on": ["F102"],
       "description": "Tahap 2 tema JSON (lanjutan F102): admin melihat katalog tema resmi, lalu memasangnya. Berkas tema JSON diunduh lewat antrean, diverifikasi tanda tangan Ed25519, dan dipasang atomik; hanya tema resmi bertanda tangan. Memuat manage:themes (super-admin), ext-sodium, check doctor, dan pondok:theme-sign. Detail di issue #134.",
       "acceptance": [
@@ -2014,10 +2014,10 @@
         "Perintah penandatangan menghasilkan paket yang lolos pemasangan dan entri katalog dengan sha256 dan ukuran benar; hasil deterministik",
         "Teks lewat lang/id; ModuleComplianceTest lulus"
       ],
-      "owner": null,
+      "owner": "f103-katalog-tema-plan",
       "handoff": null,
       "evidence": null,
-      "notes": "jalur: penuh. URL katalog dan pemegang kunci masih terbuka."
+      "notes": "jalur: penuh. URL katalog dan pemegang kunci sudah diputuskan (docs/plans/F103-plan.md)."
     },
     {
       "id": "F101",

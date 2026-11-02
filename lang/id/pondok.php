@@ -3282,6 +3282,7 @@ return [
             'version_not_newer' => 'Versi :version tidak lebih baru dari versi terpasang (:installed), jadi tidak dipasang.',
             'locked' => 'Tema ini sedang diproses. Coba lagi beberapa saat lagi.',
             'no_previous' => 'Tidak ada versi sebelumnya yang dapat dikembalikan.',
+            'forbidden' => 'Hanya super-admin yang dapat mengelola tema dari katalog.',
             'write_failed' => 'Berkas tema tidak dapat ditulis. Tema yang terpasang tidak berubah.',
         ],
     ],

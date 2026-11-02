@@ -76,6 +76,21 @@ class ThemeStyleMap
     }
 
     /**
+     * Kelas kolom node `columns`: `style.columns` dibatasi jumlah sel yang tampil; tanpa itu satu kolom di layar kecil
+     * dan sebanyak sel pada md.
+     *
+     * @param  array<string, mixed>  $style
+     */
+    public static function columns(array $style, int $cells): string
+    {
+        $requested = $style['columns'] ?? ['base' => 1, 'md' => $cells];
+
+        return self::classes(['columns' => is_array($requested)
+            ? array_map(fn (mixed $value): mixed => is_int($value) ? min($value, $cells) : $value, $requested)
+            : (is_int($requested) ? min($requested, $cells) : $requested)]);
+    }
+
+    /**
      * @param  array<array-key, mixed>  $value
      */
     private static function responsive(string $property, array $value): string

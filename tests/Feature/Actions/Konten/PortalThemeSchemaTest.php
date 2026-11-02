@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Konten\GetPortalTheme;
 use App\Actions\Konten\ValidatePortalTheme;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
@@ -298,4 +299,61 @@ it('AC-9: never turns theme json into a view name, a view include or an unmapped
 
     expect($views)->not->toBeEmpty('view komponen tema (resources/views/portal/theme/*.blade.php dan components/portal/theme-node.blade.php) belum ada')
         ->and($problems)->toBe([]);
+});
+
+/*
+| F104 AC-2: kunci puncak opsional `palette` (navy|hijau), `surface` (putih|krem), `font` (kunci `GetPortalTheme::FONTS`);
+| `CORE_VERSION` 1.1.0; hasil `handle()` memuat ketiga kunci (null bila tak dideklarasikan).
+*/
+
+it('F104 AC-2: accepts the enum values and returns them in the normalised tree', function () {
+    $validate = app(ValidatePortalTheme::class);
+    $plain = $validate->handle(themeTempFile(themeBaseManifest()));
+
+    expect($plain)->toHaveKeys(['palette', 'surface', 'font'])
+        ->and($plain['palette'])->toBeNull()->and($plain['surface'])->toBeNull()->and($plain['font'])->toBeNull();
+
+    foreach (['palette' => ['navy', 'hijau'], 'surface' => ['putih', 'krem'], 'font' => array_keys(GetPortalTheme::FONTS)] as $key => $values) {
+        foreach ($values as $value) {
+            $tree = $validate->handle(themeTempFile([...themeBaseManifest(), 'min_core' => '1.1.0', $key => $value]));
+
+            expect($tree[$key])->toBe($value, "{$key}={$value}");
+        }
+    }
+
+    $all = $validate->handle(themeTempFile([...themeBaseManifest(), 'min_core' => '1.1.0', 'palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora']));
+
+    expect([$all['palette'], $all['surface'], $all['font']])->toBe(['hijau', 'krem', 'lora']);
+});
+
+it('F104 AC-2: rejects every non-enum value of palette, surface and font with a message', function () {
+    $junk = [1, 0, true, false, null, '', '#2e7d32', ['hijau'], 'Hijau', 'KREM', 'comic-sans', 'url(https://x.test/a.woff2)', 'Lora', 'merah', ' hijau'];
+    $cross = ['palette' => ['krem', 'lora'], 'surface' => ['hijau', 'navy'], 'font' => ['hijau', 'krem', 'navy', 'putih']];
+    $accepted = [];
+
+    foreach ($cross as $key => $extra) {
+        foreach ([...$junk, ...$extra] as $value) {
+            $message = themeRejection([...themeBaseManifest(), 'min_core' => '1.1.0', $key => $value]);
+
+            if ($message === null) {
+                $accepted[] = "{$key}=".json_encode($value);
+            } else {
+                expect($message)->not->toBe('(tanpa pesan)', "{$key}=".json_encode($value));
+            }
+        }
+    }
+
+    expect($accepted)->toBe([], 'nilai yang seharusnya ditolak tetapi diterima');
+});
+
+it('F104 AC-2: raises the core version to 1.1.0 and checks min_core against it', function () {
+    expect(ValidatePortalTheme::CORE_VERSION)->toBe('1.1.0')
+        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.1.0']))->toBeNull()
+        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.2.0']))->not->toBeNull()
+        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.0.0', 'palette' => 'hijau']))->toBeNull('tidak ada aturan min_core khusus untuk kunci baru');
+});
+
+it('F104 AC-2: keeps the root key set closed', function () {
+    expect(themeRejection([...themeBaseManifest(), 'accent' => 'emas']))->not->toBeNull()
+        ->and(themeRejection([...themeBaseManifest(), 'css' => 'body{}']))->not->toBeNull();
 });

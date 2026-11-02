@@ -188,3 +188,11 @@ it('F071 AC-13: shows the rejected message instead of a sample when the portal w
         ->assertSee(__('pondok.school_profile.theme.brand_preview.rejected'))
         ->assertDontSee('Contoh tombol');
 });
+
+it('F104 AC-8: tells the admin that default colours and font follow the active theme', function () {
+    $this->actingAs(kontenUser('admin-konten'));
+
+    $html = mb_strtolower(Livewire::test(Theme::class)->html());
+
+    expect($html)->toContain('mengikuti tema');
+});

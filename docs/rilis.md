@@ -87,6 +87,53 @@ Kebijakan versi:
 
 Saat rilis, jalankan `npm run build` (atau `pnpm run build`, sudah ada di `pondok:release`) sebelum memaketkan: kelas Tailwind peta gaya (`ThemeStyleMap`, kelas ditulis utuh sebagai literal) dan utilitas `portal-gutter` hanya ada di CSS bila dibuild. Test tidak memeriksa CSS hasil build, jadi periksa sekilas satu tema di portal setelah build.
 
+## Menerbitkan tema resmi
+
+Tema resmi tambahan (di luar empat tema bawaan) dipasang super-admin dari Situs > Katalog tema. Penerbit menandatangani `theme.json` dengan kunci rahasia Ed25519; aplikasi hanya memasang berkas yang tanda tangannya cocok dengan kunci publik yang tertanam di kode.
+
+### Kunci tanda tangan (sekali saja)
+
+Buat **dua** pasang kunci: `k1` (utama) dan `k2` (cadangan, dipakai bila `k1` bocor). Jalankan di mesin pengelola, bukan di server sekolah, satu kali per kunci:
+
+```
+php -r '$p=sodium_crypto_sign_keypair(); echo "publik:  ".base64_encode(sodium_crypto_sign_publickey($p))."\nrahasia: ".base64_encode(sodium_crypto_sign_secretkey($p))."\n";'
+```
+
+- Simpan kunci **rahasia** offline (mis. berkas di flash disk terenkripsi atau password manager), satu berkas per kunci berisi hanya string base64-nya. Jangan pernah menaruhnya di repo, CI, `.env`, atau chat. `k2` disimpan terpisah dari `k1`.
+- Tanam kunci **publik** di `config/pondok.php`, `theme_public_keys` (`'k1' => '...', 'k2' => '...'`), lalu rilis inti. Selama nilainya kosong, pemasangan tema dari katalog ditolak dengan pesan jelas.
+- Bila `k1` bocor: rilis inti berikutnya menghapus `k1` dari daftar, dan tema diterbitkan ulang dengan `k2`. Rotasi penuh di luar cakupan v1.
+
+### Menandatangani satu tema
+
+Sumber tema ada di repo publik `dankedev/pondok-themes`, satu folder per slug berisi `theme.json` (slug = nama folder, `version` naik setiap terbit). Tandatangani:
+
+```
+php artisan pondok:theme-sign zz-contoh/theme.json \
+  --secret-file=/media/kunci/k1.key --key-id=k1 \
+  --url=https://pondok.org/themes/zz-contoh/1.0.0/theme.json
+```
+
+Perintah memvalidasi tema, memastikan kunci rahasia berpasangan dengan kunci publik `key_id` di config, lalu mencetak satu objek JSON (`slug`, `name`, `description`, `version`, `schema_version`, `min_core`, `size`, `sha256`, `url`, `signature`, `key_id`). Keluarannya sama pada setiap jalan, jadi aman diulang. Perintah gagal (exit 1) bila kunci salah, tak cocok dengan `key_id`, atau tema tidak valid.
+
+### Menyusun dan menerbitkan katalog
+
+1. Susun `themes.json` berisi `{"themes": [ ...entri dari pondok:theme-sign... ]}` (satu entri per tema, versi terbaru saja). Katalog tidak ditandatangani; yang dipercaya hanya tanda tangan atas berkas tema.
+2. Hosting berkas **apa adanya, tanpa mengubah satu byte pun**: tanda tangan dihitung atas byte persis. Di repo `dankedev/pondok-themes` set `* -text` di `.gitattributes` (tanpa konversi akhir baris), dan jangan biarkan hosting meminifikasi atau mengompres ulang isi JSON.
+3. **Urutan terbit:** unggah dulu berkas tema ke `https://pondok.org/themes/<slug>/<versi>/theme.json`, pastikan terunduh sama persis (`shasum -a 256`), baru terakhir unggah `https://pondok.org/themes/themes.json`. Katalog tidak boleh menunjuk berkas yang belum ada.
+4. Uji dari instalasi percobaan: Situs > Katalog tema > Muat ulang katalog, pasang tema, dan periksa portal. Untuk uji sebelum rilis, ganti URL katalog dengan env `PONDOK_THEME_CATALOG_URL`.
+
+`pondok:doctor` menampilkan baris **Katalog tema** (peringatan, bukan kegagalan, bila katalog tidak terjangkau).
+
+### Memasang, mengembalikan, dan menghapus tema (super-admin)
+
+Di Situs > Katalog tema (izin `manage:themes`, bawaan super-admin):
+
+- **Pasang / Perbarui:** pemasangan berjalan di antrean, jadi baru mulai paling lambat sekitar 1 menit (cron `schedule:run` yang memproses antrean). Status berubah dari "sedang berjalan" ke terpasang tanpa memuat ulang manual. Tema hanya terpasang bila ukuran, sha256, dan tanda tangan cocok dan `theme.json` lolos validasi; versi harus lebih baru dari yang terpasang.
+- **Kembalikan versi sebelumnya:** memulihkan `previous.json` (satu langkah mundur).
+- **Hapus:** menghapus tema terpasang; bila sedang dipakai, portal kembali ke tema bawaan.
+- Perubahan tema aktif di portal baru terlihat setelah cache portal kedaluwarsa, sekitar 5 menit.
+- Tema terpasang disimpan di `storage/app/themes` (ikut dalam backup storage).
+
 ## Memeriksa checksum
 
 Sekolah dapat mencocokkan berkas yang diunduh:

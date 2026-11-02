@@ -1,0 +1,21 @@
+{{-- Teks + gambar bergaya: gambar di atas teks di layar kecil, berdampingan di >= 1024px; gap dari peta gaya pada <section>. --}}
+<section class="{{ $sectionClass }} flex flex-col lg:flex-row lg:items-center" @if ($data['heading']) aria-labelledby="{{ $headingId }}" @endif>
+    @if ($block['image'])
+        <img src="{{ $block['image'] }}" alt="{{ $data['image_alt'] ?? '' }}" loading="lazy"
+             class="aspect-video w-full rounded-xl bg-gray-100 object-cover shadow-card lg:w-1/2">
+    @endif
+    <div @class(['min-w-0 space-y-4', 'lg:w-1/2' => $block['image'], 'max-w-3xl' => ! $block['image']])>
+        @if ($data['heading'])
+            <h2 id="{{ $headingId }}" class="text-3xl font-bold tracking-tight lg:text-4xl">{{ $data['heading'] }}</h2>
+        @endif
+        @if ($data['text'])
+            <div class="portal-prose">{!! $data['text'] !!}</div>
+        @endif
+        @foreach ($block['buttons'] as $button)
+            <a href="{{ $button['url'] }}" class="inline-flex min-h-11 items-center gap-1 rounded-lg text-sm font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current">
+                {{ $button['label'] }}
+                <x-heroicon-o-arrow-right class="size-4" aria-hidden="true" />
+            </a>
+        @endforeach
+    </div>
+</section>

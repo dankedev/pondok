@@ -8,7 +8,7 @@
     });
 @endphp
 
-<section class="{{ $band() }} py-16 lg:py-24" aria-labelledby="{{ $headingId }}">
+<section class="{{ $band }} py-16 lg:py-24" aria-labelledby="{{ $headingId }}">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <div class="mb-8 flex flex-wrap items-end justify-between gap-2 lg:mb-10">
             <h2 id="{{ $headingId }}" class="{{ $sectionHeading }}">{{ $heading }}</h2>

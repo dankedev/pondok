@@ -4,15 +4,18 @@ namespace App\Actions\Konten;
 
 /**
  * Peta tetap komponen tema portal (F102, skema v1): komponen yang sah per slot dan varian per komponen.
- * Dibatasi pada yang dipakai tiga tema resmi; menambah entri = ubah peta ini dan rilis inti.
- * Nama komponen dari JSON tidak pernah menjadi nama view: renderer hanya memetakan lewat peta ini ke view inti.
+ * Menambah entri = ubah peta ini dan rilis inti. Nama komponen dari JSON tidak pernah menjadi nama view:
+ * renderer hanya memetakan lewat peta ini ke view inti.
  */
 class ThemeComponents
 {
-    /** Komponen sah di `header` dan `footer`; hanya `container` boleh punya `children`. */
+    private const LAYOUT = ['container', 'columns', 'divider'];
+
+    /** Komponen sah per slot; hanya `container` dan `columns` boleh punya `children`, `blocks` hanya di `home`. */
     public const SLOTS = [
-        'header' => ['container', 'brand', 'nav_menu'],
-        'footer' => ['container', 'footer_widgets', 'copyright'],
+        'header' => [...self::LAYOUT, 'brand', 'nav_menu'],
+        'footer' => [...self::LAYOUT, 'footer_widgets', 'copyright'],
+        'home' => [...self::LAYOUT, 'hero', 'text_image', 'feature_grid', 'quote', 'cta', 'video', 'feed_list', 'blocks'],
     ];
 
     /** Tipe blok beranda (`portal.home_blocks`) -> komponen. */
@@ -26,14 +29,13 @@ class ThemeComponents
         'feed' => 'feed_list',
     ];
 
-    /** Varian per komponen beranda: `split` = tampilan preset `default`, `centered` = preset `centered`. */
+    /** Varian per komponen (yang pertama = bawaan); komponen yang tak tercantum tanpa varian. */
     public const VARIANTS = [
-        'hero' => ['split', 'centered'],
-        'text_image' => ['split', 'centered'],
-        'feature_grid' => ['split', 'centered'],
-        'quote' => ['split', 'centered'],
-        'cta' => ['split'],
-        'video' => ['split'],
-        'feed_list' => ['split'],
+        'hero' => ['center', 'split'],
+        'feed_list' => ['cards', 'list', 'magazine'],
+        'quote' => ['plain', 'framed'],
+        'cta' => ['band', 'card'],
+        'feature_grid' => ['cards', 'numbered'],
+        'blocks' => ['default', 'centered'],
     ];
 }

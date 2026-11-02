@@ -6,28 +6,11 @@
   "name": "Terpusat",
   "description": "Hero rata tengah dengan gambar lebar di bawahnya, keunggulan sebagai daftar bergaris.",
   "home": {
-    "sections": {
-      "hero": {
+    "layout": [
+      {
+        "component": "blocks",
         "variant": "centered"
-      },
-      "text_image": {
-        "variant": "centered"
-      },
-      "features": {
-        "variant": "centered"
-      },
-      "quote": {
-        "variant": "centered"
-      },
-      "cta": {
-        "variant": "split"
-      },
-      "video": {
-        "variant": "split"
-      },
-      "feed": {
-        "variant": "split"
       }
-    }
+    ]
   }
 }

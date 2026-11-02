@@ -6296,3 +6296,91 @@ function diniyahPortalFixture(): object
 
     return $f;
 }
+
+/*
+|--------------------------------------------------------------------------
+| F102 konten-katalog-tema
+|--------------------------------------------------------------------------
+|
+| Tema resmi: `resources/themes/<slug>/theme.json` (`default`, `centered`, `klasik`). Tema uji ditulis ke direktori yang sama
+| dengan slug unik berawalan `zz-uji-` (memoisasi validasi dan log peringatan per slug hidup selama proses, jadi slug tidak boleh
+| dipakai ulang antartest) dan dihapus lagi setelah test. `themeTempFile` hanya untuk validator: berkas di direktori sementara.
+|
+*/
+
+pest()->afterEach(fn () => themeCleanup());
+
+/**
+ * Isi manifest tema resmi sebagai array.
+ *
+ * @return array<string, mixed>
+ */
+function themeOfficialManifest(string $slug): array
+{
+    return json_decode((string) file_get_contents(resource_path("themes/{$slug}/theme.json")), true, 32);
+}
+
+function themeUniqueSlug(): string
+{
+    return 'zz-uji-'.strtolower(Str::random(8));
+}
+
+/**
+ * Tulis tema uji ke `resources/themes/<slug>/theme.json`. Array selalu diberi `slug` = nama direktori;
+ * string ditulis apa adanya (JSON rusak, berkas besar, dst.).
+ *
+ * @param  array<string, mixed>|string  $manifest
+ * @return string slug
+ */
+function themeInstall(array|string $manifest, ?string $slug = null): string
+{
+    $slug ??= themeUniqueSlug();
+    $dir = resource_path("themes/{$slug}");
+    @mkdir($dir, 0777, true);
+    file_put_contents("{$dir}/theme.json", is_array($manifest) ? json_encode([...$manifest, 'slug' => $slug], JSON_UNESCAPED_SLASHES) : $manifest);
+    $GLOBALS['themeInstalledDirs'][] = $dir;
+
+    return $slug;
+}
+
+/**
+ * Tulis manifest ke direktori sementara bernama `$dir` dan kembalikan path `theme.json`-nya (untuk `ValidatePortalTheme`).
+ *
+ * @param  array<string, mixed>|string  $manifest
+ */
+function themeTempFile(array|string $manifest, ?string $dir = null): string
+{
+    $dir = sys_get_temp_dir().'/pondok-f102-'.Str::random(10).'/'.($dir ?? 'klasik');
+    mkdir($dir, 0777, true);
+    file_put_contents("{$dir}/theme.json", is_array($manifest) ? json_encode($manifest, JSON_UNESCAPED_SLASHES) : $manifest);
+    $GLOBALS['themeInstalledDirs'][] = $dir;
+
+    return "{$dir}/theme.json";
+}
+
+function themeCleanup(): void
+{
+    foreach (array_unique($GLOBALS['themeInstalledDirs'] ?? []) as $dir) {
+        foreach (glob("{$dir}/*") ?: [] as $file) {
+            @unlink($file);
+        }
+
+        @rmdir($dir);
+    }
+
+    $GLOBALS['themeInstalledDirs'] = [];
+    @rmdir(resource_path('themes'));
+}
+
+/**
+ * Pilih tema aktif (`theme.template`); null = bawaan.
+ */
+function themeActivate(?string $slug): void
+{
+    if (in_array($slug, ['default', 'centered', 'klasik'], true) && ! is_file(resource_path("themes/{$slug}/theme.json"))) {
+        test()->fail("Tema resmi {$slug} belum ada: resources/themes/{$slug}/theme.json");
+    }
+
+    Setting::set('theme.template', $slug);
+    app()->forgetScopedInstances();
+}

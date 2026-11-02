@@ -29,7 +29,7 @@ class ResolveActiveTheme
     public function __construct(private readonly ValidatePortalTheme $validate) {}
 
     /**
-     * @return ?array{slug: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{sections: array<string, array<string, mixed>>}}
+     * @return ?array{slug: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{layout: list<array<string, mixed>>}}
      */
     public function handle(): ?array
     {

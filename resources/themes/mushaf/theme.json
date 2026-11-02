@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "min_core": "1.0.0",
+  "slug": "mushaf",
+  "name": "Mushaf",
+  "description": "Gaya tenang rata tengah: pembatas hias, kutipan berbingkai, dan kartu bernomor.",
+  "header": {
+    "component": "container",
+    "style": {
+      "tone": "light",
+      "border": "bottom",
+      "padding": {
+        "base": "sm",
+        "lg": "md"
+      },
+      "gap": "md",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "columns",
+        "style": {
+          "gap": "md"
+        },
+        "children": [
+          {
+            "component": "brand"
+          },
+          {
+            "component": "nav_menu"
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "component": "container",
+    "style": {
+      "tone": "dark",
+      "padding": {
+        "base": "md",
+        "lg": "lg"
+      },
+      "gap": "lg",
+      "align": "center",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "divider"
+      },
+      {
+        "component": "columns",
+        "style": {
+          "gap": "lg",
+          "columns": 1
+        },
+        "children": [
+          {
+            "component": "footer_widgets",
+            "style": {
+              "gap": "lg"
+            }
+          },
+          {
+            "component": "copyright",
+            "style": {
+              "border": "top"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "home": {
+    "layout": [
+      {
+        "component": "hero",
+        "variant": "center",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      },
+      {
+        "component": "divider"
+      },
+      {
+        "component": "quote",
+        "variant": "framed",
+        "style": {
+          "tone": "muted",
+          "align": "center"
+        }
+      },
+      {
+        "component": "text_image",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      },
+      {
+        "component": "feature_grid",
+        "variant": "numbered",
+        "style": {
+          "tone": "muted",
+          "align": "center"
+        }
+      },
+      {
+        "component": "divider"
+      },
+      {
+        "component": "quote",
+        "variant": "framed",
+        "style": {
+          "tone": "brand",
+          "align": "center"
+        }
+      },
+      {
+        "component": "video",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      },
+      {
+        "component": "cta",
+        "variant": "band",
+        "style": {
+          "tone": "dark",
+          "align": "center"
+        }
+      },
+      {
+        "component": "feed_list",
+        "variant": "cards",
+        "style": {
+          "tone": "light",
+          "align": "center"
+        }
+      }
+    ]
+  }
+}

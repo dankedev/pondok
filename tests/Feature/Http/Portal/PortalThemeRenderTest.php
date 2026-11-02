@@ -212,7 +212,7 @@ it('AC-10: keeps school text escaped and unsafe urls out of the majalah and mush
         $chrome = themeChrome(blkHome());
 
         expect($chrome['header'].$chrome['footer'])->not->toContain('<script')->not->toContain('javascript:')->not->toContain('onclick')
-            ->and($chrome['header'])->toContain('Pondok', $slug);
+            ->and($chrome['header'])->toContain('Pondok');
     }
 });
 

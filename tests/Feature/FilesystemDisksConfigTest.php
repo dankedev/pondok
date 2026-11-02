@@ -11,15 +11,29 @@ function loadFilesystemsConfig(array $env): array
 {
     $keys = ['PRIVATE_DISK_DRIVER', 'PUBLIC_DISK_DRIVER', 'AWS_BUCKET', 'AWS_PUBLIC_BUCKET', 'AWS_PUBLIC_URL', 'AWS_ENDPOINT'];
 
+    // env() membaca $_ENV/$_SERVER lebih dulu daripada putenv; di CI .env hasil
+    // salinan .env.example sudah mengisi AWS_BUCKET= (kosong) di sana.
+    $previous = [];
+
     foreach ($keys as $key) {
-        isset($env[$key]) ? putenv("{$key}={$env[$key]}") : putenv($key);
+        $previous[$key] = [array_key_exists($key, $_ENV), $_ENV[$key] ?? null, array_key_exists($key, $_SERVER), $_SERVER[$key] ?? null, getenv($key)];
+
+        if (isset($env[$key])) {
+            $_ENV[$key] = $_SERVER[$key] = $env[$key];
+            putenv("{$key}={$env[$key]}");
+        } else {
+            unset($_ENV[$key], $_SERVER[$key]);
+            putenv($key);
+        }
     }
 
     try {
         return require config_path('filesystems.php');
     } finally {
-        foreach ($keys as $key) {
-            putenv($key);
+        foreach ($previous as $key => [$hadEnv, $envValue, $hadServer, $serverValue, $processValue]) {
+            $hadEnv ? $_ENV[$key] = $envValue : null;
+            $hadServer ? $_SERVER[$key] = $serverValue : null;
+            $processValue === false ? putenv($key) : putenv("{$key}={$processValue}");
         }
     }
 }

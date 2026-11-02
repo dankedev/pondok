@@ -1975,7 +1975,7 @@
       "name": "Tema portal berbasis JSON: renderer dan tema bawaan (Tahap 1)",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F070", "F072"],
       "description": "Tahap 1 tema portal berbasis JSON: tema = data JSON (struktur + enum gaya) yang dirender inti; tanpa Blade/PHP/JS dari tema, tanpa jaringan. Cakupan header, footer, dan bagian beranda; gaya = enum dipetakan server ke kelas Tailwind literal (tanpa CSS runtime). Skema v1 + validator, renderer, tema resmi default/centered/majalah/mushaf, pemilihan di Situs > Tampilan, fallback. Aset gambar/font ditunda. Katalog dan unduh = F103. Detail di issue #133 dan docs/plans/F102-plan.md.",
       "acceptance": [
@@ -1989,9 +1989,9 @@
         "Tema hilang, rusak, atau schema tak didukung membuat portal memakai tampilan inti dengan Log::warning sekali per slug per proses",
         "Tidak ada kode dari tema; ModuleComplianceTest lulus; teks lewat lang/id"
       ],
-      "owner": "f102-planner",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "PR #135 (rebase merge ke dev, 45 commit, commit terakhir c1a7f99); CI Pest (PHP 8.3) hijau; suite penuh PHP 8.4: 5739 lulus (laporan sesi pelaksana); golden HTML default/centered hijau; verifikasi adversarial 068badc. Tema resmi: resources/themes/{default,centered,majalah,mushaf}. Belum di main; issue #133 tetap terbuka sampai rilis dev ke main.",
       "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. Revisi 4 (2 Nov 2026): susunan bebas ala Elementor, home.sections diganti home.layout, klasik diganti majalah dan mushaf; revisi 5 APPROVED. Paket A/B/C selesai: skema home.layout, renderer, varian, tema resmi default/centered/majalah/mushaf (klasik dihapus), docs/rilis.md dan design-guide diperbarui. Editor visual dan nth = issue lanjutan (usul). PR ke dev dengan Refs #133."
     },
     {

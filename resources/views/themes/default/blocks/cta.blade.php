@@ -4,7 +4,7 @@
     $styles = match ($variant) {
         'navy' => ['section' => 'bg-primary-950 text-white', 'eyebrow' => 'text-primary-200', 'heading' => 'text-white', 'text' => 'text-primary-100', 'buttons' => ['inverse', 'inverse-secondary']],
         'gold' => ['section' => 'bg-accent-500 text-primary-950', 'eyebrow' => 'text-primary-950', 'heading' => 'text-primary-950', 'text' => 'text-primary-950', 'buttons' => ['primary', 'secondary']],
-        default => ['section' => $band(), 'eyebrow' => 'text-primary-700', 'heading' => 'text-gray-900', 'text' => 'text-gray-700', 'buttons' => ['primary', 'secondary']],
+        default => ['section' => $band, 'eyebrow' => 'text-primary-700', 'heading' => 'text-gray-900', 'text' => 'text-gray-700', 'buttons' => ['primary', 'secondary']],
     };
 @endphp
 

@@ -1,4 +1,4 @@
-<section class="{{ $band() }} py-16 lg:py-24">
+<section class="{{ $band }} py-16 lg:py-24">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <figure class="mx-auto max-w-3xl space-y-4 border-s-4 border-accent-500 ps-6">
             <blockquote>

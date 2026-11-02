@@ -1,12 +1,6 @@
 @php
-    $sectionLink = 'inline-flex min-h-11 items-center gap-1 rounded-lg text-sm font-semibold text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
-    $sectionHeading = 'text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl';
-    // Latar blok setelah hero berselang-seling. Hanya dipanggil oleh blok yang dirender
-    // (blok kosong sudah dibuang `GetPortalHomeData`), sehingga dua latar sama tidak berdampingan.
-    $bandIndex = 0;
-    $band = function () use (&$bandIndex): string {
-        return ['bg-gray-50', 'bg-white'][$bandIndex++ % 2];
-    };
+    // Bagian beranda: komponen/varian/gaya dari tema aktif (F102), latar selang-seling dihitung di `ResolveHomeSections`.
+    $sections = app(\App\Actions\Konten\ResolveHomeSections::class)->handle($blocks, app(\App\Actions\Konten\ResolveActiveTheme::class)->handle());
 @endphp
 
 <x-layouts::public :canonical="route('portal.home')" :bare="true">
@@ -24,7 +18,7 @@
         </section>
     @endunless
 
-    @foreach ($blocks as $block)
-        @include($block['view'], ['block' => $block, 'data' => $block['data'], 'headingId' => 'blok-'.$loop->iteration])
+    @foreach ($sections as $section)
+        <x-portal.theme-node :node="$section['node']" area="home" :school="$school" :block="$section['block']" :heading-id="$section['headingId']" :band="$section['band']" />
     @endforeach
 </x-layouts::public>

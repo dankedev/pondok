@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F107",
+  "next_id": "F108",
   "features": [
     {
       "id": "F001",
@@ -2116,6 +2116,28 @@
       "handoff": null,
       "evidence": "commit b433c20..861a587 di feat/f106-kait-tema; suite penuh PHP 8.4: 6281 test, 6276 lulus, 5 dilewati, 1 risky; Pint lulus",
       "notes": "Jalur penuh (kontrak markup). Rencana: docs/plans/F106-plan.md. PR ke dev (Refs #144). Di luar lingkup: nth feed_list (celah 7) dan url() custom property (celah 8)."
+    },
+    {
+      "id": "F107",
+      "key": "konten-tema-resmi-kait",
+      "issue": 146,
+      "name": "Empat tema resmi memakai kait F106 dan bingkai foto hero diperbaiki",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F106"],
+      "description": "Memigrasikan tema ber-CSS Mihrab, Cahaya, Tegas, dan Kobalt (repo privat pondok-themes-work) dari selektor posisi ke kait F106, memperbaiki bingkai foto hero yang kosong di Mihrab dan Tegas, dan mengukur ulang kontras dan overflow di 360, 768, 1024, dan 1440px. Belum ditandatangani atau diterbitkan. Detail di issue #146.",
+      "acceptance": [
+        "Tidak ada selektor posisional tersisa tanpa alasan tertulis di komentar CSS",
+        "Bingkai foto hero tidak kosong lebih dari 15% di 1440px pada Mihrab dan Tegas",
+        "0 kegagalan kontras dan 0 overflow di 360, 768, 1024, dan 1440px untuk keempat tema",
+        "Keempat tema lolos ValidateThemePackage dan ValidateThemeCss",
+        "Karakter visual tiap tema tidak berubah dibanding tangkapan layar acuan"
+      ],
+      "owner": "sesi-f107",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F107-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #146). Tanpa penandatanganan atau penerbitan."
     }
   ]
 }

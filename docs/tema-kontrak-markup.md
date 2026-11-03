@@ -73,6 +73,14 @@ Tujuh halaman dalam (`/berita`, detail berita, `/galeri`, detail album, `/video`
 
 `blocks` adalah preset lama dan wajib menjadi satu-satunya node beranda; komponen lain boleh berada di posisi mana pun dan berulang.
 
+## Catatan penataan
+
+- **Urutan hero.** `center` = `section` flex kolom dengan anak `content` lalu `media`. `split` = `section` berisi satu `div` grid (hanya bila ada media) dengan anak `content` dan `media`; `media` memakai `order-first` di layar kecil (tampil di atas teks) dan kembali ke urutan DOM mulai `lg` (`lg:order-none`), sehingga di desktop `content` di kiri dan `media` di kanan. Tema boleh mengubah urutan lewat properti `order` pada anak itu, mis. `[data-pt="hero"] [data-pt-part="media"] { order:-1 }`.
+- **Spesifisitas per komponen.** Kartu dan halaman bersarang (kartu muncul di `/berita`, `/galeri`, `/video`), jadi selektor wajib menyebut komponennya: `[data-pt="card"] [data-pt-part="title"]` untuk judul kartu dan `[data-pt="page"] [data-pt-part="page-title"]` untuk judul halaman. Nama bagian `page-title` sengaja berbeda dari `title` kartu.
+- **Dua "button".** `nav_menu` bagian `button` = tautan tombol di header. Komponen `button` = tombol `x-ui.button` di hero, ajakan (CTA), preset `blocks`, dan "Daftar sekarang" di info PSB, dengan `data-pt-variant` sesuai varian tombolnya. Tombol di halaman lain tidak membawa kait.
+- **Judul grup menu.** Di seluler judul grup memakai bagian `group-label`. Di desktop tidak ada kait terpisah: pakai `[data-pt-part="group"] > summary`.
+- **`feed_list` dan preset `blocks`.** Kartu di varian `cards` dan `magazine` (item pertama) membawa kait komponen `card`; baris di varian `list` dan item sisa `magazine` adalah `entry`. Kartu berita dan album di preset `blocks` juga membawa kait `card`; kartu video di preset `blocks` dan isi seksi lainnya tidak.
+
 ## Contoh
 
 ```css

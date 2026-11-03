@@ -11,6 +11,7 @@ use App\Http\Controllers\Portal\ShowPsbInfo;
 use App\Http\Controllers\Portal\ShowRobots;
 use App\Http\Controllers\Portal\ShowSitemap;
 use App\Http\Controllers\Portal\ShowStaticPage;
+use App\Http\Controllers\Portal\ShowThemeAsset;
 use App\Http\Controllers\PortalWali\DownloadStudentDocument;
 use App\Http\Controllers\PortalWali\EmailVerificationController;
 use App\Http\Controllers\PortalWali\Logout as PortalWaliLogout;
@@ -109,6 +110,14 @@ Route::get('info-psb', ShowPsbInfo::class)
     ->withoutMiddleware($statelessWeb)
     ->middleware([...$portalHeaders, EnsureModuleIsEnabled::class.':psb,404'])
     ->name('psb.info');
+
+// CSS dan font tema ber-assets (F105): stateless, di luar grup `portal.` dan `ForcePortalRootUrl` (tautan di HTML relatif); bukan `SetPortalCacheHeaders`
+// karena md5 isi tidak cocok untuk berkas immutable. Slug/hash/path divalidasi `ResolveThemeAssetPath`, jadi tanpa `where` agar 404 tetap lewat header keamanan.
+Route::get('tema/{slug}/{hash12}/{path}', ShowThemeAsset::class)
+    ->where('path', '.+')
+    ->withoutMiddleware($statelessWeb)
+    ->middleware([SetPortalSecurityHeaders::class, EnsureModuleIsEnabled::class.':konten,404'])
+    ->name('theme-asset');
 
 Route::name('portal.')
     ->withoutMiddleware($statelessWeb)

@@ -20,8 +20,8 @@
     @if (isset($item['children']))
         @if ($isMobile)
             {{-- Seluler: judul grup sebagai teks, anak berindentasi di bawahnya. --}}
-            <div class="flex flex-col gap-1">
-                <p class="px-4 pt-2 text-sm font-semibold text-gray-500">{{ $item['label'] }}</p>
+            <div{{ $pt(part: 'group') }} class="flex flex-col gap-1">
+                <p{{ $pt(part: 'group-label') }} class="px-4 pt-2 text-sm font-semibold text-gray-500">{{ $item['label'] }}</p>
                 @foreach ($item['children'] as $child)
                     <a{{ $pt(part: 'link') }} href="{{ $child['url'] }}"
                        @if ($child['active']) aria-current="page" @endif
@@ -29,10 +29,10 @@
                 @endforeach
             </div>
         @else
-            <details class="group/menu relative">
+            <details{{ $pt(part: 'group') }} class="group/menu relative">
                 <summary @if ($item['active']) aria-current="true" @endif
                          class="{{ $linkClass }} cursor-pointer list-none gap-1 {{ $focusClass }} {{ $stateClass($item['active']) }}">{{ $item['label'] }}<x-heroicon-o-chevron-down class="size-4 transition-transform group-open/menu:rotate-180" aria-hidden="true" /></summary>
-                <div class="absolute left-0 z-10 mt-2 flex w-56 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg">
+                <div{{ $pt(part: 'panel') }} class="absolute left-0 z-10 mt-2 flex w-56 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg">
                     @foreach ($item['children'] as $child)
                         <a{{ $pt(part: 'link') }} href="{{ $child['url'] }}"
                            @if ($child['active']) aria-current="page" @endif
@@ -51,8 +51,8 @@
 @if ($waliLoginUrl)
     @php($loginChoices = [$waliLoginUrl => __('pondok.portal.nav.login_wali'), $loginUrl => __('pondok.portal.nav.login_staff')])
     @if ($isMobile)
-        <div class="flex flex-col gap-1">
-            <p class="flex items-center gap-2 px-4 pt-2 text-sm font-semibold text-gray-500">
+        <div{{ $pt(part: 'group') }} class="flex flex-col gap-1">
+            <p{{ $pt(part: 'group-label') }} class="flex items-center gap-2 px-4 pt-2 text-sm font-semibold text-gray-500">
                 <x-heroicon-o-arrow-right-end-on-rectangle class="size-5" aria-hidden="true" />
                 {{ __('pondok.portal.nav.login') }}
             </p>
@@ -61,13 +61,13 @@
             @endforeach
         </div>
     @else
-        <details class="group/menu relative">
+        <details{{ $pt(part: 'group') }} class="group/menu relative">
             <summary class="{{ $linkClass }} cursor-pointer list-none gap-2 {{ $focusClass }} {{ $stateClass(false) }}">
                 <x-heroicon-o-arrow-right-end-on-rectangle class="size-5" aria-hidden="true" />
                 {{ __('pondok.portal.nav.login') }}
                 <x-heroicon-o-chevron-down class="size-4 transition-transform group-open/menu:rotate-180" aria-hidden="true" />
             </summary>
-            <div class="absolute right-0 z-10 mt-2 flex w-48 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg">
+            <div{{ $pt(part: 'panel') }} class="absolute right-0 z-10 mt-2 flex w-48 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg">
                 @foreach ($loginChoices as $url => $label)
                     <a{{ $pt(part: 'link') }} href="{{ $url }}" class="flex min-h-11 items-center rounded-full px-4 text-sm font-semibold {{ $focusClass }} {{ $stateClass(false) }}">{{ $label }}</a>
                 @endforeach

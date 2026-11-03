@@ -41,10 +41,11 @@ class ThemeComponents
         'blocks' => ['default', 'centered'],
     ];
 
-    /** Varian komponen bersama inti tanpa slot (kartu dan tombol); kaitnya dicetak pemanggil/komponen, bukan renderer tema. */
+    /** Varian komponen bersama inti tanpa slot (kartu, tombol, halaman dalam; `page` tanpa varian); kaitnya dicetak pemanggil/komponen, bukan renderer tema. */
     public const SHARED_VARIANTS = [
         'card' => ['post', 'album', 'video'],
         'button' => ['primary', 'secondary', 'inverse', 'inverse-secondary'],
+        'page' => [],
     ];
 
     /**
@@ -68,6 +69,7 @@ class ThemeComponents
         'feed_list' => ['head', 'heading', 'see-all', 'list', 'entry', 'lead'],
         'card' => ['media', 'meta', 'badge', 'date', 'title', 'summary'],
         'button' => [],
+        'page' => ['page-title', 'breadcrumb', 'filters', 'pagination', 'prose', 'figure', 'section'],
         'blocks' => ['hero', 'text-image', 'features', 'feed', 'quote', 'video', 'cta'],
     ];
 

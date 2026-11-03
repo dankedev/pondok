@@ -63,6 +63,14 @@ Kartu dan tombol dipakai di banyak tempat, tetapi kaitnya hanya tercetak pada ha
 
 Tombol header `nav_menu` (`data-pt-part="button"`) berbeda dari komponen `button` ini.
 
+## Halaman dalam
+
+Tujuh halaman dalam (`/berita`, detail berita, `/galeri`, detail album, `/video`, halaman statis, `/info-psb`) memakai satu komponen `page` tanpa varian; halaman dibedakan lewat bagian yang ada.
+
+| Komponen | Varian | Bagian | Elemen |
+|---|---|---|---|
+| `page` | - | `page-title`, *opsional:* `breadcrumb`, `filters`, `pagination`, `prose`, `figure`, `section` | akar = pembungkus isi (`div`, atau `article` di detail berita); `page-title` = `h1`; `breadcrumb` = `nav` remah (tidak ada di `/video`); `filters` = `nav` chip filter (jumlah bisa lebih dari satu); `pagination` = `nav` paginasi (hanya bila lebih dari satu halaman); `prose` = `div` isi artikel atau halaman; `figure` = `figure` foto di detail album; `section` = `section` gelombang, syarat, biaya, dan kontak di `/info-psb` |
+
 `blocks` adalah preset lama dan wajib menjadi satu-satunya node beranda; komponen lain boleh berada di posisi mana pun dan berulang.
 
 ## Contoh

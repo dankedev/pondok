@@ -5,17 +5,18 @@
 --}}
 @php
     $chrome = $area !== 'home';
+    $wrapped = ! $chrome && $node['top'];
     $children = $node['children'];
     $gridClass = $chrome
         ? \App\Actions\Konten\ThemeStyleMap::columns($node['style'] ?? [], count($children)).' '.\App\Actions\Konten\ThemeStyleMap::classes(\Illuminate\Support\Arr::except($node['style'] ?? [], ['columns']))
         : ($node['innerClass'] ?? $node['class']).' '.$node['columnsClass'];
 @endphp
-@if (! $chrome && $node['top'])<div class="{{ $node['class'] }}"><div class="mx-auto max-w-6xl px-4 sm:px-6">@endif
-<div @class([$gridClass, 'grid', 'items-center' => $chrome, 'mx-auto max-w-6xl px-4 sm:px-6' => $chrome && $root])>
+@if ($wrapped)<div{{ $pt('columns') }} class="{{ $node['class'] }}"><div class="mx-auto max-w-6xl px-4 sm:px-6">@endif
+<div{{ $wrapped ? $pt(part: 'grid') : $pt('columns', null, 'grid') }} @class([$gridClass, 'grid', 'items-center' => $chrome, 'mx-auto max-w-6xl px-4 sm:px-6' => $chrome && $root])>
     @foreach ($children as $child)
-        <div class="min-w-0">
+        <div{{ $pt(part: 'cell') }} class="min-w-0">
             <x-portal.theme-node :node="$child" :area="$area" :school="$school" :navigation="$navigation" :footer="$footer" :compact="$compact" />
         </div>
     @endforeach
 </div>
-@if (! $chrome && $node['top'])</div></div>@endif
+@if ($wrapped)</div></div>@endif

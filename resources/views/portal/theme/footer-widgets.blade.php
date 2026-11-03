@@ -3,7 +3,7 @@
     nama dan tautan widget Tautan pertama. Tautan di atas latar navy memakai kelas tetap `GetPortalFooter::LINK_CLASS`.
 --}}
 @if ($compact)
-    <div class="space-y-3">
+    <div{{ $pt('footer_widgets') }} class="space-y-3">
         <p class="text-base font-bold">{{ $school['name'] }}</p>
         @if ($footer['compactLinks'] !== [])
             <ul class="flex flex-wrap gap-x-6" aria-label="{{ __('pondok.portal.footer.links') }}">

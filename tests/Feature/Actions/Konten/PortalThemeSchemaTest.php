@@ -346,10 +346,10 @@ it('F104 AC-2: rejects every non-enum value of palette, surface and font with a 
     expect($accepted)->toBe([], 'nilai yang seharusnya ditolak tetapi diterima');
 });
 
-it('F104 AC-2: raises the core version to 1.1.0 and checks min_core against it', function () {
-    expect(ValidatePortalTheme::CORE_VERSION)->toBe('1.1.0')
-        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.1.0']))->toBeNull()
-        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.2.0']))->not->toBeNull()
+it('F104 AC-2: raises the core version to 1.1.0 and checks min_core against it (F105: now 1.2.0, so 1.3.0 is the first too-new value)', function () {
+    expect(ValidatePortalTheme::CORE_VERSION)->toBe('1.2.0')
+        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.2.0']))->toBeNull()
+        ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.3.0']))->not->toBeNull()
         ->and(themeRejection([...themeBaseManifest(), 'min_core' => '1.0.0', 'palette' => 'hijau']))->toBeNull('tidak ada aturan min_core khusus untuk kunci baru');
 });
 

@@ -25,14 +25,14 @@ class ThemeCatalogClient
     /**
      * @throws RuntimeException
      */
-    public function get(string $url, int $maxBytes): string
+    public function get(string $url, int $maxBytes, int $timeout = 15): string
     {
         $host = $this->allowedHost();
 
         for ($redirects = 0; ; $redirects++) {
             $this->assertAllowed($url, $host);
 
-            $response = $this->request($url);
+            $response = $this->request($url, $timeout);
             $status = $response->getStatusCode();
 
             if (in_array($status, [301, 302, 303, 307, 308], true)) {
@@ -61,11 +61,11 @@ class ThemeCatalogClient
         }
     }
 
-    private function request(string $url): ResponseInterface
+    private function request(string $url, int $timeout): ResponseInterface
     {
         try {
             return Http::withOptions(['allow_redirects' => false, 'stream' => true])
-                ->connectTimeout(5)->timeout(15)
+                ->connectTimeout(min(5, $timeout))->timeout($timeout)
                 ->get($url)->toPsrResponse();
         } catch (ConnectionException) {
             $this->fail();

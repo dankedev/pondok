@@ -18,8 +18,11 @@ use App\Actions\Keuangan\RecordWalletTransaction;
 use App\Actions\Keuangan\WalletBalance;
 use App\Actions\Konten\GetPortalNavigation;
 use App\Actions\Konten\GetSchoolProfile;
+use App\Actions\Konten\InstallPortalTheme;
 use App\Actions\Konten\UpdatePortalFooter;
 use App\Actions\Konten\UpdatePortalHome;
+use App\Actions\Konten\ValidatePortalTheme;
+use App\Actions\Konten\ValidateThemePackage;
 use App\Actions\Perizinan\SubmitLeaveRequest;
 use App\Actions\Prestasi\SaveAchievement;
 use App\Actions\Psb\GenerateApplicantNumber;
@@ -6733,3 +6736,216 @@ function themeInstalledCleanup(): void
 }
 
 pest()->afterEach(fn () => themeInstalledCleanup());
+
+/*
+|--------------------------------------------------------------------------
+| F105 tema membawa CSS dan font sendiri
+|--------------------------------------------------------------------------
+|
+| `themePkg()` membangun folder paket tema (penerbit) di folder sementara: `<root>/<slug>/{theme.json, theme.css, fonts/*.woff2}` dengan
+| sha256 dan size yang dihitung dari isi berkas (woff2 palsu bermagic `wOF2`). Slug selalu unik. Kontrak yang diasumsikan test:
+|  - `ValidateThemePackage::handle(string $dir, array $manifest): void` ($manifest = keluaran `ValidatePortalTheme::handle`, memuat `assets`)
+|    melempar `InvalidArgumentException` berpesan Indonesia untuk tiap pelanggaran.
+|  - `InstallPortalTheme::handle(array $entry, string $bytes, ?User $actor = null, array $files = []): void`; `$files` = path relatif => isi byte
+|    (`theme.css`, `fonts/<nama>.woff2`) untuk tema ber-`assets`.
+|  - Tema terpasang: `<installed>/<slug>/{theme.json, previous.json, assets/<hash12>/{theme.css, fonts/*}}`, hash12 = 12 hex pertama sha256 byte `theme.json`.
+| Placeholder di fragmen CSS uji: `{S}` = `body[data-pt-theme="<slug>"]`, `{SLUG}` = slug, `{SLUG_UPPER}` = slug huruf besar.
+|
+*/
+
+const F105_FONT_FAMILY = 'Zz Uji Serif';
+
+const F105_FONT_PATH = 'fonts/zz-serif.woff2';
+
+pest()->afterEach(fn () => themePkgCleanup());
+
+function themePkgScope(string $slug): string
+{
+    return 'body[data-pt-theme="'.$slug.'"]';
+}
+
+function themePkgFontBytes(string $tag = 'a'): string
+{
+    return 'wOF2'.str_repeat($tag, 600);
+}
+
+/**
+ * Data-URI SVG terenkode-persen dengan isi `$inner` (isi di-rawurlencode).
+ */
+function themePkgSvgWith(string $inner): string
+{
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E".rawurlencode($inner).'%3C/svg%3E';
+}
+
+function themePkgSvg(): string
+{
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 0h8v8z' fill='%23123456'/%3E%3C/svg%3E";
+}
+
+/**
+ * @param  array{family?: string, path?: string}  $options
+ */
+function themePkgFontFace(array $options = []): string
+{
+    $family = $options['family'] ?? F105_FONT_FAMILY;
+    $path = $options['path'] ?? F105_FONT_PATH;
+
+    return '@font-face{font-family:"'.$family.'";src:url("'.$path.'") format("woff2");font-weight:400;font-style:normal;font-display:swap}';
+}
+
+/**
+ * CSS sah representatif mockup (custom property pada scope, SVG data-URI, mask, clip-path, radius elips, bayangan keras,
+ *
+ * @keyframes pt-*, prefers-reduced-motion, @font-face). `$extra` ditambahkan di akhir; `$fontFace` null = @font-face bawaan, '' = tanpa.
+ */
+function themePkgCss(string $slug, string $extra = '', ?string $fontFace = null): string
+{
+    $s = themePkgScope($slug);
+    $svg = themePkgSvg();
+
+    $css = "/* Tema uji {$slug} */\n"
+        .$s.'{--pt-fg:#1a2b1c;--pt-bg:#fbf7ee;--pt-accent:#b4531a;font-family:"Zz Uji Serif",Georgia,serif;color:var(--pt-fg);background:var(--pt-bg)}'."\n"
+        .$s.' [data-pt="hero"]{clip-path:polygon(0 0,100% 0,100% 90%,0 100%);border-radius:50% / 12%;box-shadow:6px 6px 0 var(--pt-accent);background-image:url("'.$svg.'")}'."\n"
+        .$s.' [data-pt="cta"]{-webkit-mask-image:url("'.$svg.'");mask-image:url("'.$svg.'");mask-size:8px 8px}'."\n"
+        .$s.' [data-pt-part="title"]:is(h1,h2),'.$s.' a:not([aria-current="page"]),'.$s.' [data-title="a,b"]{color:var(--pt-accent);text-decoration-thickness:calc(1px + .05em)}'."\n"
+        .$s.' [data-pt="quote"]{padding:clamp(1rem,3vw,2rem);background:linear-gradient(135deg,var(--pt-bg),#fff)}'."\n"
+        .$s.' [data-pt="quote"]::before{content:"“"}'."\n"
+        .$s.' [lang="ar"],'.$s.' [dir="rtl"]{font-family:"Zz Uji Serif",serif}'."\n"
+        .'@media (min-width:768px){'.$s.' [data-pt="feature_grid"]{grid-template-columns:1fr 1fr 1fr}}'."\n"
+        .'@supports (display:grid){'.$s.' [data-pt="hero"]{display:grid}}'."\n"
+        .'@media (prefers-reduced-motion:no-preference){'.$s.' [data-pt="hero"]{animation:pt-rise .6s ease-out both}'.$s.' a{transition:color .2s ease}}'."\n"
+        .'@keyframes pt-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'."\n"
+        .($fontFace ?? themePkgFontFace())."\n";
+
+    return $css.str_replace(['{SLUG_UPPER}', '{SLUG}', '{S}'], [strtoupper($slug), $slug, $s], $extra);
+}
+
+/**
+ * Bangun paket. Opsi: `slug`, `version`, `css` (string|null; null = tanpa CSS), `extra`, `fontFace`, `fonts` (daftar
+ * {path, family, weight, style, license, bytes}), `contrast`, `tweak` (Closure(array $assets): array, dijalankan setelah hash dihitung),
+ * `manifest` (menimpa kunci puncak), `tag` (menambah komentar ke CSS agar byte berbeda antarversi).
+ *
+ * @param  array<string, mixed>  $options
+ * @return array{slug: string, version: string, dir: string, root: string, manifest: array<string, mixed>, bytes: string, files: array<string, string>, hash12: string}
+ */
+function themePkg(array $options = []): array
+{
+    $slug = $options['slug'] ?? themeUniqueSlug();
+    $version = $options['version'] ?? '1.0.0';
+    $root = sys_get_temp_dir().'/pondok-f105-'.Str::random(10);
+    $dir = "{$root}/{$slug}";
+    mkdir($dir, 0777, true);
+    $GLOBALS['themePkgRoots'][] = $root;
+
+    $css = array_key_exists('css', $options) ? $options['css'] : themePkgCss($slug, $options['extra'] ?? '', $options['fontFace'] ?? null);
+    $css = $css === null ? null : $css.(isset($options['tag']) ? "\n/* {$options['tag']} */" : '');
+    $fonts = $options['fonts'] ?? [['path' => F105_FONT_PATH, 'family' => F105_FONT_FAMILY, 'weight' => 400, 'style' => 'normal', 'license' => 'OFL-1.1', 'bytes' => themePkgFontBytes()]];
+
+    $files = [];
+    $assets = [];
+
+    if ($css !== null) {
+        $files['theme.css'] = $css;
+        $assets['css'] = ['path' => 'theme.css', 'sha256' => hash('sha256', $css), 'size' => strlen($css)];
+    }
+
+    foreach ($fonts as $font) {
+        $bytes = $font['bytes'];
+        unset($font['bytes']);
+        $files[$font['path']] = $bytes;
+        $assets['fonts'][] = [...$font, 'sha256' => hash('sha256', $bytes), 'size' => strlen($bytes)];
+    }
+
+    $assets['contrast'] = $options['contrast'] ?? [['fg' => '--pt-fg', 'bg' => '--pt-bg', 'size' => 'normal']];
+
+    if (isset($options['tweak'])) {
+        $assets = $options['tweak']($assets);
+    }
+
+    $manifest = [...themeBaseManifest(), 'slug' => $slug, 'version' => $version, 'min_core' => '1.2.0', 'assets' => $assets, ...($options['manifest'] ?? [])];
+    $bytes = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+    file_put_contents("{$dir}/theme.json", $bytes);
+
+    foreach ($files as $path => $content) {
+        @mkdir(dirname("{$dir}/{$path}"), 0777, true);
+        file_put_contents("{$dir}/{$path}", $content);
+    }
+
+    return ['slug' => $slug, 'version' => $version, 'dir' => $dir, 'root' => $root, 'manifest' => json_decode($bytes, true), 'bytes' => $bytes, 'files' => $files, 'hash12' => substr(hash('sha256', $bytes), 0, 12)];
+}
+
+/**
+ * Validasi skema (harus lolos; galat di sini = test gagal) lalu `ValidateThemePackage`.
+ *
+ * @param  array<string, mixed>  $pkg
+ */
+function themePkgValidate(array $pkg): void
+{
+    $manifest = app(ValidatePortalTheme::class)->handle("{$pkg['dir']}/theme.json");
+
+    app(ValidateThemePackage::class)->handle($pkg['dir'], $manifest);
+}
+
+/**
+ * Pastikan paket lolos skema tetapi DITOLAK `ValidateThemePackage` dengan pesan Indonesia (skema yang menolak = test gagal,
+ * supaya penolakan tidak bisa lolos karena alasan lain).
+ *
+ * @param  array<string, mixed>  $pkg
+ */
+function themePkgReject(array $pkg): void
+{
+    $manifest = app(ValidatePortalTheme::class)->handle("{$pkg['dir']}/theme.json");
+
+    themeAssertRejected(fn () => app(ValidateThemePackage::class)->handle($pkg['dir'], $manifest));
+}
+
+/**
+ * Entri katalog untuk paket (bertanda tangan kunci uji `k1`).
+ *
+ * @param  array<string, mixed>  $pkg
+ * @return array<string, mixed>
+ */
+function themePkgEntry(array $pkg, array $overrides = []): array
+{
+    return themeCatalogEntry($pkg['slug'], $pkg['version'], $pkg['bytes'], $overrides);
+}
+
+/**
+ * Pasang paket lewat Action dengan semua berkasnya.
+ *
+ * @param  array<string, mixed>  $pkg
+ */
+function themePkgInstall(array $pkg, ?User $actor = null, ?array $files = null): void
+{
+    app(InstallPortalTheme::class)->handle(themePkgEntry($pkg), $pkg['bytes'], $actor, $files ?? $pkg['files']);
+}
+
+/**
+ * Tulis paket langsung ke folder terpasang (tanpa Action): untuk test route dan render.
+ *
+ * @param  array<string, mixed>  $pkg
+ */
+function themePkgPlace(array $pkg): string
+{
+    $base = themeInstalledSandbox()."/{$pkg['slug']}";
+    mkdir("{$base}/assets/{$pkg['hash12']}", 0777, true);
+    file_put_contents("{$base}/theme.json", $pkg['bytes']);
+
+    foreach ($pkg['files'] as $path => $content) {
+        @mkdir(dirname("{$base}/assets/{$pkg['hash12']}/{$path}"), 0777, true);
+        file_put_contents("{$base}/assets/{$pkg['hash12']}/{$path}", $content);
+    }
+
+    return $pkg['slug'];
+}
+
+function themePkgCleanup(): void
+{
+    foreach (array_unique($GLOBALS['themePkgRoots'] ?? []) as $root) {
+        if (is_dir($root)) {
+            File::deleteDirectory($root);
+        }
+    }
+
+    unset($GLOBALS['themePkgRoots']);
+}

@@ -5,9 +5,9 @@
     level atas); bersarang = hanya gaya sendiri. Anak dirender rekursif.
 --}}
 @if ($area === 'home')
-    <div class="{{ $node['class'] }}">
+    <div{{ $pt('container') }} class="{{ $node['class'] }}">
         @if ($node['top'])<div class="mx-auto max-w-6xl px-4 sm:px-6">@endif
-        <div class="{{ $node['innerClass'] ?? '' }} flex flex-col">
+        <div{{ $pt(part: 'inner') }} class="{{ $node['innerClass'] ?? '' }} flex flex-col">
             @foreach ($node['children'] as $child)
                 <x-portal.theme-node :node="$child" :area="$area" :school="$school" />
             @endforeach
@@ -15,8 +15,8 @@
         @if ($node['top'])</div>@endif
     </div>
 @else
-    <div class="{{ \App\Actions\Konten\ThemeStyleMap::classes(\Illuminate\Support\Arr::only($node['style'] ?? [], ['tone', 'border'])) }}">
-        <div class="{{ \App\Actions\Konten\ThemeStyleMap::classes(\Illuminate\Support\Arr::except($node['style'] ?? [], ['tone', 'border'])) }} flex px-4 sm:px-6 {{ $area === 'header' ? 'flex-wrap items-center justify-between' : 'flex-col' }}">
+    <div{{ $pt('container') }} class="{{ \App\Actions\Konten\ThemeStyleMap::classes(\Illuminate\Support\Arr::only($node['style'] ?? [], ['tone', 'border'])) }}">
+        <div{{ $pt(part: 'inner') }} class="{{ \App\Actions\Konten\ThemeStyleMap::classes(\Illuminate\Support\Arr::except($node['style'] ?? [], ['tone', 'border'])) }} flex px-4 sm:px-6 {{ $area === 'header' ? 'flex-wrap items-center justify-between' : 'flex-col' }}">
             @foreach ($node['children'] ?? [] as $child)
                 <x-portal.theme-node :node="$child" :area="$area" :school="$school" :navigation="$navigation" :footer="$footer" :compact="$compact" />
             @endforeach

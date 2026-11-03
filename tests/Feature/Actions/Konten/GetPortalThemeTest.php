@@ -357,7 +357,7 @@ it('F104 AC-6: a missing, broken or too-new theme gives the output of no theme',
     themeActivate(null);
     $baseline = themeLook();
 
-    $tooNew = themeColoured(['palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora'], '1.2.0');
+    $tooNew = themeColoured(['palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora'], '1.3.0');
     $broken = themeInstall('{ bukan json');
     $badValue = themeColoured(['palette' => '#2e7d32', 'font' => 'url(x)']);
 

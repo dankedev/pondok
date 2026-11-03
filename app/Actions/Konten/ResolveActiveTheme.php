@@ -12,7 +12,7 @@ use Throwable;
  * bila portal harus memakai chrome dan komponen bawaan inti.
  *
  * Null untuk: key belum diisi, slug rusak, tema hilang, JSON/skema tak valid, `schema_version` tak didukung,
- * melebihi batas, atau `min_core` di atas inti. Portal tidak pernah gagal karena tema. Tanpa Cache: hasil
+ * melebihi batas, `min_core` di atas inti, atau aset tema (F105) hilang/berukuran beda. Portal tidak pernah gagal karena tema. Tanpa Cache: hasil
  * dimemoisasi per request (binding scoped) dan slug dibaca dari `Setting` yang sudah dimuat F070 (0 query tambahan).
  * Peringatan log ditulis sekali per slug per proses.
  */
@@ -26,7 +26,11 @@ class ResolveActiveTheme
     /** @var ?array<string, mixed> */
     private ?array $theme = null;
 
-    public function __construct(private readonly ValidatePortalTheme $validate, private readonly ResolveThemePath $paths) {}
+    public function __construct(
+        private readonly ValidatePortalTheme $validate,
+        private readonly ResolveThemePath $paths,
+        private readonly CheckThemeAssetsRuntime $assets,
+    ) {}
 
     /**
      * @return ?array{slug: string, header: ?array<string, mixed>, footer: ?array<string, mixed>, home: array{layout: list<array<string, mixed>>}}
@@ -68,7 +72,11 @@ class ResolveActiveTheme
                 return null;
             }
 
-            return $this->validate->handle($path);
+            $manifest = $this->validate->handle($path);
+            $hash = $this->assets->handle($path, $manifest);
+
+            // Tema ber-`assets` (F105) menambah `asset_hash` (folder aset); aset hilang/rusak = tema dianggap rusak pada render ini.
+            return $hash === null ? $manifest : [...$manifest, 'asset_hash' => $hash];
         } catch (Throwable $e) {
             $this->warn($slug, $e->getMessage());
 

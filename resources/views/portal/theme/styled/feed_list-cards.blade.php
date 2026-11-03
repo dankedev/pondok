@@ -1,5 +1,5 @@
 {{-- Daftar otomatis sebagai kartu (varian bawaan): jumlah item tetap per sumber (`GetPortalHomeData::FEED_LIMITS`). --}}
-<section class="{{ $sectionClass }} flex flex-col" aria-labelledby="{{ $headingId }}">
+<section{{ $pt('feed_list', 'cards') }} class="{{ $sectionClass }} flex flex-col" aria-labelledby="{{ $headingId }}">
     @include('portal.theme.styled.feed_list-head')
     <x-portal.adaptive-grid :count="$block['items']->count()" :max="$data['source'] === 'albums' ? 4 : 3">
         @foreach ($block['items'] as $item)

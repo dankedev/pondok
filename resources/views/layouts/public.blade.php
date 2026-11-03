@@ -37,6 +37,12 @@
     $activeTheme = $themed ? app(\App\Actions\Konten\ResolveActiveTheme::class)->handle() : null;
     // Tema admin (F070): tanpa tema `css` dan `font_aliases` null, jadi keluaran sama dengan bawaan.
     $theme = app(\App\Actions\Konten\GetPortalTheme::class)->handle();
+    // Tema ber-CSS (F105) yang lolos pemeriksaan runtime: stylesheet RELATIF (HTML di-cache publik) dan `data-pt-theme`; selain itu kosong tanpa spasi (byte tak berubah).
+    $themeCss = isset($activeTheme['assets']['css'], $activeTheme['asset_hash']);
+    $themeCssLink = $themeCss
+        ? new \Illuminate\Support\HtmlString("\n    <link rel=\"stylesheet\" href=\"".e(route('theme-asset', ['slug' => $activeTheme['slug'], 'hash12' => $activeTheme['asset_hash'], 'path' => 'theme.css'], absolute: false)).'">')
+        : '';
+    $themeBodyAttribute = $themeCss ? new \Illuminate\Support\HtmlString(' data-pt-theme="'.e($activeTheme['slug']).'"') : '';
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -74,9 +80,9 @@
     @if ($theme['css'])
         {{-- Hanya hex hasil BuildColorScale dan nilai peta server (GetPortalTheme); harus setelah @vite agar menang atas @layer theme. --}}
         <style data-portal-theme>{!! $theme['css'] !!}</style>
-    @endif
+    @endif{{ $themeCssLink }}
 </head>
-<body class="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased">
+<body class="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased"{{ $themeBodyAttribute }}>
     <a href="#konten"
        class="sr-only rounded-full bg-white px-5 py-3 text-base font-semibold text-primary-700 shadow-card focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
         {{ __('pondok.portal.nav.skip_to_content') }}

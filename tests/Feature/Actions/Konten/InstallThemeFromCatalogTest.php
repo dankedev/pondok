@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Queue;
 |    mati; `InvalidArgumentException` (`invalid_slug`) untuk slug tak sah (sebelum key apa pun dibentuk). Menulis `Setting` `themes.install.<slug>`
 |    = `{state: queued, token, message: null, at: ISO-8601}` dan mendorong satu `InstallThemeFromCatalogJob`. Bila status `queued|running` masih
 |    segar (<= 5 menit) tidak melakukan apa pun (tanpa exception, tanpa job kedua); `done|failed` atau macet > 5 menit boleh diulang (token baru).
-|  - `InstallThemeFromCatalogJob(string $slug, string $token, int $userId)`, `tries = 1`, `timeout = 120`; `handle()` di-resolve container;
+|  - `InstallThemeFromCatalogJob(string $slug, string $token, int $userId)`, `tries = 1`, `timeout = 180` (F105; sebelumnya 120); `handle()` di-resolve container;
 |    `failed(Throwable)` menandai `failed` (hanya bila token masih berlaku). Job mengambil ulang katalog dan entri menurut slug.
 |    Status `failed.message` = teks Indonesia generik (tanpa isi respons mentah).
 */
@@ -238,7 +238,7 @@ it('AC-6: failed() marks the current job as failed without the raw error, and ig
 it('AC-6: the job gives up after one try within two minutes', function () {
     $job = new InstallThemeFromCatalogJob('zz-uji', 'token-1', $this->admin->id);
 
-    expect($job->tries)->toBe(1)->and($job->timeout)->toBe(120);
+    expect($job->tries)->toBe(1)->and($job->timeout)->toBe(180); // F105: tenggat total 150 dtk di dalam job, $timeout 180 dtk
 });
 
 it('AC-6: a job whose module was switched off does nothing but mark itself failed', function () {

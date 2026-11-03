@@ -1,4 +1,6 @@
 @php
+    $ptActive ??= \App\Actions\Konten\ThemeComponents::active();
+    $pt = \App\Actions\Konten\ThemeComponents::hooks(...);
     $canonical = route('portal.videos.index', array_filter(['page' => $page > 1 ? $page : null]));
 @endphp
 
@@ -11,11 +13,11 @@
         @else
             <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($videos as $video)
-                    <article class="space-y-2">
-                        <x-portal.video-embed :youtube-id="$video->youtube_id" :title="$video->title" />
-                        <h2 class="text-lg font-semibold text-gray-900">{{ $video->title }}</h2>
+                    <article{{ $pt('card', 'video') }} class="space-y-2">
+                        <x-portal.video-embed :youtube-id="$video->youtube_id" :title="$video->title" :data-pt-part="$ptActive ? 'media' : null" />
+                        <h2{{ $pt(part: 'title') }} class="text-lg font-semibold text-gray-900">{{ $video->title }}</h2>
                         @if (filled($video->description))
-                            <p class="whitespace-pre-line text-base text-gray-600">{{ $video->description }}</p>
+                            <p{{ $pt(part: 'summary') }} class="whitespace-pre-line text-base text-gray-600">{{ $video->description }}</p>
                         @endif
                     </article>
                 @endforeach

@@ -6,9 +6,9 @@
             @if ($data['source'] === 'albums')
                 <x-portal.album-card :album="$item" />
             @elseif ($data['source'] === 'videos')
-                <div class="space-y-2">
-                    <x-portal.video-embed :youtube-id="$item->youtube_id" :title="$item->title" />
-                    <h3 class="text-lg font-semibold">{{ $item->title }}</h3>
+                <div{{ $pt('card', 'video') }} class="space-y-2">
+                    <x-portal.video-embed :youtube-id="$item->youtube_id" :title="$item->title" :data-pt-part="$ptActive ? 'media' : null" />
+                    <h3{{ $pt(part: 'title') }} class="text-lg font-semibold">{{ $item->title }}</h3>
                 </div>
             @else
                 <x-portal.post-card :post="$item" />

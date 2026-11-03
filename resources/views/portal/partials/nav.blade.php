@@ -11,7 +11,7 @@
         <x-heroicon-o-bars-3 class="size-6" aria-hidden="true" />
         {{ __('pondok.portal.nav.menu') }}
     </summary>
-    <nav class="absolute right-0 z-10 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg" aria-label="{{ __('pondok.portal.nav.mobile_label') }}">
+    <nav{{ \App\Actions\Konten\ThemeComponents::hooks(part: 'panel') }} class="absolute right-0 z-10 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-gray-100 bg-white p-2 shadow-card-lg" aria-label="{{ __('pondok.portal.nav.mobile_label') }}">
         @include('portal.partials.nav-links', ['layout' => 'mobile', 'navigation' => $navigation])
     </nav>
 </details>

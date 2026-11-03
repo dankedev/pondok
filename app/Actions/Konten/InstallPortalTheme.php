@@ -4,6 +4,7 @@ namespace App\Actions\Konten;
 
 use App\Actions\Konten\Concerns\WritesInstalledThemes;
 use App\Models\User;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use SodiumException;
@@ -13,23 +14,27 @@ use SodiumException;
  * hanya tanda tangan Ed25519 atas byte persis `theme.json` (kunci publik dari `pondok.theme_public_keys` lewat `key_id`).
  *
  * Urutan: slug, ukuran, sha256, tanda tangan, lalu (di bawah kunci tulis slug) staging, `ValidatePortalTheme`, versi manifest = entri,
- * versi harus lebih tinggi dari tema terpasang yang valid, dan ganti atomik: salin `theme.json` lama ke `previous.json.tmp`,
- * rename staging ke `theme.json`, rename `.tmp` ke `previous.json`. Invarian: `theme.json` selalu utuh dan valid, `previous.json`
- * selalu utuh atau tidak ada, sisa `.tmp` dan staging dibersihkan. Penolakan = `InvalidArgumentException` berpesan Indonesia. Log `portal_theme_installed` ditulis hanya bila ada pelaku.
+ * versi harus lebih tinggi dari tema terpasang yang valid, berkas aset (F105: `$files` harus persis berkas yang dideklarasikan `assets`,
+ * ditulis ke staging lalu diperiksa `ValidateThemePackage`), dan ganti atomik: tulis `assets/<hash12>/` (hash12 = 12 hex pertama sha256
+ * byte `theme.json`), salin `theme.json` lama ke `previous.json.tmp`, rename staging ke `theme.json`, rename `.tmp` ke `previous.json`,
+ * lalu pangkas folder aset selain milik `theme.json` dan `previous.json`. Invarian: `theme.json` selalu utuh dan valid, folder aset
+ * miliknya selalu lengkap, `previous.json` selalu utuh atau tidak ada, sisa `.tmp` dan staging dibersihkan. Tema tanpa `assets` berperilaku
+ * persis seperti F103. Penolakan = `InvalidArgumentException` berpesan Indonesia. Log `portal_theme_installed` ditulis hanya bila ada pelaku.
  */
 class InstallPortalTheme
 {
     use WritesInstalledThemes;
 
-    public function __construct(private readonly ValidatePortalTheme $validate) {}
+    public function __construct(private readonly ValidatePortalTheme $validate, private readonly ValidateThemePackage $package) {}
 
     /**
      * @param  array<string, mixed>  $entry  entri katalog
      * @param  string  $bytes  isi `theme.json` hasil unduhan
+     * @param  array<string, string>  $files  path relatif (`theme.css`, `fonts/<nama>.woff2`) => isi byte; kosong untuk tema tanpa `assets`
      *
      * @throws InvalidArgumentException
      */
-    public function handle(array $entry, string $bytes, ?User $actor = null): void
+    public function handle(array $entry, string $bytes, ?User $actor = null, array $files = []): void
     {
         $slug = $this->assertThemeSlug($entry['slug'] ?? null);
 
@@ -43,7 +48,7 @@ class InstallPortalTheme
 
         $this->assertSignature($entry, $bytes);
 
-        $version = $this->withWriteLock($slug, function () use ($slug, $entry, $bytes): string {
+        $version = $this->withWriteLock($slug, function () use ($slug, $entry, $bytes, $files): string {
             $manifest = $this->validate->handle($this->stage($slug, $bytes));
 
             if ($manifest['version'] !== ($entry['version'] ?? null)) {
@@ -56,7 +61,8 @@ class InstallPortalTheme
                 $this->reject('version_not_newer', ['version' => $manifest['version'], 'installed' => $installed]);
             }
 
-            $this->swap($slug);
+            $this->stageAssets($slug, $manifest, $files);
+            $this->swap($slug, $manifest);
 
             return $manifest['version'];
         });
@@ -85,12 +91,53 @@ class InstallPortalTheme
         }
     }
 
-    private function swap(string $slug): void
+    /**
+     * Tulis berkas aset ke staging (hanya path yang dideklarasikan manifest) lalu periksa paketnya; tema tanpa `assets` tidak boleh membawa berkas.
+     *
+     * @param  array<string, mixed>  $manifest
+     * @param  array<string, string>  $files
+     */
+    private function stageAssets(string $slug, array $manifest, array $files): void
+    {
+        $declared = ValidateThemePackage::paths($manifest);
+
+        foreach (array_diff(array_keys($files), $declared) as $path) {
+            $this->reject('pondok.theme_assets.file_extra', ['path' => Str::limit((string) $path, 60)]);
+        }
+
+        foreach (array_diff($declared, array_keys($files)) as $path) {
+            $this->reject('pondok.theme_assets.file_missing', ['path' => $path]);
+        }
+
+        if (! isset($manifest['assets'])) {
+            return;
+        }
+
+        $directory = $this->stagingDirectory($slug);
+
+        foreach ($files as $path => $content) {
+            if (! is_string($content) || (! is_dir(dirname("{$directory}/{$path}")) && ! @mkdir(dirname("{$directory}/{$path}"), 0755, true))
+                || @file_put_contents("{$directory}/{$path}", $content) !== strlen($content)) {
+                $this->reject('write_failed');
+            }
+        }
+
+        $this->package->handle($directory, $manifest);
+    }
+
+    /**
+     * @param  array<string, mixed>  $manifest
+     */
+    private function swap(string $slug, array $manifest): void
     {
         $directory = $this->themeRoot()."/{$slug}";
         $theme = "{$directory}/theme.json";
         $temporary = "{$directory}/previous.json.tmp";
+        $staging = $this->stagingDirectory($slug);
         $hasOld = is_file($theme);
+        $target = isset($manifest['assets']) ? "{$directory}/assets/".$this->assetHash("{$staging}/theme.json") : null;
+        $created = false;
+        $swapped = false;
 
         if (is_link($directory)) {
             $this->reject('write_failed');
@@ -101,13 +148,19 @@ class InstallPortalTheme
         }
 
         try {
+            if ($target !== null) {
+                $created = $this->placeAssets($staging, $target, [$this->assetHash($theme), $this->assetHash("{$directory}/previous.json")]);
+            }
+
             if ($hasOld && ! @copy($theme, $temporary)) {
                 $this->reject('write_failed');
             }
 
-            if (! @rename($this->stagingDirectory($slug).'/theme.json', $theme)) {
+            if (! @rename("{$staging}/theme.json", $theme)) {
                 $this->reject('write_failed');
             }
+
+            $swapped = true;
 
             if ($hasOld && ! @rename($temporary, "{$directory}/previous.json")) {
                 $this->reject('write_failed');
@@ -116,7 +169,51 @@ class InstallPortalTheme
             if (is_file($temporary)) {
                 @unlink($temporary);
             }
+
+            // Gagal sebelum `theme.json` berganti: folder aset baru tak dimiliki siapa pun, buang.
+            if ($created && ! $swapped) {
+                File::deleteDirectory((string) $target);
+            }
         }
+
+        $this->pruneAssets($slug);
+    }
+
+    /**
+     * Pindahkan `theme.css` dan `fonts/` dari staging ke `$target`. Folder `$target` yang sudah ada dan milik `theme.json`/`previous.json`
+     * aktif (hash sama) sudah lengkap dan dibiarkan; yang bukan milik siapa pun (sisa pemasangan gagal) dihapus lalu diganti.
+     *
+     * @param  list<?string>  $owned
+     * @return bool true bila folder baru dibuat
+     */
+    private function placeAssets(string $staging, string $target, array $owned): bool
+    {
+        if (is_dir($target) && in_array(basename($target), $owned, true)) {
+            return false;
+        }
+
+        if (is_link($target) || (file_exists($target) && ! is_dir($target))) {
+            @unlink($target);
+        }
+
+        File::deleteDirectory($target);
+
+        if (! is_dir(dirname($target)) && ! @mkdir(dirname($target), 0755, true) && ! is_dir(dirname($target))) {
+            $this->reject('write_failed');
+        }
+
+        if (! @mkdir($target, 0755)) {
+            $this->reject('write_failed');
+        }
+
+        foreach (['theme.css', 'fonts'] as $name) {
+            if (file_exists("{$staging}/{$name}") && ! @rename("{$staging}/{$name}", "{$target}/{$name}")) {
+                File::deleteDirectory($target);
+                $this->reject('write_failed');
+            }
+        }
+
+        return true;
     }
 
     private function assertSignature(array $entry, string $bytes): void

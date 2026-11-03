@@ -96,10 +96,41 @@ trait WritesInstalledThemes
     }
 
     /**
+     * 12 hex pertama sha256 isi berkas manifest: nama folder aset (`assets/<hash12>`) milik manifest itu (F105); null bila berkas tak ada.
+     */
+    protected function assetHash(string $manifestPath): ?string
+    {
+        return is_file($manifestPath) ? substr((string) hash_file('sha256', $manifestPath), 0, 12) : null;
+    }
+
+    /**
+     * Pangkas `<slug>/assets/*` selain folder milik `theme.json` dan `previous.json`; `assets` yang kosong ikut dihapus.
+     * Bertahan-terbaik: kegagalan menghapus tidak mengubah invarian (folder aset milik `theme.json` aktif selalu lengkap).
+     */
+    protected function pruneAssets(string $slug): void
+    {
+        $directory = $this->themeRoot()."/{$slug}";
+        $assets = "{$directory}/assets";
+
+        if (! is_dir($assets) || is_link($assets)) {
+            return;
+        }
+
+        $keep = array_filter([$this->assetHash("{$directory}/theme.json"), $this->assetHash("{$directory}/previous.json")]);
+
+        foreach (array_diff(scandir($assets) ?: [], ['.', '..', ...$keep]) as $entry) {
+            is_dir("{$assets}/{$entry}") && ! is_link("{$assets}/{$entry}") ? File::deleteDirectory("{$assets}/{$entry}") : @unlink("{$assets}/{$entry}");
+        }
+
+        @rmdir($assets);
+    }
+
+    /**
+     * @param  string  $reason  kunci di `pondok.theme_install.errors`, atau kunci lang penuh (mengandung titik)
      * @param  array<string, mixed>  $replace
      */
     protected function reject(string $reason, array $replace = []): never
     {
-        throw new InvalidArgumentException(__("pondok.theme_install.errors.{$reason}", $replace));
+        throw new InvalidArgumentException(__(str_contains($reason, '.') ? $reason : "pondok.theme_install.errors.{$reason}", $replace));
     }
 }

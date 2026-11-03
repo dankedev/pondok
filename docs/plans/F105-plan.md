@@ -72,6 +72,13 @@ Risiko: kunci bocor (butir 14); kontras hanya untuk pasangan terdeklarasi; menim
 ## Review #1 (plan-reviewer): CHANGES_REQUESTED, 0 blocker, 6 major, 7 minor
 Major: status F103/F104 di `feature_list.json` (ditandai `done`); pertanyaan 1-6 kemudian diputuskan user; validator CSS dikencangkan (backslash, `url()` terbatas, nesting, koma tingkat atas, scope kanonik, fail-closed, dataset); pasang ulang dir `<hash12>` dan pemangkasan Rollback; aset tema bawaan dibuang ke F107; link relatif dan route stateless. Minor: `assets` hanya bila ada, kontras satu definisi, `realpath` + 404 tanpa immutable + tanpa `RESERVED_SLUGS`, tenggat job + batas konsisten, helper atribut tanpa spasi sisa, allowlist = mekanisme + `data:` global dicatat, 4 paket + doctor ditunda. Semua diterapkan.
 
+## Catatan setelah implementasi (3 Nov 2026)
+- Batas tambahan: nilai satu deklarasi CSS <= 8 KB (`ValidateThemeCss::MAX_VALUE_BYTES`, pesan `css_value_too_long`); tidak ada di rencana awal, ditambah karena dataset adversarial memuat CSS sah-sintaks berisi puluhan ribu string.
+- Syarat "tema ber-CSS" ada di dua tempat (`ThemeComponents::active()` dan `layouts/public`); dibiarkan, perapian bila ada pemakai ketiga.
+- Kait `data-pt` untuk kartu inti bersama (mis. kartu `feed_list`) belum ada; masuk F106.
+- Kontras hanya untuk pasangan terdeklarasi; elemen yang berubah per status (menu aktif) diperiksa visual penerbit (daftar periksa di `docs/rilis.md`).
+- Pengujian pasang dari katalog sungguhan tidak dilakukan (hanya `Http::fake`); kunci tanda tangan produksi tidak dipakai.
+
 ## Riwayat revisi
 - 3 Nov 2026: draf awal.
 - 3 Nov 2026, revisi 1: menjawab Review #1.

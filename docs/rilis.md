@@ -193,6 +193,13 @@ Perintah menjalankan pemeriksaan paket yang sama dengan pemasangan. Pelanggaran 
 
 **Kebijakan `min_core`.** Tema ber-`assets` memakai `min_core` `1.2.0` atau lebih tinggi. Inti yang lebih rendah menampilkan tema itu sebagai tidak cocok versi dan tidak memasangnya.
 
+**Daftar periksa penerbit sebelum menandatangani.**
+
+- Kontras hanya dijamin untuk pasangan warna yang dideklarasikan di `assets.contrast`. Pemeriksa tidak menilai warna lain di `theme.css`.
+- Periksa secara visual elemen yang warnanya berubah per status: menu aktif (`aria-current`), hover dan fokus, tombol, tautan di atas latar berwarna, dan teks pada tombol menu seluler. Teks dan latar yang sama-sama berubah per status tidak tertangkap pemeriksa.
+- Lihat tema di 360px, 1024px, dan desktop, dengan konten demo yang lengkap.
+- Variabel yang dipakai pasangan kontras hanya boleh didefinisikan sekali di blok scope tingkat atas; definisi ulang di komponen atau `@media` (termasuk mode gelap) ditolak.
+
 ### Memasang, mengembalikan, dan menghapus tema (super-admin)
 
 Di Situs > Katalog tema (izin `manage:themes`, bawaan super-admin):

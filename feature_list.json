@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F106",
+  "next_id": "F107",
   "features": [
     {
       "id": "F001",
@@ -2091,10 +2091,31 @@
         "CSS atau font hilang/rusak memberi tampilan inti (HTTP 200) dengan Log::warning",
         "Respons portal bertema tanpa csrf-token, aset Livewire, Set-Cookie; cache dan ETag utuh; ModuleComplianceTest lulus"
       ],
-      "owner": "sesi-f105",
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #143 merge be9f2d0 (ke dev); CI Pest PHP 8.3 hijau",
+      "notes": "Jalur penuh. Rencana: docs/plans/F105-plan.md. PR ke dev (Refs #142)."
+    },
+    {
+      "id": "F106",
+      "key": "konten-tema-kait-markup",
+      "issue": 144,
+      "name": "Kait tema untuk pil, slider, panel menu, kartu, dan halaman dalam",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F105"],
+      "description": "Menambah kait data-pt/data-pt-part yang belum ada di markup portal (badge, content, hgroup, slider, slide, panel, group, kartu bersama, halaman dalam, tombol) agar tema ber-CSS tidak memakai selektor posisi yang rapuh. Aditif, hanya tercetak saat tema ber-CSS aktif. Detail di issue #144 dan docs/plans/F106-plan.md.",
+      "acceptance": [
+        "Semua kait baru tercetak pada konten lengkap bila tema ber-CSS aktif dan tidak tercetak bila tidak; HTML tema tanpa CSS identik (golden hijau)",
+        "Kait F105 yang sudah ada tidak berubah; empat tema (Mihrab, Cahaya, Tegas, Kobalt) tetap valid dan tampil sama",
+        "ThemeComponents::PARTS dan docs/tema-kontrak-markup.md sinkron, dijaga test",
+        "ModuleComplianceTest lulus"
+      ],
+      "owner": "sesi-f106",
       "handoff": null,
       "evidence": null,
-      "notes": "Jalur penuh. Rencana: docs/plans/F105-plan.md. PR ke dev (Refs #142)."
+      "notes": "Jalur penuh (kontrak markup). Rencana: docs/plans/F106-plan.md. PR ke dev (Refs #144). Di luar lingkup: nth feed_list (celah 7) dan url() custom property (celah 8)."
     }
   ]
 }

@@ -41,6 +41,12 @@ class ThemeComponents
         'blocks' => ['default', 'centered'],
     ];
 
+    /** Varian komponen bersama inti tanpa slot (kartu dan tombol); kaitnya dicetak pemanggil/komponen, bukan renderer tema. */
+    public const SHARED_VARIANTS = [
+        'card' => ['post', 'album', 'video'],
+        'button' => ['primary', 'secondary', 'inverse', 'inverse-secondary'],
+    ];
+
     /**
      * Kontrak markup tema ber-CSS (F105): komponen -> nama `data-pt-part` yang SELALU muncul pada seed konten lengkap
      * (union semua varian). Bagian opsional (hanya bila datanya ada) ada di `docs/tema-kontrak-markup.md`, bukan di sini.
@@ -60,6 +66,8 @@ class ThemeComponents
         'cta' => ['heading', 'actions'],
         'video' => ['heading', 'player'],
         'feed_list' => ['head', 'heading', 'see-all', 'list', 'entry', 'lead'],
+        'card' => ['media', 'meta', 'badge', 'date', 'title', 'summary'],
+        'button' => [],
         'blocks' => ['hero', 'text-image', 'features', 'feed', 'quote', 'video', 'cta'],
     ];
 

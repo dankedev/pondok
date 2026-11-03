@@ -14,7 +14,11 @@ use InvalidArgumentException;
  */
 class ListPortalThemes
 {
-    public function __construct(private readonly ValidatePortalTheme $validate, private readonly ResolveThemePath $paths) {}
+    public function __construct(
+        private readonly ValidatePortalTheme $validate,
+        private readonly ResolveThemePath $paths,
+        private readonly CheckThemeAssetsRuntime $assets,
+    ) {}
 
     /**
      * @return list<array{slug: string, name: string, description: string, valid: bool, error: ?string, source: string, version: ?string}>
@@ -58,6 +62,7 @@ class ListPortalThemes
     {
         try {
             $manifest = $this->validate->handle($path);
+            $this->assets->handle($path, $manifest);
 
             return ['slug' => $slug, 'name' => $manifest['name'], 'description' => $manifest['description'], 'valid' => true, 'error' => null, 'source' => $source, 'version' => $manifest['version']];
         } catch (InvalidArgumentException $e) {

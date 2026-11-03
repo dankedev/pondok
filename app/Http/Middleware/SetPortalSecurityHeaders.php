@@ -9,12 +9,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Header keamanan untuk semua respons route portal (termasuk 404 di dalam grup portal).
- * CSP mengizinkan embed YouTube nocookie; tidak dikirim saat Vite dev server berjalan.
+ * CSP mengizinkan embed YouTube nocookie dan gambar `data:` (SVG/mask dari CSS tema F105; skrip tetap `'self'`); tidak dikirim saat Vite dev server berjalan.
  */
 class SetPortalSecurityHeaders
 {
     public const CONTENT_SECURITY_POLICY = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-        ."img-src 'self' https: http:; font-src 'self'; frame-src https://www.youtube-nocookie.com; connect-src 'self'; "
+        ."img-src 'self' data: https: http:; font-src 'self'; frame-src https://www.youtube-nocookie.com; connect-src 'self'; "
         ."object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 
     public function handle(Request $request, Closure $next): Response

@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F105",
+  "next_id": "F106",
   "features": [
     {
       "id": "F001",
@@ -2001,7 +2001,7 @@
       "name": "Katalog tema resmi: unduh dan pasang dari dashboard (Tahap 2)",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F102"],
       "description": "Tahap 2 tema JSON (lanjutan F102): admin melihat katalog tema resmi, lalu memasangnya. Berkas tema JSON diunduh lewat antrean, diverifikasi tanda tangan Ed25519, dan dipasang atomik; hanya tema resmi bertanda tangan. Memuat manage:themes (super-admin), ext-sodium, check doctor, dan pondok:theme-sign. Detail di issue #134.",
       "acceptance": [
@@ -2014,9 +2014,9 @@
         "Perintah penandatangan menghasilkan paket yang lolos pemasangan dan entri katalog dengan sha256 dan ukuran benar; hasil deterministik",
         "Teks lewat lang/id; ModuleComplianceTest lulus"
       ],
-      "owner": "f103-katalog-tema-plan",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "PR #138 merge 70fb19f (rebase ke dev); CI Pest PHP 8.3 hijau",
       "notes": "jalur: penuh. URL katalog dan pemegang kunci sudah diputuskan (docs/plans/F103-plan.md)."
     },
     {
@@ -2050,7 +2050,7 @@
       "name": "Tema portal menentukan warna dan tipografi",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F102"
       ],
@@ -2062,10 +2062,39 @@
         "Pengaturan admin menang atas tema; tema rusak atau font tak tersedia memberi perilaku tanpa tema",
         "Tidak ada hex, nama font, atau CSS dari tema yang masuk ke keluaran selain lewat peta server"
       ],
-      "owner": "sesi-f104",
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #141 merge 549eb61 (ke dev); CI Pest PHP 8.3 hijau",
+      "notes": "Jalur penuh (skema dan validator). Rencana: docs/plans/F104-plan.md. PR ke dev (Refs #140)."
+    },
+    {
+      "id": "F105",
+      "key": "konten-tema-css-font",
+      "issue": 142,
+      "name": "Tema membawa CSS dan font sendiri: kontrak markup dan paket tema",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": [
+        "F102",
+        "F103",
+        "F104"
+      ],
+      "description": "Tema resmi bertanda tangan boleh membawa theme.css dan font woff2 (kunci assets di manifest, sha256 per berkas), disajikan lewat route aset, dengan validator CSS allowlist, kontrak markup data-pt, pemeriksa kontras di pondok:theme-sign dan pasang. Tanpa JavaScript dari tema. Detail di issue #142 dan docs/plans/F105-plan.md.",
+      "acceptance": [
+        "Skema assets aditif (CORE_VERSION 1.2.0); tema tanpa assets tidak berubah (golden hijau)",
+        "Satu byte berubah pada manifest, CSS, atau font menolak paket tanpa mengubah tema terpasang",
+        "Validator CSS allowlist menolak setiap pola terlarang (satu test per pola) dan batas ukuran",
+        "Font hanya woff2 dari paket, hash diverifikasi, sumber luar ditolak",
+        "Kontrak markup data-pt terdokumentasi dan dijaga test",
+        "pondok:theme-sign dan pasang menjalankan lint CSS dan pemeriksa kontras",
+        "CSS atau font hilang/rusak memberi tampilan inti (HTTP 200) dengan Log::warning",
+        "Respons portal bertema tanpa csrf-token, aset Livewire, Set-Cookie; cache dan ETag utuh; ModuleComplianceTest lulus"
+      ],
+      "owner": "sesi-f105",
       "handoff": null,
       "evidence": null,
-      "notes": "Jalur penuh (skema dan validator). Rencana: docs/plans/F104-plan.md. PR ke dev (Refs #140)."
+      "notes": "Jalur penuh. Rencana: docs/plans/F105-plan.md. PR ke dev (Refs #142)."
     }
   ]
 }

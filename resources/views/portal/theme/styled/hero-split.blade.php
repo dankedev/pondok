@@ -5,11 +5,11 @@
 
 <section{{ $pt('hero', 'split') }} class="{{ $sectionClass }}" aria-labelledby="{{ $headingId }}">
     <div @class(['grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-12' => $hasMedia])>
-        <div @class(['min-w-0 space-y-6', 'max-w-3xl' => ! $hasMedia])>
+        <div{{ $pt(part: 'content') }} @class(['min-w-0 space-y-6', 'max-w-3xl' => ! $hasMedia])>
             @if ($block['psbOpen'])
-                <x-ui.badge color="accent">{{ __('pondok.portal.home.psb_open_badge') }}</x-ui.badge>
+                <x-ui.badge color="accent" :data-pt-part="$ptActive ? 'badge' : null">{{ __('pondok.portal.home.psb_open_badge') }}</x-ui.badge>
             @endif
-            <hgroup class="space-y-4">
+            <hgroup{{ $pt(part: 'hgroup') }} class="space-y-4">
                 @if ($data['eyebrow'])
                     <p{{ $pt(part: 'eyebrow') }} class="text-base font-semibold lg:text-lg">{{ $data['eyebrow'] }}</p>
                 @endif

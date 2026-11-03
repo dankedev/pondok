@@ -6403,7 +6403,7 @@ function themeUniqueSlug(): string
 
 /**
  * Folder tema sementara milik test ini: salinan `resource_path('themes')` (bila ada) dan `config('pondok.themes_path')` diarahkan ke sana.
- * Idempoten per test; dibersihkan `themeCleanup()`.
+ * Folder tema terpasang (`pondok.installed_themes_path`) ikut dikosongkan. Idempoten per test; dibersihkan `themeCleanup()`.
  */
 function themeSandbox(): string
 {
@@ -6420,6 +6420,9 @@ function themeSandbox(): string
 
     config()->set('pondok.themes_path', $root);
     $GLOBALS['themeSandboxDir'] = $root;
+
+    // Tema terpasang di mesin pengembang (`storage/app/themes`) tidak boleh ikut terdaftar.
+    themeInstalledSandbox();
 
     return $root;
 }

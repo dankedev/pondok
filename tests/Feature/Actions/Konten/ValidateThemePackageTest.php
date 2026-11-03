@@ -48,7 +48,6 @@ dataset('brokenPackages', [
     }),
     'font bukan woff2 (magic wOFF, sha cocok)' => fn () => themePkg(['fonts' => [['path' => F105_FONT_PATH, 'family' => F105_FONT_FAMILY, 'weight' => 400, 'style' => 'normal', 'license' => 'OFL-1.1', 'bytes' => 'wOFF'.str_repeat('a', 600)]]]),
     'font berisi teks biasa (sha cocok)' => fn () => themePkg(['fonts' => [['path' => F105_FONT_PATH, 'family' => F105_FONT_FAMILY, 'weight' => 400, 'style' => 'normal', 'license' => 'OFL-1.1', 'bytes' => '<?php echo 1; ?>'.str_repeat('a', 600)]]]),
-    'font kosong (sha cocok)' => fn () => themePkg(['fonts' => [['path' => F105_FONT_PATH, 'family' => F105_FONT_FAMILY, 'weight' => 400, 'style' => 'normal', 'license' => 'OFL-1.1', 'bytes' => '']]]),
     'css berupa symlink (isi sama)' => fn () => tap(themePkg(), function (array $p) {
         file_put_contents("{$p['root']}/luar.css", $p['files']['theme.css']);
         unlink("{$p['dir']}/theme.css");

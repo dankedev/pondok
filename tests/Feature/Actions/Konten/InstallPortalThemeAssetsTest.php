@@ -178,7 +178,7 @@ it('F105 AC-8: keeps theme.json, its assets and previous.json intact when a writ
     chmod($dir, 0555);
 
     try {
-        expect(fn () => themePkgInstall($v3))->toThrow(Throwable::class);
+        expect(fn () => themePkgInstall($v3))->toThrow(InvalidArgumentException::class);
     } finally {
         chmod($dir, 0755);
     }

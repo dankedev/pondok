@@ -173,13 +173,13 @@ it('F105 AC-13: documents every component, variant and part in docs/tema-kontrak
 
     foreach (ThemeComponents::VARIANTS as $component => $variants) {
         foreach ($variants as $variant) {
-            expect($doc)->toContain($variant, "{$component}: varian {$variant}");
+            expect($doc)->toContain($variant);
         }
     }
 
     foreach (ThemeComponents::PARTS as $component => $parts) {
         foreach ($parts as $part) {
-            expect($doc)->toContain($part, "{$component}: bagian {$part}");
+            expect($doc)->toContain($part);
         }
     }
 });

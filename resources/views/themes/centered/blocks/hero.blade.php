@@ -1,5 +1,5 @@
 {{-- Hero preset Terpusat: teks rata tengah, media lebar di bawah teks di semua lebar layar. Nama Arab tidak dirender otomatis. --}}
-<section class="bg-white" aria-labelledby="{{ $headingId }}">
+<section{{ $pt('blocks', $blocksVariant, 'hero') }} class="bg-white" aria-labelledby="{{ $headingId }}">
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
         <div class="mx-auto max-w-3xl space-y-6 text-center">
             @if ($block['psbOpen'])

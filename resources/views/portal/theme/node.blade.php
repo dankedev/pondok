@@ -3,8 +3,11 @@
     (`ValidatePortalTheme`/`ThemeComponents`) dan di sini hanya dipakai sebagai kunci `@switch`, tidak pernah menjadi nama view.
     Varian (`variant`, yang pertama = bawaan) memilih berkas tampilan; kelas elemen akar sudah jadi di `$node['class']`
     (`ResolveHomeLayout` untuk beranda, `ThemeStyleMap` di view chrome).
+    `$pt(component, variant, part)` mencetak kait kontrak `data-pt*` (`ThemeComponents::hooks`): kosong tanpa spasi bila tema tidak ber-CSS; `$ptActive` untuk atribut yang dioper ke komponen Blade (null = tak tercetak).
 --}}
 @php
+    $pt = \App\Actions\Konten\ThemeComponents::hooks(...);
+    $ptActive = \App\Actions\Konten\ThemeComponents::active();
     $variant = $node['variant'] ?? null;
     $block = $node['block'] ?? null;
     $data = $block['data'] ?? null;

@@ -8,7 +8,7 @@
     };
 @endphp
 
-<section class="{{ $styles['section'] }} py-16 lg:py-24" aria-labelledby="{{ $headingId }}">
+<section{{ $pt('blocks', $blocksVariant, 'cta') }} class="{{ $styles['section'] }} py-16 lg:py-24" aria-labelledby="{{ $headingId }}">
     <div class="mx-auto max-w-3xl space-y-4 px-4 text-center sm:px-6">
         @if ($data['eyebrow'])
             <p class="text-base font-semibold {{ $styles['eyebrow'] }}">{{ $data['eyebrow'] }}</p>

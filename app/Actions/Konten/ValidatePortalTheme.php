@@ -11,7 +11,8 @@ use JsonException;
  *
  * Urutan: ukuran berkas (sebelum decode), UTF-8, decode (depth longgar, hanya pengaman teknis), versi skema,
  * kunci puncak, metadata, lalu pohon `header`/`footer`/`home.layout` (kedalaman <= 6 dan node <= 150 setelah decode).
- * Slug harus sama dengan nama direktori tema. Semua penolakan berupa `InvalidArgumentException` berpesan Indonesia.
+ * Kunci puncak opsional `assets` (F105: `css`, `fonts`, `contrast`) hanya diperiksa skemanya di sini dan dikembalikan HANYA bila ada;
+ * pemeriksaan berkas ada di `ValidateThemePackage`. Slug harus sama dengan nama direktori tema. Semua penolakan berupa `InvalidArgumentException` berpesan Indonesia.
  */
 class ValidatePortalTheme
 {
@@ -22,11 +23,20 @@ class ValidatePortalTheme
     public const MAX_NODES = 150;
 
     /** Versi API tema inti; `min_core` tema tidak boleh melebihinya. */
-    public const CORE_VERSION = '1.1.0';
+    public const CORE_VERSION = '1.2.0';
+
+    /** Batas paket ber-assets (F105): CSS 128 KB, font 250 KB per berkas (maks. 6), total paket (manifest + CSS + font) 1,5 MB. */
+    public const MAX_CSS_BYTES = 131072;
+
+    public const MAX_FONT_BYTES = 256000;
+
+    public const MAX_FONTS = 6;
+
+    public const MAX_PACKAGE_BYTES = 1572864;
 
     private const JSON_DEPTH = 64;
 
-    private const ROOT_KEYS = ['schema_version', 'slug', 'name', 'description', 'version', 'min_core', 'palette', 'surface', 'font', 'header', 'footer', 'home'];
+    private const ROOT_KEYS = ['schema_version', 'slug', 'name', 'description', 'version', 'min_core', 'palette', 'surface', 'font', 'header', 'footer', 'home', 'assets'];
 
     private const REQUIRED_KEYS = ['schema_version', 'slug', 'name', 'description', 'version', 'min_core'];
 
@@ -59,6 +69,10 @@ class ValidatePortalTheme
 
         $this->assertMetadata($manifest, basename(dirname($path)));
         $this->assertLook($manifest);
+
+        if (array_key_exists('assets', $manifest)) {
+            $this->assertAssets($manifest['assets'], (int) filesize($path));
+        }
 
         $count = 0;
 
@@ -159,6 +173,115 @@ class ValidatePortalTheme
         foreach ($enums as $key => $allowed) {
             if (array_key_exists($key, $manifest) && ! in_array($manifest[$key], $allowed, true)) {
                 $this->fail('invalid_look', ['key' => $key, 'value' => json_encode($manifest[$key]), 'allowed' => implode(', ', $allowed)]);
+            }
+        }
+    }
+
+    /**
+     * Skema `assets` (F105): set kunci tertutup; sha256 dan size per berkas dicocokkan dengan isinya oleh `ValidateThemePackage`.
+     *
+     * @param  int  $manifestBytes  ukuran `theme.json`, ikut dihitung dalam batas total paket
+     */
+    private function assertAssets(mixed $assets, int $manifestBytes): void
+    {
+        $this->assertObject($assets, 'assets', 'assets_not_object');
+        $this->assertKeys($assets, ['css', 'fonts', 'contrast'], 'assets');
+
+        $total = $manifestBytes;
+        $paths = [];
+
+        if (array_key_exists('css', $assets)) {
+            $css = $assets['css'];
+            $this->assertObject($css, 'assets.css', 'assets_not_object');
+            $this->assertKeys($css, ['path', 'sha256', 'size'], 'assets.css');
+            $this->assertAssetFile($css, 'assets.css', '/^theme\.css\z/', self::MAX_CSS_BYTES, $paths);
+            $total += $css['size'];
+        }
+
+        $fonts = $assets['fonts'] ?? [];
+
+        if (! is_array($fonts) || ! array_is_list($fonts)) {
+            $this->fail('assets_not_object', ['where' => 'assets.fonts']);
+        }
+
+        if (count($fonts) > self::MAX_FONTS) {
+            $this->fail('assets_too_many_fonts', ['max' => self::MAX_FONTS]);
+        }
+
+        foreach ($fonts as $index => $font) {
+            $where = "assets.fonts.{$index}";
+            $this->assertObject($font, $where, 'assets_not_object');
+            $this->assertKeys($font, ['path', 'family', 'weight', 'style', 'license', 'sha256', 'size'], $where);
+            $this->assertAssetFile($font, $where, '/^fonts\/[a-z0-9][a-z0-9-]{0,40}\.woff2\z/', self::MAX_FONT_BYTES, $paths);
+
+            $valid = is_string($font['family'] ?? null) && preg_match('/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,59}\z/', $font['family']) === 1
+                && is_int($font['weight'] ?? null) && $font['weight'] >= 100 && $font['weight'] <= 900
+                && in_array($font['style'] ?? null, ['normal', 'italic'], true)
+                && in_array($font['license'] ?? null, ['OFL-1.1', 'Apache-2.0', 'CC0-1.0'], true);
+
+            if (! $valid) {
+                $this->fail('assets_font_field', ['where' => $where]);
+            }
+
+            $total += $font['size'];
+        }
+
+        if ($total > self::MAX_PACKAGE_BYTES) {
+            $this->fail('assets_total', ['total' => (int) ceil($total / 1024), 'max' => self::MAX_PACKAGE_BYTES / 1024]);
+        }
+
+        $this->assertContrast($assets, array_key_exists('css', $assets));
+    }
+
+    /**
+     * @param  array<string, mixed>  $file  objek `css` atau satu font; `size` yang sah menjadi bilangan bulat 1..$max
+     * @param  list<string>  $paths  path yang sudah dipakai (menolak ganda)
+     */
+    private function assertAssetFile(array $file, string $where, string $pattern, int $max, array &$paths): void
+    {
+        $path = $file['path'] ?? null;
+
+        if (! is_string($path) || preg_match($pattern, $path) !== 1 || in_array($path, $paths, true)) {
+            $this->fail('assets_path', ['where' => $where]);
+        }
+
+        $paths[] = $path;
+
+        if (! is_string($file['sha256'] ?? null) || preg_match('/^[0-9a-f]{64}\z/', $file['sha256']) !== 1) {
+            $this->fail('assets_hash', ['where' => $where]);
+        }
+
+        if (! is_int($file['size'] ?? null) || $file['size'] < 1 || $file['size'] > $max) {
+            $this->fail('assets_size', ['where' => $where, 'max' => $max / 1024]);
+        }
+    }
+
+    /**
+     * `contrast` = daftar pasangan custom property yang dijamin kontrasnya; wajib (>= 1) bila ada `css`.
+     *
+     * @param  array<string, mixed>  $assets
+     */
+    private function assertContrast(array $assets, bool $hasCss): void
+    {
+        $pairs = $assets['contrast'] ?? [];
+
+        if (! is_array($pairs) || ! array_is_list($pairs) || ($hasCss && $pairs === [])) {
+            $this->fail('assets_contrast', ['where' => 'assets.contrast']);
+        }
+
+        foreach ($pairs as $index => $pair) {
+            $where = "assets.contrast.{$index}";
+            $this->assertObject($pair, $where, 'assets_not_object');
+            $this->assertKeys($pair, ['fg', 'bg', 'size'], $where);
+
+            foreach (['fg', 'bg'] as $key) {
+                if (! is_string($pair[$key] ?? null) || preg_match('/^--[a-z0-9][a-z0-9-]{0,40}\z/', $pair[$key]) !== 1) {
+                    $this->fail('assets_contrast', ['where' => $where]);
+                }
+            }
+
+            if (! in_array($pair['size'] ?? null, ['normal', 'large'], true)) {
+                $this->fail('assets_contrast', ['where' => $where]);
             }
         }
     }

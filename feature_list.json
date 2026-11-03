@@ -2124,7 +2124,7 @@
       "name": "Empat tema resmi memakai kait F106 dan bingkai foto hero diperbaiki",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F106"],
       "description": "Memigrasikan tema ber-CSS Mihrab, Cahaya, Tegas, dan Kobalt (repo privat pondok-themes-work) dari selektor posisi ke kait F106, memperbaiki bingkai foto hero yang kosong di Mihrab dan Tegas, dan mengukur ulang kontras dan overflow di 360, 768, 1024, dan 1440px. Belum ditandatangani atau diterbitkan. Detail di issue #146.",
       "acceptance": [
@@ -2134,9 +2134,9 @@
         "Keempat tema lolos ValidateThemePackage dan ValidateThemeCss",
         "Karakter visual tiap tema tidak berubah dibanding tangkapan layar acuan"
       ],
-      "owner": "sesi-f107",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "repo pondok-themes-work commit 349a32f, 13cf24e, 9c69d3e, 5a6793b (mihrab 1.0.8, tegas 1.0.3, cahaya 1.0.3, kobalt 1.0.2), laporan LAPORAN-F107.md; 4 paket valid (ValidateThemePackage + ValidateThemeCss); audit 112 kombinasi 0 kontras gagal dan 0 overflow; bingkai hero Mihrab 44%->5%, Tegas 63%->14% (diukur ulang orkestrator di 360 dan 1440px)",
       "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F107-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #146). Tanpa penandatanganan atau penerbitan."
     }
   ]

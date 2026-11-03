@@ -871,3 +871,113 @@ it('AC-10: renders the 404 page without any data-pt hook while a css theme is ac
 
     expect($html)->not->toContain('data-pt="button"')->not->toContain('data-pt="hero"');
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// VERIFY adversarial
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Halaman dalam yang belum tercakup fixture: halaman ke-2, filter kategori, dan kombinasi menu atau modul.
+ *
+ * @return array<string, array{0: string, 1: string}> nama => [skenario, jalur]
+ */
+function hkVerifyPages(): array
+{
+    return [
+        'berita halaman 2' => ['default', '/berita?page=2'],
+        'berita filter kategori' => ['default', '/berita?kategori=pengumuman'],
+        'album besar halaman 2' => ['bigalbum2', '/galeri/{bigAlbum}?page=2'],
+        'beranda menu tanpa submenu' => ['flatmenu', '/'],
+        'berita menu tanpa submenu' => ['flatmenu', '/berita'],
+        'info psb modul psb mati' => ['psboff', '/profil'],
+        'beranda portal wali mati' => ['walioff', '/'],
+        'video tanpa video unggulan' => ['default', '/video'],
+    ];
+}
+
+function hkVerifyPrepare(string $scenario): object
+{
+    $w = hkWorld();
+
+    match ($scenario) {
+        'flatmenu' => navSet([navItem('home', 'Beranda'), navItem('posts', 'Berita')], navItem('psb.register', 'Daftar')),
+        'psboff' => Setting::set('modules.psb.enabled', false),
+        'walioff' => Setting::set('modules.portal-wali.enabled', false),
+        default => null,
+    };
+
+    return $w;
+}
+
+it('VERIFY: the css theme prints no duplicated, escaped or empty-spaced hook attribute on any inner page', function (string $name) {
+    [$scenario, $path] = hkVerifyPages()[$name];
+    $w = hkVerifyPrepare($scenario);
+    hkActivate(true, hkManifest());
+    $html = $this->get(str_replace('{bigAlbum}', $w->bigAlbum->slug, $path))->assertOk()->getContent();
+
+    preg_match_all('/<[a-z][a-z0-9-]*\b[^>]*>/i', $html, $tags);
+
+    foreach ($tags[0] as $tag) {
+        foreach (['data-pt', 'data-pt-variant', 'data-pt-part'] as $attribute) {
+            expect(substr_count($tag, " {$attribute}=\""))->toBeLessThanOrEqual(1, "{$name}: {$attribute} ganda pada {$tag}");
+        }
+
+        expect($tag)->not->toMatch('/\s{2,}>|\s>$|data-pt[a-z-]*=""/', "{$name}: spasi sisa atau nilai kosong pada {$tag}");
+    }
+
+    // Kait tidak pernah ikut tercetak sebagai teks atau di dalam nilai atribut lain.
+    expect(preg_match('/&lt;[^&]*data-pt/', $html))->toBe(0)
+        ->and(preg_match('/="[^"]*\sdata-pt[a-z-]*=\\\\?&quot;/', $html))->toBe(0);
+})->with(array_keys(hkVerifyPages()));
+
+it('VERIFY: once its hooks are stripped the css theme renders the same HTML as a theme without css', function (string $name) {
+    [$scenario, $path] = hkVerifyPages()[$name];
+    $w = hkVerifyPrepare($scenario);
+    $path = str_replace('{bigAlbum}', $w->bigAlbum->slug, $path);
+
+    hkActivate(false, hkManifest());
+    $plain = hkNormalize($this->get($path)->assertOk()->getContent());
+    hkActivate(true, hkManifest());
+    $themed = hkNormalize($this->get($path)->assertOk()->getContent());
+
+    expect($plain)->not->toContain('data-pt')
+        ->and(preg_replace('/\s+/', ' ', hkStripThemeTraces($themed)))->toBe(preg_replace('/\s+/', ' ', $plain), $name);
+})->with(array_keys(hkVerifyPages()));
+
+it('VERIFY: nested card parts never leak out of their card and every inner page has exactly one h1', function (string $path) {
+    hkWorld();
+    hkActivate(true, hkManifest());
+    $xpath = hkDoc($this->get($path)->assertOk()->getContent());
+
+    $stray = $xpath->query('//*[@data-pt-part="title" or @data-pt-part="meta" or @data-pt-part="summary" or @data-pt-part="date"][not(ancestor::*[@data-pt="card"])]');
+    $h1 = $xpath->query('//h1');
+    $pageTitles = $xpath->query('//*[@data-pt-part="page-title"]');
+    $cardInPage = $xpath->query('//*[@data-pt="page"]//*[@data-pt="card"]//*[@data-pt-part="page-title"]');
+
+    expect($stray->length)->toBe(0, "{$path}: bagian kartu di luar kartu")
+        ->and($h1->length)->toBe(1)
+        ->and($pageTitles->length)->toBe(1)
+        ->and($cardInPage->length)->toBe(0);
+})->with(['/berita', '/galeri', '/video']);
+
+it('VERIFY: portal wali pages render unchanged apart from hook attributes while a css theme is active', function () {
+    $f = waliBoot();
+    waliInvoice($f, $f->s1);
+    Setting::set('theme.template', null);
+    $paths = ['/wali', route('portal-wali.students.show', $f->s1, false)];
+    $plain = [];
+
+    hkActivate(false, hkManifest());
+
+    foreach ($paths as $path) {
+        $plain[$path] = hkNormalize($this->actingAs($f->wali)->get($path)->assertOk()->getContent());
+    }
+
+    hkActivate(true, hkManifest());
+
+    foreach ($paths as $path) {
+        $themed = hkNormalize($this->actingAs($f->wali)->get($path)->assertOk()->getContent());
+
+        expect(preg_replace('/\s+/', ' ', hkStripThemeTraces($themed)))->toBe(preg_replace('/\s+/', ' ', $plain[$path]), $path);
+    }
+});

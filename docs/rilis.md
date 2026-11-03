@@ -54,6 +54,20 @@ Tema portal adalah satu berkas `resources/themes/<slug>/theme.json` (data saja, 
 
 Isi manifes v1: `schema_version` (1), `version`, `slug`, `name`, `description`, `min_core`, serta `header`, `footer`, dan `home.layout` (daftar node `{component, variant?, style?, children?}` berurutan bebas: komponen boleh di posisi mana pun, berulang, dan bersarang di `container`/`columns`) yang disusun dari 15 komponen tetap dengan nilai gaya dari enum (padding, kolom, tone, dsb.). Node `blocks` menampilkan semua blok beranda dari admin sesuai urutannya (dipakai `default` dan `centered`); node isi (hero, feed_list, dst.) menampilkan blok aktif pertama bertipe itu. Editor visual dan susunan per situs di database adalah pekerjaan lanjutan dengan skema yang sama. Batas: kedalaman pohon 6, 150 node, 64 KB. Nilai di luar enum, kunci tak dikenal, dan `assets` ditolak.
 
+### Warna dan huruf tema (tambahan v1, inti 1.1.0)
+
+Tiga kunci puncak opsional berupa enum; tema hanya menyebut nama, tanpa hex, nama font, CSS, atau berkas:
+
+| Kunci | Nilai | Efek |
+|---|---|---|
+| `palette` | `navy` (bawaan, tanpa deklarasi), `hijau` | warna utama (`primary-50..950` dan token merek) dari satu hex primer di `ThemePalette::PALETTES`; aksen tetap emas bawaan |
+| `surface` | `putih` (bawaan), `krem` | menimpa `--color-gray-50` dan `--color-gray-100` (band `tone: muted`/`auto`, kartu); `--color-white` tidak disentuh |
+| `font` | `jakarta`, `lora`, `nunito` | pasangan font bawaan inti (`GetPortalTheme::FONTS`); font Arab tetap Noto Naskh |
+
+Prioritas: nilai admin di Situs > Tampilan yang terisi (`theme.primary`, `theme.accent`, `theme.font`) menang atas tema; nilai kosong mengikuti tema; aksen hanya dari admin; radius tidak dipengaruhi tema. Guard kontras 4,5:1 dan cek manifest font tetap berlaku, jadi warna/font yang tak lolos jatuh ke bawaan. Nilai di luar enum membuat tema ditolak.
+
+Kebijakan versi: kunci ini tambahan kompatibel, `schema_version` tetap 1 dan `CORE_VERSION` naik ke `1.1.0`. Tema yang memakainya sebaiknya menulis `min_core` `1.1.0`; inti 1.0.0 menolaknya (kunci tak dikenal) dan memakai chrome inti. Tema v1 lama tetap valid tanpa diubah.
+
 ### Panduan `home.layout` (skema v1)
 
 Node: `{component, variant?, style?, children?}`. Komponen tata letak: `container` (susun vertikal; di header berderet), `columns` (anak = sel, 2 sampai 4 anak), `divider` (hiasan emas, satu bentuk). Komponen isi mengikat blok beranda aktif pertama bertipe sama: `hero`, `text_image`, `feature_grid` (blok keunggulan), `quote`, `cta`, `video`, `feed_list` (blok konten terbaru). `blocks` adalah preset lama: wajib satu-satunya node, tanpa `style`, varian `default` atau `centered`.

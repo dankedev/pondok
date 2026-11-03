@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F104",
+  "next_id": "F105",
   "features": [
     {
       "id": "F001",
@@ -2042,6 +2042,30 @@
       "handoff": null,
       "evidence": null,
       "notes": "Jalur penuh (dokumen pribadi). Rencana: docs/plans/F101-plan.md. Dependensi aws-sdk menambah syarat ext-simplexml."
+    },
+    {
+      "id": "F104",
+      "key": "konten-tema-warna-font",
+      "issue": 140,
+      "name": "Tema portal menentukan warna dan tipografi",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": [
+        "F102"
+      ],
+      "description": "Perluasan skema tema F102 secara kompatibel (schema_version 1, min_core 1.1.0): kunci opsional palette, surface, font berupa enum yang dipetakan ke token F070 (BuildColorScale, guard kontras) dan font yang sudah ada di build. Nilai admin menang atas tema. Detail di issue #140 dan docs/plans/F104-plan.md.",
+      "acceptance": [
+        "Tema v1 lama tanpa kunci baru tetap valid dan keluaran tema tidak berubah",
+        "Validator menolak nilai di luar enum dan kunci baru dengan min_core < 1.1.0",
+        "Setiap palet dan permukaan lolos kontras 4,5:1 (dijaga test)",
+        "Pengaturan admin menang atas tema; tema rusak atau font tak tersedia memberi perilaku tanpa tema",
+        "Tidak ada hex, nama font, atau CSS dari tema yang masuk ke keluaran selain lewat peta server"
+      ],
+      "owner": "sesi-f104",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh (skema dan validator). Rencana: docs/plans/F104-plan.md. PR ke dev (Refs #140)."
     }
   ]
 }

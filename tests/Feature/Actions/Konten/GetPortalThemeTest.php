@@ -2,6 +2,8 @@
 
 use App\Actions\Konten\BuildColorScale;
 use App\Actions\Konten\GetPortalTheme;
+use App\Actions\Konten\ThemePalette;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\View;
 
 /*
@@ -211,4 +213,178 @@ it('F071 AC-13: brandTokens returns null when the primary scale fails the contra
     });
 
     expect(GetPortalTheme::brandTokens('#15803d'))->toBeNull();
+});
+
+/*
+| F104 AC-1, AC-4, AC-5, AC-6. Tema aktif (`ResolveActiveTheme`) menjadi nilai bawaan di bawah pengaturan admin
+| `theme.primary`/`theme.accent`/`theme.font`. Tema uji ditulis lewat `themeInstall()` dan diaktifkan lewat `themeActivate()`.
+*/
+
+/**
+ * @param  array<string, mixed>  $extra  kunci warna/font tema
+ */
+function themeColoured(array $extra, string $minCore = '1.1.0'): string
+{
+    $slug = themeInstall([...themeBaseManifest(), 'min_core' => $minCore, ...$extra]);
+    themeActivate($slug);
+
+    return $slug;
+}
+
+/**
+ * @return array{css: ?string, font_aliases: ?list<string>}
+ */
+function themeLook(): array
+{
+    return Arr::only(themeResolve(), ['css', 'font_aliases']);
+}
+
+it('F104 AC-1: gives the same output as no theme for a v1 theme and the official themes across admin settings', function () {
+    $combos = [
+        'kosong' => [],
+        'primer' => ['primary' => '#1f2a5e'],
+        'aksen' => ['accent' => '#f8b800'],
+        'font' => ['font' => 'nunito'],
+        'semua' => ['primary' => '#1f2a5e', 'accent' => '#ffd452', 'font' => 'lora', 'radius' => 'large'],
+    ];
+
+    foreach ($combos as $label => $values) {
+        themeSet(['primary' => null, 'accent' => null, 'font' => null, 'radius' => null, ...$values]);
+        themeActivate(null);
+        $baseline = themeLook();
+
+        foreach ([themeInstall(themeBaseManifest()), ...THEME_OFFICIAL] as $slug) {
+            themeActivate($slug);
+
+            expect(themeLook())->toBe($baseline, "{$label} / {$slug}");
+        }
+    }
+});
+
+it('F104 AC-4: palette hijau without admin settings writes the primary scale and brand tokens only', function () {
+    $hex = ThemePalette::PALETTES['hijau'];
+    $scale = app(BuildColorScale::class)->handle($hex, 'primary');
+    $brand = GetPortalTheme::brandTokens($hex);
+    themeColoured(['palette' => 'hijau']);
+
+    $css = themeLook()['css'];
+
+    expect($css)->toStartWith(':root{')
+        ->and(substr_count($css, '--color-primary-'))->toBe(11)
+        ->and($css)->toContain("--color-primary-600: {$scale[600]};")->toContain("--color-primary-950: {$scale[950]};")
+        ->toContain("--color-brand: {$brand['brand']};")->toContain("--color-on-brand: {$brand['on_brand']};")
+        ->toContain("--color-brand-text: {$brand['brand_text']};")->toContain("--color-brand-hover: {$brand['brand_hover']};")
+        ->not->toContain('--color-accent-')->not->toContain('--color-gray-')->not->toContain('--font-')
+        ->toMatch('/^:root\{[^<>{}\\\\@]*\}$/');
+});
+
+it('F104 AC-4: palette navy and surface putih add nothing', function () {
+    themeColoured(['palette' => 'navy', 'surface' => 'putih']);
+
+    expect(themeLook())->toBe(['css' => null, 'font_aliases' => null]);
+});
+
+it('F104 AC-4: surface krem writes exactly the two gray declarations', function () {
+    $surface = ThemePalette::SURFACES['krem'];
+    themeColoured(['surface' => 'krem']);
+
+    $css = themeLook()['css'];
+
+    expect(substr_count($css, '--color-gray-'))->toBe(2)
+        ->and($css)->toContain("--color-gray-50: {$surface['--color-gray-50']};")->toContain("--color-gray-100: {$surface['--color-gray-100']};")
+        ->not->toContain('--color-primary-')->not->toContain('--color-white')
+        ->toMatch('/^:root\{[^<>{}\\\\@]*\}$/');
+});
+
+it('F104 AC-4: font lora from the theme writes the heading font and its aliases', function () {
+    themeColoured(['font' => 'lora']);
+
+    $look = themeLook();
+
+    expect($look['css'])->toContain("--font-heading: 'Lora'")
+        ->and($look['font_aliases'])->toBe(['plus-jakarta-sans', 'lora', 'noto-naskh-arabic']);
+});
+
+it('F104 AC-4: combines palette, surface and font from one theme', function () {
+    themeColoured(['palette' => 'hijau', 'surface' => 'krem', 'font' => 'nunito']);
+
+    $look = themeLook();
+
+    expect(substr_count($look['css'], '--color-primary-'))->toBe(11)
+        ->and(substr_count($look['css'], '--color-gray-'))->toBe(2)
+        ->and($look['css'])->toContain("--font-sans: 'Nunito'")
+        ->and($look['font_aliases'])->toBe(['nunito', 'noto-naskh-arabic']);
+});
+
+it('F104 AC-5: admin primary, accent and font win over the theme', function () {
+    $themeHex = ThemePalette::PALETTES['hijau'];
+    $themeScale = app(BuildColorScale::class)->handle($themeHex, 'primary');
+    $adminScale = app(BuildColorScale::class)->handle('#1f2a5e', 'primary');
+    themeSet(['primary' => '#1f2a5e', 'accent' => '#f8b800', 'font' => 'nunito']);
+    themeColoured(['palette' => 'hijau', 'font' => 'lora']);
+
+    $look = themeLook();
+
+    expect($look['css'])->toContain("--color-primary-600: {$adminScale[600]};")->not->toContain($themeScale[600])
+        ->and(substr_count($look['css'], '--color-accent-'))->toBe(11)
+        ->and($look['css'])->toContain("--font-sans: 'Nunito'")->not->toContain('--font-heading')
+        ->and($look['font_aliases'])->toBe(['nunito', 'noto-naskh-arabic']);
+});
+
+it('F104 AC-5: an empty admin value follows the theme, a filled one overrides only itself', function () {
+    $themeScale = app(BuildColorScale::class)->handle(ThemePalette::PALETTES['hijau'], 'primary');
+    themeSet(['primary' => null, 'accent' => '#f8b800', 'font' => null]);
+    themeColoured(['palette' => 'hijau', 'font' => 'lora']);
+
+    $look = themeLook();
+
+    expect($look['css'])->toContain("--color-primary-600: {$themeScale[600]};")->toContain("--font-heading: 'Lora'")
+        ->and(substr_count($look['css'], '--color-accent-'))->toBe(11);
+});
+
+it('F104 AC-5: never takes the accent from the theme and survives an unreadable admin accent', function () {
+    themeColoured(['palette' => 'hijau']);
+    expect(themeLook()['css'])->not->toContain('--color-accent-');
+
+    themeSet(['accent' => '#000000']);
+
+    expect(fn () => themeLook())->not->toThrow(Throwable::class)
+        ->and(themeLook()['css'])->toBeString()->toStartWith(':root{');
+});
+
+it('F104 AC-6: a missing, broken or too-new theme gives the output of no theme', function () {
+    themeSet(['primary' => null, 'accent' => null, 'font' => null]);
+    themeActivate(null);
+    $baseline = themeLook();
+
+    $tooNew = themeColoured(['palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora'], '1.2.0');
+    $broken = themeInstall('{ bukan json');
+    $badValue = themeColoured(['palette' => '#2e7d32', 'font' => 'url(x)']);
+
+    foreach (['zz-tidak-ada', $tooNew, $broken, $badValue] as $slug) {
+        themeActivate($slug);
+
+        expect(themeLook())->toBe($baseline, $slug);
+    }
+});
+
+it('F104 AC-6: a theme font whose aliases are missing from the font manifest falls back to Jakarta', function () {
+    themeBuild(['plus-jakarta-sans', 'noto-naskh-arabic']);
+    themeColoured(['palette' => 'hijau', 'font' => 'lora']);
+
+    $look = themeLook();
+
+    expect($look['font_aliases'])->toBeNull()
+        ->and($look['css'])->not->toContain('--font-heading')
+        ->and(substr_count($look['css'], '--color-primary-'))->toBe(11, 'palet tema tetap berlaku');
+});
+
+it('F104 AC-6: an admin font missing from the manifest falls back to Jakarta even over a themed font', function () {
+    themeBuild(['plus-jakarta-sans', 'lora', 'noto-naskh-arabic']);
+    themeSet(['font' => 'nunito']);
+    themeColoured(['font' => 'lora']);
+
+    $look = themeLook();
+
+    expect($look['font_aliases'])->toBeNull()->and($look['css'])->toBeNull();
 });

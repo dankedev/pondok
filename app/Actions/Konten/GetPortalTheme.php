@@ -16,7 +16,9 @@ use Illuminate\Foundation\Vite;
  * Font non-bawaan hanya dipakai bila semua aliasnya ada di manifest font build aktif, agar
  * `@fonts($aliases)` tidak pernah melempar `ViteException` di portal.
  *
- * `theme.template` (F072) menyimpan slug tema portal (F102, daftar dari `ListPortalThemes`); tema tidak memengaruhi `css`.
+ * Tema aktif (F104) menyuplai bawaan `palette`/`surface`/`font` di bawah pengaturan admin (lihat `ThemePalette`).
+
+`theme.template` (F072) menyimpan slug tema portal (F102, daftar dari `ListPortalThemes`); tema tidak memengaruhi `css`.
  */
 class GetPortalTheme
 {
@@ -94,6 +96,11 @@ class GetPortalTheme
     public function handle(): array
     {
         $values = Setting::getMany(self::KEYS);
+        $theme = app(ResolveActiveTheme::class)->handle();
+
+        // Tema aktif (F104) hanya nilai bawaan: pengaturan admin yang terisi menang; aksen tidak pernah dari tema.
+        $values['theme.primary'] ??= ThemePalette::PALETTES[$theme['palette'] ?? ''] ?? null;
+        $values['theme.font'] ??= $theme['font'] ?? null;
         $build = app(BuildColorScale::class);
 
         $scales = array_filter([
@@ -135,6 +142,7 @@ class GetPortalTheme
             ];
         }
 
+        $declarations += ThemePalette::SURFACES[$theme['surface'] ?? ''] ?? [];
         $declarations += $font === null ? [] : self::FONTS[$font]['css'];
         $declarations += self::RADII[self::option($values['theme.radius'], self::RADII) ?? self::DEFAULT_RADIUS];
 

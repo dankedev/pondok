@@ -1,7 +1,9 @@
 <?php
 
+use App\Actions\Konten\BuildColorScale;
 use App\Actions\Konten\GetPortalTheme;
 use App\Actions\Konten\ResolveActiveTheme;
+use App\Actions\Konten\ThemePalette;
 use App\Actions\Konten\ThemeStyleMap;
 use App\Models\Setting;
 use Illuminate\Support\Arr;
@@ -734,4 +736,48 @@ it('VERIFY AC-15: keeps the core chrome with a 200 on session pages and 404 when
         expect(themeChrome($response->getContent()))->toBe($before[$index], $url)
             ->and($response->getStatusCode())->toBe($index === 3 ? 404 : 200, $url);
     }
+});
+
+/*
+| F104 AC-7: tema berwarna/bertipografi memuat `<style data-portal-theme>` bertoken tema, tetap cache publik + ETag,
+| tanpa cookie, dan tanpa tambahan query dibanding tema v1 tanpa kunci baru.
+*/
+
+it('F104 AC-7: prints the theme tokens on the home page with public cache, etag and no cookie', function () {
+    themeBuild();
+    themeSeed();
+    $hex = ThemePalette::PALETTES['hijau'];
+    $scale = app(BuildColorScale::class)->handle($hex, 'primary');
+    themeActivate(themeInstall([...themeBaseManifest(), 'min_core' => '1.1.0', 'palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora']));
+
+    $response = $this->get('/')->assertOk();
+    $html = $response->getContent();
+
+    expect($html)->toContain('<style data-portal-theme>:root{')
+        ->toContain("--color-primary-600: {$scale[600]};")->toContain('--color-gray-50:')->toContain("--font-heading: 'Lora'")
+        ->and($response->headers->get('Cache-Control'))->toContain('public')->toContain('max-age=300')
+        ->and($response->headers->get('ETag'))->not->toBeNull()
+        ->and($response->headers->getCookies())->toBeEmpty()
+        ->and($this->withHeader('If-None-Match', (string) $response->headers->get('ETag'))->get('/')->getStatusCode())->toBe(304);
+});
+
+it('F104 AC-7: costs the same number of queries as a v1 theme without the new keys', function () {
+    themeBuild();
+    themeSeed();
+    $plain = themeInstall(themeBaseManifest());
+    $coloured = themeInstall([...themeBaseManifest(), 'min_core' => '1.1.0', 'palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora']);
+
+    $count = function (string $slug): int {
+        themeActivate($slug);
+        blkHome();
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        blkHome();
+
+        return count(DB::getQueryLog());
+    };
+
+    $baseline = $count($plain);
+
+    expect($baseline)->toBeGreaterThan(0)->and($count($coloured))->toBe($baseline);
 });

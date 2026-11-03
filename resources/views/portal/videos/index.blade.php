@@ -5,8 +5,8 @@
 @endphp
 
 <x-layouts::public :title="__('pondok.portal.videos.title')" :canonical="$canonical" :bare="true">
-    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
-        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ __('pondok.portal.videos.title') }}</h1>
+    <div{{ $pt('page') }} class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <h1{{ $pt(part: 'page-title') }} class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ __('pondok.portal.videos.title') }}</h1>
 
         @if ($videos->isEmpty())
             <x-ui.empty-state icon="heroicon-o-film" class="mt-8">{{ __('pondok.portal.videos.empty') }}</x-ui.empty-state>

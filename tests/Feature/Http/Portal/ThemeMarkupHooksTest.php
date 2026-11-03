@@ -335,6 +335,8 @@ it('AC-2: marks the panel without any group when the menu has no submenu and no 
 
 it('AC-3: marks post cards on the home feed (cards and magazine) with all parts inside the card root', function (string $feed) {
     hkWorld();
+    // Feed magazine hanya menjadikan item pertama (lead) sebagai kartu; buat berita berkategori menjadi yang terbaru.
+    Post::query()->where('title', 'Berita berkategori')->update(['published_at' => now()->subHour()]);
     hkBlocks('posts');
     hkActivate(true, hkManifest('center', $feed));
 
@@ -403,6 +405,8 @@ it('AC-3: marks album cards on the home feed and /galeri; /galeri cards carry th
 
 it('AC-3: marks video cards in feed cards, feed magazine, and /video, with summary only when a description exists', function () {
     hkWorld();
+    // Beranda hanya memuat video unggulan (GetPortalHomeData: is_featured = true).
+    Video::query()->update(['is_featured' => true]);
     hkBlocks('videos');
     $found = [];
 
@@ -806,7 +810,7 @@ it('AC-8: documents every component, variant and part of PARTS and SHARED_VARIAN
     expect(defined(ThemeComponents::class.'::SHARED_VARIANTS'))->toBeTrue('ThemeComponents::SHARED_VARIANTS belum ada');
 
     foreach (ThemeComponents::PARTS as $component => $parts) {
-        expect($rows)->toHaveKey($component, "{$component}: baris dokumen");
+        expect($rows)->toHaveKey($component);
 
         foreach ($parts as $part) {
             expect($rows[$component])->toContain("`{$part}`");

@@ -247,12 +247,27 @@ class ValidateThemePackage
      */
     private function assertContrast(array $pairs, array $rules, string $scope): void
     {
+        $used = [];
+
+        foreach ($pairs as $pair) {
+            $used[$pair['fg']] = $used[$pair['bg']] = true;
+        }
+
         $definitions = [];
+        $redefined = [];
 
         foreach ($rules as $rule) {
-            if ($rule['top'] && $rule['selectors'] === [$scope]) {
-                foreach ($rule['declarations'] as [$property, $value]) {
+            $isScope = $rule['top'] && $rule['selectors'] === [$scope];
+
+            foreach ($rule['declarations'] as [$property, $value]) {
+                if (! isset($used[$property])) {
+                    continue;
+                }
+
+                if ($isScope) {
                     $definitions[$property][] = $value;
+                } else {
+                    $redefined[$property] = true;
                 }
             }
         }
@@ -265,7 +280,7 @@ class ValidateThemePackage
                 $values = $definitions[$name] ?? [];
                 $replace = ['fg' => $pair['fg'], 'bg' => $pair['bg'], 'name' => $name];
 
-                if (count($values) !== 1) {
+                if (count($values) !== 1 || isset($redefined[$name])) {
                     $this->fail('contrast_missing', $replace);
                 }
 

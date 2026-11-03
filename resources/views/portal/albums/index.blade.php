@@ -1,4 +1,6 @@
 @php
+    $ptActive ??= \App\Actions\Konten\ThemeComponents::active();
+    $pt = \App\Actions\Konten\ThemeComponents::hooks(...);
     $chips = [['label' => __('pondok.portal.albums.all_categories'), 'url' => route('portal.albums.index'), 'active' => $category === null]];
     foreach ($categories as $item) {
         $chips[] = ['label' => $item->name, 'url' => route('portal.albums.index', ['kategori' => $item->slug]), 'active' => $category?->is($item) ?? false];
@@ -11,9 +13,9 @@
 @endphp
 
 <x-layouts::public :title="__('pondok.portal.albums.title')" :canonical="$canonical" :bare="true">
-    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
-        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" />
-        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ __('pondok.portal.albums.title') }}</h1>
+    <div{{ $pt('page') }} class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" :data-pt-part="$ptActive ? 'breadcrumb' : null" />
+        <h1{{ $pt(part: 'page-title') }} class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ __('pondok.portal.albums.title') }}</h1>
 
         @if ($categories->isNotEmpty())
             <x-portal.filter-chips :items="$chips" :label="__('pondok.portal.albums.filter_label')" class="mt-6" />

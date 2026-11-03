@@ -35,7 +35,7 @@ Daftar komponen dan bagian yang **selalu ada** pada konten lengkap bersumber dar
 | Komponen | Varian | Bagian | Elemen |
 |---|---|---|---|
 | `brand` | - | `name` | akar `a` ke beranda; `name` = `span` nama lembaga (bisa `sr-only` bila logo ada) |
-| `nav_menu` | - | `desktop`, `mobile`, `toggle`, `link`, *opsional:* `button` | dua akar: `nav` (desktop, mulai `xl`) dengan `data-pt-part="desktop"` dan `details` (menu lipat) dengan `mobile`; `toggle` = `summary` menu lipat; `link` = `a` item menu (juga tautan Masuk); `button` = `a` tombol header |
+| `nav_menu` | - | `desktop`, `mobile`, `toggle`, `link`, `panel`, `group`, `group-label`, *opsional:* `button` | dua akar: `nav` (desktop, mulai `xl`) dengan `data-pt-part="desktop"` dan `details` (menu lipat) dengan `mobile`; `toggle` = `summary` menu lipat; `link` = `a` item menu (juga tautan Masuk); `button` = `a` tombol header; `group` = `details` submenu atau pilihan Masuk (desktop) dan `div` pembungkus grup (seluler); `panel` = `div` daftar tautan dalam `group` (desktop) dan `nav` di dalam `details` seluler; `group-label` = `p` judul grup (hanya seluler; desktop pakai `[data-pt-part="group"] > summary`) |
 | `footer_widgets` | - | `widget`, `heading` | akar `div` grid widget (mode ringkas: `div` nama dan tautan); `widget` = `div` per widget; `heading` = `h2` judul widget (*opsional* per widget) |
 | `copyright` | - | - | `p` hak cipta |
 
@@ -43,7 +43,7 @@ Daftar komponen dan bagian yang **selalu ada** pada konten lengkap bersumber dar
 
 | Komponen | Varian | Bagian | Elemen |
 |---|---|---|---|
-| `hero` | `center`, `split` | `eyebrow`, `title`, `text`, `actions`, `media` | akar `section`; `eyebrow` = `p`; `title` = `h1`/`h2`; `text` = `p`; `actions` = `div` tombol; `media` = `div` pembungkus gambar atau slider album |
+| `hero` | `center`, `split` | `eyebrow`, `title`, `text`, `actions`, `media`, `badge`, `content`, `hgroup`, `slider`, `slide` | akar `section`; `eyebrow` = `p`; `title` = `h1`/`h2`; `text` = `p`; `actions` = `div` tombol; `media` = `div` pembungkus gambar atau slider album; `badge` = `span` pil pendaftaran (hanya bila gelombang PSB buka); `content` = `div` pembungkus teks (anak langsung akar `center`, atau anak grid `split`); `hgroup` = `hgroup` eyebrow, judul, teks; `slider` = `div[role=region]` slider album; `slide` = `img` tiap foto (gambar tunggal juga `slide`, tanpa `slider`) |
 | `text_image` | - | `media`, `heading`, `body`, `link` | akar `section`; `media` = `img`; `heading` = `h2`; `body` = `div` isi; `link` = `a` tombol |
 | `feature_grid` | `cards`, `numbered` | `heading`, `item`, `item-title`, `item-text`, `number` | akar `section`; `item` = `div` (cards) atau `li` (numbered); `number` = `span` nomor (hanya `numbered`) |
 | `quote` | `plain`, `framed` | `text`, `source`, *opsional:* `translation` | akar `section`; `text` = `p` kutipan; `source` = `figcaption`; `translation` = `p` terjemahan |

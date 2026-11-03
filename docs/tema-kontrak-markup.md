@@ -49,8 +49,19 @@ Daftar komponen dan bagian yang **selalu ada** pada konten lengkap bersumber dar
 | `quote` | `plain`, `framed` | `text`, `source`, *opsional:* `translation` | akar `section`; `text` = `p` kutipan; `source` = `figcaption`; `translation` = `p` terjemahan |
 | `cta` | `band`, `card` | `heading`, `actions`, *opsional:* `eyebrow`, `text` | akar `section`; `heading` = `h2`; `actions` = `div` tombol |
 | `video` | - | `heading`, `player` | akar `section`; `heading` = `h2`; `player` = `div` pemutar (`iframe` ditambah tautan YouTube) |
-| `feed_list` | `cards`, `list`, `magazine` | `head`, `heading`, `see-all`, `list`, `entry`, `lead` | akar `section`; `head` = `div` judul + tautan; `heading` = `h2`; `see-all` = `a` "Lihat semua"; `list` = `ul` (varian `list` dan `magazine`); `entry` = `li` (varian `list` dan `magazine`); `lead` = `div` item pertama (hanya `magazine`). Kartu di varian `cards` adalah komponen inti bersama dan tidak punya kait: tata lewat `[data-pt="feed_list"]` dan tag |
+| `feed_list` | `cards`, `list`, `magazine` | `head`, `heading`, `see-all`, `list`, `entry`, `lead` | akar `section`; `head` = `div` judul + tautan; `heading` = `h2`; `see-all` = `a` "Lihat semua"; `list` = `ul` (varian `list` dan `magazine`); `entry` = `li` (varian `list` dan `magazine`); `lead` = `div` item pertama (hanya `magazine`). Kartu di varian `cards` membawa kait komponen `card` (lihat bagian Komponen bersama) |
 | `blocks` | `default`, `centered` | `hero`, `text-image`, `features`, `feed`, `quote`, `video`, `cta` | tanpa pembungkus: tiap seksi `section` membawa `data-pt="blocks"`, `data-pt-variant`, dan `data-pt-part` = jenis seksi. Isi seksi tidak punya kait lanjutan |
+
+## Komponen bersama (kartu dan tombol)
+
+Kartu dan tombol dipakai di banyak tempat, tetapi kaitnya hanya tercetak pada halaman portal publik saat tema ber-CSS aktif.
+
+| Komponen | Varian | Bagian | Elemen |
+|---|---|---|---|
+| `card` | `post`, `album`, `video` | `media`, `meta`, `badge`, `date`, `title`, `summary` | akar `article` (`post`, `album`; `video` di daftar video) atau `div` (`video` di beranda); `media` = `img` atau `div` placeholder (`div` pemutar untuk `video`); `meta` = `div` badge dan tanggal (`post`) atau `p` kategori dan jumlah foto (`album`); `badge` = kategori, hanya bila ada; `date` = `time` (hanya `post`, bila terbit); `title` = `h2`/`h3`; `summary` = `p` ringkasan (`post`) atau deskripsi (`video`, hanya bila ada) |
+| `button` | `primary`, `secondary`, `inverse`, `inverse-secondary` | - | akar `a`/`button` tombol di hero, ajakan (CTA), preset `blocks`, dan "Daftar sekarang" di info PSB; varian = varian tombol yang dicetak |
+
+Tombol header `nav_menu` (`data-pt-part="button"`) berbeda dari komponen `button` ini.
 
 `blocks` adalah preset lama dan wajib menjadi satu-satunya node beranda; komponen lain boleh berada di posisi mana pun dan berulang.
 

@@ -17,7 +17,7 @@
             @if ($block['buttons'] !== [])
                 <div class="flex flex-wrap justify-center gap-3 pt-2">
                     @foreach ($block['buttons'] as $button)
-                        <x-ui.button :href="$button['url']" :variant="$loop->first ? 'primary' : 'secondary'">{{ $button['label'] }}</x-ui.button>
+                        <x-ui.button :href="$button['url']" :variant="$loop->first ? 'primary' : 'secondary'" :data-pt="$ptActive ? 'button' : null" :data-pt-variant="$ptActive ? ($loop->first ? 'primary' : 'secondary') : null">{{ $button['label'] }}</x-ui.button>
                     @endforeach
                 </div>
             @endif

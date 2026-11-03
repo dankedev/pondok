@@ -6,6 +6,8 @@
     use App\Actions\Konten\GetPsbInfo;
     use App\Models\Payment;
 
+    $ptActive ??= \App\Actions\Konten\ThemeComponents::active();
+
     $title = $page?->title ?? __('pondok.portal.nav.psb_info');
     $description = $bodyHtml ? app(\App\Actions\Konten\SummarizeHtml::class)->handle($bodyHtml->toHtml(), 160) : null;
     $breadcrumbs = [
@@ -46,7 +48,7 @@
 
                 @if ($openWave)
                     <div class="mt-6">
-                        <x-ui.button :href="route('psb.register')">{{ __('pondok.portal.psb_info.register') }}</x-ui.button>
+                        <x-ui.button :href="route('psb.register')" :data-pt="$ptActive ? 'button' : null" :data-pt-variant="$ptActive ? 'primary' : null">{{ __('pondok.portal.psb_info.register') }}</x-ui.button>
                     </div>
                 @endif
             </section>

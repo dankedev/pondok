@@ -103,6 +103,8 @@ Aturan:
 
 Tema portal boleh memilih palet (`hijau`), permukaan (`krem`), dan font (`jakarta|lora|nunito`) hanya lewat nama enum di `theme.json`; inti memetakannya ke token di atas (`ThemePalette`) dan menuliskannya ke `<style data-portal-theme>`. Pengaturan admin di Situs > Tampilan menang atas tema. Setiap palet wajib lolos guard kontras `BuildColorScale`, dan `krem` hanya mengganti `gray-50`/`gray-100` dengan tint sangat terang agar `gray-500` ke atas tetap terbaca; `white` dan warna status tidak berubah.
 
+Tema resmi ber-CSS (F105) menentukan warna, huruf, dan bentuknya sendiri dan mengalahkan pengaturan admin; tema tanpa CSS tetap mengikuti token di atas. Kualitas visual dan keterbacaan tema ber-CSS adalah tanggung jawab penerbit: kontras hanya dijamin untuk pasangan warna yang dideklarasikan di `assets.contrast` (diperiksa saat menandatangani dan memasang), gerak hanya di dalam `prefers-reduced-motion: no-preference`, dan panel admin tidak pernah memuat CSS tema. Panduan penerbit ada di `docs/rilis.md`.
+
 ### Kontras & latar
 
 - Teks utama `gray-900` di atas putih, teks isi `gray-600`/`gray-700`. `gray-500` hanya untuk ikon; `gray-300`/`gray-400` tidak untuk teks yang harus dibaca (kecuali paginasi nonaktif).

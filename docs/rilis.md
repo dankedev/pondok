@@ -52,7 +52,7 @@ unzip -l storage/app/releases/pondok-1.2.0.zip | less
 
 Tema portal adalah satu berkas `resources/themes/<slug>/theme.json` (data saja, tanpa kode, tanpa aset; `slug` harus sama dengan nama folder). Empat tema resmi: `default`, `centered`, `majalah`, `mushaf`. Tema dipilih di Situs > Tampilan; tema yang gagal validasi tampil nonaktif dan portal memakai chrome inti.
 
-Isi manifes v1: `schema_version` (1), `version`, `slug`, `name`, `description`, `min_core`, serta `header`, `footer`, dan `home.layout` (daftar node `{component, variant?, style?, children?}` berurutan bebas: komponen boleh di posisi mana pun, berulang, dan bersarang di `container`/`columns`) yang disusun dari 15 komponen tetap dengan nilai gaya dari enum (padding, kolom, tone, dsb.). Node `blocks` menampilkan semua blok beranda dari admin sesuai urutannya (dipakai `default` dan `centered`); node isi (hero, feed_list, dst.) menampilkan blok aktif pertama bertipe itu. Editor visual dan susunan per situs di database adalah pekerjaan lanjutan dengan skema yang sama. Batas: kedalaman pohon 6, 150 node, 64 KB. Nilai di luar enum, kunci tak dikenal, dan `assets` ditolak.
+Isi manifes v1: `schema_version` (1), `version`, `slug`, `name`, `description`, `min_core`, serta `header`, `footer`, dan `home.layout` (daftar node `{component, variant?, style?, children?}` berurutan bebas: komponen boleh di posisi mana pun, berulang, dan bersarang di `container`/`columns`) yang disusun dari 15 komponen tetap dengan nilai gaya dari enum (padding, kolom, tone, dsb.). Node `blocks` menampilkan semua blok beranda dari admin sesuai urutannya (dipakai `default` dan `centered`); node isi (hero, feed_list, dst.) menampilkan blok aktif pertama bertipe itu. Editor visual dan susunan per situs di database adalah pekerjaan lanjutan dengan skema yang sama. Batas: kedalaman pohon 6, 150 node, 64 KB. Nilai di luar enum dan kunci tak dikenal ditolak; kunci `assets` hanya dikenal inti 1.2.0 ke atas (lihat "Menyusun, menguji, dan menandatangani paket tema ber-CSS").
 
 ### Warna dan huruf tema (tambahan v1, inti 1.1.0)
 
@@ -137,6 +137,61 @@ Perintah memvalidasi tema, memastikan kunci rahasia berpasangan dengan kunci pub
 4. Uji dari instalasi percobaan: Situs > Katalog tema > Muat ulang katalog, pasang tema, dan periksa portal. Untuk uji sebelum rilis, ganti URL katalog dengan env `PONDOK_THEME_CATALOG_URL`.
 
 `pondok:doctor` menampilkan baris **Katalog tema** (peringatan, bukan kegagalan, bila katalog tidak terjangkau).
+
+### Menyusun, menguji, dan menandatangani paket tema ber-CSS
+
+Sejak inti 1.2.0 tema resmi boleh membawa `theme.css` dan font `woff2` sendiri (kunci puncak opsional `assets` di `theme.json`). Tanpa JavaScript dari tema. Tema tanpa `assets` tidak berubah sama sekali. Kait markup yang boleh dipakai CSS ada di [docs/tema-kontrak-markup.md](tema-kontrak-markup.md).
+
+**Struktur folder** (nama folder = `slug`):
+
+```
+zz-contoh/
+  theme.json
+  theme.css
+  fonts/zz-serif.woff2
+```
+
+Hanya berkas yang terdaftar di `theme.json` yang boleh ada; berkas lain, subfolder lain, dan symlink menolak paket.
+
+**Manifest `assets`:**
+
+```json
+"assets": {
+  "css": {"path": "theme.css", "sha256": "<64 hex>", "size": 4210},
+  "fonts": [
+    {"path": "fonts/zz-serif.woff2", "family": "Zz Serif", "weight": 400, "style": "normal", "license": "OFL-1.1", "sha256": "<64 hex>", "size": 48211}
+  ],
+  "contrast": [{"fg": "--pt-fg", "bg": "--pt-bg", "size": "normal"}]
+}
+```
+
+- Path hanya `theme.css` dan `fonts/<nama>.woff2` (huruf kecil, angka, tanda hubung). Maksimum 6 font; lisensi `OFL-1.1`, `Apache-2.0`, atau `CC0-1.0`.
+- Batas: manifest 64 KB, CSS 128 KB, tiap font 250 KB, total paket (manifest + CSS + font) 1,5 MB.
+- Tema ber-`assets` menulis `min_core` `1.2.0` (inti lama menolaknya sebagai kunci tak dikenal, jadi tidak pernah memasang paket yang tidak dipahaminya). Skema tetap `schema_version` 1.
+
+**Aturan CSS** (diperiksa saat `pondok:theme-sign` dan saat pasang, dengan validator yang sama): setiap selektor diawali `body[data-pt-theme="<slug>"]`, tanpa kelas atau id (pakai kait `data-pt*` dan `aria-*`); tanpa nesting, `!important`, backslash, `@import`, dan `url()` eksternal; `url()` hanya untuk `@font-face` ke font manifest dan `data:image/svg+xml` pada `background*`, `mask*`, atau `border-image-source`; at-rule hanya `@media`, `@supports`, `@keyframes pt-*`, dan `@font-face`. Tiap `@font-face` wajib `font-display: swap`, `font-family` sama dengan `family` manifest, dan `src: url("fonts/...woff2") format("woff2")`; setiap font manifest harus dirujuk. Custom property hanya didefinisikan di blok scope tema.
+
+**Tailwind.** Utilitas Tailwind berada di `@layer`, jadi CSS tema (tanpa layer) selalu menang tanpa perang spesifisitas. Tema menimpa properti secara eksplisit, termasuk varian responsif utilitas (mis. `md:grid-cols-*` perlu `@media` sendiri).
+
+**Kontras.** Daftar `assets.contrast` berisi pasangan custom property (`--pt-fg` di atas `--pt-bg`) yang wajib berkontras >= 4,5:1 (`normal`) atau >= 3:1 (`large`). Kedua properti harus bernilai literal `#rrggbb` dan didefinisikan tepat sekali di blok scope tema tingkat atas. Wajib minimal satu pasangan. **Jaminan kontras hanya untuk pasangan yang dideklarasikan**; pasangan lain menjadi tanggung jawab penerbit.
+
+**Reduced-motion.** `animation*`, `transition*`, dan `scroll-behavior` hanya boleh aktif di dalam `@media (prefers-reduced-motion: no-preference)`; di luarnya hanya `none`, `0s`, atau `auto`.
+
+**Menandatangani paket.** Beri path folder paket:
+
+```
+php artisan pondok:theme-sign zz-contoh \
+  --secret-file=/media/kunci/k1.key --key-id=k1 \
+  --url=https://pondok.org/themes/zz-contoh/1.0.0/theme.json
+```
+
+Perintah menjalankan pemeriksaan paket yang sama dengan pemasangan. Pelanggaran (hash atau ukuran tak cocok, berkas hilang atau berlebih, aturan CSS, font, kontras, gerak) = exit 1 tanpa entri. Bila hash tak cocok, nilai yang benar dicetak. Setelah menyunting CSS atau font, jalankan lagi dengan `--write-hashes`: sha256 dan size di `theme.json` ditulis ulang (ringkasan perubahan dicetak ke stderr) **hanya bila seluruh paket lolos**, baru kemudian ditandatangani. Keluaran entri sama dengan tema biasa dan deterministik; `--url` tetap menunjuk `theme.json`.
+
+**Menguji sebelum terbit.** Tempatkan folder paket dan `themes.json` di hosting uji HTTPS (host sama untuk katalog dan berkas), arahkan instalasi percobaan ke sana dengan env `PONDOK_THEME_CATALOG_URL`, lalu pasang dari Situs > Katalog tema dan periksa portal. Job mengunduh `theme.json` lalu tiap berkas dari folder yang sama dengan `url` entri (`<folder url>/theme.css`, `<folder url>/fonts/<nama>.woff2`), dengan tenggat total 150 detik.
+
+**Urutan terbit.** Unggah dulu **semua berkas paket** (`theme.json`, `theme.css`, font) ke `https://pondok.org/themes/<slug>/<versi>/`, pastikan terunduh sama persis (`shasum -a 256`), baru terakhir perbarui `themes.json`. Berkas tidak boleh diubah setelah ditandatangani; perubahan sekecil apa pun = versi baru. Versi baru harus lebih tinggi dari yang terpasang.
+
+**Kebijakan `min_core`.** Tema ber-`assets` memakai `min_core` `1.2.0` atau lebih tinggi. Inti yang lebih rendah menampilkan tema itu sebagai tidak cocok versi dan tidak memasangnya.
 
 ### Memasang, mengembalikan, dan menghapus tema (super-admin)
 

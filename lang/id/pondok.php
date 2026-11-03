@@ -1968,7 +1968,7 @@ return [
         ],
         'theme' => [
             'section' => 'Tampilan portal',
-            'section_description' => 'Tema portal, warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan. Warna utama dan huruf yang dibiarkan bawaan mengikuti tema aktif; isi di sini untuk menimpanya.',
+            'section_description' => 'Tema portal, warna, huruf, dan sudut kartu situs publik. Panel admin tidak ikut berubah. Perubahan tampil di portal paling lambat beberapa menit setelah disimpan. Warna utama dan huruf yang dibiarkan bawaan mengikuti tema aktif; isi di sini untuk menimpanya. Tema ber-CSS menentukan warna dan hurufnya sendiri, jadi pilihan warna dan huruf di sini tidak berlaku untuknya.',
             'template' => 'Tema portal',
             'template_helper' => 'Mengubah tata letak beranda dan, bila tema membawanya, header dan footer. Isi beranda tidak berubah. Portal bisa masih menampilkan tema sebelumnya hingga 5 menit setelah disimpan (cache publik).',
             'template_unavailable' => 'Tidak bisa dipilih: :reason',
@@ -3280,7 +3280,7 @@ return [
         'file_missing' => 'Berkas :path tidak ada di paket tema.',
         'file_link' => 'Berkas :path tidak boleh berupa tautan simbolik.',
         'file_extra' => 'Paket tema memuat berkas yang tidak terdaftar di theme.json: :path.',
-        'size_mismatch' => 'Ukuran berkas :path tidak sama dengan yang tercatat di theme.json.',
+        'size_mismatch' => 'Ukuran berkas :path tidak sama dengan yang tercatat di theme.json; ukuran sebenarnya :actual byte.',
         'hash_mismatch' => 'Sidik jari sha256 berkas :path tidak sama dengan yang tercatat di theme.json; nilai yang benar: :actual.',
         'font_magic' => 'Berkas :path bukan font woff2 yang sah.',
         'font_face_display' => '@font-face untuk :family harus memakai font-display: swap.',
@@ -3319,6 +3319,7 @@ return [
     'theme_install' => [
         'errors' => [
             'download_failed' => 'Tema tidak dapat diunduh dari katalog resmi. Coba lagi nanti.',
+            'deadline' => 'Pengunduhan tema melewati batas waktu 150 detik, jadi tema tidak dipasang. Coba lagi nanti.',
             'catalog_unavailable' => 'Katalog tema resmi tidak dapat dimuat. Coba lagi nanti.',
             'invalid_slug' => 'Slug tema harus 2-40 karakter huruf kecil, angka, atau tanda hubung.',
             'official_slug' => 'Tema resmi bawaan tidak dapat dipasang, dikembalikan, atau dihapus.',
@@ -3350,6 +3351,8 @@ return [
         'secret_invalid' => 'Kunci rahasia tidak valid. Isi berkas harus base64 dari kunci Ed25519 64 byte.',
         'key_unknown' => 'Kunci publik untuk --key-id ini belum ada di config pondok.theme_public_keys.',
         'key_mismatch' => 'Kunci rahasia tidak cocok dengan kunci publik :key di config.',
+        'write_failed' => 'theme.json tidak dapat ditulis ulang.',
+        'hash_updated' => 'theme.json diperbarui: :path sha256 :sha256, ukuran :size byte.',
         'url_required' => 'Opsi --url wajib diisi dengan URL publik berkas tema.',
     ],
 

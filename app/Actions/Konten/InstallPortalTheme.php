@@ -36,17 +36,7 @@ class InstallPortalTheme
      */
     public function handle(array $entry, string $bytes, ?User $actor = null, array $files = []): void
     {
-        $slug = $this->assertThemeSlug($entry['slug'] ?? null);
-
-        if (($entry['size'] ?? null) !== strlen($bytes)) {
-            $this->reject('size_mismatch');
-        }
-
-        if (! is_string($entry['sha256'] ?? null) || ! hash_equals(hash('sha256', $bytes), strtolower($entry['sha256']))) {
-            $this->reject('sha256_mismatch');
-        }
-
-        $this->assertSignature($entry, $bytes);
+        $slug = $this->verify($entry, $bytes);
 
         $version = $this->withWriteLock($slug, function () use ($slug, $entry, $bytes, $files): string {
             $manifest = $this->validate->handle($this->stage($slug, $bytes));
@@ -75,6 +65,46 @@ class InstallPortalTheme
                 ->withProperties(['slug' => $slug, 'version' => $version])
                 ->log('portal_theme_installed');
         }
+    }
+
+    /**
+     * Berkas aset yang dideklarasikan `theme.json` hasil unduhan (path => size terdeklarasi), setelah ukuran, sha256, tanda tangan, dan skema
+     * lolos; dipakai job untuk tahu berkas apa yang harus diunduh. Tidak menulis apa pun ke tema terpasang.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return array<string, int>
+     *
+     * @throws InvalidArgumentException
+     */
+    public function declaredAssets(array $entry, string $bytes): array
+    {
+        $slug = $this->verify($entry, $bytes);
+
+        $manifest = $this->withWriteLock($slug, fn (): array => $this->validate->handle($this->stage($slug, $bytes)));
+
+        return ValidateThemePackage::sizes($manifest);
+    }
+
+    /**
+     * Slug, ukuran, sha256, dan tanda tangan `theme.json` terhadap entri katalog.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function verify(array $entry, string $bytes): string
+    {
+        $slug = $this->assertThemeSlug($entry['slug'] ?? null);
+
+        if (($entry['size'] ?? null) !== strlen($bytes)) {
+            $this->reject('size_mismatch');
+        }
+
+        if (! is_string($entry['sha256'] ?? null) || ! hash_equals(hash('sha256', $bytes), strtolower($entry['sha256']))) {
+            $this->reject('sha256_mismatch');
+        }
+
+        $this->assertSignature($entry, $bytes);
+
+        return $slug;
     }
 
     /**

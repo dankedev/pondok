@@ -33,6 +33,17 @@ class ValidateThemePackage
     }
 
     /**
+     * Ukuran terdeklarasi tiap berkas aset (path => size).
+     *
+     * @param  array<string, mixed>  $manifest
+     * @return array<string, int>
+     */
+    public static function sizes(array $manifest): array
+    {
+        return array_map(fn (array $file): int => $file['size'], self::declared($manifest));
+    }
+
+    /**
      * @param  array<string, mixed>  $manifest
      *
      * @throws InvalidArgumentException
@@ -43,8 +54,19 @@ class ValidateThemePackage
 
         $this->assertNoStrayFiles($dir, $declared);
 
+        $problems = [];
+
         foreach ($declared as $path => $file) {
-            $this->assertFile($dir, $path, $file);
+            try {
+                $this->assertFile($dir, $path, $file);
+            } catch (InvalidArgumentException $exception) {
+                $problems[] = $exception->getMessage();
+            }
+        }
+
+        // Semua berkas yang bermasalah dilaporkan sekaligus supaya penerbit melihat semua nilai yang benar dalam satu kali jalan.
+        if ($problems !== []) {
+            throw new InvalidArgumentException(implode("\n", $problems));
         }
 
         $fonts = $manifest['assets']['fonts'] ?? [];
@@ -162,7 +184,7 @@ class ValidateThemePackage
         }
 
         if (filesize($full) !== $size) {
-            $this->fail('size_mismatch', ['path' => $path]);
+            $this->fail('size_mismatch', ['path' => $path, 'actual' => filesize($full)]);
         }
     }
 

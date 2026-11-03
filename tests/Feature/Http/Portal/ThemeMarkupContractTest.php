@@ -91,12 +91,54 @@ function mcAllComponents(): array
     return array_values(array_unique(array_merge(...array_values(ThemeComponents::SLOTS))));
 }
 
+/**
+ * `ThemeComponents::SHARED_VARIANTS` (komponen bersama tanpa slot); kosong selama konstanta belum ada.
+ *
+ * @return array<string, list<string>>
+ */
+function mcSharedVariants(): array
+{
+    return defined(ThemeComponents::class.'::SHARED_VARIANTS') ? constant(ThemeComponents::class.'::SHARED_VARIANTS') : [];
+}
+
+/**
+ * Daftar bagian F105 yang SELALU tercetak pada beranda lengkap (beku: nama tidak boleh berubah atau hilang).
+ *
+ * @return array<string, list<string>>
+ */
+function mcF105Parts(): array
+{
+    return [
+        'container' => ['inner'],
+        'columns' => ['grid', 'cell'],
+        'divider' => ['line', 'diamond'],
+        'brand' => ['name'],
+        'nav_menu' => ['desktop', 'mobile', 'toggle', 'link'],
+        'footer_widgets' => ['widget', 'heading'],
+        'hero' => ['eyebrow', 'title', 'text', 'actions', 'media'],
+        'text_image' => ['media', 'heading', 'body', 'link'],
+        'feature_grid' => ['heading', 'item', 'item-title', 'item-text', 'number'],
+        'quote' => ['text', 'source'],
+        'cta' => ['heading', 'actions'],
+        'video' => ['heading', 'player'],
+        'feed_list' => ['head', 'heading', 'see-all', 'list', 'entry', 'lead'],
+        'blocks' => ['hero', 'text-image', 'features', 'feed', 'quote', 'video', 'cta'],
+    ];
+}
+
 it('F105 AC-13: declares the parts per component in ThemeComponents::PARTS for real components only', function () {
     expect(ThemeComponents::PARTS)->toBeArray()->not->toBeEmpty();
 
     foreach (ThemeComponents::PARTS as $component => $parts) {
-        expect(mcAllComponents())->toContain($component)
-            ->and($parts)->toBeArray()->not->toBeEmpty("{$component}: bagian tidak boleh kosong");
+        // F106: komponen bersama tanpa slot (`SHARED_VARIANTS`) juga sah; `button` boleh tanpa bagian.
+        $shared = array_keys(mcSharedVariants());
+
+        expect([...mcAllComponents(), ...$shared])->toContain($component)
+            ->and($parts)->toBeArray();
+
+        if (! in_array($component, $shared, true) || $parts !== []) {
+            expect($parts)->not->toBeEmpty("{$component}: bagian tidak boleh kosong");
+        }
 
         foreach ($parts as $part) {
             expect($part)->toMatch('/^[a-z][a-z0-9-]*$/', "{$component}: nama bagian");
@@ -129,7 +171,7 @@ it('F105 AC-13: puts data-pt, data-pt-variant and every data-pt-part on a css th
             expect($html)->toMatch('/<[^>]*data-pt="'.$component.'"[^>]*data-pt-variant="'.$variant.'"|<[^>]*data-pt-variant="'.$variant.'"[^>]*data-pt="'.$component.'"/', "{$component} varian {$variant}");
         }
 
-        foreach (ThemeComponents::PARTS as $component => $parts) {
+        foreach (mcF105Parts() as $component => $parts) {
             foreach ($parts as $part) {
                 if (str_contains($html, "data-pt-part=\"{$part}\"")) {
                     $partsSeen[$component][$part] = true;
@@ -142,8 +184,9 @@ it('F105 AC-13: puts data-pt, data-pt-variant and every data-pt-part on a css th
         expect(array_keys($variantsSeen[$component] ?? []))->toEqualCanonicalizing($variants, "{$component}: semua varian teruji");
     }
 
-    foreach (ThemeComponents::PARTS as $component => $parts) {
-        expect(array_keys($partsSeen[$component] ?? []))->toEqualCanonicalizing($parts, "{$component}: semua bagian muncul");
+    // Komponen slot saja; bagian kartu/halaman/tombol/hero-baru dituntut di ThemeMarkupHooksTest. Yang diwajibkan di beranda lengkap: bagian F105.
+    foreach (mcF105Parts() as $component => $parts) {
+        expect(array_keys($partsSeen[$component] ?? []))->toEqualCanonicalizing($parts, "{$component}: semua bagian F105 muncul");
     }
 });
 
@@ -180,6 +223,31 @@ it('F105 AC-13: documents every component, variant and part in docs/tema-kontrak
     foreach (ThemeComponents::PARTS as $component => $parts) {
         foreach ($parts as $part) {
             expect($doc)->toContain($part);
+        }
+    }
+});
+
+it('F106 AC-7: keeps every frozen F105 component-part pair in PARTS and prints it on a full-content css theme', function () {
+    $seen = [];
+
+    foreach ([[0, false], [1, false], [2, false], [0, true], [1, true]] as [$round, $blocksOnly]) {
+        $html = mcRender($round, true, $blocksOnly);
+
+        foreach (mcF105Parts() as $component => $parts) {
+            foreach ($parts as $part) {
+                if (str_contains($html, "data-pt-part=\"{$part}\"")) {
+                    $seen[$component][$part] = true;
+                }
+            }
+        }
+    }
+
+    foreach (mcF105Parts() as $component => $parts) {
+        expect(ThemeComponents::PARTS)->toHaveKey($component);
+
+        foreach ($parts as $part) {
+            expect(in_array($part, ThemeComponents::PARTS[$component], true))->toBeTrue("F105 {$component}/{$part} hilang dari PARTS")
+                ->and($seen[$component][$part] ?? false)->toBeTrue("F105 {$component}/{$part} tidak tercetak");
         }
     }
 });

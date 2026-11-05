@@ -17,7 +17,7 @@
             <x-heroicon-o-newspaper class="size-10 text-gray-400" aria-hidden="true" />
         </div>
     @endif
-    <div class="flex flex-1 flex-col gap-2 p-5">
+    <div{{ $pt(part: 'body') }} class="flex flex-1 flex-col gap-2 p-5">
         <div{{ $pt(part: 'meta') }} class="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             @if ($post->category)
                 <x-ui.badge color="gray" :data-pt-part="$ptActive ? 'badge' : null">{{ $post->category->name }}</x-ui.badge>

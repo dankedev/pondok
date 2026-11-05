@@ -1,6 +1,6 @@
 {{-- Ajakan kartu: kartu putih di atas latar node; teks dan tombol tetap normal (primer) agar kontras tak bergantung latar. --}}
 <section{{ $pt('cta', 'card') }} class="{{ $sectionClass }} flex flex-col" aria-labelledby="{{ $headingId }}">
-    <div class="mx-auto w-full max-w-3xl space-y-4 rounded-2xl border border-gray-100 bg-white p-8 text-center text-gray-900 shadow-card">
+    <div{{ $pt(part: 'inner') }} class="mx-auto w-full max-w-3xl space-y-4 rounded-2xl border border-gray-100 bg-white p-8 text-center text-gray-900 shadow-card">
         @if ($data['eyebrow'])
             <p{{ $pt(part: 'eyebrow') }} class="text-base font-semibold text-primary-700">{{ $data['eyebrow'] }}</p>
         @endif

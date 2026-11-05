@@ -13,7 +13,7 @@
             <x-heroicon-o-photo class="size-10 text-gray-400" aria-hidden="true" />
         </div>
     @endif
-    <div class="flex flex-1 flex-col gap-1 p-5">
+    <div{{ $pt(part: 'body') }} class="flex flex-1 flex-col gap-1 p-5">
         <{{ $heading }}{{ $pt(part: 'title') }} class="text-lg font-semibold text-gray-900">
             <a href="{{ route('portal.albums.show', $album->slug) }}" class="rounded-lg underline-offset-4 hover:text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">{{ $album->title }}</a>
         </{{ $heading }}>

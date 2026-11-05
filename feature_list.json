@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F108",
+  "next_id": "F109",
   "features": [
     {
       "id": "F001",
@@ -2138,6 +2138,27 @@
       "handoff": null,
       "evidence": "repo pondok-themes-work commit 349a32f, 13cf24e, 9c69d3e, 5a6793b (mihrab 1.0.8, tegas 1.0.3, cahaya 1.0.3, kobalt 1.0.2), laporan LAPORAN-F107.md; 4 paket valid (ValidateThemePackage + ValidateThemeCss); audit 112 kombinasi 0 kontras gagal dan 0 overflow; bingkai hero Mihrab 44%->5%, Tegas 63%->14% (diukur ulang orkestrator di 360 dan 1440px)",
       "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F107-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #146). Tanpa penandatanganan atau penerbitan."
+    },
+    {
+      "id": "F108",
+      "key": "konten-tema-kait-elemen",
+      "issue": 148,
+      "name": "Kait tema untuk elemen yang masih tanpa kait",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F106"],
+      "description": "Menutup butir 12 CELAH-SISTEM.md: kait data-pt-part untuk isi kartu (body), pembungkus text_image dan cta (inner), kutipan (figure, mark), footer ringkas (name, logo), dan halaman dalam (meta, back, lead, cover, card) agar tema ber-CSS tidak memakai selektor posisional. Aditif, hanya tercetak saat tema ber-CSS aktif. Detail di issue #148.",
+      "acceptance": [
+        "Semua kait baru tercetak pada konten lengkap bila tema ber-CSS aktif dan tidak tercetak bila tidak; HTML tema tanpa CSS identik (golden hijau)",
+        "Kait F105 dan F106 tidak berubah",
+        "ThemeComponents::PARTS dan docs/tema-kontrak-markup.md sinkron, dijaga test",
+        "ModuleComplianceTest lulus dan empat tema resmi tetap valid dan tampil sama"
+      ],
+      "owner": "orkestrator",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh. Rencana: docs/plans/F108-plan.md. PR ke dev (Refs #148)."
     }
   ]
 }

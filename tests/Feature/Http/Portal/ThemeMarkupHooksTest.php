@@ -1322,7 +1322,7 @@ it('F108 AC-10: lists the always-printed new parts in PARTS and the conditional 
     foreach ($optional as $component => $parts) {
         foreach ($parts as $part) {
             expect(ThemeComponents::PARTS[$component])->not->toContain($part)
-                ->and(hkDocPartCell($component)['optional'])->toContain($part, "{$component}: `{$part}` harus bertanda *opsional:* di dokumen")
+                ->and(hkDocPartCell($component)['optional'])->toContain($part)
                 ->and(hkDocPartCell($component)['always'])->not->toContain($part);
         }
     }

@@ -677,12 +677,18 @@ function hkScenario(string $name): Closure
         'videos-index' => '/video',
         'pages-show' => '/profil',
         'psb-info' => '/info-psb',
+        'kontak-show' => '/kontak',
     ];
     $homes = [
         'beranda-center-posts-cards' => ['posts', null, ['center', 'cards', 'band']],
         'beranda-split-albums-magazine' => ['albums', $w->album, ['split', 'magazine', 'card']],
         'beranda-center-videos-cards' => ['videos', null, ['center', 'cards', 'band']],
     ];
+
+    if ($name === 'kontak-show') {
+        portalContactData();
+        StaticPage::query()->where('slug', 'kontak')->update(['status' => 'terbit', 'body' => '<p>Hubungi kami.</p>']);
+    }
 
     if (isset($pages[$name])) {
         return function (bool $css) use ($pages, $name): string {
@@ -717,7 +723,7 @@ function hkScenario(string $name): Closure
  */
 function hkSnapshotNames(): array
 {
-    return ['beranda-center-posts-cards', 'beranda-split-albums-magazine', 'beranda-center-videos-cards', 'beranda-blocks', 'posts-index', 'posts-show', 'albums-index', 'albums-show', 'videos-index', 'pages-show', 'psb-info'];
+    return ['beranda-center-posts-cards', 'beranda-split-albums-magazine', 'beranda-center-videos-cards', 'beranda-blocks', 'posts-index', 'posts-show', 'albums-index', 'albums-show', 'videos-index', 'pages-show', 'psb-info', 'kontak-show'];
 }
 
 function hkSnapshotDataset(array $names): Closure
@@ -747,7 +753,7 @@ it('AC-6: matches the css-less HTML once data-pt attributes, the theme link and 
 
     expect($themed)->toContain('data-pt=')
         ->and(preg_replace('/\s+/', ' ', hkStripThemeTraces($themed)))->toBe(preg_replace('/\s+/', ' ', $plain), "{$name}: ber-CSS setelah dibersihkan sama dengan tanpa CSS");
-})->with(hkSnapshotDataset(['beranda-center-posts-cards', 'beranda-split-albums-magazine', 'beranda-blocks', 'posts-index', 'albums-show', 'psb-info']));
+})->with(hkSnapshotDataset(['beranda-center-posts-cards', 'beranda-split-albums-magazine', 'beranda-blocks', 'posts-index', 'albums-show', 'psb-info', 'kontak-show']));
 
 // ---------------------------------------------------------------------------------------------------------------------
 // AC-7 kompatibilitas F105

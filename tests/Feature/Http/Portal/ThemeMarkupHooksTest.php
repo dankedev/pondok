@@ -1337,3 +1337,114 @@ it('F108 AC-10: documents the text_image inner+content nesting and that page met
         ->and($doc)->toMatch('/`meta`[^\n]*bervariasi|bervariasi[^\n]*`meta`/')
         ->and($rows['page'])->toContain('`contact`');
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// F108 VERIFY adversarial
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Kait baru F108 yang tidak boleh muncul di halaman di luar jangkauannya (PSB, portal wali). `name` dikecualikan karena footer ringkas PSB memang memilikinya.
+ *
+ * @return list<string>
+ */
+function hkF108OnlyParts(): array
+{
+    return ['inner', 'content', 'mark', 'logo', 'lead', 'cover', 'back', 'contact', 'body', 'meta', 'figure'];
+}
+
+it('F108 VERIFY: prints no F108 part on the PSB registration and status pages while a css theme is active', function (string $path) {
+    hkWorld();
+    hkActivate(true, hkManifest());
+    $html = $this->get($path)->assertOk()->getContent();
+
+    foreach (hkF108OnlyParts() as $part) {
+        expect(hkPartCount($html, $part))->toBe(0, "{$path}: {$part} bocor ke halaman PSB");
+    }
+})->with(['/psb', '/psb/status']);
+
+it('F108 VERIFY: prints no F108 part on the guardian portal while a css theme is active', function () {
+    $f = waliBoot();
+    hkActivate(true, hkManifest());
+
+    foreach (['/wali', '/wali/santri/'.$f->s1->id] as $path) {
+        $html = $this->actingAs($f->wali)->get($path)->assertOk()->getContent();
+
+        foreach (hkF108OnlyParts() as $part) {
+            expect(hkPartCount($html, $part))->toBe(0, "{$path}: {$part} bocor ke portal wali");
+        }
+    }
+});
+
+it('F108 VERIFY: renders a plain news detail, a bare album, and both footer modes without css exactly as the css theme stripped of traces', function (string $kind) {
+    $w = hkWorld();
+    Setting::set('school.logo_mobile_path', 'school/logo-uji.png');
+    ftrSet([ftr('text', ['body' => '<p>Isi</p>', 'show_logo' => true])]);
+    $bare = kontenAlbum(['title' => 'Album polos']);
+    kontenPhoto($bare, ['sort_order' => 1]);
+    $path = match ($kind) {
+        'berita-polos' => route('portal.posts.show', $w->plainPost->slug, false),
+        'album-polos' => route('portal.albums.show', $bare->slug, false),
+        'footer-ringkas' => '/info-psb',
+        'footer-penuh' => '/berita',
+    };
+
+    hkActivate(false, hkManifest());
+    $plain = hkNormalize($this->get($path)->assertOk()->getContent());
+    hkActivate(true, hkManifest());
+    $themed = hkNormalize($this->get($path)->assertOk()->getContent());
+
+    expect($plain)->not->toContain('data-pt')->not->toMatch('/<[a-z][a-z0-9-]*\s+>/i')
+        ->and($themed)->toContain('data-pt-part=')
+        ->and(preg_replace('/\s+/', ' ', hkStripThemeTraces($themed)))->toBe(preg_replace('/\s+/', ' ', $plain));
+})->with(['berita-polos', 'album-polos', 'footer-ringkas', 'footer-penuh']);
+
+it('F108 VERIFY: never prints two data-pt-part attributes on one tag nor repeats a part on one element across the themed pages', function (string $key) {
+    $w = hkWorld();
+    portalContactData();
+    StaticPage::query()->where('slug', 'kontak')->update(['status' => 'terbit', 'body' => '<p>Hubungi kami.</p>']);
+    ftrSet([ftr('text', ['body' => '<p>Isi</p>', 'show_logo' => true])]);
+    hkBlocks('posts');
+    hkActivate(true, [...hkManifest(), 'home' => ['layout' => [['component' => 'blocks', 'variant' => 'default']]]]);
+    $path = $key === 'posts-show' ? route('portal.posts.show', $w->post->slug, false) : ($key === 'home' ? '/' : hkPageUrl($key, $w));
+    $html = $this->get($path)->assertOk()->getContent();
+
+    expect(preg_match('/<[a-z][a-z0-9-]*\b[^>]*\bdata-pt-part="[^>]*\bdata-pt-part="/i', $html))->toBe(0, "{$key}: atribut data-pt-part ganda pada satu tag")
+        ->and(preg_match('/<[a-z][a-z0-9-]*\b[^>]*\bdata-pt="[^>]*\bdata-pt="/i', $html))->toBe(0, "{$key}: atribut data-pt ganda pada satu tag");
+})->with(['home', 'posts-index', 'posts-show', 'albums-show', 'pages-show', 'psb-info']);
+
+it('F108 VERIFY: keeps the F105 and F106 counts on the home feed and cards unchanged per root', function () {
+    hkWorld();
+    hkBlocks('posts');
+    hkActivate(true, hkManifest());
+    $html = hkNormalize(blkHome());
+    $cards = hkCards($html, 'post');
+
+    expect($cards)->not->toBeEmpty();
+
+    foreach ($cards as $card) {
+        foreach (['media', 'title', 'meta', 'date'] as $part) {
+            expect(hkParts($card, $part))->toHaveCount(1, "kartu post: {$part} harus tepat satu");
+        }
+    }
+
+    // F106 menjadikan `section` bagian halaman, bukan komponen lain: kait baru tidak menumpang `data-pt-part="section"` di beranda.
+    expect(hkPartCount($html, 'section'))->toBe(0);
+});
+
+it('F108 VERIFY: gives the contact part to the kontak slug only, not to other static pages or the PSB info page', function (string $path) {
+    hkWorld();
+    portalContactData();
+    StaticPage::query()->where('slug', 'kontak')->update(['status' => 'terbit', 'body' => '<p>Hubungi kami.</p>']);
+    hkActivate(true, hkManifest());
+
+    expect(hkPartCount($this->get($path)->assertOk()->getContent(), 'contact'))->toBe(0);
+})->with(['/profil', '/info-psb', '/berita', '/galeri']);
+
+it('F108 VERIFY: prints no contact part on the contact page without a css theme', function () {
+    hkWorld();
+    portalContactData();
+    StaticPage::query()->where('slug', 'kontak')->update(['status' => 'terbit', 'body' => '<p>Hubungi kami.</p>']);
+    hkActivate(false, hkManifest());
+
+    expect($this->get('/kontak')->assertOk()->getContent())->not->toContain('data-pt');
+});

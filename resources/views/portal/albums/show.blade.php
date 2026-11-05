@@ -15,10 +15,10 @@
         <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" :data-pt-part="$ptActive ? 'breadcrumb' : null" />
         <h1{{ $pt(part: 'page-title') }} class="break-words text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $album->title }}</h1>
         @if ($album->category)
-            <p class="mt-2 text-sm text-gray-600">{{ $album->category->name }}</p>
+            <p{{ $pt(part: 'meta') }} class="mt-2 text-sm text-gray-600">{{ $album->category->name }}</p>
         @endif
         @if (filled($album->description))
-            <p class="mt-4 max-w-3xl whitespace-pre-line text-base leading-relaxed text-gray-700 lg:text-lg">{{ $album->description }}</p>
+            <p{{ $pt(part: 'lead') }} class="mt-4 max-w-3xl whitespace-pre-line text-base leading-relaxed text-gray-700 lg:text-lg">{{ $album->description }}</p>
         @endif
 
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -38,7 +38,7 @@
 
         {{ $photos->onEachSide(1)->links('portal.partials.pagination') }}
 
-        <a href="{{ route('portal.albums.index') }}" class="mt-10 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+        <a{{ $pt(part: 'back') }} href="{{ route('portal.albums.index') }}" class="mt-10 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
             <x-heroicon-o-arrow-left class="size-4" aria-hidden="true" />
             {{ __('pondok.portal.albums.back') }}
         </a>

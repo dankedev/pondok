@@ -20,7 +20,7 @@
         @endif
 
         @if ($isContact)
-            <x-ui.card :title="__('pondok.portal.contact.title')" class="mt-8">
+            <x-ui.card :title="__('pondok.portal.contact.title')" class="mt-8" :data-pt-part="$ptActive ? 'contact' : null">
                 @include('portal.partials.contact-list', ['school' => $school, 'phoneFormatter' => $phoneFormatter])
             </x-ui.card>
         @endif

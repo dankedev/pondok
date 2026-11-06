@@ -4,7 +4,7 @@
 --}}
 @if ($compact)
     <div{{ $pt('footer_widgets') }} class="space-y-3">
-        <p class="text-base font-bold">{{ $school['name'] }}</p>
+        <p{{ $pt(part: 'name') }} class="text-base font-bold">{{ $school['name'] }}</p>
         @if ($footer['compactLinks'] !== [])
             <ul class="flex flex-wrap gap-x-6" aria-label="{{ __('pondok.portal.footer.links') }}">
                 @foreach ($footer['compactLinks'] as $link)

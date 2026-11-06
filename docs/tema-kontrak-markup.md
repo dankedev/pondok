@@ -36,7 +36,7 @@ Daftar komponen dan bagian yang **selalu ada** pada konten lengkap bersumber dar
 |---|---|---|---|
 | `brand` | - | `name` | akar `a` ke beranda; `name` = `span` nama lembaga (bisa `sr-only` bila logo ada) |
 | `nav_menu` | - | `desktop`, `mobile`, `toggle`, `link`, `panel`, `group`, `group-label`, *opsional:* `button` | dua akar: `nav` (desktop, mulai `xl`) dengan `data-pt-part="desktop"` dan `details` (menu lipat) dengan `mobile`; `toggle` = `summary` menu lipat; `link` = `a` item menu (juga tautan Masuk); `button` = `a` tombol header; `group` = `details` submenu atau pilihan Masuk (desktop) dan `div` pembungkus grup (seluler); `panel` = `div` daftar tautan dalam `group` (desktop) dan `nav` di dalam `details` seluler; `group-label` = `p` judul grup (hanya seluler; desktop pakai `[data-pt-part="group"] > summary`) |
-| `footer_widgets` | - | `widget`, `heading` | akar `div` grid widget (mode ringkas: `div` nama dan tautan); `widget` = `div` per widget; `heading` = `h2` judul widget (*opsional* per widget) |
+| `footer_widgets` | - | `widget`, `heading`, *opsional:* `name`, `logo` | akar `div` grid widget (mode ringkas: `div` nama dan tautan); `widget` = `div` per widget; `heading` = `h2` judul widget (*opsional* per widget); `name` = `p` nama lembaga (mode ringkas, dan widget Teks bila diminta); `logo` = `span` pembungkus logo (hanya widget Teks mode penuh, bila logo ada) |
 | `copyright` | - | - | `p` hak cipta |
 
 ## Beranda
@@ -44,10 +44,10 @@ Daftar komponen dan bagian yang **selalu ada** pada konten lengkap bersumber dar
 | Komponen | Varian | Bagian | Elemen |
 |---|---|---|---|
 | `hero` | `center`, `split` | `eyebrow`, `title`, `text`, `actions`, `media`, `badge`, `content`, `hgroup`, `slider`, `slide` | akar `section`; `eyebrow` = `p`; `title` = `h1`/`h2`; `text` = `p`; `actions` = `div` tombol; `media` = `div` pembungkus gambar atau slider album; `badge` = `span` pil pendaftaran (hanya bila gelombang PSB buka); `content` = `div` pembungkus teks (anak langsung akar `center`, atau anak grid `split`); `hgroup` = `hgroup` eyebrow, judul, teks; `slider` = `div[role=region]` slider album; `slide` = `img` tiap foto (gambar tunggal juga `slide`, tanpa `slider`) |
-| `text_image` | - | `media`, `heading`, `body`, `link` | akar `section`; `media` = `img`; `heading` = `h2`; `body` = `div` isi; `link` = `a` tombol |
+| `text_image` | - | `media`, `heading`, `body`, `link`, `inner`, `content` | akar `section`; `inner` = `div` pembungkus grid (anak langsung akar); `media` = `img`; `content` = `div` pembungkus teks (anak langsung `inner`, bersaudara dengan `media`; tanpa gambar tetap ada); `heading` = `h2`; `body` = `div` isi; `link` = `a` tombol |
 | `feature_grid` | `cards`, `numbered` | `heading`, `item`, `item-title`, `item-text`, `number` | akar `section`; `item` = `div` (cards) atau `li` (numbered); `number` = `span` nomor (hanya `numbered`) |
-| `quote` | `plain`, `framed` | `text`, `source`, *opsional:* `translation` | akar `section`; `text` = `p` kutipan; `source` = `figcaption`; `translation` = `p` terjemahan |
-| `cta` | `band`, `card` | `heading`, `actions`, *opsional:* `eyebrow`, `text` | akar `section`; `heading` = `h2`; `actions` = `div` tombol |
+| `quote` | `plain`, `framed` | `text`, `source`, `figure`, *opsional:* `translation`, `mark` | akar `section`; `figure` = `figure` pembungkus kutipan; `text` = `p` kutipan; `source` = `figcaption`; `translation` = `p` terjemahan; `mark` = `div` garis hias (hanya `framed`) |
+| `cta` | `band`, `card` | `heading`, `actions`, `inner`, *opsional:* `eyebrow`, `text` | akar `section`; `inner` = `div` pembungkus isi (anak langsung akar, satu tingkat); `heading` = `h2`; `actions` = `div` tombol |
 | `video` | - | `heading`, `player` | akar `section`; `heading` = `h2`; `player` = `div` pemutar (`iframe` ditambah tautan YouTube) |
 | `feed_list` | `cards`, `list`, `magazine` | `head`, `heading`, `see-all`, `list`, `entry`, `lead` | akar `section`; `head` = `div` judul + tautan; `heading` = `h2`; `see-all` = `a` "Lihat semua"; `list` = `ul` (varian `list` dan `magazine`); `entry` = `li` (varian `list` dan `magazine`); `lead` = `div` item pertama (hanya `magazine`). Kartu di varian `cards` membawa kait komponen `card` (lihat bagian Komponen bersama) |
 | `blocks` | `default`, `centered` | `hero`, `text-image`, `features`, `feed`, `quote`, `video`, `cta` | tanpa pembungkus: tiap seksi `section` membawa `data-pt="blocks"`, `data-pt-variant`, dan `data-pt-part` = jenis seksi. Isi seksi tidak punya kait lanjutan |
@@ -58,7 +58,7 @@ Kartu dan tombol dipakai di banyak tempat, tetapi kaitnya hanya tercetak pada ha
 
 | Komponen | Varian | Bagian | Elemen |
 |---|---|---|---|
-| `card` | `post`, `album`, `video` | `media`, `meta`, `badge`, `date`, `title`, `summary` | akar `article` (`post`, `album`; `video` di daftar video) atau `div` (`video` di beranda); `media` = `img` atau `div` placeholder (`div` pemutar untuk `video`); `meta` = `div` badge dan tanggal (`post`) atau `p` kategori dan jumlah foto (`album`); `badge` = kategori, hanya bila ada; `date` = `time` (hanya `post`, bila terbit); `title` = `h2`/`h3`; `summary` = `p` ringkasan (`post`) atau deskripsi (`video`, hanya bila ada) |
+| `card` | `post`, `album`, `video` | `media`, `meta`, `badge`, `date`, `title`, `summary`, `body` | akar `article` (`post`, `album`; `video` di daftar video) atau `div` (`video` di beranda); `media` = `img` atau `div` placeholder (`div` pemutar untuk `video`); `meta` = `div` badge dan tanggal (`post`) atau `p` kategori dan jumlah foto (`album`); `badge` = kategori, hanya bila ada; `date` = `time` (hanya `post`, bila terbit); `title` = `h2`/`h3`; `summary` = `p` ringkasan (`post`) atau deskripsi (`video`, hanya bila ada); `body` = `div` pembungkus judul, meta, dan ringkasan di bawah media (hanya `post` dan `album`; kartu `video` tanpa pembungkus) |
 | `button` | `primary`, `secondary`, `inverse`, `inverse-secondary` | - | akar `a`/`button` tombol di hero, ajakan (CTA), preset `blocks`, dan "Daftar sekarang" di info PSB; varian = varian tombol yang dicetak |
 
 Tombol header `nav_menu` (`data-pt-part="button"`) berbeda dari komponen `button` ini.
@@ -69,7 +69,7 @@ Tujuh halaman dalam (`/berita`, detail berita, `/galeri`, detail album, `/video`
 
 | Komponen | Varian | Bagian | Elemen |
 |---|---|---|---|
-| `page` | - | `page-title`, *opsional:* `breadcrumb`, `filters`, `pagination`, `prose`, `figure`, `section` | akar = pembungkus isi (`div`, atau `article` di detail berita); `page-title` = `h1`; `breadcrumb` = `nav` remah (tidak ada di `/video`); `filters` = `nav` chip filter (jumlah bisa lebih dari satu); `pagination` = `nav` paginasi (hanya bila lebih dari satu halaman); `prose` = `div` isi artikel atau halaman; `figure` = `figure` foto di detail album; `section` = `section` gelombang, syarat, biaya, dan kontak di `/info-psb` |
+| `page` | - | `page-title`, `meta`, `back`, *opsional:* `breadcrumb`, `filters`, `pagination`, `prose`, `figure`, `section`, `lead`, `cover`, `contact` | akar = pembungkus isi (`div`, atau `article` di detail berita); `page-title` = `h1`; `breadcrumb` = `nav` remah (tidak ada di `/video`); `filters` = `nav` chip filter (jumlah bisa lebih dari satu); `pagination` = `nav` paginasi (hanya bila lebih dari satu halaman); `prose` = `div` isi artikel atau halaman; `figure` = `figure` foto di detail album; `section` = `section` gelombang, syarat, biaya, dan kontak di `/info-psb`; `meta` = `div` baris tanggal dan kategori (detail berita) atau `p` kategori album (detail album, bila ada kategori), jadi elemennya bervariasi; `back` = `a` tautan kembali (detail berita dan album); `lead` = `p` kutipan berita atau deskripsi album; `cover` = `img` sampul berita; `contact` = `section` kartu kontak (halaman kontak) |
 
 `blocks` adalah preset lama dan wajib menjadi satu-satunya node beranda; komponen lain boleh berada di posisi mana pun dan berulang.
 

@@ -1,6 +1,6 @@
 {{-- Ajakan pita: teks rata tengah langsung di atas latar node (tombol terbalik bila latar gelap/merek; varian `light/navy/gold` data blok tidak dipakai). --}}
 <section{{ $pt('cta', 'band') }} class="{{ $sectionClass }} flex flex-col" aria-labelledby="{{ $headingId }}">
-    <div class="mx-auto max-w-3xl space-y-4 text-center">
+    <div{{ $pt(part: 'inner') }} class="mx-auto max-w-3xl space-y-4 text-center">
         @if ($data['eyebrow'])
             <p{{ $pt(part: 'eyebrow') }} class="text-base font-semibold">{{ $data['eyebrow'] }}</p>
         @endif

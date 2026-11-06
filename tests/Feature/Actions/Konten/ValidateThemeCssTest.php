@@ -186,6 +186,7 @@ it('F105 AC-4: accepts safe variations the validator must not over-block', funct
         '@keyframes persen' => '@keyframes pt-geser{0%{transform:translateX(0)}100%{transform:translateX(10px)}}',
         'bayangan keras dan radius elips' => '{S} [data-pt="cta"]{border-radius:60% 40% 55% 45% / 50% 60% 40% 50%;box-shadow:4px 4px 0 #000}',
         'warna rgba dan gradient' => '{S} [data-pt="hero"]{background:linear-gradient(180deg,rgba(0,0,0,.4),transparent)}',
+        'kait F108 contact dan mark' => '{S} [data-pt="page"] [data-pt-part="contact"],{S} [data-pt="quote"] [data-pt-part="mark"]{border-color:var(--pt-accent)}',
         'komentar berisi kata terlarang' => '/* expression( javascript: url(x) @import */',
     ];
 

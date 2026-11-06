@@ -1,6 +1,6 @@
 {{-- Kutipan polos: rata tengah tanpa hiasan; warna teks mewarisi latar (`tone`). --}}
 <section{{ $pt('quote', 'plain') }} class="{{ $sectionClass }} flex flex-col">
-    <figure class="mx-auto max-w-3xl space-y-4 text-center">
+    <figure{{ $pt(part: 'figure') }} class="mx-auto max-w-3xl space-y-4 text-center">
         <blockquote>
             @if ($data['rtl'])
                 <p{{ $pt(part: 'text') }} lang="ar" dir="rtl" class="whitespace-pre-line font-arabic text-2xl leading-loose sm:text-3xl">{{ $data['text'] }}</p>

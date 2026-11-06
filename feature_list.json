@@ -2146,7 +2146,7 @@
       "name": "Kait tema untuk elemen yang masih tanpa kait",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F106"],
       "description": "Menutup butir 12 CELAH-SISTEM.md: kait data-pt-part untuk isi kartu (body), pembungkus text_image dan cta (inner), kutipan (figure, mark), footer ringkas (name, logo), dan halaman dalam (meta, back, lead, cover, card) agar tema ber-CSS tidak memakai selektor posisional. Aditif, hanya tercetak saat tema ber-CSS aktif. Detail di issue #148.",
       "acceptance": [
@@ -2155,10 +2155,10 @@
         "ThemeComponents::PARTS dan docs/tema-kontrak-markup.md sinkron, dijaga test",
         "ModuleComplianceTest lulus dan empat tema resmi tetap valid dan tampil sama"
       ],
-      "owner": "orkestrator",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
-      "notes": "Jalur penuh. Rencana: docs/plans/F108-plan.md. PR ke dev (Refs #148)."
+      "evidence": "commit 5e3d123..da7762f (RED 3, GREEN 4, VERIFY 2); 18 test kait F108 + 19 test verifikasi lulus; suite penuh PHP 8.4 6324 test, 6319 lulus, 5 dilewati, 1 risky; kait terverifikasi di DOM tema Kobalt (8 halaman)",
+      "notes": "Jalur penuh. Rencana: docs/plans/F108-plan.md. PR ke dev (Refs #148). Cek visual peramban tidak dilakukan (server Vite pengguna memblokir app.css); CSS empat tema belum memakai kait baru (pekerjaan terpisah di repo tema)."
     }
   ]
 }

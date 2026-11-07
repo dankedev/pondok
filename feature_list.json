@@ -2188,17 +2188,17 @@
       "name": "Rencana editor tema v0",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F109"],
       "description": "Menulis rencana editor tema v0 (modul Konten, super-admin): apa yang diedit, penyimpanan dan pemasangan, pratinjau, antarmuka Filament, validasi dan keamanan, paket kerja. Hanya rencana, belum kode. Detail di issue #152.",
       "acceptance": [
         "docs/plans/F110-plan.md (maks ±150 baris, 8 sampai 15 AC yang bisa dites) lolos satu putaran review plan-reviewer",
         "Memuat keputusan dan alasan untuk enam pertanyaan di issue, daftar yang sengaja ditunda, dan paket kerja"
       ],
-      "owner": "orkestrator",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
-      "notes": "Jalur penuh, tahap rencana saja. PR ke dev (Refs #152). Tidak ke produksi."
+      "evidence": "commit 26fc844, 2dc4351 (docs/plans/F110-plan.md, 14 AC, 5 PR bertahap); review plan-reviewer satu putaran (1 major cakupan, diputuskan pemilik tetap penuh, 6 minor ditanggapi)",
+      "notes": "Jalur penuh, tahap rencana saja. PR ke dev (Refs #152). Implementasi (PR1 sampai PR5 di rencana) belum dimulai dan belum punya ID fitur; dibuat atas persetujuan pemilik. Tidak ke produksi."
     }
   ]
 }

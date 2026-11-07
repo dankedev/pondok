@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F109",
+  "next_id": "F110",
   "features": [
     {
       "id": "F001",
@@ -2159,6 +2159,27 @@
       "handoff": null,
       "evidence": "commit 5e3d123..da7762f (RED 3, GREEN 4, VERIFY 2); 18 test kait F108 + 19 test verifikasi lulus; suite penuh PHP 8.4 6324 test, 6319 lulus, 5 dilewati, 1 risky; kait terverifikasi di DOM tema Kobalt (8 halaman)",
       "notes": "Jalur penuh. Rencana: docs/plans/F108-plan.md. PR ke dev (Refs #148). Cek visual peramban tidak dilakukan (server Vite pengguna memblokir app.css); CSS empat tema belum memakai kait baru (pekerjaan terpisah di repo tema)."
+    },
+    {
+      "id": "F109",
+      "key": "konten-tema-resmi-kait-elemen",
+      "issue": 150,
+      "name": "Empat tema resmi memakai kait F108",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F108"],
+      "description": "Memigrasikan tema ber-CSS Mihrab, Cahaya, Tegas, dan Kobalt (repo privat pondok-themes-work) dari selektor posisional sisa ke kait F108, lalu mengukur ulang kontras dan overflow di 360, 768, 1024, dan 1440px. Belum ditandatangani atau diterbitkan. Detail di issue #150.",
+      "acceptance": [
+        "Tidak ada selektor posisional tersisa tanpa alasan tertulis di komentar CSS",
+        "0 kegagalan kontras dan 0 overflow di 360, 768, 1024, dan 1440px untuk keempat tema",
+        "Keempat tema lolos ValidateThemePackage dan ValidateThemeCss",
+        "Karakter visual tiap tema tidak berubah dibanding tangkapan layar acuan"
+      ],
+      "owner": "orkestrator",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F109-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #150). Tanpa penandatanganan atau penerbitan."
     }
   ]
 }

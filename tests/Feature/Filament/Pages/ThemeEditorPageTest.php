@@ -88,7 +88,9 @@ it('AC-1: only manage:themes with the Konten module on can open the page; others
 });
 
 it('AC-1: a role without manage:themes cannot mount the component directly either', function () {
-    tePage('admin-sekolah', null)->assertForbidden();
+    test()->actingAs(kontenUser('admin-sekolah'));
+
+    Livewire::test(ThemeEditor::class)->assertForbidden();
 });
 
 it('loads a local theme into the form: ColorPicker tokens and layout for a css theme, no upload component', function () {
@@ -105,12 +107,12 @@ it('loads a local theme into the form: ColorPicker tokens and layout for a css t
 });
 
 it('only offers the palette, surface and font selects for a theme without css', function () {
-    themeInstalledWrite('lokal-polos', [...themeBaseManifest(), 'palette' => 'amanah', 'surface' => 'warm', 'font' => 'jakarta']);
+    themeInstalledWrite('lokal-polos', [...themeBaseManifest(), 'palette' => 'hijau', 'surface' => 'krem', 'font' => 'lora']);
 
     tePage('super-admin', 'lokal-polos')
-        ->assertSet('data.palette', 'amanah')
-        ->assertSet('data.surface', 'warm')
-        ->assertSet('data.font', 'jakarta')
+        ->assertSet('data.palette', 'hijau')
+        ->assertSet('data.surface', 'krem')
+        ->assertSet('data.font', 'lora')
         ->assertSet('data.tokens', []);
 });
 

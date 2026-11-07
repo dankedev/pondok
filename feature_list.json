@@ -2207,7 +2207,7 @@
       "name": "Implementasi editor tema v0",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F110"],
       "description": "Mengimplementasikan editor tema v0 sesuai docs/plans/F110-plan.md: duplikat tema menjadi lokal-<nama>, ubah token warna, enum, dan susunan beranda, pratinjau lewat URL bertanda tangan, label Buatan sendiri, dan ekspor. Lima PR bertahap ke dev (PR1 refactor trait dan penolakan lokal-*, PR2 Action, PR3 pratinjau, PR4 halaman, PR5 ekspor). Detail di issue #154.",
       "acceptance": [
@@ -2215,10 +2215,10 @@
         "Setiap PR lulus test terdampak, Pint, dan suite penuh, dan berdiri sendiri",
         "Tema resmi dan alur pasang, kembalikan, hapus tidak berubah perilakunya; ModuleComplianceTest lulus"
       ],
-      "owner": "orkestrator",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
-      "notes": "Jalur penuh, PR bertahap ke dev (Refs #154). PR1 (trait tulis bersama dan penolakan lokal-*) sedang berjalan. Tidak ke produksi."
+      "evidence": "PR #155, #156, #157, #158 merged ke dev; PR5 (pondok:theme-export) menyusul. Suite penuh PHP 8.4: 6488 test, 6483 lulus, 5 skipped. Cek visual Editor tema di 360px, 1024px, dan desktop dilakukan manual (AC-14).",
+      "notes": "Jalur penuh, PR bertahap ke dev (Refs #154). Selesai di dev; issue #154 tertutup oleh PR rilis dev ke main (atas permintaan user). Batasan v0: gaya responsif node puncak dipangkas ke base saat susunan beranda diubah; daftar rasio kontras panjang dan di bawah tombol Simpan. Tidak ke produksi."
     }
   ]
 }

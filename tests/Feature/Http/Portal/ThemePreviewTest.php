@@ -3,6 +3,7 @@
 use App\Actions\Konten\BuildThemePreviewUrl;
 use App\Actions\Konten\DuplicatePortalTheme;
 use App\Models\Setting;
+use App\Models\StaticPage;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
@@ -62,15 +63,17 @@ it('F111 AC-9: renders the local theme on /, /berita, /galeri and a static page 
     $hash = substr(hash('sha256', (string) themeInstalledFile($slug)), 0, 12);
     Setting::set('theme.template', 'default');
     $before = Setting::get('theme.template');
+    StaticPage::factory()->published()->create(['slug' => 'tentang-tema']);
 
-    foreach ([['portal.home', []], ['portal.posts.index', []], ['portal.albums.index', []], ['portal.pages.show', ['page' => 'kontak']]] as [$route, $params]) {
-        $response = tpRequest(app(BuildThemePreviewUrl::class)->handle($slug, $route, $params))->assertOk();
+    foreach ([['portal.home', []], ['portal.posts.index', []], ['portal.albums.index', []], ['portal.pages.show', ['page' => 'tentang-tema']]] as [$route, $params]) {
+        $response = tpRequest(app(BuildThemePreviewUrl::class)->handle($slug, $route, $params));
+        expect($response->status())->toBe(200, "status {$route}");
         $html = $response->getContent();
 
-        expect($html)->toContain('data-pt-theme="'.$slug.'"', $route)
-            ->and($html)->toContain("/tema/{$slug}/{$hash}/theme.css", $route)
-            ->and(tpCacheControl($response))->toContain('private', $route)->toContain('no-store', $route)->not->toContain('public', $route)
-            ->and((string) $response->headers->get('X-Robots-Tag'))->toContain('noindex', $route)
+        expect($html)->toContain('data-pt-theme="'.$slug.'"')
+            ->and($html)->toContain("/tema/{$slug}/{$hash}/theme.css")
+            ->and(tpCacheControl($response))->toContain('private')->toContain('no-store')->not->toContain('public')
+            ->and((string) $response->headers->get('X-Robots-Tag'))->toContain('noindex')
             ->and(Setting::get('theme.template'))->toBe($before, "theme.template tidak berubah di {$route}");
     }
 });

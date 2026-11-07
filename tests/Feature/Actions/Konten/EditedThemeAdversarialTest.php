@@ -76,6 +76,22 @@ it('VERIFY: nama berisi traversal, unicode, null byte, HTML dan tanda kutip meng
         ->and(array_map('basename', glob(themeInstalledSandbox().'/*', GLOB_ONLYDIR) ?: []))->each->toMatch('/^(_staging|[a-z0-9-]+)\z/');
 });
 
+it('VERIFY: nama dengan karakter kontrol (newline, tab) tidak tersimpan mentah ke theme.json', function () {
+    advPlace('zz-sumber');
+
+    try {
+        $slug = advDuplicate('zz-sumber', "Tema\nBaru\t<b>x</b>");
+    } catch (InvalidArgumentException) {
+        expect(true)->toBeTrue();
+
+        return;
+    }
+
+    $name = json_decode((string) themeInstalledFile($slug), true)['name'];
+
+    expect(preg_match('/[\x00-\x1f\x7f]/', $name))->toBe(0, 'nama tersimpan: '.json_encode($name));
+});
+
 it('VERIFY: duplikat tidak menyalin previous.json dan tidak menyalin scope tema lain yang slugnya superset', function () {
     // komentar menyebut scope slug lain yang diawali slug sumber; hanya scope sumber persis yang boleh diganti
     $pkg = advPlace('zz-sumber', "\n/* lihat body[data-pt-theme=\"zz-sumber-2\"] dan body[data-pt-theme=\"zz-sumber\"] */\n");

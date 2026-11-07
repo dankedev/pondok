@@ -24,6 +24,7 @@ use App\Http\Middleware\AddPrivacyHeaders;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use App\Http\Middleware\EnsurePortalWaliUser;
 use App\Http\Middleware\ForcePortalRootUrl;
+use App\Http\Middleware\PreviewPortalTheme;
 use App\Http\Middleware\SetPortalCacheHeaders;
 use App\Http\Middleware\SetPortalSecurityHeaders;
 use App\Livewire\PortalWali\ForgotPassword as PortalWaliForgotPassword;
@@ -102,7 +103,7 @@ Route::middleware([AddPrivacyHeaders::class, EnsureModuleIsEnabled::class.':doku
 // Portal publik (F017): stateless (tanpa sesi, cookie, CSRF) agar aman di-cache publik.
 // Daftar `withoutMiddleware` mengikuti isi grup `web` Laravel 13. Route `/{page}` paling akhir.
 $statelessWeb = [EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class, ValidateCsrfToken::class];
-$portalHeaders = [ForcePortalRootUrl::class, SetPortalSecurityHeaders::class, SetPortalCacheHeaders::class];
+$portalHeaders = [ForcePortalRootUrl::class, SetPortalSecurityHeaders::class, PreviewPortalTheme::class, SetPortalCacheHeaders::class];
 
 // Info PSB publik (F038): stateless seperti portal, tetapi bernama `psb.info` (di luar grup `portal.`) dan
 // mengikuti saklar psb, bukan konten. Didaftarkan sebelum route `/{page}`.

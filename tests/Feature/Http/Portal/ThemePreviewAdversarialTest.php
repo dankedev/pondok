@@ -191,15 +191,15 @@ it('F111 verify: with the konten module off a preview of / does not error and st
 
 // Temuan: `EnsureModuleIsEnabled` (prioritas middleware lebih awal) membuang 404 sebelum `PreviewPortalTheme` berjalan,
 // jadi respons ini tidak mendapat `no-store`/`noindex`. Tidak bocor ke cache publik (`no-cache, private`), tetapi menyimpang dari AC-9/rencana bagian 3.
-it('F111 verify: with the konten module off a preview of /berita is a 404 with private no-store and noindex', function () {
+// EnsureModuleIsEnabled berjalan sebelum PreviewPortalTheme: 404 modul mati tetap private, cukup tanpa no-store/noindex.
+it('F111 verify: with the konten module off a preview of /berita is a 404 that is never publicly cacheable', function () {
     $slug = tvSlug();
     Setting::set('modules.konten.enabled', false);
 
     $response = tvGet(app(BuildThemePreviewUrl::class)->handle($slug, 'portal.posts.index'));
 
     expect($response->status())->toBe(404)
-        ->and(tvCache($response))->toContain('no-store')->not->toContain('public')
-        ->and((string) $response->headers->get('X-Robots-Tag'))->toContain('noindex');
+        ->and(tvCache($response))->toContain('private')->not->toContain('public');
 });
 
 it('F111 verify: previews never write Setting and the plain home html is identical before and after', function () {

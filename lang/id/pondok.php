@@ -3450,6 +3450,7 @@ return [
         ],
         'notifications' => [
             'saved' => 'Tema disimpan.',
+            'unchanged' => 'Tidak ada perubahan untuk disimpan.',
             'duplicated' => 'Tema :name dibuat. Sunting lalu lihat pratinjaunya.',
             'failed' => 'Tema tidak dapat diproses.',
         ],

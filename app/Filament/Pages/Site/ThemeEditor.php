@@ -256,6 +256,13 @@ class ThemeEditor extends Page
             return;
         }
 
+        // Tanpa perubahan: jangan menaikkan versi dan menimpa previous.json.
+        if ($this->data === $this->formState((array) $this->manifest())) {
+            Notification::make()->title(__('pondok.theme_editor.notifications.unchanged'))->send();
+
+            return;
+        }
+
         $input = collect($this->data)->only(['name', 'description', 'palette', 'surface', 'font'])->filter(fn (mixed $value): bool => $value !== null)->all();
 
         if (($this->data['tokens'] ?? []) !== []) {
@@ -350,7 +357,16 @@ class ThemeEditor extends Page
             return;
         }
 
-        $this->data = [
+        $this->data = $this->formState($manifest);
+    }
+
+    /**
+     * @param  array<string, mixed>  $manifest
+     * @return array<string, mixed>
+     */
+    private function formState(array $manifest): array
+    {
+        return [
             'name' => $manifest['name'],
             'description' => $manifest['description'] ?? '',
             'palette' => $manifest['palette'] ?? null,

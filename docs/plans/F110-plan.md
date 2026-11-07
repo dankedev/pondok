@@ -1,7 +1,7 @@
 # F110 konten-editor-tema — Editor tema v0 (rencana)
 
 Issue: #152
-Status rencana: REVISED (menunggu keputusan orkestrator)
+Status rencana: APPROVED (Review #1 direvisi satu kali; tanpa blocker)
 Jalur penuh: menulis berkas tema terpasang, menyentuh `InstallPortalTheme`, route portal yang di-cache publik, dan hak akses. PR implementasi ke `dev` dengan `Refs #152`; tidak ke `main`, katalog, atau pondok-web.
 Sumber: `pondok-themes-work/PANDUAN-MEMBUAT-TEMA.md`, `CATATAN-DISTRIBUSI-TEMA.md`, `CELAH-SISTEM.md`, `LAPORAN-F109.md` (repo privat).
 

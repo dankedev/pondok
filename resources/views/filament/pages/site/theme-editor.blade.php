@@ -20,7 +20,9 @@
     </x-filament::section>
 
     @if ($selectedSlug)
-        <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('pondok.theme_editor.active_note') }}</p>
+        @if ($this->isActiveTheme())
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('pondok.theme_editor.active_note') }}</p>
+        @endif
 
         {{ $this->content }}
 

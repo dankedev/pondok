@@ -360,6 +360,11 @@ class ThemeEditor extends Page
         $this->data = $this->formState($manifest);
     }
 
+    public function isActiveTheme(): bool
+    {
+        return app(GetPortalTheme::class)->template() === $this->selectedSlug;
+    }
+
     /**
      * @param  array<string, mixed>  $manifest
      * @return array<string, mixed>

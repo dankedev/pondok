@@ -35,7 +35,7 @@ class ListPortalThemes
             $path = $this->paths->handle($slug);
 
             if (! isset($entries[$slug]) && $path !== null) {
-                $entries[$slug] = $this->entry($slug, $path, 'installed');
+                $entries[$slug] = $this->entry($slug, $path, ResolveThemePath::isLocal($slug) ? 'local' : 'installed');
             }
         }
 

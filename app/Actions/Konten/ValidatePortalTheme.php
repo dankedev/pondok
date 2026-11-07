@@ -146,6 +146,11 @@ class ValidatePortalTheme
             }
         }
 
+        // nama tampil di daftar tema, karakter kontrol (newline, tab) merusak tampilan
+        if (preg_match('/[\x00-\x1f\x7f]/', $manifest['name']) === 1) {
+            $this->fail('invalid_text', ['key' => 'name', 'max' => 60]);
+        }
+
         foreach (['version', 'min_core'] as $key) {
             if (! is_string($manifest[$key]) || preg_match('/^\d+\.\d+\.\d+\z/', $manifest[$key]) !== 1) {
                 $this->fail('invalid_version', ['key' => $key]);

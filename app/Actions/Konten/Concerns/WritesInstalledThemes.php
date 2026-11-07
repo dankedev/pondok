@@ -253,6 +253,46 @@ trait WritesInstalledThemes
     }
 
     /**
+     * Isi berkas aset (path => byte) milik `theme.json` terpasang di `$directory`; ditolak bila ada yang hilang atau bukan berkas biasa.
+     *
+     * @param  array<string, mixed>  $manifest
+     * @return array<string, string>
+     */
+    protected function installedAssetFiles(string $directory, array $manifest): array
+    {
+        $files = [];
+        $source = "{$directory}/assets/".$this->assetHash("{$directory}/theme.json");
+
+        foreach (ValidateThemePackage::paths($manifest) as $path) {
+            $bytes = is_file("{$source}/{$path}") && ! is_link("{$source}/{$path}") ? @file_get_contents("{$source}/{$path}") : false;
+
+            if ($bytes === false) {
+                $this->reject('write_failed');
+            }
+
+            $files[$path] = $bytes;
+        }
+
+        return $files;
+    }
+
+    /**
+     * Selektor scope CSS tema (F105).
+     */
+    protected function scope(string $slug): string
+    {
+        return 'body[data-pt-theme="'.$slug.'"]';
+    }
+
+    /**
+     * @param  array<string, mixed>  $manifest
+     */
+    protected function encodeManifest(array $manifest): string
+    {
+        return json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+    }
+
+    /**
      * @param  string  $reason  kunci di `pondok.theme_install.errors`, atau kunci lang penuh (mengandung titik)
      * @param  array<string, mixed>  $replace
      */

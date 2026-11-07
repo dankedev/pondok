@@ -7,6 +7,7 @@ use App\Actions\Konten\InstallThemeFromCatalog;
 use App\Actions\Konten\ListPortalThemes;
 use App\Actions\Konten\MigrateThemeSchema;
 use App\Actions\Konten\RemovePortalTheme;
+use App\Actions\Konten\ResolveThemePath;
 use App\Actions\Konten\RollbackPortalTheme;
 use App\Actions\Konten\ValidatePortalTheme;
 use App\Enums\Module;
@@ -134,7 +135,7 @@ class ThemeCatalog extends Page implements HasTable
                     TextColumn::make('name')
                         ->grow()
                         ->weight('semibold')
-                        ->description(fn (array $record): ?string => $record['description'] !== '' ? $record['description'] : null),
+                        ->description(fn (array $record): ?string => collect([$record['is_local'] ? __('pondok.theme_editor.source_local') : null, $record['description'] !== '' ? $record['description'] : null])->filter()->implode('. ') ?: null),
                     TextColumn::make('version')
                         ->grow(false)
                         ->extraAttributes(['class' => 'tabular-nums']),
@@ -219,7 +220,7 @@ class ThemeCatalog extends Page implements HasTable
      */
     private function rows(): array
     {
-        $installed = collect(app(ListPortalThemes::class)->handle())->where('source', 'installed')->keyBy('slug');
+        $installed = collect(app(ListPortalThemes::class)->handle())->whereIn('source', ['installed', 'local'])->keyBy('slug');
         $rows = [];
 
         foreach ($this->catalogThemes as $entry) {
@@ -263,6 +264,7 @@ class ThemeCatalog extends Page implements HasTable
             'status' => $jobState ?? $base,
             'message' => $jobState === 'failed' ? $job['message'] : null,
             'is_installed' => $isInstalled,
+            'is_local' => ResolveThemePath::isLocal($slug),
             'has_previous' => $isInstalled && is_file(rtrim((string) config('pondok.installed_themes_path'), '/')."/{$slug}/previous.json"),
         ];
     }

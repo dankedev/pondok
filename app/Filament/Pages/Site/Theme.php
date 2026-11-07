@@ -64,7 +64,7 @@ class Theme extends SettingsFormPage
                             ->helperText(__('pondok.school_profile.theme.template_helper'))
                             ->options($themes->map->name->all())
                             ->descriptions($themes->map(fn (array $theme): string => $theme['valid']
-                                ? $theme['description']
+                                ? trim(($theme['source'] === 'local' ? __('pondok.theme_editor.source_local').'. ' : '').$theme['description'])
                                 : __('pondok.school_profile.theme.template_unavailable', ['reason' => $theme['error']]))->all())
                             ->disableOptionWhen(fn (string $value): bool => ! ($themes[$value]['valid'] ?? false))
                             ->columnSpanFull(),

@@ -126,6 +126,31 @@ it('AC-8: rejects a traversal, malformed or official slug before any path is bui
     }
 });
 
+it('F111 AC-8: rejects a lokal-* catalog entry, even when properly signed, before writing anything', function () {
+    $before = themeInstalledBaseTree();
+
+    foreach (['lokal-sendiri', 'lokal-a-b'] as $slug) {
+        $package = signedThemePackage($slug);
+
+        themeAssertRejected(fn () => ipInstall($package, $this->admin));
+        themeAssertRejected(fn () => app(InstallPortalTheme::class)->declaredAssets($package['entry'], $package['bytes']));
+
+        expect(themeInstalledBaseTree())->toBe($before, $slug)
+            ->and(is_dir(themeInstalledSandbox()."/{$slug}"))->toBeFalse()
+            ->and(is_dir(themeInstalledSandbox()."/_staging/{$slug}"))->toBeFalse();
+    }
+});
+
+it('F111 AC-8: a lokal-* catalog entry never changes an installed local theme', function () {
+    themeInstalledWrite('lokal-saya', [...themeBaseManifest(), 'version' => '1.0.0']);
+    $before = themeInstalledTree();
+
+    themeAssertRejected(fn () => ipInstall(signedThemePackage('lokal-saya', '2.0.0'), $this->admin));
+
+    expect(themeInstalledTree())->toBe($before)
+        ->and(is_dir(themeInstalledSandbox().'/_staging/lokal-saya'))->toBeFalse();
+});
+
 it('AC-8: rejects a manifest whose slug or version differs from the signed catalog entry', function () {
     $before = themeInstalledTree();
 

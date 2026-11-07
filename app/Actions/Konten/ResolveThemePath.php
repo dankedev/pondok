@@ -11,9 +11,19 @@ class ResolveThemePath
 {
     public const SLUG_PATTERN = '/^[a-z0-9-]{2,40}\z/';
 
+    /**
+     * Awalan slug tema buatan sendiri (F111): tak pernah berasal dari katalog resmi.
+     */
+    public const LOCAL_PREFIX = 'lokal-';
+
     public static function isSlug(mixed $slug): bool
     {
         return is_string($slug) && preg_match(self::SLUG_PATTERN, $slug) === 1;
+    }
+
+    public static function isLocal(string $slug): bool
+    {
+        return str_starts_with($slug, self::LOCAL_PREFIX);
     }
 
     /**

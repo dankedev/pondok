@@ -10,7 +10,7 @@ use Throwable;
  * kegagalan jaringan atau bentuk katalog yang salah menghasilkan `error` (pesan generik, tanpa isi respons).
  *
  * Katalog tidak dipercaya (yang dipercaya hanya tanda tangan atas berkas tema). Entri tak valid dilewati tanpa merusak yang lain,
- * entri berslug tema resmi diabaikan, dan hanya kunci entri yang dikenal yang diteruskan.
+ * entri berslug tema resmi atau berawalan `lokal-` diabaikan, dan hanya kunci entri yang dikenal yang diteruskan.
  */
 class FetchThemeCatalog
 {
@@ -48,7 +48,7 @@ class FetchThemeCatalog
 
     private function isValid(mixed $entry): bool
     {
-        if (! is_array($entry) || ! ResolveThemePath::isSlug($entry['slug'] ?? null) || ResolveThemePath::isOfficial($entry['slug'])) {
+        if (! is_array($entry) || ! ResolveThemePath::isSlug($entry['slug'] ?? null) || ResolveThemePath::isOfficial($entry['slug']) || ResolveThemePath::isLocal($entry['slug'])) {
             return false;
         }
 

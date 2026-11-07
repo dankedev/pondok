@@ -3323,6 +3323,7 @@ return [
             'catalog_unavailable' => 'Katalog tema resmi tidak dapat dimuat. Coba lagi nanti.',
             'invalid_slug' => 'Slug tema harus 2-40 karakter huruf kecil, angka, atau tanda hubung.',
             'official_slug' => 'Tema resmi bawaan tidak dapat dipasang, dikembalikan, atau dihapus.',
+            'local_slug' => 'Tema berawalan "lokal-" hanya untuk tema buatan sendiri dan tidak dapat dipasang dari katalog.',
             'size_mismatch' => 'Ukuran berkas tema tidak sama dengan yang tercatat di katalog.',
             'sha256_mismatch' => 'Berkas tema tidak sama dengan yang tercatat di katalog (sidik jari sha256 berbeda).',
             'signature_invalid' => 'Tanda tangan berkas tema tidak sah. Tema tidak dipasang.',

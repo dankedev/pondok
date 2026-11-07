@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F111",
+  "next_id": "F112",
   "features": [
     {
       "id": "F001",
@@ -2199,6 +2199,26 @@
       "handoff": null,
       "evidence": "commit 26fc844, 2dc4351 (docs/plans/F110-plan.md, 14 AC, 5 PR bertahap); review plan-reviewer satu putaran (1 major cakupan, diputuskan pemilik tetap penuh, 6 minor ditanggapi)",
       "notes": "Jalur penuh, tahap rencana saja. PR ke dev (Refs #152). Implementasi (PR1 sampai PR5 di rencana) belum dimulai dan belum punya ID fitur; dibuat atas persetujuan pemilik. Tidak ke produksi."
+    },
+    {
+      "id": "F111",
+      "key": "konten-tema-editor",
+      "issue": 154,
+      "name": "Implementasi editor tema v0",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F110"],
+      "description": "Mengimplementasikan editor tema v0 sesuai docs/plans/F110-plan.md: duplikat tema menjadi lokal-<nama>, ubah token warna, enum, dan susunan beranda, pratinjau lewat URL bertanda tangan, label Buatan sendiri, dan ekspor. Lima PR bertahap ke dev (PR1 refactor trait dan penolakan lokal-*, PR2 Action, PR3 pratinjau, PR4 halaman, PR5 ekspor). Detail di issue #154.",
+      "acceptance": [
+        "AC-1 sampai AC-14 di docs/plans/F110-plan.md terpenuhi dan dijaga test",
+        "Setiap PR lulus test terdampak, Pint, dan suite penuh, dan berdiri sendiri",
+        "Tema resmi dan alur pasang, kembalikan, hapus tidak berubah perilakunya; ModuleComplianceTest lulus"
+      ],
+      "owner": "orkestrator",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh, PR bertahap ke dev (Refs #154). PR1 (trait tulis bersama dan penolakan lokal-*) sedang berjalan. Tidak ke produksi."
     }
   ]
 }

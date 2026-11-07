@@ -3,6 +3,7 @@
 namespace App\Actions\Konten\Concerns;
 
 use App\Actions\Konten\ResolveThemePath;
+use App\Actions\Konten\ValidateThemePackage;
 use App\Enums\Module;
 use App\Models\Setting;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -123,6 +125,131 @@ trait WritesInstalledThemes
         }
 
         @rmdir($assets);
+    }
+
+    /**
+     * Tulis berkas aset ke staging (hanya path yang dideklarasikan manifest) lalu periksa paketnya; tema tanpa `assets` tidak boleh membawa berkas.
+     *
+     * @param  array<string, mixed>  $manifest
+     * @param  array<string, string>  $files
+     */
+    protected function stageAssets(ValidateThemePackage $package, string $slug, array $manifest, array $files): void
+    {
+        $declared = ValidateThemePackage::paths($manifest);
+
+        foreach (array_diff(array_keys($files), $declared) as $path) {
+            $this->reject('pondok.theme_assets.file_extra', ['path' => Str::limit((string) $path, 60)]);
+        }
+
+        foreach (array_diff($declared, array_keys($files)) as $path) {
+            $this->reject('pondok.theme_assets.file_missing', ['path' => $path]);
+        }
+
+        if (! isset($manifest['assets'])) {
+            return;
+        }
+
+        $directory = $this->stagingDirectory($slug);
+
+        foreach ($files as $path => $content) {
+            if (! is_string($content) || (! is_dir(dirname("{$directory}/{$path}")) && ! @mkdir(dirname("{$directory}/{$path}"), 0755, true))
+                || @file_put_contents("{$directory}/{$path}", $content) !== strlen($content)) {
+                $this->reject('write_failed');
+            }
+        }
+
+        $package->handle($directory, $manifest);
+    }
+
+    /**
+     * @param  array<string, mixed>  $manifest
+     */
+    protected function swap(string $slug, array $manifest): void
+    {
+        $directory = $this->themeRoot()."/{$slug}";
+        $theme = "{$directory}/theme.json";
+        $temporary = "{$directory}/previous.json.tmp";
+        $staging = $this->stagingDirectory($slug);
+        $hasOld = is_file($theme);
+        $target = isset($manifest['assets']) ? "{$directory}/assets/".$this->assetHash("{$staging}/theme.json") : null;
+        $created = false;
+        $swapped = false;
+
+        if (is_link($directory)) {
+            $this->reject('write_failed');
+        }
+
+        if (! $hasOld && ! is_dir($directory) && ! @mkdir($directory, 0755, true) && ! is_dir($directory)) {
+            $this->reject('write_failed');
+        }
+
+        try {
+            if ($target !== null) {
+                $created = $this->placeAssets($staging, $target, [$this->assetHash($theme), $this->assetHash("{$directory}/previous.json")]);
+            }
+
+            if ($hasOld && ! @copy($theme, $temporary)) {
+                $this->reject('write_failed');
+            }
+
+            if (! @rename("{$staging}/theme.json", $theme)) {
+                $this->reject('write_failed');
+            }
+
+            $swapped = true;
+
+            if ($hasOld && ! @rename($temporary, "{$directory}/previous.json")) {
+                $this->reject('write_failed');
+            }
+        } finally {
+            if (is_file($temporary)) {
+                @unlink($temporary);
+            }
+
+            // Gagal sebelum `theme.json` berganti: folder aset baru tak dimiliki siapa pun, buang.
+            if ($created && ! $swapped) {
+                File::deleteDirectory((string) $target);
+            }
+        }
+
+        $this->pruneAssets($slug);
+    }
+
+    /**
+     * Pindahkan `theme.css` dan `fonts/` dari staging ke `$target`. Folder `$target` yang sudah ada dan milik `theme.json`/`previous.json`
+     * aktif (hash sama) sudah lengkap dan dibiarkan; yang bukan milik siapa pun (sisa pemasangan gagal) dihapus lalu diganti.
+     *
+     * @param  list<?string>  $owned
+     * @return bool true bila folder baru dibuat
+     */
+    protected function placeAssets(string $staging, string $target, array $owned): bool
+    {
+        if (is_dir($target) && in_array(basename($target), $owned, true)) {
+            return false;
+        }
+
+        if (is_link($target) || (file_exists($target) && ! is_dir($target))) {
+            @unlink($target);
+        }
+
+        File::deleteDirectory($target);
+
+        if (! is_dir(dirname($target)) && ! @mkdir(dirname($target), 0755, true) && ! is_dir(dirname($target))) {
+            $this->reject('write_failed');
+        }
+
+        if (! @mkdir($target, 0755)) {
+            $this->reject('write_failed');
+        }
+
+        foreach (['theme.css', 'fonts'] as $name) {
+            if (file_exists("{$staging}/{$name}") && ! @rename("{$staging}/{$name}", "{$target}/{$name}")) {
+                File::deleteDirectory($target);
+                $this->reject('write_failed');
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -79,6 +79,15 @@ it('AC-1: ignores an entry that uses the slug of an official theme', function ()
     expect(array_column(tcFetch()['themes'], 'slug'))->toBe(['zz-bagus']);
 });
 
+it('F111 AC-8: filters out lokal-* entries and keeps the other valid ones', function () {
+    themeFakeCatalog([tcValidEntry('lokal-sendiri'), tcValidEntry('zz-bagus'), tcValidEntry('lokal-a-b')]);
+
+    $result = tcFetch();
+
+    expect(array_column($result['themes'], 'slug'))->toBe(['zz-bagus'])
+        ->and($result['error'])->toBeNull();
+});
+
 it('AC-1: reports an error without throwing for a 500, a timeout, broken JSON and a wrong shape', function () {
     $failures = [
         'status 500' => fn () => themeFakeHttp([THEME_CATALOG_URL => Http::response('SECRET-ISI-RESPONS', 500)]),

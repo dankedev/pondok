@@ -2167,7 +2167,7 @@
       "name": "Empat tema resmi memakai kait F108",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": ["F108"],
       "description": "Memigrasikan tema ber-CSS Mihrab, Cahaya, Tegas, dan Kobalt (repo privat pondok-themes-work) dari selektor posisional sisa ke kait F108, lalu mengukur ulang kontras dan overflow di 360, 768, 1024, dan 1440px. Belum ditandatangani atau diterbitkan. Detail di issue #150.",
       "acceptance": [
@@ -2176,9 +2176,9 @@
         "Keempat tema lolos ValidateThemePackage dan ValidateThemeCss",
         "Karakter visual tiap tema tidak berubah dibanding tangkapan layar acuan"
       ],
-      "owner": "orkestrator",
+      "owner": null,
       "handoff": null,
-      "evidence": null,
+      "evidence": "repo pondok-themes-work commit 9e6fd50, 9525b27, cfeea44 (mihrab 1.0.11, cahaya 1.0.5, tegas 1.0.5, kobalt 1.0.4), laporan LAPORAN-F109.md; 4 paket valid (ValidateThemePackage + ValidateThemeCss); audit 128 kombinasi 0 kontras gagal dan 0 overflow; diff gaya terhitung 8 halaman x 360/1440px x 4 tema (3 perbaikan gaya tercatat); sha256 css terpasang cocok dengan repo",
       "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F109-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #150). Tanpa penandatanganan atau penerbitan."
     }
   ]

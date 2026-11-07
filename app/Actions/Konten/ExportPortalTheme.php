@@ -49,6 +49,11 @@ class ExportPortalTheme
             $this->reject('pondok.theme_export.destination_exists', ['path' => "{$folder}/{$as}"]);
         }
 
+        // tujuan tidak boleh di dalam folder tema terpasang: tema tanpa tanda tangan akan langsung tampak terpasang
+        if ($this->isInside($folder, (string) config('pondok.installed_themes_path'))) {
+            $this->reject('pondok.theme_export.destination_invalid', ['path' => $folder]);
+        }
+
         $source = $this->validate->handle($sourcePath);
         $raw = json_decode((string) file_get_contents($sourcePath), true);
         $files = isset($source['assets']) ? $this->installedAssetFiles(dirname($sourcePath), $source) : [];
@@ -56,7 +61,7 @@ class ExportPortalTheme
         $this->rescopeCss($raw, $files, $source['slug'], $as);
 
         $bytes = $this->encodeManifest([...$raw, 'slug' => $as, 'version' => '1.0.0']);
-        $createdFolder = ! is_dir($folder);
+        $firstCreated = $this->firstMissingAncestor($folder);
         $staging = "{$folder}/_staging-".Str::random(8);
 
         try {
@@ -72,7 +77,7 @@ class ExportPortalTheme
                 $this->reject('pondok.theme_export.write_failed');
             }
         } catch (Throwable $exception) {
-            File::deleteDirectory($createdFolder ? $folder : $staging);
+            File::deleteDirectory($firstCreated ?? $staging);
 
             throw $exception;
         }
@@ -80,6 +85,47 @@ class ExportPortalTheme
         File::deleteDirectory($staging);
 
         return "{$folder}/{$as}";
+    }
+
+    /**
+     * Folder pertama dari `$path` ke atas yang belum ada (ikut dihapus bila ekspor gagal), atau null bila `$path` sudah ada.
+     */
+    private function firstMissingAncestor(string $path): ?string
+    {
+        $missing = null;
+
+        while ($path !== '' && $path !== '.' && $path !== '/' && ! file_exists($path) && ! is_link($path)) {
+            $missing = $path;
+            $path = dirname($path);
+        }
+
+        return $missing;
+    }
+
+    private function isInside(string $path, string $root): bool
+    {
+        $root = realpath($root);
+
+        if ($root === false) {
+            return false;
+        }
+
+        $tail = [];
+
+        while (($real = realpath($path)) === false) {
+            $tail[] = basename($path);
+            $parent = dirname($path);
+
+            if ($parent === $path) {
+                return false;
+            }
+
+            $path = $parent;
+        }
+
+        $resolved = rtrim($real, '/').($tail === [] ? '' : '/'.implode('/', array_reverse($tail)));
+
+        return $resolved === $root || str_starts_with($resolved, $root.'/');
     }
 
     /**

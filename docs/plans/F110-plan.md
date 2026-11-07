@@ -1,98 +1,99 @@
 # F110 konten-editor-tema — Editor tema v0 (rencana)
 
 Issue: #152
-Status rencana: Draf, menunggu review plan-reviewer
-Jalur penuh (menulis berkas tema terpasang, menyentuh `InstallPortalTheme`, route portal yang di-cache publik, dan hak akses). PR implementasi kelak ke `dev` dengan `Refs #152`; tidak ke `main`, katalog, atau pondok-web.
-Bergantung pada F102 sampai F109 (semua `done`). Sumber: `pondok-themes-work/PANDUAN-MEMBUAT-TEMA.md`, `CATATAN-DISTRIBUSI-TEMA.md`, `CELAH-SISTEM.md`, `LAPORAN-F109.md` (repo privat).
+Status rencana: REVISED (menunggu keputusan orkestrator)
+Jalur penuh: menulis berkas tema terpasang, menyentuh `InstallPortalTheme`, route portal yang di-cache publik, dan hak akses. PR implementasi ke `dev` dengan `Refs #152`; tidak ke `main`, katalog, atau pondok-web.
+Sumber: `pondok-themes-work/PANDUAN-MEMBUAT-TEMA.md`, `CATATAN-DISTRIBUSI-TEMA.md`, `CELAH-SISTEM.md`, `LAPORAN-F109.md` (repo privat).
 
 ## Ringkasan & tujuan
-Kini tema hanya bisa dibuat dengan menulis JSON dan CSS tangan lalu `install-theme.sh` (kunci sekali pakai). Editor v0 memberi super-admin cara cepat membuat variasi dari tema yang sudah lolos validasi: **duplikat, ubah token warna dan susunan beranda, pratinjau, lalu aktifkan lewat Situs > Tampilan**. Tidak ada format paket baru: hasilnya tema terpasang biasa di `storage/app/themes/lokal-<nama>/`, diperiksa validator yang sama dengan tema resmi.
+Saat ini tema hanya bisa dibuat dengan menulis JSON dan CSS tangan lalu menjalankan `install-theme.sh`. Editor v0 memberi super-admin jalur cepat: **duplikat tema valid, ubah token warna dan susunan beranda, pratinjau, lalu aktifkan lewat Situs > Tampilan**. Tidak ada format paket baru. Hasilnya tema terpasang biasa di `storage/app/themes/lokal-<nama>/` yang diperiksa validator yang sama dengan tema resmi.
 
 ## Jawaban enam pertanyaan issue
 
-**1. Yang diedit di v0: duplikat tema lalu ubah token dan susunan, BUKAN editor CSS.**
-- Duplikat tema valid apa pun dari `ListPortalThemes` (resmi atau terpasang, ber-CSS atau tidak) menjadi `lokal-<nama>`.
-- Yang bisa diubah: (a) `name`, `description`; (b) enum `palette`, `surface`, `font` (`ValidatePortalTheme::assertLook`), satu-satunya pengubah tampilan untuk tema tanpa CSS (Amanah, Lapang); (c) **nilai custom property `--*` berliteral `#rrggbb` di blok scope tingkat atas** `body[data-pt-theme="<slug>"] { ... }`. Daftarnya dibaca generik dari keluaran `ValidateThemeCss::handle()` (`rules[top && selectors === [scope]]`), karena tiap tema memberi nama tokennya sendiri (Tegas `--pt-ink`/`--pt-paper`, Cahaya 11 token hex, Kobalt 7, Mihrab 9); (d) node puncak `home.layout`: urutan, tambah/hapus, `variant` (`ThemeComponents::VARIANTS`), dan `style` skalar (`tone`, `align`, `width`, `radius`, `shadow`, `border`, `gap`, `padding.base`; `ThemeStyleMap::MAP`). Sudut, bayangan, dan jarak per blok datang dari (d), bukan dari CSS.
-- Alasan: empat tema ber-CSS sudah memusatkan warna di custom property blok scope (aturan 6 PANDUAN), dan validator kontras sudah membaca persis blok itu. Mengganti nilai di sana memberi palet baru di seluruh tema tanpa menulis satu aturan CSS. Editor CSS bebas sama dengan pekerjaan yang sekarang sudah dilakukan di repo tema; nilainya kecil untuk v0 dan permukaan risikonya terbesar.
-- Ditunda: editor CSS bebas (v1 bila v0 kurang, lewat `ValidateThemeCss`); token non-warna (sudut/bayangan/jarak di CSS belum dijadikan custom property oleh tema mana pun, jadi perlu diubah dulu di tema sumber); ganti/tambah font; header dan footer; `children` node `container`/`columns` (dipertahankan apa adanya); `blocks` legacy (tetap ikut bila tema sumbernya memakai itu, tidak bisa ditambah).
+**1. Yang diedit: duplikat lalu ubah token dan susunan, bukan editor CSS.**
+- Sumber duplikat adalah tema valid apa pun dari `ListPortalThemes`. Byte disalin dari tempat ini: tema terpasang ber-`assets` menyalin `theme.json` dan isi `storage/app/themes/<slug>/assets/<hash12>/` milik `theme.json` itu (`theme.css`, `fonts/`). Tema resmi di `resources/themes/*` (default, centered, majalah, mushaf) dan tema tanpa `assets` (Amanah, Lapang) hanya menyalin `theme.json`, tanpa berkas aset.
+- Yang bisa diubah ada empat. (a) `name` dan `description`. (b) Enum `palette`, `surface`, dan `font` (`ValidatePortalTheme::assertLook`); untuk tema tanpa CSS hanya ini yang mengubah tampilan. (c) Nilai custom property `--*` berliteral `#rrggbb` di blok scope tingkat atas `body[data-pt-theme="<slug>"]`. Daftarnya dibaca dari keluaran `ValidateThemeCss::handle()` (`rules` dengan `top` dan `selectors === [scope]`), karena tiap tema memberi nama tokennya sendiri: Cahaya punya 11 token hex, Mihrab 9, Kobalt 7. (d) Node puncak `home.layout`: urutan, tambah/hapus, `variant` (`ThemeComponents::VARIANTS`), dan `style` **skalar saja** dari `ThemeStyleMap::MAP` (`tone`, `align`, `width`, `radius`, `shadow`, `border`, `gap`, `padding.base`). Sudut, bayangan, dan jarak per blok diatur lewat (d).
+- Alasannya: warna tema ber-CSS sudah terpusat di blok scope (aturan 6 PANDUAN), dan validator kontras membaca blok yang sama. Editor CSS bebas hanya mengulang pekerjaan di repo tema, padahal permukaan risikonya terbesar.
+- Yang ditunda: editor CSS bebas, token non-warna di CSS (belum ada tema yang menjadikannya custom property), font baru atau ganti font, header/footer, `children` dari `container`/`columns` (dipertahankan apa adanya), dan menambah `blocks` legacy.
 
-**2. Penyimpanan dan pemasangan: tema terpasang biasa berawalan `lokal-`, lewat jalur tulis yang sama dengan `InstallPortalTheme`.**
-- `InstallPortalTheme::stageAssets()` dan `swap()` (staging, `ValidateThemePackage`, folder `assets/<hash12>`, `previous.json`, pangkas aset) dipindah ke trait `Concerns\WritesInstalledThemes` yang sudah dipakai pasang/kembalikan/hapus. Tanda tangan, sha256 katalog, dan aturan "versi harus naik" tetap hanya di `InstallPortalTheme::verify()`/`handle()`.
-- Tema buatan sendiri dibedakan dengan slug berawalan `lokal-` (slug tetap lolos `ResolveThemePath::SLUG_PATTERN`, sisa nama maks. 34 karakter). Editor hanya menulis slug `lokal-*`; `InstallPortalTheme` menolak entri katalog berslug `lokal-*`, jadi pembaruan katalog tidak pernah menimpa hasil edit, dan editor tidak pernah menyentuh tema resmi/katalog.
-- Tiap simpan menaikkan versi patch dan `theme.json` lama menjadi `previous.json`, sehingga **Kembalikan** (`RollbackPortalTheme`) dan **Hapus** (`RemovePortalTheme`) di halaman Katalog tema langsung berlaku untuk tema lokal. Aktivasi tetap lewat Situs > Tampilan (`UpdatePortalTheme`), tanpa jalur baru.
-- Ekspor untuk ditandatangani: perintah `php artisan pondok:theme-export lokal-<nama> <folder> --as=<slug-resmi>` menulis folder paket (slug dan scope CSS diganti) yang lalu ditandatangani dengan `pondok:theme-sign --write-hashes` seperti biasa. Perintah, bukan unduhan ZIP: penandatangan hanya pemilik di mesinnya sendiri, `ext-zip` tidak dijamin di cPanel, dan tidak perlu route unduh baru.
+**2. Penyimpanan: tema terpasang berawalan `lokal-` yang ditulis lewat jalur yang sama dengan `InstallPortalTheme`.**
+- `stageAssets`, `swap`, dan `placeAssets` dipindah dari `InstallPortalTheme` ke trait `Concerns\WritesInstalledThemes`. Trait ini sudah dipakai pasang, kembalikan, dan hapus, dan menangani staging, `ValidateThemePackage`, `assets/<hash12>`, `previous.json`, serta pangkas aset. Pemeriksaan tanda tangan, sha256, dan aturan versi naik tetap di `InstallPortalTheme`.
+- Penanda tema lokal adalah slug `lokal-*` (lolos `SLUG_PATTERN`; sisa nama maksimal 34 karakter). Editor hanya menulis `lokal-*`. Untuk katalog: `InstallPortalTheme::verify()` dan `FetchThemeCatalog::isValid()` menolak `lokal-*`, sehingga katalog tidak pernah menimpa hasil edit. `ListPortalThemes` memberi `source = 'local'` dan Situs > Tampilan serta Katalog tema menampilkan label "Buatan sendiri".
+- Setiap simpan menaikkan versi patch dan `theme.json` lama menjadi `previous.json`. Dengan begitu `RollbackPortalTheme`, `RemovePortalTheme` (halaman Katalog), dan aktivasi lewat `UpdatePortalTheme` berlaku tanpa jalur baru.
+- Ekspor dilakukan lewat `php artisan pondok:theme-export lokal-<nama> <folder> --as=<slug>`. Perintah ini menulis folder paket dengan slug dan scope CSS yang diganti, lalu paket ditandatangani dengan `pondok:theme-sign --write-hashes`. Bentuknya perintah, bukan ZIP, karena penandatangannya hanya pemilik di mesinnya sendiri, `ext-zip` tidak dijamin ada di cPanel, dan cara ini tidak butuh route unduh.
 
-**3. Pratinjau: URL bertanda tangan pada route portal yang sudah ada, respons `private, no-store`.**
-- Route portal stateless (tanpa sesi), jadi pratinjau tidak bisa memakai login. Middleware baru `PreviewPortalTheme` di grup `$portalHeaders` (`routes/web.php`): bila query `pratinjau-tema=<slug>` ada DAN tanda tangan URL sah (`URL::temporarySignedRoute`, 30 menit, kunci `APP_KEY`), `ResolveActiveTheme` (scoped) memakai slug itu untuk request ini, dan respons diberi `Cache-Control: private, no-store` serta `X-Robots-Tag: noindex` (dijalankan setelah `SetPortalCacheHeaders`). Selain itu middleware tidak berbuat apa pun.
-- Slug pratinjau dibaca di dua titik yang sekarang memakai `Setting::get('theme.template')`: `ResolveActiveTheme::resolve()` dan `GetPortalTheme::handle()` (kunci `template`). Keduanya membaca slug efektif dari satu tempat; `theme.template` tidak pernah ditulis.
-- CSS dan font sudah dilayani `ShowThemeAsset` untuk tema terpasang mana pun (`ResolveThemeAssetPath`), jadi tidak ada route baru. Editor menampilkan tautan pratinjau untuk beranda, `/berita`, `/galeri`, dan halaman statis pertama. Tautan di dalam halaman pratinjau kembali ke tema aktif (dicatat di UI).
-- Ditolak: query unik tanpa tanda tangan (siapa pun bisa merender draf dan memecah cache) dan route admin yang merender ulang view portal (menggandakan pemanggilan controller portal).
+**3. Pratinjau: URL bertanda tangan di route portal yang ada, dengan respons `private, no-store`.**
+- Route portal stateless, jadi tidak bisa membaca login. Middleware baru `PreviewPortalTheme` di `$portalHeaders` (`routes/web.php`) bekerja seperti ini: bila ada query `pratinjau-tema=<slug>` dan tanda tangan URL sah (`URL::temporarySignedRoute`, 30 menit), request itu memakai slug tersebut. Responsnya diberi `Cache-Control: private, no-store` dan `X-Robots-Tag: noindex` setelah `SetPortalCacheHeaders` berjalan. Selain kondisi itu, middleware tidak melakukan apa pun.
+- Editor membangun URL dari `APP_URL` (root yang sama dengan `ForcePortalRootUrl`), bukan dari host panel admin, supaya tanda tangannya cocok di portal.
+- Slug efektif dibaca di tiga titik yang kini memakai `Setting::get('theme.template')`: `ResolveActiveTheme::resolve()` (±53), `GetPortalTheme::template()` (±90), dan `GetPortalTheme::handle()` (kunci `template`, ±158). Ketiganya mengambil dari satu sumber, dan `theme.template` tidak pernah ditulis. Palet, surface, dan font tema dari `GetPortalTheme::handle()` ikut tema pratinjau karena berasal dari `ResolveActiveTheme`.
+- Aset dilayani `ShowThemeAsset` untuk tema terpasang mana pun, jadi tidak ada route baru. Editor memberi tautan ke `/`, `/berita`, `/galeri`, dan halaman statis pertama. Tautan di dalam halaman pratinjau kembali ke tema aktif.
 
-**4. Antarmuka: satu halaman Filament `Site/ThemeEditor` di grup navigasi Situs.**
-- `getModule()` = `Module::Konten`, `canAccess()` = modul Konten aktif DAN `can('manage:themes')` (pola `ThemeCatalog`; permission sudah ada dan hanya milik super-admin). Tanpa permission, peran, atau migration baru.
-- Isi: pilih tema `lokal-*` atau aksi **Duplikat** (sumber + nama); form: teks, tiga `Select` enum, `ColorPicker` per token hex dengan rasio kontras tiap pasangan `assets.contrast` dihitung langsung (`BuildColorScale::contrast`, `->live(onBlur: true)`), `Repeater` node beranda (bawaan Filament, bisa diurutkan, opsi dari `ThemeComponents`/`ThemeStyleMap`), tombol Simpan dan tautan pratinjau.
-- Hanya komponen Filament bawaan: asetnya sudah dibangun saat rilis, tanpa Node, Vite, atau proses latar saat runtime. Simpan sinkron (paket ≤ 1,5 MB, tanpa antrean).
+**4. Antarmuka: satu halaman Filament `Site/ThemeEditor` di grup Situs.** Halaman ini memakai `getModule()` = `Module::Konten`, dan `canAccess()` mensyaratkan modul aktif serta `can('manage:themes')` (pola `ThemeCatalog`). Tidak ada permission atau migration baru. Isinya: pilih tema `lokal-*` atau aksi **Duplikat**; tiga `Select` enum; `ColorPicker` per token dengan rasio kontras tiap pasangan `assets.contrast` yang dihitung langsung (`BuildColorScale::contrast`, `live(onBlur)`); `Repeater` node beranda yang bisa diurutkan; tombol Simpan; dan tautan pratinjau. Hanya komponen bawaan Filament, jadi tanpa Node, antrean, atau proses latar. Simpan berjalan sinkron karena paket maksimal 1,5 MB.
 
-**5. Keamanan dan validasi: input sempit, lalu validator yang sama dengan tema resmi.**
-- Pengguna hanya mengirim nilai `#rrggbb`, nama enum, dan daftar node. Tidak ada `FileUpload`, tidak ada byte CSS atau font dari pengguna. CSS dan font duplikat disalin dari paket sumber yang sudah lolos pemasangan, lalu diperiksa ulang.
-- Penggantian token menyunting teks CSS hanya pada deklarasi `--nama: #xxxxxx;` di blok scope (nama harus ada di daftar token hex hasil parse); paket lalu diulang penuh oleh `ValidatePortalTheme` + `ValidateThemePackage` (`ValidateThemeCss`, kontras, font, gerak) di staging. Gagal = ditolak, tema terpasang tidak berubah (fail-closed).
-- Kontras WCAG: peringatan di form sebelum simpan; pasangan terdeklarasi di bawah 4,5:1 (3:1 `large`) tetap DITOLAK `ValidateThemePackage` (`contrast_low`). Font: hanya font paket sumber (lisensinya sudah dibatasi `ValidatePortalTheme` ke `OFL-1.1`/`Apache-2.0`/`CC0-1.0`; keempat tema resmi memakai OFL); tidak ada font baru.
-- Tulis per slug diserialkan `withWriteLock`; slug divalidasi sebelum path dibentuk (`assertThemeSlug`). Log `activity('konten')` event `edited`/`duplicated` dengan pelaku.
+**5. Keamanan: input sempit, lalu validator yang sama dengan tema resmi.** Pengguna hanya mengirim `#rrggbb`, enum, dan node. Tidak ada `FileUpload`, dan tidak ada byte CSS atau font dari pengguna. Token diganti dengan menyunting teks deklarasi `--nama: #xxxxxx;` di blok scope; nama token harus ada di hasil parse. Setelah itu paket divalidasi ulang penuh di staging oleh `ValidatePortalTheme` dan `ValidateThemePackage` (CSS, kontras, font, gerak). Kalau gagal, tema terpasang tidak berubah. Rasio kontras WCAG diperingatkan di form, dan pasangan di bawah 4,5:1 (3:1 untuk `large`) tetap ditolak (`contrast_low`). Font hanya yang ada di paket sumber, dengan lisensi yang sudah dibatasi validator ke OFL-1.1, Apache-2.0, atau CC0-1.0. Penulisan diserialkan `withWriteLock`, dan slug divalidasi lebih dulu (`assertThemeSlug`). Aktivitas `konten` dicatat dengan event `duplicated` dan `edited`.
 
-**6. Risiko, kompatibilitas kait F105 sampai F108, dan urutan paket kerja:** lihat bagian Risiko dan Paket kerja. Kompatibilitas: editor tidak mengubah markup, `PARTS`, atau selektor CSS; duplikat hanya mengganti token scope `body[data-pt-theme="<sumber>"]` menjadi slug baru, jadi tema lokal memakai kait yang sama persis dengan sumbernya (AC-13).
+**6. Kompatibilitas kait F105–F108:** Markup, `PARTS`, dan selektor tidak berubah. Duplikat hanya mengganti `body[data-pt-theme="<sumber>"]` dengan slug baru (AC-12). Risiko dan urutan kerja ada di bagian berikut.
 
 ## File
-- **Baru** `app/Actions/Konten/DuplicatePortalTheme.php`: operasi "buat tema lokal dari tema valid" (baca sumber, ganti slug/nama/scope, versi `1.0.0`, tulis lewat trait). Statis `rescope(css, from, to)` dipakai juga oleh ekspor.
-- **Baru** `app/Actions/Konten/SaveEditedTheme.php`: operasi "simpan suntingan tema lokal" (teks, enum, token, layout; naik versi patch; tulis lewat trait). Dua Action karena dua operasi berbeda masukan dan aturan (CLAUDE.md: satu Action per operasi).
-- **Baru** `app/Http/Middleware/PreviewPortalTheme.php`, `app/Filament/Pages/Site/ThemeEditor.php` + view, `app/Console/Commands/ThemeExportCommand.php`, kunci `lang/id/pondok.php` (`theme_editor.*`).
-- **Diubah** `InstallPortalTheme` (pindah `stageAssets`/`swap`/`placeAssets` ke trait; tolak `lokal-*`), `Concerns/WritesInstalledThemes`, `ResolveActiveTheme` + `GetPortalTheme` (slug pratinjau), `routes/web.php` (`$portalHeaders`).
-- **Dipakai ulang tanpa diubah**: `ValidatePortalTheme`, `ValidateThemePackage`, `ValidateThemeCss`, `ThemeComponents`, `ThemeStyleMap`, `ListPortalThemes`, `RollbackPortalTheme`, `RemovePortalTheme`, `UpdatePortalTheme`, `ShowThemeAsset`, `BuildColorScale`, `ThemeSignCommand`. `MigrateThemeSchema`, `FetchThemeCatalog`, `InstallThemeFromCatalog` tidak disentuh.
+- **Baru:** `Actions/Konten/DuplicatePortalTheme.php` (operasi membuat tema lokal; punya static `rescope()` yang juga dipakai ekspor) dan `Actions/Konten/SaveEditedTheme.php` (operasi menyimpan suntingan). Keduanya Action terpisah karena operasi, masukan, dan aturannya berbeda. Juga baru: `Http/Middleware/PreviewPortalTheme.php`, `Filament/Pages/Site/ThemeEditor.php` beserta view, `Console/Commands/ThemeExportCommand.php`, dan `lang/id` (`theme_editor.*`).
+- **Diubah:** `InstallPortalTheme` (pindah ke trait, tolak `lokal-*`), `Concerns/WritesInstalledThemes`, `FetchThemeCatalog` (saring `lokal-*`), `ListPortalThemes` (`source` `local`), `Pages/Site/Theme.php` dan `ThemeCatalog.php` (label), `ResolveActiveTheme`, `GetPortalTheme`, dan `routes/web.php`.
+- **Dipakai ulang tanpa diubah:** `ValidatePortalTheme`, `ValidateThemePackage`, `ValidateThemeCss`, `ThemeComponents`, `ThemeStyleMap`, `RollbackPortalTheme`, `RemovePortalTheme`, `UpdatePortalTheme`, `ShowThemeAsset`, `BuildColorScale`, dan `ThemeSignCommand`.
 
 ## Kriteria penerimaan
-- **AC-1** Akses: `ThemeEditor` hanya untuk pemegang `manage:themes` dengan modul Konten aktif; peran lain dan modul mati = tidak terlihat/403. `ModuleComplianceTest` hijau.
-- **AC-2** Duplikat tema ber-CSS: folder `lokal-<nama>` berisi `theme.json` valid (slug/nama baru, versi `1.0.0`), CSS tanpa sisa `data-pt-theme="<sumber>"`, font byte-identik, sha256/size `assets` cocok; muncul valid di `ListPortalThemes`; tema sumber tidak berubah (byte). Duplikat tema tanpa CSS juga berhasil.
-- **AC-3** Duplikat ditolak (`InvalidArgumentException`, tanpa folder atau `_staging` tersisa) untuk: slug target sudah ada, sumber tak valid, nama kosong/terlalu panjang.
-- **AC-4** Simpan token mengganti hanya nilai custom property yang diminta di blok scope; sisa CSS byte-identik. Nama token tak dikenal, token bukan hex, atau nilai bukan `#rrggbb` ditolak.
-- **AC-5** Token yang membuat pasangan `assets.contrast` di bawah ambang ditolak dengan pesan kontras dan tema terpasang tidak berubah; form menampilkan rasio tiap pasangan sebelum simpan.
-- **AC-6** Simpan layout: urutan, varian, dan style node puncak `home.layout` tersimpan; `children` dipertahankan; komponen/varian/style di luar `ThemeComponents`/`ThemeStyleMap` ditolak; `header`/`footer` tidak berubah.
-- **AC-7** Setiap simpan menaikkan versi patch, versi lama menjadi `previous.json`, dan `RollbackPortalTheme` mengembalikannya; simpan yang gagal tidak mengubah `theme.json` maupun folder aset; log `edited` mencatat pelaku.
-- **AC-8** Batas lokal: `SaveEditedTheme` menolak slug tanpa `lokal-`, tema resmi, dan tema yang sedang aktif (`theme.template`); `InstallPortalTheme` menolak entri katalog berslug `lokal-*` sebelum menulis apa pun; test pasang/kembalikan/hapus yang ada tetap hijau.
-- **AC-9** Pratinjau: URL bertanda tangan sah pada `/`, `/berita`, `/galeri`, dan halaman statis merender tema lokal (`data-pt-theme="lokal-…"`, `<link>` ke aset slug itu) dengan `Cache-Control: private, no-store` dan `X-Robots-Tag: noindex`; `theme.template` tidak berubah.
-- **AC-10** Tanda tangan salah, kedaluwarsa, atau slug tak terpasang/tak valid: halaman dirender dengan tema aktif dan header cache publik biasa, tanpa error. Request tanpa query tidak berubah (`PortalThemeGoldenTest` hijau).
-- **AC-11** Tidak ada unggahan: `SaveEditedTheme`/`DuplicatePortalTheme` menolak kunci masukan tak dikenal; halaman tidak memuat komponen unggah berkas.
-- **AC-12** `pondok:theme-export` menulis folder paket dengan slug `--as` (CSS di-scope ulang) yang lolos `ValidateThemePackage` setelah `pondok:theme-sign --write-hashes`; menolak `--as` berawalan `lokal-`, slug tak sah, dan folder tujuan yang sudah ada (tidak menimpa).
-- **AC-13** Kompatibilitas kait: HTML beranda pratinjau tema duplikat sama dengan HTML beranda tema sumber yang aktif, kecuali slug pada `data-pt-theme` dan URL CSS; `ThemeMarkupContractTest` dan `ThemeMarkupHooksTest` hijau.
-- **AC-14** Tampilan halaman lulus checklist `docs/design-guide.md` §0 di 360px, 1024px, dan desktop; semua teks dari `lang/id`.
+- **AC-1 Akses:** `ThemeEditor` hanya untuk `manage:themes` dengan modul Konten aktif. Peran lain atau modul mati: tidak terlihat atau 403. `ModuleComplianceTest` hijau.
+- **AC-2 Duplikat tema terpasang ber-`assets`:** menghasilkan `lokal-<nama>` dengan `theme.json` valid (slug dan nama baru, versi `1.0.0`), CSS tanpa sisa `data-pt-theme="<sumber>"`, font byte-identik, serta sha256/size yang cocok. Tema itu valid di `ListPortalThemes` dengan `source = local`, dan tema sumber tetap byte-identik. Duplikat tema resmi (`resources/themes`) dan tema tanpa `assets` hanya menghasilkan `theme.json`.
+- **AC-3 Penolakan duplikat:** `InvalidArgumentException` tanpa folder atau `_staging` yang tersisa bila slug target sudah ada, sumber tidak valid, nama kosong atau terlalu panjang, atau ada kunci masukan yang tidak dikenal.
+- **AC-4 Simpan token:** hanya nilai token yang diminta berubah, dan sisa CSS byte-identik. Nama token tak dikenal, token bukan hex, nilai bukan `#rrggbb`, atau kunci masukan tak dikenal ditolak. Halaman tidak memuat komponen unggah.
+- **AC-5 Kontras:** token yang membuat pasangan `assets.contrast` di bawah ambang ditolak, dan tema terpasang tidak berubah. Form menampilkan rasio tiap pasangan sebelum simpan.
+- **AC-6 Layout:** urutan, tambah/hapus, varian, dan style skalar node puncak tersimpan, `children` dipertahankan, dan `header`/`footer` tidak berubah. Komponen, varian, atau style di luar `ThemeComponents`/`ThemeStyleMap` ditolak, begitu juga style responsif (array).
+- **AC-7 Riwayat:** setiap simpan menaikkan versi patch dan versi lama menjadi `previous.json`. `RollbackPortalTheme` bisa mengembalikannya. Simpan yang gagal tidak mengubah `theme.json` maupun aset. Log `edited` mencatat pelaku.
+- **AC-8 Batas lokal:** `SaveEditedTheme` menolak slug tanpa `lokal-`, tema resmi, dan tema yang sedang aktif (`theme.template`). `InstallPortalTheme` menolak entri berslug `lokal-*` sebelum menulis apa pun, dan `FetchThemeCatalog` membuangnya. Test pasang, kembalikan, hapus, dan katalog yang sudah ada tetap hijau.
+- **AC-9 Pratinjau sah:** URL bertanda tangan pada `/`, `/berita`, `/galeri`, dan halaman statis merender tema lokal (`data-pt-theme="lokal-…"`, `<link>` ke asetnya) dengan header `private, no-store` dan noindex, dan `theme.template` tidak berubah. URL yang dibuat ketika request admin memakai host berbeda dari `APP_URL` tetap sah di portal.
+- **AC-10 Pratinjau ditolak:** tanda tangan salah atau kedaluwarsa, atau slug tidak terpasang atau tidak valid, merender tema aktif dengan header cache publik biasa, tanpa error. Request tanpa query tidak berubah (`PortalThemeGoldenTest` hijau).
+- **AC-11 Ekspor:** `pondok:theme-export` menulis paket dengan slug `--as` yang lolos `ValidateThemePackage` setelah `pondok:theme-sign --write-hashes`. Perintah menolak `--as` berawalan `lokal-`, slug tidak sah, dan folder tujuan yang sudah ada.
+- **AC-12 Kompatibilitas:** HTML beranda pratinjau duplikat sama dengan HTML beranda tema sumber yang aktif, kecuali slug di `data-pt-theme` dan URL CSS. `<style data-portal-theme>` (palet, surface, font dari `GetPortalTheme::handle()`) identik untuk duplikat tema tanpa CSS yang ber-`palette`/`font`. `ThemeMarkupContractTest` dan `ThemeMarkupHooksTest` hijau.
+- **AC-13 Label:** tema `lokal-*` berlabel "Buatan sendiri" di Situs > Tampilan dan Katalog tema.
+- **AC-14 Tampilan:** halaman editor lulus `docs/design-guide.md` §0 di 360px, 1024px, dan desktop (dicek manual oleh sesi utama), dan semua teks berasal dari `lang/id`.
 
 ## Rencana test
-- `tests/Feature/Actions/Konten/DuplicatePortalThemeTest.php` (AC-2, 3, 11), `SaveEditedThemeTest.php` (AC-4 sampai 8, 11), tambahan satu kasus `lokal-*` di `InstallPortalThemeTest.php` (AC-8).
-- `tests/Feature/Http/Portal/ThemePreviewTest.php` (AC-9, 10, 13): pakai helper paket tema yang ada (`themePkg`, `portalSeedContent`).
-- `tests/Feature/Filament/Pages/ThemeEditorPageTest.php` (AC-1, 5 rasio di form), `tests/Feature/Console/ThemeExportCommandTest.php` (AC-12). AC-14 manual oleh sesi utama.
-- Fixture: paket ber-CSS kecil buatan test (dua token hex + satu pasangan kontras + satu font `wOF2` palsu), bukan tema dari repo privat.
+- `Actions/Konten/DuplicatePortalThemeTest` (AC-2, 3), `SaveEditedThemeTest` (AC-4 sampai 8), serta kasus tambahan di `InstallPortalThemeTest` dan `FetchThemeCatalogTest` (AC-8).
+- `Http/Portal/ThemePreviewTest` (AC-9, 10, 12), `Filament/Pages/ThemeEditorPageTest` (AC-1, 5, 13), dan `Console/ThemeExportCommandTest` (AC-11).
+- Satu helper fixture bersama di `tests/Pest.php` (memperluas `themePkg`): paket ber-CSS kecil dengan dua token hex, satu pasangan kontras, dan satu font `wOF2` palsu. Tidak memakai tema dari repo privat.
 
-## Paket kerja (RED lalu GREEN, berurutan)
-- **P1 Trait tulis bersama (hijau: AC-8 bagian katalog; regresi pasang/kembalikan/hapus).** Pindah `stageAssets`/`swap`/`placeAssets` ke `WritesInstalledThemes` tanpa ubah perilaku; tolak `lokal-*` di `InstallPortalTheme::verify()`.
-- **P2 `DuplicatePortalTheme` (AC-2, 3, 11 sebagian).**
-- **P3 `SaveEditedTheme` (AC-4 sampai 8, 11).**
-- **P4 Pratinjau (AC-9, 10, 13):** middleware, slug efektif di `ResolveActiveTheme`/`GetPortalTheme`, route.
-- **P5 Halaman `ThemeEditor` + `lang/id` (AC-1, 5, 14).** Panggil `/anti-ui-slop` bila tersedia.
-- **P6 `pondok:theme-export` (AC-12).** Terakhir karena hanya dibutuhkan saat tema lokal mau dijadikan resmi.
+## Paket kerja: PR bertahap ke `dev`
+Setiap PR berdiri sendiri, lulus test terdampak, Pint, dan suite penuh, lalu di-merge berurutan. Urutan RED → GREEN → VERIFY berlaku per PR.
+- **PR1 = P1, refactor trait tanpa perubahan perilaku.** Pindahkan `stageAssets`, `swap`, dan `placeAssets` ke `WritesInstalledThemes`. Selesai bila semua test pasang, kembalikan, hapus, dan adversarial tema hijau tanpa test diubah. Tolak `lokal-*` di `InstallPortalTheme`/`FetchThemeCatalog` (AC-8 bagian katalog) masuk di sini sebagai satu commit terpisah.
+- **PR2 = P2 + P3, Action dan label.** `DuplicatePortalTheme`, `SaveEditedTheme`, `source` `local`. Selesai: AC-2 sampai 8 hijau.
+- **PR3 = P4, pratinjau.** Middleware, slug efektif di tiga titik baca, dan route. Selesai: AC-9, 10, 12 hijau dan golden tidak berubah.
+- **PR4 = P5, halaman.** `ThemeEditor`, label di Tampilan dan Katalog, `lang/id`, dan `/anti-ui-slop`. Selesai: AC-1, 5, 13, 14.
+- **PR5 = P6, ekspor.** `pondok:theme-export`. Selesai: AC-11.
+- Fitur dianggap tuntas (`done`) setelah PR5 masuk `dev`.
 
 ## Di luar ruang lingkup
-Penjualan, lisensi, atau pembeda gratis/berbayar; penerbitan ke pondok.org, katalog, `main`, atau rilis; editor visual drag-and-drop dan pratinjau langsung di dalam form (iframe hidup); tema pihak luar atau unggah paket; editor CSS bebas, font baru, header/footer, `children`; celah terbuka `CELAH-SISTEM.md` butir 7 dan 8.
+Penjualan, lisensi, dan pembeda gratis/berbayar; penerbitan ke pondok.org, katalog, `main`, atau rilis; editor visual drag-and-drop dan iframe pratinjau langsung; tema pihak luar dan unggah paket; editor CSS bebas, font baru, header/footer, `children`, dan style responsif; serta celah 7 dan 8 di `CELAH-SISTEM.md`.
 
 ## Risiko
-- **Refactor `swap` di P1** menyentuh jalur pasang tema resmi yang sudah dirilis ke `dev`: dikerjakan tanpa perubahan perilaku, dijaga test pasang/kembalikan/hapus dan adversarial yang ada; P1 berdiri sendiri sebelum fitur baru.
-- **Penyuntingan teks CSS** bisa salah tempat (mis. nilai dalam komentar atau string). Mitigasi: hanya deklarasi di blok scope pertama yang cocok dengan hasil parse, lalu validasi ulang penuh; AC-4 memeriksa sisa CSS byte-identik.
-- **Warna literal di luar token**: CSS yang menulis hex langsung di aturan lain tidak ikut berubah, jadi palet bisa tampak setengah berganti. Diterima di v0; dicatat di UI dan di PANDUAN (pakai `var()` untuk semua warna).
-- **Header cache**: bila urutan middleware salah, halaman pratinjau bisa ter-cache publik. Dijaga AC-9/10 yang memeriksa header persis.
-- **Tautan pratinjau bocor**: siapa pun yang memegangnya melihat draf maksimal 30 menit. Dampak kecil (tema bukan data pribadi); CSS tema terpasang memang sudah bisa diambil lewat `/tema/<slug>/<hash12>/`.
-- **Variasi kurang terasa**: warna + susunan mungkin belum cukup "benar-benar berbeda". Lihat K3.
+- **Cakupan penuh berarti banyak UI dan test.** Mitigasinya: PR bertahap yang masing-masing lulus suite, satu helper fixture bersama, `style` dibatasi ke nilai skalar dari `ThemeStyleMap::MAP` (tanpa editor responsif), dan form yang hanya memakai komponen bawaan Filament.
+- **Refactor PR1 menyentuh jalur pasang tema resmi.** PR1 tidak mengubah perilaku dan dijaga test yang sudah ada, dan di-merge sebelum fitur baru apa pun.
+- **Penyuntingan teks CSS bisa salah tempat** (nilai di dalam komentar atau string). Penyuntingan hanya menyentuh deklarasi di blok scope yang cocok dengan hasil parse, lalu validasi ulang penuh. AC-4 memastikan sisa CSS byte-identik.
+- **Hex literal di luar token tidak ikut berubah**, sehingga palet bisa tampak setengah berganti. Ini diterima di v0, dicatat di UI, dan PANDUAN akan menganjurkan `var()` untuk semua warna.
+- **Urutan middleware yang salah bisa membuat pratinjau ter-cache publik.** Dijaga AC-9 dan AC-10 yang memeriksa header persis.
+- **Tautan pratinjau yang bocor** memperlihatkan draf paling lama 30 menit. Dampaknya kecil karena tema bukan data pribadi, dan aset tema terpasang memang sudah publik di `/tema/…`.
 
-## Keputusan terbuka untuk pemilik
-- **K1 Siapa yang melihat editor.** `manage:themes` dimiliki super-admin setiap sekolah, jadi kode di `dev` akan membuka editor untuk semua super-admin begitu dirilis. Rekomendasi: tambah saklar `config('pondok.theme_editor')` (env `PONDOK_THEME_EDITOR`, bawaan `false`) di `canAccess()` dan di Action, menyala hanya di mesin pemilik sampai editor jadi produk.
-- **K2 Menyunting tema yang sedang aktif.** Rekomendasi: ditolak (AC-8). Alurnya duplikat, sunting, pratinjau, lalu aktifkan, sehingga pengunjung tidak pernah melihat setengah jadi. Alternatif: boleh dengan peringatan.
-- **K3 Cukupkah warna + susunan untuk v0.** Rekomendasi: ya untuk v0; variasi besar tetap datang dari empat CSS dasar yang berbeda, editor memperbanyaknya. Bila belum cukup setelah dicoba, v1 = editor CSS bebas lewat `ValidateThemeCss` (rencana terpisah).
+## Keputusan
+- **Sudah diambil:** menyunting tema yang sedang aktif ditolak (AC-8). Alurnya duplikat, sunting, pratinjau, lalu aktifkan.
+- **Keputusan pemilik:** cakupan v0 penuh, yaitu token warna, enum, susunan beranda dengan tambah/hapus dan style skalar, pratinjau, dan ekspor. Dikonfirmasi 7 Nov 2026.
+- Saklar akses tambahan tidak dibuat (YAGNI): editor hanya ada di `dev`, dan pembatasannya diputuskan ketika tema dirilis ke `main`.
+
+## Review #1 (plan-reviewer): CHANGES_REQUESTED, 0 blocker, 1 major, 6 minor
+- **Major (ukuran):** teks dan AC dipadatkan (14 AC), cakupan tidak dipangkas sesuai keputusan pemilik, paket kerja menjadi PR bertahap dengan kriteria selesai, dan risiko cakupan beserta mitigasinya ditambahkan.
+- **Minor 2:** tiga titik baca slug (`GetPortalTheme::template()`/`handle()`) ditulis di bagian 3, dan AC-12 kini memeriksa `<style data-portal-theme>`.
+- **Minor 3:** K1 dihapus, K2 menjadi keputusan yang sudah diambil, dan K3 menjadi keputusan pemilik.
+- **Minor 4:** sumber byte duplikat (`assets/<hash12>` milik `theme.json` sumber; tema resmi dan tema tanpa `assets` hanya `theme.json`) dinyatakan, dan AC-2 disesuaikan.
+- **Minor 5:** URL pratinjau dibangun dari `APP_URL`, dan AC-9 mendapat kasus host admin yang berbeda.
+- **Minor 6:** label "Buatan sendiri" dan penyaringan `lokal-*` di `FetchThemeCatalog` ditambahkan (File, AC-8, AC-13).
+- **Minor 7:** catatan ketergantungan F105 yang keliru dihapus. `feature_list.json` sudah dibetulkan orkestrator.
 
 ## Riwayat revisi
 - 7 Nov 2026: draf awal.
+- 7 Nov 2026, revisi 1: menjawab Review #1.

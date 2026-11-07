@@ -93,6 +93,10 @@ class InstallPortalTheme
     {
         $slug = $this->assertThemeSlug($entry['slug'] ?? null);
 
+        if (ResolveThemePath::isLocal($slug)) {
+            $this->reject('local_slug');
+        }
+
         if (($entry['size'] ?? null) !== strlen($bytes)) {
             $this->reject('size_mismatch');
         }

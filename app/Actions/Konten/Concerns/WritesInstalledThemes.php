@@ -285,6 +285,22 @@ trait WritesInstalledThemes
     }
 
     /**
+     * Ganti scope CSS dari slug `$from` ke `$to` di `$files['theme.css']` (bila ada) dan hitung ulang sha256 dan size di `$raw`.
+     *
+     * @param  array<string, mixed>  $raw
+     * @param  array<string, string>  $files
+     */
+    protected function rescopeCss(array &$raw, array &$files, string $from, string $to): void
+    {
+        if (! isset($files['theme.css'])) {
+            return;
+        }
+
+        $files['theme.css'] = str_replace($this->scope($from), $this->scope($to), $files['theme.css']);
+        $raw['assets']['css'] = [...$raw['assets']['css'], 'sha256' => hash('sha256', $files['theme.css']), 'size' => strlen($files['theme.css'])];
+    }
+
+    /**
      * @param  array<string, mixed>  $manifest
      */
     protected function encodeManifest(array $manifest): string

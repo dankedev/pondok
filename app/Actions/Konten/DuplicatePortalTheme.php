@@ -65,10 +65,7 @@ class DuplicatePortalTheme
             $raw = json_decode((string) file_get_contents($sourcePath), true);
             $files = isset($source['assets']) ? $this->installedAssetFiles(dirname($sourcePath), $source) : [];
 
-            if (isset($files['theme.css'])) {
-                $files['theme.css'] = str_replace($this->scope($source['slug']), $this->scope($slug), $files['theme.css']);
-                $raw['assets']['css'] = [...$raw['assets']['css'], 'sha256' => hash('sha256', $files['theme.css']), 'size' => strlen($files['theme.css'])];
-            }
+            $this->rescopeCss($raw, $files, $source['slug'], $slug);
 
             $manifest = $this->validate->handle($this->stage($slug, $this->encodeManifest([...$raw, 'slug' => $slug, 'name' => trim($name), 'version' => '1.0.0'])));
 

@@ -3456,6 +3456,18 @@ return [
         ],
     ],
 
+    /*
+    | Ekspor tema lokal menjadi paket penerbit (F111, `pondok:theme-export`).
+    */
+    'theme_export' => [
+        'as_invalid' => 'Opsi --as harus slug sah (huruf kecil, angka, tanda hubung; 2-40 karakter) dan tidak diawali lokal-.',
+        'source_invalid' => 'Sumber harus berupa slug tema lokal-* yang sudah terpasang.',
+        'destination_invalid' => 'Folder tujuan tidak boleh berada di dalam folder tema terpasang: :path.',
+        'destination_exists' => 'Folder tujuan sudah ada: :path. Pilih nama --as lain atau hapus folder itu.',
+        'write_failed' => 'Paket tema tidak dapat ditulis ke folder tujuan.',
+        'done' => 'Paket tema ditulis ke :path. Lanjutkan dengan pondok:theme-sign --write-hashes.',
+    ],
+
     'theme_catalog' => [
         'title' => 'Katalog tema',
         'description' => 'Tema resmi yang dapat dipasang ke portal. Tema terpasang dipilih di Situs > Tampilan.',

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Konten;
 
+use App\Http\Middleware\PreviewPortalTheme;
 use App\Models\Setting;
 use Illuminate\Foundation\Vite;
 
@@ -87,7 +88,16 @@ class GetPortalTheme
      */
     public function template(): string
     {
-        return self::installedTheme(Setting::get('theme.template')) ?? self::DEFAULT_TEMPLATE;
+        return self::installedTheme(self::templateSetting()) ?? self::DEFAULT_TEMPLATE;
+    }
+
+    /**
+     * Slug tema efektif request ini: pratinjau sah (`PreviewPortalTheme`, F111) menang atas `theme.template`.
+     * Satu sumber untuk `ResolveActiveTheme`, `template()`, dan `handle()`.
+     */
+    public static function templateSetting(): mixed
+    {
+        return request()->attributes->get(PreviewPortalTheme::ATTRIBUTE) ?? Setting::get('theme.template');
     }
 
     /**
@@ -96,6 +106,7 @@ class GetPortalTheme
     public function handle(): array
     {
         $values = Setting::getMany(self::KEYS);
+        $values['theme.template'] = self::templateSetting();
         $theme = app(ResolveActiveTheme::class)->handle();
 
         // Tema aktif (F104) hanya nilai bawaan: pengaturan admin yang terisi menang; aksen tidak pernah dari tema.

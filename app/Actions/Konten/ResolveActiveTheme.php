@@ -2,7 +2,6 @@
 
 namespace App\Actions\Konten;
 
-use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -50,7 +49,7 @@ class ResolveActiveTheme
      */
     private function resolve(): ?array
     {
-        $slug = Setting::get('theme.template');
+        $slug = GetPortalTheme::templateSetting();
 
         if (! is_string($slug) || $slug === '') {
             return null;

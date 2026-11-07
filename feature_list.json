@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F110",
+  "next_id": "F111",
   "features": [
     {
       "id": "F001",
@@ -2180,6 +2180,25 @@
       "handoff": null,
       "evidence": "repo pondok-themes-work commit 9e6fd50, 9525b27, cfeea44 (mihrab 1.0.11, cahaya 1.0.5, tegas 1.0.5, kobalt 1.0.4), laporan LAPORAN-F109.md; 4 paket valid (ValidateThemePackage + ValidateThemeCss); audit 128 kombinasi 0 kontras gagal dan 0 overflow; diff gaya terhitung 8 halaman x 360/1440px x 4 tema (3 perbaikan gaya tercatat); sha256 css terpasang cocok dengan repo",
       "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F109-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #150). Tanpa penandatanganan atau penerbitan."
+    },
+    {
+      "id": "F110",
+      "key": "konten-tema-editor-rencana",
+      "issue": 152,
+      "name": "Rencana editor tema v0",
+      "phase": 2,
+      "module": "Konten",
+      "status": "in-progress",
+      "depends_on": ["F109"],
+      "description": "Menulis rencana editor tema v0 (modul Konten, super-admin): apa yang diedit, penyimpanan dan pemasangan, pratinjau, antarmuka Filament, validasi dan keamanan, paket kerja. Hanya rencana, belum kode. Detail di issue #152.",
+      "acceptance": [
+        "docs/plans/F110-plan.md (maks ±150 baris, 8 sampai 15 AC yang bisa dites) lolos satu putaran review plan-reviewer",
+        "Memuat keputusan dan alasan untuk enam pertanyaan di issue, daftar yang sengaja ditunda, dan paket kerja"
+      ],
+      "owner": "orkestrator",
+      "handoff": null,
+      "evidence": null,
+      "notes": "Jalur penuh, tahap rencana saja. PR ke dev (Refs #152). Tidak ke produksi."
     }
   ]
 }

@@ -2074,7 +2074,7 @@
       "name": "Tema membawa CSS dan font sendiri: kontrak markup dan paket tema",
       "phase": 2,
       "module": "Konten",
-      "status": "in-progress",
+      "status": "done",
       "depends_on": [
         "F102",
         "F103",

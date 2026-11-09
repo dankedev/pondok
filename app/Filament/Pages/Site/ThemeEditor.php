@@ -392,7 +392,8 @@ class ThemeEditor extends Page
             'surface' => $manifest['surface'] ?? null,
             'font' => $manifest['font'] ?? null,
             'tokens' => $this->editableTokens($manifest),
-            'layout' => array_values($manifest['home']['layout'] ?? []),
+            // Kunci non-numerik: JS mengurutkan ulang kunci angka sehingga urutan seretan hilang di state klien.
+            'layout' => collect($manifest['home']['layout'] ?? [])->values()->mapWithKeys(fn (array $node, int $i): array => ["item-{$i}" => $node])->all(),
         ];
     }
 

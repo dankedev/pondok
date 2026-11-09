@@ -101,7 +101,7 @@ it('loads a local theme into the form: ColorPicker tokens and layout for a css t
         ->assertSet('data.tokens.--pt-fg', '#1a2b1c')
         ->assertSet('data.tokens.--pt-bg', '#fbf7ee')
         ->assertSet('data.tokens.--pt-accent', '#b4531a')
-        ->assertSet('data.layout.0.component', $pkg['manifest']['home']['layout'][0]['component']);
+        ->assertSet('data.layout.item-0.component', $pkg['manifest']['home']['layout'][0]['component']);
 
     expect(collect($page->instance()->getForm('form')->getFlatComponents())->contains(fn ($component) => $component instanceof FileUpload))->toBeFalse();
 });
@@ -278,4 +278,13 @@ it('takes every visible string from lang/id', function () {
 
     expect($html)->not->toMatch('/\bpondok\.theme_editor\.[a-z_.]+/')
         ->and($html)->not->toContain('Save')->not->toContain('Duplicate')->not->toContain('Preview');
+});
+
+it('F112: layout items use non-numeric keys so a dragged order survives the client round trip', function () {
+    teLocal();
+
+    $keys = array_keys(tePage()->instance()->data['layout']);
+
+    expect($keys)->not->toBeEmpty()
+        ->and(collect($keys)->every(fn ($key) => ! is_numeric($key)))->toBeTrue();
 });

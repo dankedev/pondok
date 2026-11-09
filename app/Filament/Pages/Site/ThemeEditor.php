@@ -314,6 +314,20 @@ class ThemeEditor extends Page
     }
 
     /**
+     * Pasangan yang gagal dipisah dari yang lulus agar yang perlu diperbaiki tampil lebih dulu.
+     *
+     * @param  list<array{fg: string, bg: string, size: string, ratio: float, passes: bool}>  $rows
+     * @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>}
+     */
+    public function splitContrastRows(array $rows): array
+    {
+        return [
+            array_values(array_filter($rows, fn (array $row): bool => ! $row['passes'])),
+            array_values(array_filter($rows, fn (array $row): bool => $row['passes'])),
+        ];
+    }
+
+    /**
      * @return list<array{label: string, url: string}>
      */
     public function previewLinks(): array

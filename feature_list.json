@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F112",
+  "next_id": "F113",
   "features": [
     {
       "id": "F001",
@@ -2219,6 +2219,26 @@
       "handoff": null,
       "evidence": "PR #155, #156, #157, #158 merged ke dev; PR5 (pondok:theme-export) menyusul. Suite penuh PHP 8.4: 6488 test, 6483 lulus, 5 skipped. Cek visual Editor tema di 360px, 1024px, dan desktop dilakukan manual (AC-14).",
       "notes": "Jalur penuh, PR bertahap ke dev (Refs #154). Selesai di dev; issue #154 tertutup oleh PR rilis dev ke main (atas permintaan user). Batasan v0: gaya responsif node puncak dipangkas ke base saat susunan beranda diubah; daftar rasio kontras panjang dan di bawah tombol Simpan. Tidak ke produksi."
+    },
+    {
+      "id": "F112",
+      "key": "konten-tema-editor-kontras",
+      "issue": 160,
+      "name": "Rapikan daftar kontras di Editor tema",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F111"],
+      "description": "Ringkasan jumlah pasangan lulus, pasangan gagal tampil dulu, pasangan lulus dilipat. Jalur cepat: tampilan saja.",
+      "acceptance": [
+        "Ringkasan 'N dari M pasangan warna lulus' tampil",
+        "Pasangan gagal selalu terlihat; pasangan lulus dalam details",
+        "Test Editor tema tetap lulus; cek visual 360px dan desktop"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (29). Cek visual 375px dan desktop manual.",
+      "notes": "Jalur cepat."
     }
   ]
 }

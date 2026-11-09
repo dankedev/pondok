@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F113",
+  "next_id": "F114",
   "features": [
     {
       "id": "F001",
@@ -2238,6 +2238,25 @@
       "owner": null,
       "handoff": null,
       "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (29). Cek visual 375px dan desktop manual.",
+      "notes": "Jalur cepat."
+    },
+    {
+      "id": "F113",
+      "key": "konten-tema-editor-urutan",
+      "issue": 162,
+      "name": "Urutan seret bagian beranda hilang di Editor tema",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F111"],
+      "description": "Kunci Repeater layout memakai item-N (non-numerik) supaya urutan hasil seret tidak diurutkan ulang oleh JS di state klien.",
+      "acceptance": [
+        "Kunci data.layout non-numerik",
+        "Test Editor tema tetap lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (30). Penyebab direproduksi di browser; verifikasi seret setelah perbaikan menunggu cek manual pemilik (Vite pemilik aktif, public/hot).",
       "notes": "Jalur cepat."
     }
   ]

@@ -3425,6 +3425,8 @@ return [
             'size' => ['normal' => 'teks biasa', 'large' => 'teks besar'],
             'pass' => 'Lulus',
             'fail' => 'Gagal',
+            'summary' => ':pass dari :total pasangan warna lulus.',
+            'show_passing' => 'Tampilkan :count pasangan yang lulus',
         ],
         'preview' => [
             'heading' => 'Pratinjau',

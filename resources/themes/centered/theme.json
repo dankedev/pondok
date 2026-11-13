@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "min_core": "1.0.0",
+  "slug": "centered",
+  "name": "Terpusat",
+  "description": "Hero rata tengah dengan gambar lebar di bawahnya, keunggulan sebagai daftar bergaris.",
+  "home": {
+    "layout": [
+      {
+        "component": "blocks",
+        "variant": "centered"
+      }
+    ]
+  }
+}

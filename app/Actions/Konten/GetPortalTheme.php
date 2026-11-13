@@ -2,9 +2,9 @@
 
 namespace App\Actions\Konten;
 
+use App\Http\Middleware\PreviewPortalTheme;
 use App\Models\Setting;
 use Illuminate\Foundation\Vite;
-use Illuminate\Support\Facades\View;
 
 /**
  * Token tema portal (F070) untuk `<style data-portal-theme>` di layout publik.
@@ -17,17 +17,15 @@ use Illuminate\Support\Facades\View;
  * Font non-bawaan hanya dipakai bila semua aliasnya ada di manifest font build aktif, agar
  * `@fonts($aliases)` tidak pernah melempar `ViteException` di portal.
  *
- * Preset template beranda (F072): `theme.template` memilih set view `themes.<preset>.blocks.<tipe>`;
- * blok yang tidak dioverride preset jatuh ke `themes.default`. Template tidak memengaruhi `css`.
+ * Tema aktif (F104) menyuplai bawaan `palette`/`surface`/`font` di bawah pengaturan admin (lihat `ThemePalette`).
+
+`theme.template` (F072) menyimpan slug tema portal (F102, daftar dari `ListPortalThemes`); tema tidak memengaruhi `css`.
  */
 class GetPortalTheme
 {
     public const KEYS = ['theme.primary', 'theme.accent', 'theme.font', 'theme.radius', 'theme.template'];
 
     public const DEFAULT_TEMPLATE = 'default';
-
-    /** Preset template beranda; label dan deskripsi di `pondok.school_profile.theme.templates`. */
-    public const TEMPLATES = ['default' => [], 'centered' => []];
 
     public const DEFAULT_FONT = 'jakarta';
 
@@ -85,22 +83,21 @@ class GetPortalTheme
     }
 
     /**
-     * Kunci preset tersimpan; nilai kosong atau rusak → bawaan.
+     * Slug tema tersimpan; nilai kosong, rusak, atau tanpa folder tema → bawaan.
+     * Hanya memeriksa keberadaan folder; validitas manifest dinilai `ResolveActiveTheme`.
      */
     public function template(): string
     {
-        return self::option(Setting::get('theme.template'), self::TEMPLATES) ?? self::DEFAULT_TEMPLATE;
+        return self::installedTheme(self::templateSetting()) ?? self::DEFAULT_TEMPLATE;
     }
 
     /**
-     * View blok untuk preset; jatuh ke preset bawaan bila preset tidak mengoverride tipe ini.
-     * `$template` harus kunci `TEMPLATES` dan `$type` tipe blok tervalidasi (bukan string DB mentah).
+     * Slug tema efektif request ini: pratinjau sah (`PreviewPortalTheme`, F111) menang atas `theme.template`.
+     * Satu sumber untuk `ResolveActiveTheme`, `template()`, dan `handle()`.
      */
-    public static function blockView(string $template, string $type): string
+    public static function templateSetting(): mixed
     {
-        $view = "themes.{$template}.blocks.{$type}";
-
-        return View::exists($view) ? $view : 'themes.'.self::DEFAULT_TEMPLATE.".blocks.{$type}";
+        return request()->attributes->get(PreviewPortalTheme::ATTRIBUTE) ?? Setting::get('theme.template');
     }
 
     /**
@@ -109,6 +106,12 @@ class GetPortalTheme
     public function handle(): array
     {
         $values = Setting::getMany(self::KEYS);
+        $values['theme.template'] = self::templateSetting();
+        $theme = app(ResolveActiveTheme::class)->handle();
+
+        // Tema aktif (F104) hanya nilai bawaan: pengaturan admin yang terisi menang; aksen tidak pernah dari tema.
+        $values['theme.primary'] ??= ThemePalette::PALETTES[$theme['palette'] ?? ''] ?? null;
+        $values['theme.font'] ??= $theme['font'] ?? null;
         $build = app(BuildColorScale::class);
 
         $scales = array_filter([
@@ -150,6 +153,7 @@ class GetPortalTheme
             ];
         }
 
+        $declarations += ThemePalette::SURFACES[$theme['surface'] ?? ''] ?? [];
         $declarations += $font === null ? [] : self::FONTS[$font]['css'];
         $declarations += self::RADII[self::option($values['theme.radius'], self::RADII) ?? self::DEFAULT_RADIUS];
 
@@ -162,8 +166,16 @@ class GetPortalTheme
         return [
             'css' => $css === '' ? null : ':root{'.$css.'}',
             'font_aliases' => $font === null ? null : self::FONTS[$font]['aliases'],
-            'template' => self::option($values['theme.template'], self::TEMPLATES) ?? self::DEFAULT_TEMPLATE,
+            'template' => self::installedTheme($values['theme.template']) ?? self::DEFAULT_TEMPLATE,
         ];
+    }
+
+    /**
+     * Slug berbentuk sah (sama dengan `ResolveActiveTheme`) yang punya berkas tema (resmi atau terpasang), atau null.
+     */
+    private static function installedTheme(mixed $slug): ?string
+    {
+        return app(ResolveThemePath::class)->handle($slug) === null ? null : $slug;
     }
 
     /**

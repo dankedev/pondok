@@ -6,6 +6,9 @@
     use App\Actions\Konten\GetPsbInfo;
     use App\Models\Payment;
 
+    $ptActive ??= \App\Actions\Konten\ThemeComponents::active();
+    $pt = \App\Actions\Konten\ThemeComponents::hooks(...);
+
     $title = $page?->title ?? __('pondok.portal.nav.psb_info');
     $description = $bodyHtml ? app(\App\Actions\Konten\SummarizeHtml::class)->handle($bodyHtml->toHtml(), 160) : null;
     $breadcrumbs = [
@@ -19,12 +22,12 @@
 @endphp
 
 <x-layouts::public :title="$title" :description="$description" :canonical="route('psb.info')" :bare="true">
-    <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:py-20">
-        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" />
-        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $title }}</h1>
+    <div{{ $pt('page') }} class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" :data-pt-part="$ptActive ? 'breadcrumb' : null" />
+        <h1{{ $pt(part: 'page-title') }} class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $title }}</h1>
 
         @if ($waves !== [])
-            <section class="mt-8" aria-labelledby="psb-waves">
+            <section{{ $pt(part: 'section') }} class="mt-8" aria-labelledby="psb-waves">
                 <h2 id="psb-waves" class="{{ $headingClass }}">{{ __('pondok.portal.psb_info.waves_title') }}</h2>
                 <ul class="mt-4 space-y-3">
                     @foreach ($waves as $wave)
@@ -46,18 +49,18 @@
 
                 @if ($openWave)
                     <div class="mt-6">
-                        <x-ui.button :href="route('psb.register')">{{ __('pondok.portal.psb_info.register') }}</x-ui.button>
+                        <x-ui.button :href="route('psb.register')" :data-pt="$ptActive ? 'button' : null" :data-pt-variant="$ptActive ? 'primary' : null">{{ __('pondok.portal.psb_info.register') }}</x-ui.button>
                     </div>
                 @endif
             </section>
         @endif
 
         @if ($bodyHtml)
-            <div class="portal-prose isolate overflow-hidden break-words {{ $waves === [] ? 'mt-8' : $sectionClass }}">{!! $bodyHtml !!}</div>
+            <div{{ $pt(part: 'prose') }} class="portal-prose isolate overflow-hidden break-words {{ $waves === [] ? 'mt-8' : $sectionClass }}">{!! $bodyHtml !!}</div>
         @endif
 
         @if ($requirements !== [])
-            <section class="{{ $sectionClass }}" aria-labelledby="psb-requirements">
+            <section{{ $pt(part: 'section') }} class="{{ $sectionClass }}" aria-labelledby="psb-requirements">
                 <h2 id="psb-requirements" class="{{ $headingClass }}">{{ __('pondok.portal.psb_info.requirements_title') }}</h2>
                 <div class="mt-4 space-y-6">
                     @foreach ($requirements as $group)
@@ -80,7 +83,7 @@
         @endif
 
         @if ($fees !== [])
-            <section class="{{ $sectionClass }}" aria-labelledby="psb-fees">
+            <section{{ $pt(part: 'section') }} class="{{ $sectionClass }}" aria-labelledby="psb-fees">
                 <h2 id="psb-fees" class="{{ $headingClass }}">{{ __('pondok.portal.psb_info.fees_title') }}</h2>
                 @if ($openWave)
                     <p class="mt-2 text-base text-gray-600">{{ __('pondok.portal.psb_info.fees_note', ['wave' => $openWave['name'], 'year' => $openWave['academic_year']]) }}</p>
@@ -107,7 +110,7 @@
         @endif
 
         @if ($contacts !== [])
-            <section class="{{ $sectionClass }}" aria-labelledby="psb-contacts">
+            <section{{ $pt(part: 'section') }} class="{{ $sectionClass }}" aria-labelledby="psb-contacts">
                 <h2 id="psb-contacts" class="{{ $headingClass }}">{{ __('pondok.portal.psb_info.contacts_title') }}</h2>
                 <div class="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-card">
                     @include('portal.partials.contact-list', [

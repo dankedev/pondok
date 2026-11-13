@@ -220,3 +220,11 @@
 @utility adaptive-cols-* {
     --adaptive-cols: --value(integer);
 }
+
+/*
+ * Bagian beranda bergaya tema (F102): <section> penuh lebar memegang latar, padding, gap, dan kolom dari peta gaya,
+ * jadi isinya dibatasi lewat padding sisi. Selaras `mx-auto max-w-6xl px-6`: isi maksimal 72rem, minimal 1rem dari tepi.
+ */
+@utility portal-gutter {
+    padding-inline: max(1rem, calc((100% - 72rem) / 2 + 1.5rem));
+}

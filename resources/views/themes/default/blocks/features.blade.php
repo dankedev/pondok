@@ -1,4 +1,4 @@
-<section class="{{ $band() }} py-16 lg:py-24" @if ($data['heading']) aria-labelledby="{{ $headingId }}" @endif>
+<section{{ $pt('blocks', $blocksVariant, 'features') }} class="{{ $band }} py-16 lg:py-24" @if ($data['heading']) aria-labelledby="{{ $headingId }}" @endif>
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         @if ($data['heading'])
             <h2 id="{{ $headingId }}" class="mb-8 {{ $sectionHeading }} lg:mb-10">{{ $data['heading'] }}</h2>

@@ -1,4 +1,6 @@
 @php
+    $ptActive ??= \App\Actions\Konten\ThemeComponents::active();
+    $pt = \App\Actions\Konten\ThemeComponents::hooks(...);
     $heading = __('pondok.portal.posts.titles.all');
     $listUrl = fn (array $overrides): string => route('portal.posts.index', array_filter([...$filters, ...$overrides]));
     $categoryChips = [['label' => __('pondok.portal.posts.all_categories'), 'url' => $listUrl(['kategori' => null]), 'active' => $category === null]];
@@ -17,9 +19,9 @@
 @endphp
 
 <x-layouts::public :title="$heading" :canonical="$canonical" :bare="true">
-    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
-        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" />
-        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $heading }}</h1>
+    <div{{ $pt('page') }} class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+        <x-portal.breadcrumb :items="$breadcrumbs" class="mb-3" :data-pt-part="$ptActive ? 'breadcrumb' : null" />
+        <h1{{ $pt(part: 'page-title') }} class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $heading }}</h1>
 
         <div class="mt-6 space-y-3">
             @if ($categories->isNotEmpty() || $category)

@@ -1,17 +1,11 @@
 @php
-    $sectionLink = 'inline-flex min-h-11 items-center gap-1 rounded-lg text-sm font-semibold text-primary-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
-    $sectionHeading = 'text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl';
-    // Latar blok setelah hero berselang-seling. Hanya dipanggil oleh blok yang dirender
-    // (blok kosong sudah dibuang `GetPortalHomeData`), sehingga dua latar sama tidak berdampingan.
-    $bandIndex = 0;
-    $band = function () use (&$bandIndex): string {
-        return ['bg-gray-50', 'bg-white'][$bandIndex++ % 2];
-    };
+    // Susunan beranda dari tema aktif (F102): blok terikat, node kosong, heading, dan latar selang-seling dihitung di `ResolveHomeLayout`.
+    $layout = app(\App\Actions\Konten\ResolveHomeLayout::class)->handle($blocks, app(\App\Actions\Konten\ResolveActiveTheme::class)->handle());
 @endphp
 
 <x-layouts::public :canonical="route('portal.home')" :bare="true">
-    @unless ($hasHero)
-        {{-- Tanpa blok hero: pita sederhana nama lembaga sebagai satu-satunya h1. --}}
+    @if ($layout['banner'])
+        {{-- Preset tanpa blok hero: pita sederhana nama lembaga sebagai satu-satunya h1. --}}
         <section class="bg-white">
             <div class="mx-auto max-w-6xl px-4 pb-12 pt-16 sm:px-6 lg:pb-16 lg:pt-24">
                 <hgroup class="max-w-3xl space-y-4">
@@ -22,9 +16,14 @@
                 </hgroup>
             </div>
         </section>
-    @endunless
+    @endif
 
-    @foreach ($blocks as $block)
-        @include($block['view'], ['block' => $block, 'data' => $block['data'], 'headingId' => 'blok-'.$loop->iteration])
+    @if ($layout['srH1'])
+        {{-- Susunan bebas tanpa hero di posisi h1: judul halaman tetap ada untuk pembaca layar. --}}
+        <h1 class="sr-only">{{ $school['name'] }}</h1>
+    @endif
+
+    @foreach ($layout['nodes'] as $node)
+        <x-portal.theme-node :node="$node" area="home" :school="$school" />
     @endforeach
 </x-layouts::public>

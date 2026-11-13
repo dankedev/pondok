@@ -3,7 +3,7 @@
     @php
         $base = 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2';
     @endphp
-    <nav aria-label="{{ __('pondok.portal.pagination_label') }}" class="mt-8 flex flex-wrap items-center justify-center gap-2">
+    <nav{{ \App\Actions\Konten\ThemeComponents::hooks(part: 'pagination') }} aria-label="{{ __('pondok.portal.pagination_label') }}" class="mt-8 flex flex-wrap items-center justify-center gap-2">
         @if ($paginator->onFirstPage())
             <span class="{{ $base }} text-gray-400" aria-disabled="true">{!! __('pagination.previous') !!}</span>
         @else

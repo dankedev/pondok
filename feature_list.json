@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F102",
+  "next_id": "F114",
   "features": [
     {
       "id": "F001",
@@ -1969,6 +1969,57 @@
       "notes": "Jalur cepat: script entrypoint, pemeriksaan doctor read-only, dan dokumen; tanpa migration."
     },
     {
+      "id": "F102",
+      "key": "konten-katalog-tema",
+      "issue": 133,
+      "name": "Tema portal berbasis JSON: renderer dan tema bawaan (Tahap 1)",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F070", "F072"],
+      "description": "Tahap 1 tema portal berbasis JSON: tema = data JSON (struktur + enum gaya) yang dirender inti; tanpa Blade/PHP/JS dari tema, tanpa jaringan. Cakupan header, footer, dan bagian beranda; gaya = enum dipetakan server ke kelas Tailwind literal (tanpa CSS runtime). Skema v1 + validator, renderer, tema resmi default/centered/majalah/mushaf, pemilihan di Situs > Tampilan, fallback. Aset gambar/font ditunda. Katalog dan unduh = F103. Detail di issue #133 dan docs/plans/F102-plan.md.",
+      "acceptance": [
+        "Validator skema v1 menolak schema_version tak didukung, kunci/komponen tak dikenal, nilai gaya di luar enum, slug tak sama nama direktori, UTF-8 rusak, dan JSON melebihi batas ukuran (dicek sebelum decode), depth, kedalaman, atau jumlah node",
+        "Peta gaya server: enum -> kelas Tailwind literal (md:/lg: hanya columns/padding), dicek statis PHP (pola token, literal utuh, tanpa interpolasi); pasangan latar/teks tone terjamin dan lolos kontras 4,5:1 pada skala default dan F070 ekstrem",
+        "Renderer header/footer memakai data inti yang sama tanpa query tambahan; teks dan URL tetap tersanitasi",
+        "Beranda berblok tidak berubah (default dan centered sama dengan golden pra-migrasi; tone auto = selang-seling renderer); tipe blok tak dipetakan memakai komponen bawaan",
+        "Struktur aksesibel (lompat ke konten, satu h1, urutan heading, fokus terlihat) di semua tema resmi",
+        "Tema dipilih di Situs > Tampilan dari ListPortalThemes (empat tema resmi); TEMPLATES dihapus; token F070 tetap berlaku",
+        "Respons portal bertema tanpa csrf-token, aset Livewire, atau Set-Cookie; Cache-Control public dan ETag utuh; PSB Livewire, portal wali, 404, dan verify-* tetap chrome inti",
+        "Tema hilang, rusak, atau schema tak didukung membuat portal memakai tampilan inti dengan Log::warning sekali per slug per proses",
+        "Tidak ada kode dari tema; ModuleComplianceTest lulus; teks lewat lang/id"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #135 (rebase merge ke dev, 45 commit, commit terakhir c1a7f99); CI Pest (PHP 8.3) hijau; suite penuh PHP 8.4: 5739 lulus (laporan sesi pelaksana); golden HTML default/centered hijau; verifikasi adversarial 068badc. Tema resmi: resources/themes/{default,centered,majalah,mushaf}. Belum di main; issue #133 tetap terbuka sampai rilis dev ke main.",
+      "notes": "jalur: penuh. Tahap 1 saja (issue #133). Arah baru 2 Nov 2026: tema = JSON, bukan paket Blade; rencana direvisi 2x (review 1 + pecah dan peta Tailwind), APPROVED. Keputusan user: dipecah ke F103 (#134), gaya = peta kelas Tailwind literal, assets ditunda, manage:themes pindah ke F103. Revisi 4 (2 Nov 2026): susunan bebas ala Elementor, home.sections diganti home.layout, klasik diganti majalah dan mushaf; revisi 5 APPROVED. Paket A/B/C selesai: skema home.layout, renderer, varian, tema resmi default/centered/majalah/mushaf (klasik dihapus), docs/rilis.md dan design-guide diperbarui. Editor visual dan nth = issue lanjutan (usul). PR ke dev dengan Refs #133."
+    },
+    {
+      "id": "F103",
+      "key": "konten-katalog-tema-unduh",
+      "issue": 134,
+      "name": "Katalog tema resmi: unduh dan pasang dari dashboard (Tahap 2)",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F102"],
+      "description": "Tahap 2 tema JSON (lanjutan F102): admin melihat katalog tema resmi, lalu memasangnya. Berkas tema JSON diunduh lewat antrean, diverifikasi tanda tangan Ed25519, dan dipasang atomik; hanya tema resmi bertanda tangan. Memuat manage:themes (super-admin), ext-sodium, check doctor, dan pondok:theme-sign. Detail di issue #134.",
+      "acceptance": [
+        "Halaman Situs > Katalog tema menampilkan status tema (belum dipasang, terpasang, ada pembaruan, tidak cocok versi); hanya super-admin yang dapat memasang atau menghapus",
+        "Pasang memasukkan job ke antrean database; klik ganda tidak membuat job kedua; gagal menulis status failed dengan pesan Indonesia; status macet > 5 menit dianggap gagal",
+        "Paket ditolak tanpa mengubah tema terpasang: sha256 salah, tanda tangan salah/terpotong, schema_version tak didukung, versi lebih rendah, ukuran melebihi batas, host atau skema URL tidak sesuai",
+        "Pasang atomik: kegagalan di tengah tidak merusak tema lama; kembalikan satu versi berfungsi",
+        "Katalog timeout, 500, JSON rusak, atau terlalu besar: halaman tetap tampil dengan daftar terpasang dan pesan, tanpa exception",
+        "pondok:doctor memeriksa sodium dan katalog (warning bila tidak terjangkau)",
+        "Perintah penandatangan menghasilkan paket yang lolos pemasangan dan entri katalog dengan sha256 dan ukuran benar; hasil deterministik",
+        "Teks lewat lang/id; ModuleComplianceTest lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #138 merge 70fb19f (rebase ke dev); CI Pest PHP 8.3 hijau",
+      "notes": "jalur: penuh. URL katalog dan pemegang kunci sudah diputuskan (docs/plans/F103-plan.md)."
+    },
+    {
       "id": "F101",
       "key": "inti-dukungan-r2-s3",
       "issue": 131,
@@ -1991,6 +2042,222 @@
       "handoff": null,
       "evidence": null,
       "notes": "Jalur penuh (dokumen pribadi). Rencana: docs/plans/F101-plan.md. Dependensi aws-sdk menambah syarat ext-simplexml."
+    },
+    {
+      "id": "F104",
+      "key": "konten-tema-warna-font",
+      "issue": 140,
+      "name": "Tema portal menentukan warna dan tipografi",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": [
+        "F102"
+      ],
+      "description": "Perluasan skema tema F102 secara kompatibel (schema_version 1, min_core 1.1.0): kunci opsional palette, surface, font berupa enum yang dipetakan ke token F070 (BuildColorScale, guard kontras) dan font yang sudah ada di build. Nilai admin menang atas tema. Detail di issue #140 dan docs/plans/F104-plan.md.",
+      "acceptance": [
+        "Tema v1 lama tanpa kunci baru tetap valid dan keluaran tema tidak berubah",
+        "Validator menolak nilai di luar enum dan kunci baru dengan min_core < 1.1.0",
+        "Setiap palet dan permukaan lolos kontras 4,5:1 (dijaga test)",
+        "Pengaturan admin menang atas tema; tema rusak atau font tak tersedia memberi perilaku tanpa tema",
+        "Tidak ada hex, nama font, atau CSS dari tema yang masuk ke keluaran selain lewat peta server"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #141 merge 549eb61 (ke dev); CI Pest PHP 8.3 hijau",
+      "notes": "Jalur penuh (skema dan validator). Rencana: docs/plans/F104-plan.md. PR ke dev (Refs #140)."
+    },
+    {
+      "id": "F105",
+      "key": "konten-tema-css-font",
+      "issue": 142,
+      "name": "Tema membawa CSS dan font sendiri: kontrak markup dan paket tema",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": [
+        "F102",
+        "F103",
+        "F104"
+      ],
+      "description": "Tema resmi bertanda tangan boleh membawa theme.css dan font woff2 (kunci assets di manifest, sha256 per berkas), disajikan lewat route aset, dengan validator CSS allowlist, kontrak markup data-pt, pemeriksa kontras di pondok:theme-sign dan pasang. Tanpa JavaScript dari tema. Detail di issue #142 dan docs/plans/F105-plan.md.",
+      "acceptance": [
+        "Skema assets aditif (CORE_VERSION 1.2.0); tema tanpa assets tidak berubah (golden hijau)",
+        "Satu byte berubah pada manifest, CSS, atau font menolak paket tanpa mengubah tema terpasang",
+        "Validator CSS allowlist menolak setiap pola terlarang (satu test per pola) dan batas ukuran",
+        "Font hanya woff2 dari paket, hash diverifikasi, sumber luar ditolak",
+        "Kontrak markup data-pt terdokumentasi dan dijaga test",
+        "pondok:theme-sign dan pasang menjalankan lint CSS dan pemeriksa kontras",
+        "CSS atau font hilang/rusak memberi tampilan inti (HTTP 200) dengan Log::warning",
+        "Respons portal bertema tanpa csrf-token, aset Livewire, Set-Cookie; cache dan ETag utuh; ModuleComplianceTest lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #143 merge be9f2d0 (ke dev); CI Pest PHP 8.3 hijau",
+      "notes": "Jalur penuh. Rencana: docs/plans/F105-plan.md. PR ke dev (Refs #142)."
+    },
+    {
+      "id": "F106",
+      "key": "konten-tema-kait-markup",
+      "issue": 144,
+      "name": "Kait tema untuk pil, slider, panel menu, kartu, dan halaman dalam",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F105"],
+      "description": "Menambah kait data-pt/data-pt-part yang belum ada di markup portal (badge, content, hgroup, slider, slide, panel, group, kartu bersama, halaman dalam, tombol) agar tema ber-CSS tidak memakai selektor posisi yang rapuh. Aditif, hanya tercetak saat tema ber-CSS aktif. Detail di issue #144 dan docs/plans/F106-plan.md.",
+      "acceptance": [
+        "Semua kait baru tercetak pada konten lengkap bila tema ber-CSS aktif dan tidak tercetak bila tidak; HTML tema tanpa CSS identik (golden hijau)",
+        "Kait F105 yang sudah ada tidak berubah; empat tema (Mihrab, Cahaya, Tegas, Kobalt) tetap valid dan tampil sama",
+        "ThemeComponents::PARTS dan docs/tema-kontrak-markup.md sinkron, dijaga test",
+        "ModuleComplianceTest lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit b433c20..861a587 di feat/f106-kait-tema; suite penuh PHP 8.4: 6281 test, 6276 lulus, 5 dilewati, 1 risky; Pint lulus",
+      "notes": "Jalur penuh (kontrak markup). Rencana: docs/plans/F106-plan.md. PR ke dev (Refs #144). Di luar lingkup: nth feed_list (celah 7) dan url() custom property (celah 8)."
+    },
+    {
+      "id": "F107",
+      "key": "konten-tema-resmi-kait",
+      "issue": 146,
+      "name": "Empat tema resmi memakai kait F106 dan bingkai foto hero diperbaiki",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F106"],
+      "description": "Memigrasikan tema ber-CSS Mihrab, Cahaya, Tegas, dan Kobalt (repo privat pondok-themes-work) dari selektor posisi ke kait F106, memperbaiki bingkai foto hero yang kosong di Mihrab dan Tegas, dan mengukur ulang kontras dan overflow di 360, 768, 1024, dan 1440px. Belum ditandatangani atau diterbitkan. Detail di issue #146.",
+      "acceptance": [
+        "Tidak ada selektor posisional tersisa tanpa alasan tertulis di komentar CSS",
+        "Bingkai foto hero tidak kosong lebih dari 15% di 1440px pada Mihrab dan Tegas",
+        "0 kegagalan kontras dan 0 overflow di 360, 768, 1024, dan 1440px untuk keempat tema",
+        "Keempat tema lolos ValidateThemePackage dan ValidateThemeCss",
+        "Karakter visual tiap tema tidak berubah dibanding tangkapan layar acuan"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "repo pondok-themes-work commit 349a32f, 13cf24e, 9c69d3e, 5a6793b (mihrab 1.0.8, tegas 1.0.3, cahaya 1.0.3, kobalt 1.0.2), laporan LAPORAN-F107.md; 4 paket valid (ValidateThemePackage + ValidateThemeCss); audit 112 kombinasi 0 kontras gagal dan 0 overflow; bingkai hero Mihrab 44%->5%, Tegas 63%->14% (diukur ulang orkestrator di 360 dan 1440px)",
+      "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F107-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #146). Tanpa penandatanganan atau penerbitan."
+    },
+    {
+      "id": "F108",
+      "key": "konten-tema-kait-elemen",
+      "issue": 148,
+      "name": "Kait tema untuk elemen yang masih tanpa kait",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F106"],
+      "description": "Menutup butir 12 CELAH-SISTEM.md: kait data-pt-part untuk isi kartu (body), pembungkus text_image dan cta (inner), kutipan (figure, mark), footer ringkas (name, logo), dan halaman dalam (meta, back, lead, cover, card) agar tema ber-CSS tidak memakai selektor posisional. Aditif, hanya tercetak saat tema ber-CSS aktif. Detail di issue #148.",
+      "acceptance": [
+        "Semua kait baru tercetak pada konten lengkap bila tema ber-CSS aktif dan tidak tercetak bila tidak; HTML tema tanpa CSS identik (golden hijau)",
+        "Kait F105 dan F106 tidak berubah",
+        "ThemeComponents::PARTS dan docs/tema-kontrak-markup.md sinkron, dijaga test",
+        "ModuleComplianceTest lulus dan empat tema resmi tetap valid dan tampil sama"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit 5e3d123..da7762f (RED 3, GREEN 4, VERIFY 2); 18 test kait F108 + 19 test verifikasi lulus; suite penuh PHP 8.4 6324 test, 6319 lulus, 5 dilewati, 1 risky; kait terverifikasi di DOM tema Kobalt (8 halaman)",
+      "notes": "Jalur penuh. Rencana: docs/plans/F108-plan.md. PR ke dev (Refs #148). Cek visual peramban tidak dilakukan (server Vite pengguna memblokir app.css); CSS empat tema belum memakai kait baru (pekerjaan terpisah di repo tema)."
+    },
+    {
+      "id": "F109",
+      "key": "konten-tema-resmi-kait-elemen",
+      "issue": 150,
+      "name": "Empat tema resmi memakai kait F108",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F108"],
+      "description": "Memigrasikan tema ber-CSS Mihrab, Cahaya, Tegas, dan Kobalt (repo privat pondok-themes-work) dari selektor posisional sisa ke kait F108, lalu mengukur ulang kontras dan overflow di 360, 768, 1024, dan 1440px. Belum ditandatangani atau diterbitkan. Detail di issue #150.",
+      "acceptance": [
+        "Tidak ada selektor posisional tersisa tanpa alasan tertulis di komentar CSS",
+        "0 kegagalan kontras dan 0 overflow di 360, 768, 1024, dan 1440px untuk keempat tema",
+        "Keempat tema lolos ValidateThemePackage dan ValidateThemeCss",
+        "Karakter visual tiap tema tidak berubah dibanding tangkapan layar acuan"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "repo pondok-themes-work commit 9e6fd50, 9525b27, cfeea44 (mihrab 1.0.11, cahaya 1.0.5, tegas 1.0.5, kobalt 1.0.4), laporan LAPORAN-F109.md; 4 paket valid (ValidateThemePackage + ValidateThemeCss); audit 128 kombinasi 0 kontras gagal dan 0 overflow; diff gaya terhitung 8 halaman x 360/1440px x 4 tema (3 perbaikan gaya tercatat); sha256 css terpasang cocok dengan repo",
+      "notes": "Jalur cepat (CSS dan dokumen). Rencana: docs/plans/F109-plan.md. Sumber tema di luar repo ini. PR ke dev (Refs #150). Tanpa penandatanganan atau penerbitan."
+    },
+    {
+      "id": "F110",
+      "key": "konten-tema-editor-rencana",
+      "issue": 152,
+      "name": "Rencana editor tema v0",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F109"],
+      "description": "Menulis rencana editor tema v0 (modul Konten, super-admin): apa yang diedit, penyimpanan dan pemasangan, pratinjau, antarmuka Filament, validasi dan keamanan, paket kerja. Hanya rencana, belum kode. Detail di issue #152.",
+      "acceptance": [
+        "docs/plans/F110-plan.md (maks ±150 baris, 8 sampai 15 AC yang bisa dites) lolos satu putaran review plan-reviewer",
+        "Memuat keputusan dan alasan untuk enam pertanyaan di issue, daftar yang sengaja ditunda, dan paket kerja"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "commit 26fc844, 2dc4351 (docs/plans/F110-plan.md, 14 AC, 5 PR bertahap); review plan-reviewer satu putaran (1 major cakupan, diputuskan pemilik tetap penuh, 6 minor ditanggapi)",
+      "notes": "Jalur penuh, tahap rencana saja. PR ke dev (Refs #152). Implementasi (PR1 sampai PR5 di rencana) belum dimulai dan belum punya ID fitur; dibuat atas persetujuan pemilik. Tidak ke produksi."
+    },
+    {
+      "id": "F111",
+      "key": "konten-tema-editor",
+      "issue": 154,
+      "name": "Implementasi editor tema v0",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F110"],
+      "description": "Mengimplementasikan editor tema v0 sesuai docs/plans/F110-plan.md: duplikat tema menjadi lokal-<nama>, ubah token warna, enum, dan susunan beranda, pratinjau lewat URL bertanda tangan, label Buatan sendiri, dan ekspor. Lima PR bertahap ke dev (PR1 refactor trait dan penolakan lokal-*, PR2 Action, PR3 pratinjau, PR4 halaman, PR5 ekspor). Detail di issue #154.",
+      "acceptance": [
+        "AC-1 sampai AC-14 di docs/plans/F110-plan.md terpenuhi dan dijaga test",
+        "Setiap PR lulus test terdampak, Pint, dan suite penuh, dan berdiri sendiri",
+        "Tema resmi dan alur pasang, kembalikan, hapus tidak berubah perilakunya; ModuleComplianceTest lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "PR #155, #156, #157, #158 merged ke dev; PR5 (pondok:theme-export) menyusul. Suite penuh PHP 8.4: 6488 test, 6483 lulus, 5 skipped. Cek visual Editor tema di 360px, 1024px, dan desktop dilakukan manual (AC-14).",
+      "notes": "Jalur penuh, PR bertahap ke dev (Refs #154). Selesai di dev; issue #154 tertutup oleh PR rilis dev ke main (atas permintaan user). Batasan v0: gaya responsif node puncak dipangkas ke base saat susunan beranda diubah; daftar rasio kontras panjang dan di bawah tombol Simpan. Tidak ke produksi."
+    },
+    {
+      "id": "F112",
+      "key": "konten-tema-editor-kontras",
+      "issue": 160,
+      "name": "Rapikan daftar kontras di Editor tema",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F111"],
+      "description": "Ringkasan jumlah pasangan lulus, pasangan gagal tampil dulu, pasangan lulus dilipat. Jalur cepat: tampilan saja.",
+      "acceptance": [
+        "Ringkasan 'N dari M pasangan warna lulus' tampil",
+        "Pasangan gagal selalu terlihat; pasangan lulus dalam details",
+        "Test Editor tema tetap lulus; cek visual 360px dan desktop"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (29). Cek visual 375px dan desktop manual.",
+      "notes": "Jalur cepat."
+    },
+    {
+      "id": "F113",
+      "key": "konten-tema-editor-urutan",
+      "issue": 162,
+      "name": "Urutan seret bagian beranda hilang di Editor tema",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F111"],
+      "description": "Kunci Repeater layout memakai item-N (non-numerik) supaya urutan hasil seret tidak diurutkan ulang oleh JS di state klien.",
+      "acceptance": [
+        "Kunci data.layout non-numerik",
+        "Test Editor tema tetap lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (30). Penyebab direproduksi di browser; verifikasi seret setelah perbaikan menunggu cek manual pemilik (Vite pemilik aktif, public/hot).",
+      "notes": "Jalur cepat."
     }
   ]
 }

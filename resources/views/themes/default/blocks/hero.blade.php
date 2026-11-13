@@ -3,7 +3,7 @@
     $hasMedia = $block['album'] !== null || $block['image'] !== null;
 @endphp
 
-<section class="relative isolate overflow-x-clip bg-white" aria-labelledby="{{ $headingId }}">
+<section{{ $pt('blocks', $blocksVariant, 'hero') }} class="relative isolate overflow-x-clip bg-white" aria-labelledby="{{ $headingId }}">
     <div aria-hidden="true" class="portal-decor-dots pointer-events-none absolute right-0 top-12 -z-10 hidden h-72 w-56 lg:block xl:w-72"></div>
     <div @class(['mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24', 'grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-12' => $hasMedia])>
         <div @class(['space-y-6', 'max-w-3xl' => ! $hasMedia])>
@@ -22,7 +22,7 @@
             @if ($block['buttons'] !== [])
                 <div class="flex flex-wrap gap-3 pt-2">
                     @foreach ($block['buttons'] as $button)
-                        <x-ui.button :href="$button['url']" :variant="$loop->first ? 'primary' : 'secondary'">{{ $button['label'] }}</x-ui.button>
+                        <x-ui.button :href="$button['url']" :variant="$loop->first ? 'primary' : 'secondary'" :data-pt="$ptActive ? 'button' : null" :data-pt-variant="$ptActive ? ($loop->first ? 'primary' : 'secondary') : null">{{ $button['label'] }}</x-ui.button>
                     @endforeach
                 </div>
             @endif

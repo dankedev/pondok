@@ -37,6 +37,28 @@ return [
     ],
 
     /*
+    | Direktori tema portal (F102): satu subfolder per tema berisi `theme.json`.
+    | Bawaan `resources/themes` (tiga tema resmi); test mengarahkannya ke folder sementara.
+    */
+    'themes_path' => resource_path('themes'),
+
+    /*
+    | Tema resmi terpasang dari katalog (F103): `<slug>/theme.json` (+ `previous.json`), ditulis aplikasi, di luar web root.
+    */
+    'installed_themes_path' => storage_path('app/themes'),
+
+    /*
+    | Katalog tema resmi (F103). URL dapat diganti env hanya untuk uji, bukan pengaturan admin. Kunci publik Ed25519
+    | (base64) sengaja literal di sini, tidak dari env: `k1` utama, `k2` cadangan (privatnya disimpan terpisah offline).
+    | Kunci kosong membuat pemasangan tema ditolak dengan pesan jelas. Kunci privat tidak ada di repo (docs/rilis.md).
+    */
+    'theme_catalog_url' => env('PONDOK_THEME_CATALOG_URL', 'https://pondok.org/themes/themes.json'),
+    'theme_public_keys' => [
+        'k1' => 'iBp6Ju+fcrjdcH2jps6A6QNXUvkeZ6pisMR0FHL3Piw=',
+        'k2' => 'EJFcfG8aypTKgociXiahFy2gdmByxqKZ3U2ZNOqA6xk=',
+    ],
+
+    /*
     | Data demo (F034, `php artisan db:seed --class=DemoSeeder`). Password semua
     | akun demo; kosong = password bawaan `DemoSeeder::DEFAULT_PASSWORD` yang
     | tertulis di docs/demo.md (seeder menampilkan peringatan).

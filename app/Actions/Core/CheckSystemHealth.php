@@ -2,6 +2,8 @@
 
 namespace App\Actions\Core;
 
+use App\Actions\Konten\FetchThemeCatalog;
+use App\Models\Setting;
 use App\Services\SystemProbe;
 use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migrator;
@@ -18,14 +20,14 @@ class CheckSystemHealth
     /** Ekstensi PHP wajib: semua `ext-*` di composer.lock (paket non-dev) ditambah PDO. */
     public const REQUIRED_EXTENSIONS = [
         'ctype', 'dom', 'fileinfo', 'filter', 'hash', 'iconv', 'intl', 'json', 'libxml',
-        'mbstring', 'openssl', 'pcre', 'session', 'tokenizer', 'xmlreader', 'simplexml', 'zip', 'pdo',
+        'mbstring', 'openssl', 'pcre', 'session', 'sodium', 'tokenizer', 'xmlreader', 'simplexml', 'zip', 'pdo',
     ];
 
     /** Urutan pemeriksaan yang ditampilkan. */
     public const CHECKS = [
         'php_version', 'extensions', 'app_key', 'app_env', 'app_url', 'database', 'database_version',
         'migrations', 'writable_paths', 'assets', 'public_storage', 'private_disk', 'persistent_storage', 'app_exposure',
-        'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'version',
+        'drivers', 'scheduler', 'queue', 'php_functions', 'php_limits', 'mail', 'theme_catalog', 'version',
     ];
 
     public const MIN_PHP_VERSION = '8.3.0';
@@ -41,7 +43,7 @@ class CheckSystemHealth
 
     private ?bool $databaseReachable = null;
 
-    public function __construct(private SystemProbe $probe) {}
+    public function __construct(private SystemProbe $probe, private FetchThemeCatalog $themeCatalog) {}
 
     /**
      * @return list<array{key: string, status: string, message: string}>
@@ -553,6 +555,22 @@ class CheckSystemHealth
         return app()->environment('production') && in_array($mailer, ['log', 'array'], true)
             ? ['warning', __('pondok.doctor.messages.mail_not_sent', ['mailer' => $mailer])]
             : ['ok', __('pondok.doctor.messages.mail_ok', ['mailer' => $mailer])];
+    }
+
+    /**
+     * Katalog tema resmi (F103). Hanya peringatan: katalog yang tak terjangkau tidak menggagalkan instalasi.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function checkThemeCatalog(): array
+    {
+        if (! $this->databaseIsReachable() || ! Setting::moduleEnabled('konten')) {
+            return ['skipped', __('pondok.doctor.messages.theme_catalog_skipped')];
+        }
+
+        return $this->themeCatalog->handle()['error'] === null
+            ? ['ok', __('pondok.doctor.messages.theme_catalog_ok')]
+            : ['warning', __('pondok.doctor.messages.theme_catalog_unreachable')];
     }
 
     /**

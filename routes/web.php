@@ -11,6 +11,7 @@ use App\Http\Controllers\Portal\ShowPsbInfo;
 use App\Http\Controllers\Portal\ShowRobots;
 use App\Http\Controllers\Portal\ShowSitemap;
 use App\Http\Controllers\Portal\ShowStaticPage;
+use App\Http\Controllers\Portal\ShowThemeAsset;
 use App\Http\Controllers\PortalWali\DownloadStudentDocument;
 use App\Http\Controllers\PortalWali\EmailVerificationController;
 use App\Http\Controllers\PortalWali\Logout as PortalWaliLogout;
@@ -23,6 +24,7 @@ use App\Http\Middleware\AddPrivacyHeaders;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use App\Http\Middleware\EnsurePortalWaliUser;
 use App\Http\Middleware\ForcePortalRootUrl;
+use App\Http\Middleware\PreviewPortalTheme;
 use App\Http\Middleware\SetPortalCacheHeaders;
 use App\Http\Middleware\SetPortalSecurityHeaders;
 use App\Livewire\PortalWali\ForgotPassword as PortalWaliForgotPassword;
@@ -101,7 +103,7 @@ Route::middleware([AddPrivacyHeaders::class, EnsureModuleIsEnabled::class.':doku
 // Portal publik (F017): stateless (tanpa sesi, cookie, CSRF) agar aman di-cache publik.
 // Daftar `withoutMiddleware` mengikuti isi grup `web` Laravel 13. Route `/{page}` paling akhir.
 $statelessWeb = [EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class, ValidateCsrfToken::class];
-$portalHeaders = [ForcePortalRootUrl::class, SetPortalSecurityHeaders::class, SetPortalCacheHeaders::class];
+$portalHeaders = [ForcePortalRootUrl::class, SetPortalSecurityHeaders::class, PreviewPortalTheme::class, SetPortalCacheHeaders::class];
 
 // Info PSB publik (F038): stateless seperti portal, tetapi bernama `psb.info` (di luar grup `portal.`) dan
 // mengikuti saklar psb, bukan konten. Didaftarkan sebelum route `/{page}`.
@@ -109,6 +111,14 @@ Route::get('info-psb', ShowPsbInfo::class)
     ->withoutMiddleware($statelessWeb)
     ->middleware([...$portalHeaders, EnsureModuleIsEnabled::class.':psb,404'])
     ->name('psb.info');
+
+// CSS dan font tema ber-assets (F105): stateless, di luar grup `portal.` dan `ForcePortalRootUrl` (tautan di HTML relatif); bukan `SetPortalCacheHeaders`
+// karena md5 isi tidak cocok untuk berkas immutable. Slug/hash/path divalidasi `ResolveThemeAssetPath`, jadi tanpa `where` agar 404 tetap lewat header keamanan.
+Route::get('tema/{slug}/{hash12}/{path}', ShowThemeAsset::class)
+    ->where('path', '.+')
+    ->withoutMiddleware($statelessWeb)
+    ->middleware([SetPortalSecurityHeaders::class, EnsureModuleIsEnabled::class.':konten,404'])
+    ->name('theme-asset');
 
 Route::name('portal.')
     ->withoutMiddleware($statelessWeb)

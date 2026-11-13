@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Actions\Konten\ResolveActiveTheme;
 use App\Models\Document;
 use App\Models\Setting;
 use App\Models\User;
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(Setting::CACHE_BINDING, fn (): ArrayObject => new ArrayObject);
+        $this->app->scoped(ResolveActiveTheme::class);
 
         $this->configurePublicPath();
     }

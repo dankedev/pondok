@@ -1,5 +1,5 @@
 {{-- Kutipan preset Terpusat: rata tengah dengan garis emas pendek di atas sebagai hiasan. --}}
-<section class="{{ $band() }} py-16 lg:py-24">
+<section{{ $pt('blocks', $blocksVariant, 'quote') }} class="{{ $band }} py-16 lg:py-24">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <figure class="mx-auto max-w-3xl space-y-4 text-center">
             <div aria-hidden="true" class="mx-auto mb-8 h-1 w-12 rounded-full bg-accent-500"></div>

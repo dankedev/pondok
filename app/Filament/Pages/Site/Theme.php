@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Site;
 
 use App\Actions\Konten\BuildColorScale;
 use App\Actions\Konten\GetPortalTheme;
+use App\Actions\Konten\ListPortalThemes;
 use App\Actions\Konten\UpdatePortalTheme;
 use App\Filament\Pages\SettingsFormPage;
 use App\Models\Setting;
@@ -19,7 +20,7 @@ use Filament\Support\Icons\Heroicon;
 
 /**
  * Tampilan portal (F070): warna utama dan aksen, pasangan font, dan sudut kartu situs publik,
- * serta preset template beranda (F072). Pratinjau warna tombol dan judul portal (F071) dihitung dari
+ * serta tema portal (F072, F102: daftar dari `ListPortalThemes`). Pratinjau warna tombol dan judul portal (F071) dihitung dari
  * state form lewat `GetPortalTheme::brandTokens()`, sama dengan portal.
  * Disimpan lewat `UpdatePortalTheme` (validasi hex, opsi, dan kontras skala); panel admin tidak
  * ikut berubah. Form diisi dari key `theme.*` mentah; kosong berarti bawaan.
@@ -49,10 +50,7 @@ class Theme extends SettingsFormPage
             array_map(fn (string $key): string => __("pondok.school_profile.theme.{$group}.{$key}"), $keys),
         );
 
-        $template = fn (string $field): array => array_combine(
-            array_keys(GetPortalTheme::TEMPLATES),
-            array_map(fn (string $key): string => __("pondok.school_profile.theme.templates.{$key}.{$field}"), array_keys(GetPortalTheme::TEMPLATES)),
-        );
+        $themes = collect(app(ListPortalThemes::class)->handle())->keyBy('slug');
 
         return $schema
             ->statePath('data')
@@ -64,8 +62,11 @@ class Theme extends SettingsFormPage
                         Radio::make('template')
                             ->label(__('pondok.school_profile.theme.template'))
                             ->helperText(__('pondok.school_profile.theme.template_helper'))
-                            ->options($template('label'))
-                            ->descriptions($template('description'))
+                            ->options($themes->map->name->all())
+                            ->descriptions($themes->map(fn (array $theme): string => $theme['valid']
+                                ? trim(($theme['source'] === 'local' ? __('pondok.theme_editor.source_local').'. ' : '').$theme['description'])
+                                : __('pondok.school_profile.theme.template_unavailable', ['reason' => $theme['error']]))->all())
+                            ->disableOptionWhen(fn (string $value): bool => ! ($themes[$value]['valid'] ?? false))
                             ->columnSpanFull(),
                         ColorPicker::make('primary')
                             ->label(__('pondok.school_profile.theme.primary'))
@@ -113,18 +114,31 @@ class Theme extends SettingsFormPage
             'accent' => GetPortalTheme::isHex($values['theme.accent']) ? $values['theme.accent'] : null,
             'font' => $option($values['theme.font'], GetPortalTheme::FONTS, GetPortalTheme::DEFAULT_FONT),
             'radius' => $option($values['theme.radius'], GetPortalTheme::RADII, GetPortalTheme::DEFAULT_RADIUS),
-            'template' => $option($values['theme.template'], GetPortalTheme::TEMPLATES, GetPortalTheme::DEFAULT_TEMPLATE),
+            'template' => $this->selectableTheme($values['theme.template']),
         ];
+    }
+
+    /**
+     * Slug tersimpan bila masih tema valid; selain itu bawaan (portal juga jatuh ke chrome inti).
+     */
+    private function selectableTheme(mixed $slug): string
+    {
+        $valid = collect(app(ListPortalThemes::class)->handle())->where('valid', true)->pluck('slug');
+
+        return is_string($slug) && $valid->contains($slug) ? $slug : GetPortalTheme::DEFAULT_TEMPLATE;
     }
 
     protected function persist(array $data, User $user): void
     {
+        // Radio mengubah kunci opsi angka-saja (slug "12345") jadi int; slug tersimpan harus tetap string.
+        $template = is_int($data['template'] ?? null) ? (string) $data['template'] : ($data['template'] ?? null);
+
         app(UpdatePortalTheme::class)->handle([
             'primary' => $data['primary'] ?? null,
             'accent' => $data['accent'] ?? null,
             'font' => $data['font'] ?? null,
             'radius' => $data['radius'] ?? null,
-            'template' => $data['template'] ?? null,
+            'template' => $template,
         ], $user);
     }
 }

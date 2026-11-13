@@ -99,6 +99,12 @@ Aturan:
 - Arti warna konsisten. Hijau tidak pernah dipakai untuk "ditolak", merah tidak pernah untuk dekorasi.
 - Warna tidak boleh jadi satu-satunya pembeda. Badge selalu berisi teks.
 
+### Warna dari tema
+
+Tema portal boleh memilih palet (`hijau`), permukaan (`krem`), dan font (`jakarta|lora|nunito`) hanya lewat nama enum di `theme.json`; inti memetakannya ke token di atas (`ThemePalette`) dan menuliskannya ke `<style data-portal-theme>`. Pengaturan admin di Situs > Tampilan menang atas tema. Setiap palet wajib lolos guard kontras `BuildColorScale`, dan `krem` hanya mengganti `gray-50`/`gray-100` dengan tint sangat terang agar `gray-500` ke atas tetap terbaca; `white` dan warna status tidak berubah.
+
+Tema resmi ber-CSS (F105) menentukan warna, huruf, dan bentuknya sendiri dan mengalahkan pengaturan admin; tema tanpa CSS tetap mengikuti token di atas. Kualitas visual dan keterbacaan tema ber-CSS adalah tanggung jawab penerbit: kontras hanya dijamin untuk pasangan warna yang dideklarasikan di `assets.contrast` (diperiksa saat menandatangani dan memasang), gerak hanya di dalam `prefers-reduced-motion: no-preference`, dan panel admin tidak pernah memuat CSS tema. Panduan penerbit ada di `docs/rilis.md`.
+
 ### Kontras & latar
 
 - Teks utama `gray-900` di atas putih, teks isi `gray-600`/`gray-700`. `gray-500` hanya untuk ikon; `gray-300`/`gray-400` tidak untuk teks yang harus dibaca (kecuali paginasi nonaktif).
@@ -262,6 +268,12 @@ Setiap kolom `status` tampil sebagai badge (`->badge()`), label dari `lang/id`, 
 | Konten | draft | `gray` |
 | Konten | terbit | `success` |
 | Konten | terjadwal (dihitung, bukan status) | `info` |
+| Katalog tema (Situs → Katalog tema) | belum dipasang | `gray` |
+| Katalog tema | terpasang | `success` |
+| Katalog tema | ada pembaruan | `info` |
+| Katalog tema | tidak cocok versi (skema atau inti tidak didukung) | `warning` |
+| Katalog tema | pemasangan sedang berjalan (antre, berjalan) | `info` |
+| Katalog tema | pemasangan gagal | `danger` |
 | Saklar modul (Pengaturan → Modul) | aktif | `success` |
 | Saklar modul (Pengaturan → Modul) | nonaktif | `gray` |
 
@@ -306,9 +318,10 @@ Zona waktu selalu `Asia/Jakarta`. Jangan menampilkan ISO timestamp mentah.
 - Sudut: `rounded-full` (pill) untuk tombol, input, select, input file, badge, chip filter, paginasi, item nav, dan tautan "Daftar". `rounded-xl` untuk kartu, alert, empty state, foto, iframe, menu lipat, dan ubin pilihan radio.
 - Bayangan hanya token di `@theme`: `shadow-card` (kartu, `border-gray-100`), `shadow-card-lg` (kartu besar, menu lipat), `shadow-button` (tombol utama navy). Tanpa `shadow-[…]`.
 - Input dan select memakai kelas komponen `.ui-input` (pill, `px-5`, fokus `ring-primary-500`); kelas tambahan per field (`tabular-nums`) tetap ditulis di elemen.
-- Beranda (F045) = daftar blok (`resources/views/themes/<preset>/blocks/{type}.blade.php`): hero putih, lalu blok yang dirender berselang-seling `bg-gray-50` → `bg-white` (penghitung `$band()` di `home.blade.php`, hanya dipanggil blok yang tampil). Blok kosong tidak dirender. Blok Ajakan punya latar sendiri: `light` = band, `navy` = `bg-primary-950` teks putih dengan tombol varian `inverse`/`inverse-secondary` dan fokus `ring-accent-400`, `gold` = `bg-accent-500` teks `text-primary-950` (emas tetap bukan warna teks). Grid Keunggulan dan Konten terbaru memakai `<x-portal.adaptive-grid>`: kolom `lg` = min(jumlah item, maks.), satu item tanpa grid lebar, baris sisa rata tengah dengan lebar kartu sama (`.portal-adaptive-grid` + `adaptive-cols-<n>` di `app.css`, F073).
-- Preset template beranda (F072, Situs > Tampilan, key `theme.template`): `default` (Standar: hero dua kolom, keunggulan dalam kartu) dan `centered` (Terpusat: hero rata tengah dengan media `max-w-4xl` di bawah teks, keunggulan sebagai daftar bergaris `divide-y` tanpa kartu (butir terakhir jumlah ganjil di tengah pada `lg`), gambar Teks + gambar di kiri pada `lg`, kutipan rata tengah dengan garis emas pendek di atas). Preset hanya mengoverride blok yang tata letaknya beda; blok lain jatuh ke `themes/default` (`GetPortalTheme::blockView`). Semua preset merender isian `portal.home_blocks` yang sama dengan kontrak yang sama: satu `h1` (hero atau pita nama lembaga), `section` dengan `aria-labelledby` hanya bila ada judul, `$band()`/`$sectionHeading`/`$sectionLink` dari `home.blade.php`, tombol dan alt gambar sama. Header, footer, navigasi, dan halaman selain beranda tidak ikut preset. Preset baru = folder `themes/<kunci>/blocks/` + kunci di `GetPortalTheme::TEMPLATES` + label/deskripsi di `pondok.school_profile.theme.templates`.
+- Beranda (F045) = daftar blok (`resources/views/themes/<preset>/blocks/{type}.blade.php`): hero putih, lalu blok yang dirender berselang-seling `bg-gray-50` → `bg-white` (latar dihitung `ResolveHomeLayout`, hanya digeser blok yang memakainya). Blok kosong tidak dirender. Blok Ajakan punya latar sendiri: `light` = band, `navy` = `bg-primary-950` teks putih dengan tombol varian `inverse`/`inverse-secondary` dan fokus `ring-accent-400`, `gold` = `bg-accent-500` teks `text-primary-950` (emas tetap bukan warna teks). Grid Keunggulan dan Konten terbaru memakai `<x-portal.adaptive-grid>`: kolom `lg` = min(jumlah item, maks.), satu item tanpa grid lebar, baris sisa rata tengah dengan lebar kartu sama (`.portal-adaptive-grid` + `adaptive-cols-<n>` di `app.css`, F073).
+- Tema portal (F072, F102, Situs > Tampilan, key `theme.template`): slug tema di `resources/themes/<slug>/theme.json` (`default`, `centered`, `majalah`, `mushaf`), daftar dan nama/deskripsinya dari `ListPortalThemes`. Tema rusak tampil nonaktif dengan alasan; portal jatuh ke chrome inti. Pilihan tema memuat catatan bahwa portal bisa basi hingga 5 menit (cache publik). Semua tema merender isian `portal.home_blocks` yang sama; view legacy `themes/<preset>/blocks/` tetap ada sebagai referensi golden.
 - Hiasan cincin emas setengah lingkaran (`.portal-decor-ring`) dan pola titik navy muda (`.portal-decor-dots`): murni CSS, hanya di hero (titik, `lg`) dan slider (cincin + titik, `sm`), sebagai `<div aria-hidden="true">` kosong di belakang konten (`-z-10` dalam wadah `isolate`), selalu berkelas `hidden` di bawah breakpoint. Section berhias memakai `overflow-x-clip`.
+- Warna dan font tema (F104): token tema (`primary-*`, `gray-50/100`, `--font-heading`/`--font-sans`) dipakai lewat kelas Tailwind biasa; jangan menulis hex atau nama font di view portal supaya tema dapat menggantinya. Latar `body` dan `tone: light` tetap putih.
 - Target sentuh minimal 44×44px. Tombol utama di portal wali/PSB lebar penuh di mobile (`w-full sm:w-auto`).
 - Form PSB dipecah menjadi langkah (wizard) dengan indikator langkah, satu kolom di mobile, label di atas field, dan tombol "Simpan & lanjut" di bawah.
 - Komponen Blade yang dipakai ulang (tombol, badge, kartu, field, empty state, alert) dibuat sebagai anonymous component di `resources/views/components/ui/` dan dipakai sebagai `<x-ui.button>`. Cek komponen yang sudah ada sebelum membuat yang baru.

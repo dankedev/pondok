@@ -1,7 +1,7 @@
 {{-- Chip filter portal. $items: list<array{label: string, url: string, active: bool}>. --}}
 @props(['items', 'label'])
 
-<nav aria-label="{{ $label }}" {{ $attributes->class('flex flex-wrap gap-2') }}>
+<nav{{ \App\Actions\Konten\ThemeComponents::hooks(part: 'filters') }} aria-label="{{ $label }}" {{ $attributes->class('flex flex-wrap gap-2') }}>
     @foreach ($items as $item)
         <a href="{{ $item['url'] }}"
            @if ($item['active']) aria-current="true" @endif

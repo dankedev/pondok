@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "min_core": "1.0.0",
+  "slug": "default",
+  "name": "Standar (bawaan)",
+  "description": "Hero dua kolom dengan gambar di samping, keunggulan dalam kartu.",
+  "home": {
+    "layout": [
+      {
+        "component": "blocks",
+        "variant": "default"
+      }
+    ]
+  }
+}

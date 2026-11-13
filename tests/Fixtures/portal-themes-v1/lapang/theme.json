@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "min_core": "1.0.0",
+  "slug": "lapang",
+  "name": "Lapang",
+  "description": "Terang dan modern dengan banyak ruang putih: latar polos, jarak antarbagian lebar, keunggulan dan berita dalam kartu, penutup terang.",
+  "header": {
+    "component": "container",
+    "style": {
+      "tone": "light",
+      "padding": {
+        "base": "md",
+        "lg": "lg"
+      },
+      "gap": "lg",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "columns",
+        "style": {
+          "gap": "lg"
+        },
+        "children": [
+          {
+            "component": "brand"
+          },
+          {
+            "component": "nav_menu"
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "component": "container",
+    "style": {
+      "tone": "muted",
+      "border": "top",
+      "padding": {
+        "base": "md",
+        "lg": "lg"
+      },
+      "gap": "lg",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "component": "footer_widgets",
+        "style": {
+          "gap": "lg"
+        }
+      },
+      {
+        "component": "copyright",
+        "style": {
+          "border": "top"
+        }
+      }
+    ]
+  },
+  "home": {
+    "layout": [
+      {
+        "component": "hero",
+        "variant": "split",
+        "style": {
+          "tone": "light",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "feature_grid",
+        "variant": "cards",
+        "style": {
+          "tone": "light",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "text_image",
+        "style": {
+          "tone": "light",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "quote",
+        "variant": "plain",
+        "style": {
+          "tone": "muted",
+          "align": "center",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "feed_list",
+        "variant": "cards",
+        "style": {
+          "tone": "light",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "video",
+        "style": {
+          "tone": "light",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      },
+      {
+        "component": "cta",
+        "variant": "card",
+        "style": {
+          "tone": "light",
+          "align": "center",
+          "padding": {
+            "base": "lg"
+          }
+        }
+      }
+    ]
+  }
+}

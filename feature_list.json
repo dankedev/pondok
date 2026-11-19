@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F114",
+  "next_id": "F115",
   "features": [
     {
       "id": "F001",
@@ -2258,6 +2258,25 @@
       "handoff": null,
       "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (30). Penyebab direproduksi di browser; verifikasi seret setelah perbaikan menunggu cek manual pemilik (Vite pemilik aktif, public/hot).",
       "notes": "Jalur cepat."
+    },
+    {
+      "id": "F114",
+      "key": "konten-beranda-blok-berulang",
+      "issue": 166,
+      "name": "Komponen beranda berulang memakai blok admin berikutnya",
+      "phase": 2,
+      "module": "Konten",
+      "status": "done",
+      "depends_on": ["F102"],
+      "description": "Node ke-n bertipe sama memakai blok aktif ke-n di Beranda admin; tanpa pasangan kembali ke blok pertama.",
+      "acceptance": [
+        "AC-1 sampai AC-4 di docs/plans/F114-plan.md",
+        "Test portal, Action Konten, dan halaman Filament terdampak lulus"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "ResolveHomeLayoutRepeatedComponentTest (4) dan PortalThemeRenderTest lulus; suite penuh menyusul di PR.",
+      "notes": "Jalur cepat. Test AC-5 PortalThemeRenderTest diperbarui ke kontrak baru."
     }
   ]
 }

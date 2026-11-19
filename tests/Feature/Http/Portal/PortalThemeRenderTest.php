@@ -294,7 +294,7 @@ it('AC-4 and AC-5: shows every block for each official theme, drops hidden and e
     }
 });
 
-it('AC-5: binds each node to the first active block of its type and repeats it, and lets blocks list every active block in admin order', function () {
+it('AC-5 (F114): binds the nth node of a type to the nth active block of that type, and lets blocks list every active block in admin order', function () {
     portalSeedContent();
     blkSet([
         blk('quote', ['text' => 'Kutipan pertama uji']),
@@ -306,8 +306,8 @@ it('AC-5: binds each node to the first active block of its type and repeats it, 
     $main = profilVisibleText(themeMain(themeHomeWith([['component' => 'hero'], ['component' => 'quote'], ['component' => 'hero']])));
     $blocks = profilVisibleText(themeMain(themeHomeWith([['component' => 'blocks']])));
 
-    expect(substr_count($main, 'Hero pertama uji'))->toBe(2)
-        ->and($main)->not->toContain('Hero kedua uji')->toContain('Kutipan pertama uji')->not->toContain('Kutipan kedua uji')
+    expect(substr_count($main, 'Hero pertama uji'))->toBe(1)
+        ->and($main)->toContain('Hero kedua uji')->toContain('Kutipan pertama uji')->not->toContain('Kutipan kedua uji')
         ->and(collect(['Kutipan pertama uji', 'Hero pertama uji', 'Kutipan kedua uji', 'Hero kedua uji'])->map(fn (string $needle): int|false => mb_strpos($blocks, $needle))->all())
         ->toBe(collect(['Kutipan pertama uji', 'Hero pertama uji', 'Kutipan kedua uji', 'Hero kedua uji'])->map(fn (string $needle): int|false => mb_strpos($blocks, $needle))->sort()->values()->all());
 });

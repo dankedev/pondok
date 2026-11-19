@@ -46,10 +46,10 @@ class ResolveHomeLayout
             ];
         }
 
-        $state = ['blocks' => [], 'seq' => 0, 'band' => 0, 'hero' => null, 'titled' => false];
+        $state = ['blocks' => [], 'used' => [], 'seq' => 0, 'band' => 0, 'hero' => null, 'titled' => false];
 
         foreach ($blocks as $block) {
-            $state['blocks'][$block['type']] ??= $block;
+            $state['blocks'][$block['type']][] = $block;
         }
 
         $nodes = $this->siblings($layout, true, false, $state);
@@ -149,11 +149,15 @@ class ResolveHomeLayout
                 $extra['columnsClass'] = ThemeStyleMap::columns($node['style'] ?? [], count($children));
             }
         } else {
-            $block = $state['blocks'][array_search($component, ThemeComponents::HOME, true)] ?? null;
+            // Node ke-n bertipe sama memakai blok aktif ke-n; tanpa pasangan, kembali ke blok pertama (kontrak F102).
+            $type = array_search($component, ThemeComponents::HOME, true);
+            $block = $state['blocks'][$type][$state['used'][$type] ?? 0] ?? $state['blocks'][$type][0] ?? null;
 
             if ($block === null) {
                 return null;
             }
+
+            $state['used'][$type] = ($state['used'][$type] ?? 0) + 1;
 
             $extra = ['block' => $block, 'headingId' => 'blok-'.(++$state['seq']), 'inverse' => $inverse];
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\Psb\DownloadApplicantDocument;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use App\Http\Middleware\SetAdminSecurityHeaders;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Actions\Action;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Events\ServingFilament;
 use Filament\Http\Middleware\Authenticate;
@@ -52,6 +53,14 @@ class AdminPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
+        foreach (config('pondok.guides.pages') as $page => $slug) {
+            $panel->renderHook(
+                PanelsRenderHook::PAGE_HEADER_ACTIONS_AFTER,
+                fn (): string => view('filament.guide-link', ['slug' => $slug])->render(),
+                scopes: $page,
+            );
+        }
+
         return $panel
             ->default()
             ->id('admin')
@@ -88,6 +97,13 @@ class AdminPanelProvider extends PanelProvider
             // F092: palet perintah kustom (Ctrl+K) menggantikan kolom pencarian global bawaan.
             ->globalSearch(false)
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => auth()->check() ? view('filament.command-palette-trigger') : '')
+            // F115: tautan ke panduan pondok.org per halaman, dan indeks panduan di menu pengguna.
+            ->userMenuItems([
+                Action::make('guides')
+                    ->label(fn (): string => __('pondok.guides.index'))
+                    ->icon('heroicon-o-book-open')
+                    ->url(config('pondok.guides.base_url'), shouldOpenInNewTab: true),
+            ])
             ->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('filament.command-palette-host') : '')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

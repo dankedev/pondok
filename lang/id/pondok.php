@@ -6,6 +6,11 @@ return [
         'download_template' => 'Unduh template CSV',
     ],
 
+    'guides' => [
+        'link' => 'Panduan',
+        'index' => 'Semua panduan',
+    ],
+
     'navigation' => [
         'master' => 'Data Induk',
         'akademik' => 'Akademik',

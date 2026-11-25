@@ -1,5 +1,15 @@
 <?php
 
+use App\Filament\Pages\Settings\Modules;
+use App\Filament\Resources\Achievements\Pages\CreateAchievement;
+use App\Filament\Resources\Achievements\Pages\ListAchievements;
+use App\Filament\Resources\Users\Pages\CreateUser;
+use App\Filament\Resources\Users\Pages\EditUser;
+use App\Filament\Resources\Users\Pages\ListUsers;
+use BezhanSalleh\FilamentShield\Resources\Roles\Pages\CreateRole;
+use BezhanSalleh\FilamentShield\Resources\Roles\Pages\EditRole;
+use BezhanSalleh\FilamentShield\Resources\Roles\Pages\ListRoles;
+
 return [
 
     /*
@@ -46,6 +56,25 @@ return [
     | Tema resmi terpasang dari katalog (F103): `<slug>/theme.json` (+ `previous.json`), ditulis aplikasi, di luar web root.
     */
     'installed_themes_path' => storage_path('app/themes'),
+
+    /*
+    | Panduan pondok.org (F115). Slug /panduan/<slug>/ stabil; jangan menautkan ke anchor (#...), bisa berubah.
+    | `pages` memetakan halaman admin ke slug panduannya; tautan "Panduan" tampil di header halaman itu.
+    */
+    'guides' => [
+        'base_url' => 'https://pondok.org/panduan/',
+        'pages' => [
+            ListRoles::class => 'membuat-peran',
+            CreateRole::class => 'membuat-peran',
+            EditRole::class => 'membuat-peran',
+            ListUsers::class => 'menambah-pengguna',
+            CreateUser::class => 'menambah-pengguna',
+            EditUser::class => 'mengelola-akun-pengguna',
+            Modules::class => 'modul',
+            ListAchievements::class => 'input-prestasi',
+            CreateAchievement::class => 'input-prestasi',
+        ],
+    ],
 
     /*
     | Katalog tema resmi (F103). URL dapat diganti env hanya untuk uji, bukan pengaturan admin. Kunci publik Ed25519

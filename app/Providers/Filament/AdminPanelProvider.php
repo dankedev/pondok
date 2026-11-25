@@ -26,6 +26,7 @@ use Filament\Navigation\NavigationManager;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
@@ -51,9 +52,29 @@ class AdminPanelProvider extends PanelProvider
         Event::listen(ServingFilament::class, fn () => $this->app->forgetInstance(NavigationManager::class));
     }
 
+    /**
+     * Peta halaman → slug panduan. Kunci berupa Resource berlaku untuk semua halamannya;
+     * entri halaman eksplisit didahulukan.
+     *
+     * @return array<class-string, string>
+     */
+    private static function guidePages(): array
+    {
+        $map = config('pondok.guides.pages');
+        $pages = array_filter($map, fn (string $slug, string $class): bool => ! is_subclass_of($class, Resource::class), ARRAY_FILTER_USE_BOTH);
+
+        foreach (array_diff_key($map, $pages) as $resource => $slug) {
+            foreach ($resource::getPages() as $registration) {
+                $pages[$registration->getPage()] ??= $slug;
+            }
+        }
+
+        return $pages;
+    }
+
     public function panel(Panel $panel): Panel
     {
-        foreach (config('pondok.guides.pages') as $page => $slug) {
+        foreach (self::guidePages() as $page => $slug) {
             $panel->renderHook(
                 PanelsRenderHook::PAGE_HEADER_ACTIONS_AFTER,
                 fn (): string => view('filament.guide-link', ['slug' => $slug])->render(),

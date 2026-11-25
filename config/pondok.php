@@ -1,14 +1,64 @@
 <?php
 
+use App\Filament\Pages\AttendanceRecap;
+use App\Filament\Pages\DiniyahGradeEntry;
+use App\Filament\Pages\DisciplineRecap;
+use App\Filament\Pages\FinanceReport;
+use App\Filament\Pages\Settings\Contacts;
+use App\Filament\Pages\Settings\Identity;
 use App\Filament\Pages\Settings\Modules;
-use App\Filament\Resources\Achievements\Pages\CreateAchievement;
-use App\Filament\Resources\Achievements\Pages\ListAchievements;
+use App\Filament\Pages\Site\Footer;
+use App\Filament\Pages\Site\Home;
+use App\Filament\Pages\Site\Navigation;
+use App\Filament\Pages\Site\Theme;
+use App\Filament\Pages\Site\ThemeCatalog;
+use App\Filament\Pages\Site\ThemeEditor;
+use App\Filament\Pages\WalletBalances;
+use App\Filament\Resources\AcademicYears\AcademicYearResource;
+use App\Filament\Resources\Achievements\AchievementResource;
+use App\Filament\Resources\AdmissionRequirements\AdmissionRequirementResource;
+use App\Filament\Resources\AdmissionTracks\AdmissionTrackResource;
+use App\Filament\Resources\AdmissionWaves\AdmissionWaveResource;
+use App\Filament\Resources\Albums\AlbumResource;
+use App\Filament\Resources\Applicants\ApplicantResource;
+use App\Filament\Resources\AttendanceSessions\AttendanceSessionResource;
+use App\Filament\Resources\Classrooms\ClassroomResource;
+use App\Filament\Resources\DiniyahSubjects\DiniyahSubjectResource;
+use App\Filament\Resources\DisciplineLevels\DisciplineLevelResource;
+use App\Filament\Resources\Documents\DocumentResource;
+use App\Filament\Resources\Dormitories\DormitoryResource;
+use App\Filament\Resources\FeeOverrides\FeeOverrideResource;
+use App\Filament\Resources\FeeRates\FeeRateResource;
+use App\Filament\Resources\FeeTypes\FeeTypeResource;
+use App\Filament\Resources\Guardians\GuardianResource;
+use App\Filament\Resources\Halaqahs\HalaqahResource;
+use App\Filament\Resources\HealthVisits\HealthVisitResource;
+use App\Filament\Resources\HomecomingPeriods\HomecomingPeriodResource;
+use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\IssuedLetters\IssuedLetterResource;
+use App\Filament\Resources\LeaveRequests\LeaveRequestResource;
+use App\Filament\Resources\LeaveTypes\LeaveTypeResource;
+use App\Filament\Resources\MemorizationRecords\MemorizationRecordResource;
+use App\Filament\Resources\Payments\PaymentResource;
+use App\Filament\Resources\Posts\PostResource;
+use App\Filament\Resources\RoomAssignments\RoomAssignmentResource;
+use App\Filament\Resources\Scholarships\ScholarshipResource;
+use App\Filament\Resources\StaticPages\StaticPageResource;
+use App\Filament\Resources\Students\StudentResource;
+use App\Filament\Resources\StudentViolations\StudentViolationResource;
+use App\Filament\Resources\TahfidzExams\TahfidzExamResource;
+use App\Filament\Resources\TahfidzTargets\TahfidzTargetResource;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
+use App\Filament\Resources\Videos\VideoResource;
+use App\Filament\Resources\ViolationTypes\ViolationTypeResource;
+use App\Filament\Resources\Visits\VisitResource;
+use App\Filament\Resources\WalletTransactions\WalletTransactionResource;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\CreateRole;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\EditRole;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\ListRoles;
+use Filament\Pages\Dashboard;
 
 return [
 
@@ -60,6 +110,7 @@ return [
     /*
     | Panduan pondok.org (F115). Slug /panduan/<slug>/ stabil; jangan menautkan ke anchor (#...), bisa berubah.
     | `pages` memetakan halaman admin ke slug panduannya; tautan "Panduan" tampil di header halaman itu.
+    | Kunci berupa Resource berlaku untuk semua halamannya; entri halaman eksplisit didahulukan.
     */
     'guides' => [
         'base_url' => 'https://pondok.org/panduan/',
@@ -71,8 +122,58 @@ return [
             CreateUser::class => 'menambah-pengguna',
             EditUser::class => 'mengelola-akun-pengguna',
             Modules::class => 'modul',
-            ListAchievements::class => 'input-prestasi',
-            CreateAchievement::class => 'input-prestasi',
+            Dashboard::class => 'mengenal-dasbor-dan-menu',
+            DiniyahGradeEntry::class => 'mengisi-nilai-dan-rapor',
+            FinanceReport::class => 'laporan-keuangan',
+            WalletBalances::class => 'mengelola-uang-saku',
+            DisciplineRecap::class => 'mencatat-pelanggaran',
+            AttendanceRecap::class => 'mencatat-absensi-harian',
+            Identity::class => 'mengatur-menu-footer-halaman',
+            Contacts::class => 'mengatur-menu-footer-halaman',
+            Navigation::class => 'mengatur-menu-footer-halaman',
+            Footer::class => 'mengatur-menu-footer-halaman',
+            Theme::class => 'memilih-tema-portal',
+            ThemeCatalog::class => 'memilih-tema-portal',
+            ThemeEditor::class => 'memilih-tema-portal',
+            Home::class => 'menyusun-beranda',
+            StudentResource::class => 'menambah-santri',
+            GuardianResource::class => 'menambah-santri',
+            ClassroomResource::class => 'mengatur-rombel',
+            AcademicYearResource::class => 'mengatur-rombel',
+            DiniyahSubjectResource::class => 'mengatur-mapel-diniyah',
+            FeeTypeResource::class => 'mengatur-jenis-biaya',
+            FeeRateResource::class => 'mengatur-jenis-biaya',
+            InvoiceResource::class => 'menerbitkan-tagihan',
+            PaymentResource::class => 'mencatat-pembayaran',
+            FeeOverrideResource::class => 'keringanan-beasiswa',
+            ScholarshipResource::class => 'keringanan-beasiswa',
+            WalletTransactionResource::class => 'mengelola-uang-saku',
+            AdmissionTrackResource::class => 'jalur-dan-syarat-berkas-psb',
+            AdmissionRequirementResource::class => 'jalur-dan-syarat-berkas-psb',
+            AdmissionWaveResource::class => 'membuka-gelombang-psb',
+            ApplicantResource::class => 'memeriksa-pendaftar',
+            DormitoryResource::class => 'mengatur-asrama-kamar',
+            RoomAssignmentResource::class => 'menempatkan-santri-di-kamar',
+            LeaveRequestResource::class => 'mengajukan-izin-santri',
+            LeaveTypeResource::class => 'mengatur-jenis-izin-dan-pulang-massal',
+            HomecomingPeriodResource::class => 'mengatur-jenis-izin-dan-pulang-massal',
+            VisitResource::class => 'mencatat-kunjungan-wali',
+            HealthVisitResource::class => 'mencatat-kesehatan-santri',
+            StudentViolationResource::class => 'mencatat-pelanggaran',
+            ViolationTypeResource::class => 'mengatur-jenis-pelanggaran',
+            DisciplineLevelResource::class => 'mengatur-jenis-pelanggaran',
+            MemorizationRecordResource::class => 'mencatat-setoran-hafalan',
+            HalaqahResource::class => 'mengatur-halaqah',
+            TahfidzTargetResource::class => 'mengatur-halaqah',
+            TahfidzExamResource::class => 'ujian-tahfidz',
+            AttendanceSessionResource::class => 'mencatat-absensi-harian',
+            AchievementResource::class => 'input-prestasi',
+            IssuedLetterResource::class => 'menerbitkan-surat-keluar',
+            DocumentResource::class => 'mengunggah-dokumen-santri',
+            StaticPageResource::class => 'mengatur-menu-footer-halaman',
+            PostResource::class => 'menulis-berita-galeri-video',
+            AlbumResource::class => 'menulis-berita-galeri-video',
+            VideoResource::class => 'menulis-berita-galeri-video',
         ],
     ],
 

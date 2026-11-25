@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F116",
+  "next_id": "F117",
   "features": [
     {
       "id": "F001",
@@ -2278,6 +2278,28 @@
       "handoff": null,
       "evidence": "GuideLinksTest dan ModuleComplianceTest lulus (11). Halaman panduan baru live di pondok.org setelah sesi pondok-marketing push dan deploy.",
       "notes": "Jalur cepat. Checklist Setup awal masih memakai /docs/ lama (slug pengenalan, konfigurasi-env, cron-antrean belum ada di /panduan/); ditunda."
+    },
+    {
+      "id": "F116",
+      "key": "inti-tautan-panduan-lengkap",
+      "issue": 170,
+      "name": "Tautan Panduan untuk semua modul admin",
+      "phase": 2,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": [
+        "F115"
+      ],
+      "description": "Peta config pondok.guides.pages diperluas ke halaman admin semua modul (akademik, keuangan, PSB, asrama, perizinan, kesehatan, kedisiplinan, tahfidz, absensi, prestasi, dokumen, portal publik). Kunci Resource berlaku untuk semua halamannya.",
+      "acceptance": [
+        "Halaman tiap modul menampilkan tautan Panduan ke slug yang sesuai",
+        "Entri halaman eksplisit didahulukan dari entri Resource",
+        "Slug polos tanpa anchor"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "GuideLinksTest dan ModuleComplianceTest lulus (15).",
+      "notes": "Jalur cepat. Panduan Info PSB, impor data, keamanan akun, dan portal wali belum punya halaman admin yang cocok; tidak ditautkan."
     }
   ]
 }

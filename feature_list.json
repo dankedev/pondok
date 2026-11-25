@@ -12,7 +12,7 @@
     "depends_on": "Daftar id fitur yang harus done sebelum fitur ini boleh mulai. Hanya boleh menunjuk id yang ada di file ini.",
     "fitur_dibatalkan": "Jangan dihapus. Ubah status menjadi deferred dan jelaskan di notes."
   },
-  "next_id": "F114",
+  "next_id": "F116",
   "features": [
     {
       "id": "F001",
@@ -2258,6 +2258,26 @@
       "handoff": null,
       "evidence": "ThemeEditorPageTest dan ThemeEditorAdversarialTest lulus (30). Penyebab direproduksi di browser; verifikasi seret setelah perbaikan menunggu cek manual pemilik (Vite pemilik aktif, public/hot).",
       "notes": "Jalur cepat."
+    },
+    {
+      "id": "F115",
+      "key": "inti-tautan-panduan",
+      "issue": 168,
+      "name": "Tautan Panduan pondok.org di panel admin",
+      "phase": 2,
+      "module": "Inti",
+      "status": "done",
+      "depends_on": [],
+      "description": "Tautan Panduan di header halaman Peran, Pengguna, Modul, dan Prestasi menuju pondok.org/panduan/<slug>/, plus indeks panduan di menu pengguna. Peta halaman ke slug di config pondok.guides.",
+      "acceptance": [
+        "Tautan tampil di halaman terkait dan terbuka di tab baru",
+        "Indeks panduan ada di menu pengguna",
+        "Slug hanya yang ada di pondok.org (tanpa anchor)"
+      ],
+      "owner": null,
+      "handoff": null,
+      "evidence": "GuideLinksTest dan ModuleComplianceTest lulus (11). Halaman panduan baru live di pondok.org setelah sesi pondok-marketing push dan deploy.",
+      "notes": "Jalur cepat. Checklist Setup awal masih memakai /docs/ lama (slug pengenalan, konfigurasi-env, cron-antrean belum ada di /panduan/); ditunda."
     }
   ]
 }
